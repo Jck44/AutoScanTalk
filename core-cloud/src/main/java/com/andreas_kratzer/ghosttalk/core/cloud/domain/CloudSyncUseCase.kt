@@ -1,6 +1,5 @@
-@file:Suppress("UseKtx", "REDUNDANT_ELVIS", "RedundantInitializer")
 package com.andreas_kratzer.ghosttalk.core.cloud.domain
-
+import android.annotation.SuppressLint
 import android.content.Context
 import com.andreas_kratzer.ghosttalk.core.cloud.CloudSyncOptimizer
 import com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper
@@ -51,13 +50,9 @@ class CloudSyncUseCase @Inject constructor(
     private val audioSyncHelper = AudioSyncHelper(context, importExportManager, logger)
     private val ttsSyncHelper = TtsSyncHelper(context, importExportManager, syncLogProvider, logger)
     private val statisticsSyncHelper = StatisticsSyncHelper(context, importExportManager, syncLogProvider, logger)
-    private val configSyncHelper = ConfigSyncHelper(context, importExportManager, syncLogProvider, logger)
 
     private suspend fun getStorageProvider(drive: Drive?, folderId: String? = null): SyncStorageProvider =
         storageResolver.getStorageProvider(drive, folderId)
-
-    private suspend fun resolveProfilesStorageProvider(drive: Drive?): SyncStorageProvider =
-        storageResolver.resolveProfilesStorageProvider(drive)
 
     suspend fun syncBook(
         drive: Drive?,
@@ -629,6 +624,7 @@ class CloudSyncUseCase @Inject constructor(
         }
     }
 
+    @SuppressLint("HardwareIds")
     private fun buildBookDescription(bookName: String): String {
         val device = "${android.os.Build.MANUFACTURER} ${android.os.Build.MODEL}"
         val versionName = try {
@@ -640,6 +636,7 @@ class CloudSyncUseCase @Inject constructor(
         return "$bookName Book (Uploaded by $device - App v$versionName - Device ID: $androidId)"
     }
 
+    @SuppressLint("HardwareIds")
     private fun buildLogDescription(): String {
         val device = "${android.os.Build.MANUFACTURER} ${android.os.Build.MODEL}"
         val versionName = try {
@@ -649,10 +646,6 @@ class CloudSyncUseCase @Inject constructor(
         }
         val androidId = android.provider.Settings.Secure.getString(context.contentResolver, android.provider.Settings.Secure.ANDROID_ID) ?: "unknown"
         return "App Logcat Extract (Uploaded by $device - App v$versionName - Device ID: $androidId)"
-    }
-
-    private fun clearCache(clearSettings: Boolean = false) {
-        DriveFolderCache.clearCache(settingsRepository, clearSettings)
     }
 
     companion object {

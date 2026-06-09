@@ -219,7 +219,7 @@ fun PermissionsSettingsSection(viewModel: SettingsViewModel) {
                                 expanded = modeExpanded,
                                 onDismissRequest = { modeExpanded = false }
                             ) {
-                                com.andreas_kratzer.ghosttalk.core.settings.AutoReadMode.values().forEach { mode ->
+                                com.andreas_kratzer.ghosttalk.core.settings.AutoReadMode.entries.forEach { mode ->
                                     DropdownMenuItem(
                                         text = {
                                             Text(when(mode) {

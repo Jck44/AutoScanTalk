@@ -975,7 +975,7 @@ fun SubmenuContent(
             CallSettingsSection(viewModel)
         }
         SettingsSection.SMART_INTEGRATION -> {
-            SmartHomeSettingsSection(viewModel, isGlobal = false)
+            SmartHomeSettingsSection(viewModel)
         }
         SettingsSection.CLOUD_SYNC -> {
             CloudSettingsSection(

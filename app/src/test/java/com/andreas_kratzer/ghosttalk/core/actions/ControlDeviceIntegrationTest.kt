@@ -58,7 +58,6 @@ class ControlDeviceIntegrationTest {
 
         val handlers = setOf(
             ControlDeviceActionHandler(
-                context = application,
                 actionLogger = actionCoordinator,
                 smsExecutor = smsExecutor,
                 notificationExecutor = notificationExecutor,

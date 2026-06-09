@@ -620,7 +620,7 @@ class PageImportExportManager @Inject constructor(
             }
 
             onProgress(0.9f, "Importing data...")
-            val result = importFromJson(jsonContent!!, bookId, regenerateIds, restoreSyncSettings)
+            val result = importFromJson(jsonContent, bookId, regenerateIds, restoreSyncSettings)
             
             vocalProfilesJson?.let {
                 try {
@@ -740,7 +740,7 @@ class PageImportExportManager @Inject constructor(
             }
 
             onProgress(0.9f, "Importing book...")
-            val result = importCloudBackup(jsonContent!!, cloudFileId)
+            val result = importCloudBackup(jsonContent, cloudFileId)
             onProgress(1.0f, "Import complete.")
             result
         } catch (e: Exception) {

@@ -15,6 +15,10 @@ android {
         consumerProguardFiles("consumer-rules.pro")
     }
 
+    lint {
+        disable += "PlayStoreLogin"
+    }
+
     buildFeatures {
         buildConfig = true
     }

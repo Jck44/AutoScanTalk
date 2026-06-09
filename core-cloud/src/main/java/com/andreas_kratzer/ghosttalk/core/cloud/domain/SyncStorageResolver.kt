@@ -2,6 +2,7 @@ package com.andreas_kratzer.ghosttalk.core.cloud.domain
 
 import android.content.Context
 import android.net.Uri
+import androidx.core.net.toUri
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.core.util.Logger
 import com.google.api.services.drive.Drive
@@ -36,7 +37,7 @@ class SyncStorageResolver @Inject constructor(
         val folderId = settingsRepository.googleDriveFolderId
         if (drive == null && folderId?.startsWith("content://") == true) {
             // SAF Folder: Find or create a subfolder named "Profiles"
-            val rootDoc = androidx.documentfile.provider.DocumentFile.fromTreeUri(context, Uri.parse(folderId))
+            val rootDoc = androidx.documentfile.provider.DocumentFile.fromTreeUri(context, folderId.toUri())
             val profilesDoc = rootDoc?.findFile("Profiles") ?: rootDoc?.createDirectory("Profiles")
             val targetUri = profilesDoc?.uri?.toString() ?: folderId
             return DocumentFolderSyncStorageProvider(context, targetUri)
@@ -50,7 +51,7 @@ class SyncStorageResolver @Inject constructor(
     suspend fun resolveLogsStorageProvider(drive: Drive?): SyncStorageProvider {
         val folderId = settingsRepository.googleDriveFolderId
         if (drive == null && folderId?.startsWith("content://") == true) {
-            val rootDoc = androidx.documentfile.provider.DocumentFile.fromTreeUri(context, Uri.parse(folderId))
+            val rootDoc = androidx.documentfile.provider.DocumentFile.fromTreeUri(context, folderId.toUri())
             val logsDoc = rootDoc?.findFile("Logs") ?: rootDoc?.createDirectory("Logs")
             val targetUri = logsDoc?.uri?.toString() ?: folderId
             return DocumentFolderSyncStorageProvider(context, targetUri)
@@ -66,7 +67,7 @@ class SyncStorageResolver @Inject constructor(
         destFile: java.io.File,
         onProgress: (Float) -> Unit
     ): Boolean {
-        val uri = Uri.parse(documentUri)
+        val uri = documentUri.toUri()
         return try {
             context.contentResolver.openInputStream(uri)?.use { inputStream ->
                 destFile.outputStream().use { os ->
@@ -89,7 +90,7 @@ class SyncStorageResolver @Inject constructor(
     }
 
     fun extractTreeUriFromDocumentUri(documentUri: String): String? {
-        val uri = Uri.parse(documentUri)
+        val uri = documentUri.toUri()
         val path = uri.path ?: return null
         val treeIndex = path.indexOf("/tree/")
         if (treeIndex == -1) return null

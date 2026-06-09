@@ -376,13 +376,11 @@ class ConfigSyncHelper(
             try { jsonSerializer.decodeFromString(com.andreas_kratzer.ghosttalk.core.model.SettingsProfile.serializer(), remoteJson).name } catch(_: Exception) { remoteFile.description ?: activeProfile.name }
         )) {
             com.andreas_kratzer.ghosttalk.core.cloud.SyncLogger.logSkipped(logger, TAG, profileFileName, "Profile settings and name are identical (backfilling deterministic MD5: $localDeterministicMd5)")
-            if (remoteDeterministicMd5 != localDeterministicMd5) {
-                try {
-                    storageProvider.updateProperties(remoteFile.id, mapOf("deterministic_md5" to localDeterministicMd5))
-                    logger.d(TAG, "Successfully backfilled deterministic MD5 metadata on remote profile file: $profileFileName")
-                } catch (e: Exception) {
-                    logger.w(TAG, "Failed to backfill deterministic MD5 metadata on remote file $profileFileName: ${e.message}")
-                }
+            try {
+                storageProvider.updateProperties(remoteFile.id, mapOf("deterministic_md5" to localDeterministicMd5))
+                logger.d(TAG, "Successfully backfilled deterministic MD5 metadata on remote profile file: $profileFileName")
+            } catch (e: Exception) {
+                logger.w(TAG, "Failed to backfill deterministic MD5 metadata on remote file $profileFileName: ${e.message}")
             }
             return@withContext
         }

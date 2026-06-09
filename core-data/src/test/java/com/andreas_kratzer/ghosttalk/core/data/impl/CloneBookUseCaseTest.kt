@@ -44,7 +44,6 @@ import org.junit.Test
 @OptIn(ExperimentalCoroutinesApi::class)
 class CloneBookUseCaseTest {
 
-    private val mockContext = mockk<Context>(relaxed = true)
     private val mockDatabase = mockk<AppDatabase>(relaxed = true)
     private val mockBookRepository = mockk<BookRepository>(relaxed = true)
     private val mockPrefs = mockk<SharedPreferences>(relaxed = true)

@@ -38,11 +38,7 @@ class ActionLogUseCase @Inject constructor(
         if (!settingsRepository.persistActionLogs) return@withContextAndLock emptyList()
         
         val activeBookId = settingsRepository.activeBookId
-        val savedJson = if (activeBookId != null) {
-            bookRepository.getBookById(activeBookId)?.actionLogsStorage
-        } else {
-            null
-        }
+        val savedJson = bookRepository.getBookById(activeBookId)?.actionLogsStorage
         val entries: List<ActionLogEntry> = if (!savedJson.isNullOrBlank()) {
             withContext(Dispatchers.IO) {
                 try {
@@ -104,11 +100,9 @@ class ActionLogUseCase @Inject constructor(
         if (settingsRepository.persistActionLogs) {
             withContext(Dispatchers.IO) {
                 val activeBookId = settingsRepository.activeBookId
-                if (activeBookId != null) {
-                    val book = bookRepository.getBookById(activeBookId)
-                    if (book != null) {
-                        bookRepository.updateBook(book.copy(actionLogsStorage = Json.encodeToString(updatedEntries)))
-                    }
+                val book = bookRepository.getBookById(activeBookId)
+                if (book != null) {
+                    bookRepository.updateBook(book.copy(actionLogsStorage = Json.encodeToString(updatedEntries)))
                 }
             }
         }
@@ -135,11 +129,9 @@ class ActionLogUseCase @Inject constructor(
         if (settingsRepository.persistActionLogs) {
             withContext(Dispatchers.IO) {
                 val activeBookId = settingsRepository.activeBookId
-                if (activeBookId != null) {
-                    val book = bookRepository.getBookById(activeBookId)
-                    if (book != null) {
-                        bookRepository.updateBook(book.copy(actionLogsStorage = "[]"))
-                    }
+                val book = bookRepository.getBookById(activeBookId)
+                if (book != null) {
+                    bookRepository.updateBook(book.copy(actionLogsStorage = "[]"))
                 }
             }
         }

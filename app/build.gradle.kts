@@ -33,6 +33,10 @@ android {
         }
     }
 
+    lint {
+        disable += "PlayStoreLogin"
+    }
+
     signingConfigs {
         create("release") {
             val keystorePath = project.findProperty("RELEASE_STORE_FILE")?.toString() ?: "release.keystore"

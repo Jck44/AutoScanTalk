@@ -21,7 +21,6 @@ import javax.inject.Singleton
 @Singleton
 open class RoutedAudioPlayer @Inject constructor(
     @param:ApplicationContext private val context: Context,
-    private val topologyTracker: AudioTopologyTracker,
     private val audioSettings: AudioSettings,
     @param:ApplicationScope private val scope: CoroutineScope
 ) {

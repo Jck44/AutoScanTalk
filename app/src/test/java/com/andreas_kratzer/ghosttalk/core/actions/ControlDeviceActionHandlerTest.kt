@@ -78,7 +78,6 @@ class ControlDeviceActionHandlerTest {
         )
 
         handler = ControlDeviceActionHandler(
-            context = context,
             actionLogger = actionLogger,
             smsExecutor = smsExecutor,
             notificationExecutor = notificationExecutor,

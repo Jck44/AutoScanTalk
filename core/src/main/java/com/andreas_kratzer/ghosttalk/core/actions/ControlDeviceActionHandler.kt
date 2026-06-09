@@ -7,7 +7,6 @@ import com.andreas_kratzer.ghosttalk.core.model.ButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.core.model.ControlDeviceButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.DeviceActionType
-import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 
 interface ControlDeviceTtsProxy {
@@ -17,7 +16,6 @@ interface ControlDeviceTtsProxy {
 }
 
 class ControlDeviceActionHandler @Inject constructor(
-    @param:ApplicationContext private val context: Context,
     private val actionLogger: ActionLogger,
     private val smsExecutor: SmsExecutor,
     private val notificationExecutor: NotificationExecutor,

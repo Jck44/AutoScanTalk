@@ -729,10 +729,12 @@ class PageViewModelTest {
         // Banana should be first.
         // Wait for background thread to compute proposals due to flowOn(Dispatchers.Default)
         var list = emptyList<com.andreas_kratzer.ghosttalk.core.data.impl.analytics.PageLayoutOptimizer.LayoutOptimizationProposal>()
-        for (i in 1..40) {
+        var attempts = 0
+        while (attempts < 40) {
             list = viewModel.layoutOptimizationProposals.value
             if (list.isNotEmpty()) break
             Thread.sleep(25)
+            attempts++
         }
         assertEquals("Proposals size was ${list.size}. unfilteredPages was ${viewModel.unfilteredPages.value.size}. activeBookId was ${viewModel.activeBookId.value}", 2, list.size)
         assertEquals("p1", list[0].pageId)
@@ -741,10 +743,12 @@ class PageViewModelTest {
         // 2. Filter SPLIT_ONLY
         viewModel.setProposalFilter(ProposalFilter.SPLIT_ONLY)
         testScheduler.runCurrent()
-        for (i in 1..40) {
+        var splitAttempts = 0
+        while (splitAttempts < 40) {
             list = viewModel.layoutOptimizationProposals.value
             if (list.size == 1) break
             Thread.sleep(25)
+            splitAttempts++
         }
         assertEquals(1, list.size)
         assertEquals("p1", list[0].pageId)
@@ -752,10 +756,12 @@ class PageViewModelTest {
         // 3. Filter PATTERN_ONLY
         viewModel.setProposalFilter(ProposalFilter.PATTERN_ONLY)
         testScheduler.runCurrent()
-        for (i in 1..40) {
+        var patternAttempts = 0
+        while (patternAttempts < 40) {
             list = viewModel.layoutOptimizationProposals.value
             if (list.size == 1 && list[0].pageId == "p2") break
             Thread.sleep(25)
+            patternAttempts++
         }
         assertEquals(1, list.size)
         assertEquals("p2", list[0].pageId)
@@ -764,10 +770,12 @@ class PageViewModelTest {
         viewModel.setProposalFilter(ProposalFilter.ALL)
         viewModel.setProposalSort(ProposalSort.PAGE_NAME_ASC)
         testScheduler.runCurrent()
-        for (i in 1..40) {
+        var sortAttempts = 0
+        while (sortAttempts < 40) {
             list = viewModel.layoutOptimizationProposals.value
             if (list.size == 2 && list[0].pageId == "p2") break
             Thread.sleep(25)
+            sortAttempts++
         }
         assertEquals(2, list.size)
         assertEquals("p2", list[0].pageId) // "Apple Page" comes before "Banana Page"
@@ -1041,9 +1049,11 @@ class PageViewModelTest {
         }
         testScheduler.runCurrent()
         
-        for (i in 1..40) {
+        var magicAttempts = 0
+        while (magicAttempts < 40) {
             if (viewModel.layoutOptimizationProposals.value.isNotEmpty()) break
             Thread.sleep(25)
+            magicAttempts++
         }
         
         val updatedPageSlot = io.mockk.slot<Page>()

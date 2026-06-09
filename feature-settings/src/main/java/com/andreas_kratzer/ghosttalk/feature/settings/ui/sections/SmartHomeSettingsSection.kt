@@ -28,8 +28,7 @@ import com.andreas_kratzer.ghosttalk.feature.settings.ui.SettingsViewModel
 
 @Composable
 fun SmartHomeSettingsSection(
-    viewModel: SettingsViewModel,
-    isGlobal: Boolean
+    viewModel: SettingsViewModel
 ) {
     val dimensions = LocalDimensions.current
     
@@ -44,7 +43,7 @@ fun SmartHomeSettingsSection(
         if (hueCachedDevices.isBlank()) 0 else {
             try {
                 org.json.JSONArray(hueCachedDevices).length()
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 0
             }
         }

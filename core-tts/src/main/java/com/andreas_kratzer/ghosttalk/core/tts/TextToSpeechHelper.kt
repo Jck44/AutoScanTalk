@@ -95,16 +95,12 @@ open class TextToSpeechHelper @Inject constructor(
     open fun speak(text: String, queueMode: Int = 0, onDone: (() -> Unit)? = null, onError: ((String) -> Unit)? = null) {
         val provider = currentProvider
         if (provider is ElevenLabsTtsProvider) {
-            var fallbackTriggered = false
             provider.speak(
                 text = text,
                 queueMode = queueMode,
-                onDone = {
-                    if (!fallbackTriggered) onDone?.invoke()
-                },
+                onDone = { onDone?.invoke() },
                 onError = { error ->
                     Log.w("TextToSpeechHelper", "ElevenLabs speak failed, falling back to Android TTS: $error")
-                    fallbackTriggered = true
                     androidTtsProvider.get().speak(text, queueMode, onDone, onError)
                 }
             )
@@ -126,18 +122,14 @@ open class TextToSpeechHelper @Inject constructor(
         Log.i("TextToSpeechHelper", "speakRouted: engine=$engineType, text='${text.take(20)}...', isReady=${provider.isReady}")
         
         if (provider is ElevenLabsTtsProvider) {
-            var fallbackTriggered = false
             provider.speakRouted(
                 text = text,
                 deviceAddress = deviceAddress,
                 queueMode = queueMode,
                 isForCues = isForCues,
-                onDone = {
-                    if (!fallbackTriggered) onDone?.invoke()
-                },
+                onDone = { onDone?.invoke() },
                 onError = { error ->
                     Log.w("TextToSpeechHelper", "ElevenLabs speakRouted failed, falling back to Android TTS: $error")
-                    fallbackTriggered = true
                     androidTtsProvider.get().speakRouted(text, deviceAddress, queueMode, isForCues, onDone, onError)
                 }
             )
@@ -150,9 +142,7 @@ open class TextToSpeechHelper @Inject constructor(
         return currentProvider.getAvailableLanguages()
     }
 
-    fun getAvailableVoices(languageTag: String?): List<TtsVoice> {
-        return currentProvider.getAvailableVoices(languageTag)
-    }
+
 
     fun setVoice(voiceName: String?) {
         currentProvider.setVoice(voiceName)
@@ -202,8 +192,5 @@ open class TextToSpeechHelper @Inject constructor(
         }
     }
 
-    fun shutdown() {
 
-        currentProvider.shutdown()
-    }
 }

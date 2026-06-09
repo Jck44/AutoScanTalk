@@ -1,5 +1,6 @@
 package com.andreas_kratzer.ghosttalk.core.cloud.domain
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.util.Log
 import com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper
@@ -308,6 +309,7 @@ class BookMergeService @Inject constructor(
         )
     }
 
+    @SuppressLint("HardwareIds")
     private fun buildBookDescription(bookName: String): String {
         val device = "${android.os.Build.MANUFACTURER} ${android.os.Build.MODEL}"
         val versionName = try {

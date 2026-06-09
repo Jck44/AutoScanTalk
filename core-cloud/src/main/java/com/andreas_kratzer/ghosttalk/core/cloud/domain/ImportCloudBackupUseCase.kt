@@ -2,6 +2,7 @@ package com.andreas_kratzer.ghosttalk.core.cloud.domain
 
 import android.content.Context
 import android.net.Uri
+import androidx.core.net.toUri
 import com.andreas_kratzer.ghosttalk.core.data.BookRepository
 import com.andreas_kratzer.ghosttalk.core.data.SyncLogProvider
 import com.andreas_kratzer.ghosttalk.core.data.impl.PageImportExportManager
@@ -22,7 +23,6 @@ class ImportCloudBackupUseCase @Inject constructor(
     private val logger: Logger
 ) {
     private val TAG = "ImportCloudBackupUseCase"
-    private val TTS_CACHE_FILE_NAME = "tts_cache.zip"
 
     private val audioSyncHelper = AudioSyncHelper(context, importExportManager, logger)
     private val ttsSyncHelper = TtsSyncHelper(context, importExportManager, syncLogProvider, logger)
@@ -81,7 +81,7 @@ class ImportCloudBackupUseCase @Inject constructor(
                     if (bookId.isNotEmpty()) {
                         try {
                             if (isSafUri) {
-                                val docUri = Uri.parse(fileId)
+                                val docUri = fileId.toUri()
                                 val doc = androidx.documentfile.provider.DocumentFile.fromSingleUri(context, docUri)
                                 val remoteTime = doc?.lastModified() ?: 0L
                                 if (remoteTime > 0L) {
