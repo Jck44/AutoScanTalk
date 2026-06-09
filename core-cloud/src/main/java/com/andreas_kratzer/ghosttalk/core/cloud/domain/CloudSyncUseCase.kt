@@ -1319,7 +1319,8 @@ class CloudSyncUseCase @Inject constructor(
         } catch (_: Exception) {
             "unknown"
         }
-        return "$bookName Book (Uploaded by $device - App v$versionName)"
+        val androidId = android.provider.Settings.Secure.getString(context.contentResolver, android.provider.Settings.Secure.ANDROID_ID) ?: "unknown"
+        return "$bookName Book (Uploaded by $device - App v$versionName - Device ID: $androidId)"
     }
 
     private fun buildLogDescription(): String {
@@ -1329,7 +1330,8 @@ class CloudSyncUseCase @Inject constructor(
         } catch (_: Exception) {
             "unknown"
         }
-        return "App Logcat Extract (Uploaded by $device - App v$versionName)"
+        val androidId = android.provider.Settings.Secure.getString(context.contentResolver, android.provider.Settings.Secure.ANDROID_ID) ?: "unknown"
+        return "App Logcat Extract (Uploaded by $device - App v$versionName - Device ID: $androidId)"
     }
 
 

@@ -62,7 +62,7 @@ class ConfigSyncHelper(
             "app_version" to versionName
         )
         val displayType = if (type == "profile") "Profile" else "Config"
-        val description = "$name $displayType (Uploaded by $device - App v$versionName)"
+        val description = "$name $displayType (Uploaded by $device - App v$versionName - Device ID: $androidId)"
         return Pair(properties, description)
     }
 
