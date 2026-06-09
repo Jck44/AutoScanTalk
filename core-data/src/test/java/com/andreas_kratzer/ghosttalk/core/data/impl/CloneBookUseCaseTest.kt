@@ -1,6 +1,5 @@
 package com.andreas_kratzer.ghosttalk.core.data.impl
 
-import android.content.Context
 import android.content.SharedPreferences
 import androidx.room.RoomDatabase
 import androidx.room.withTransaction

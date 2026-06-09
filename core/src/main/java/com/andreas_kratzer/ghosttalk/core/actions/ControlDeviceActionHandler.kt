@@ -1,6 +1,5 @@
 package com.andreas_kratzer.ghosttalk.core.actions
 
-import android.content.Context
 import android.media.AudioManager
 import android.view.KeyEvent
 import com.andreas_kratzer.ghosttalk.core.model.ButtonAction
