@@ -136,5 +136,7 @@ object SettingsConstants {
     const val KEY_LATE_CLICK_THRESHOLD_MILLIS = "late_click_threshold_millis"
     const val KEY_VOCAL_SWITCH_ENABLED = "vocal_switch_enabled"
     const val KEY_FIREBASE_ANALYTICS_ENABLED = "firebase_analytics_enabled"
+    const val KEY_FOREGROUND_SYNC_INTERVAL_MINUTES = "foreground_sync_interval_minutes"
 }
+
 

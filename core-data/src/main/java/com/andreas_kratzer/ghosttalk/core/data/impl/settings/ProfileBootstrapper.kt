@@ -122,6 +122,7 @@ class ProfileBootstrapper @Inject constructor(
                 backgroundWeatherEnabled = prefs.getBoolean(SettingsConstants.KEY_BACKGROUND_WEATHER_ENABLED, false),
                 backgroundWeatherInterval = prefs.getLong(SettingsConstants.KEY_BACKGROUND_WEATHER_INTERVAL, 4L),
                 syncIntervalMinutes = prefs.getLong(SettingsConstants.KEY_SYNC_INTERVAL_MINUTES, 60L),
+                foregroundSyncIntervalMinutes = prefs.getLong(SettingsConstants.KEY_FOREGROUND_SYNC_INTERVAL_MINUTES, 5L),
                 syncModeBook = prefs.getString(SettingsConstants.KEY_SYNC_MODE_BOOK, "TWO_WAY") ?: "TWO_WAY",
                 syncModeStats = prefs.getString(SettingsConstants.KEY_SYNC_MODE_STATS, "RESTORE_ONLY") ?: "RESTORE_ONLY",
                 syncModeTts = prefs.getString(SettingsConstants.KEY_SYNC_MODE_TTS, "TWO_WAY") ?: "TWO_WAY",

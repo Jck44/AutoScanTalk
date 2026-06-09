@@ -25,6 +25,7 @@ class CloudSettingsRepository(
 
     private val _isCloudSyncEnabled = BooleanSetting(KEY_CLOUD_SYNC_ENABLED, false)
     private val _syncIntervalMinutes = LongSetting(KEY_SYNC_INTERVAL_MINUTES, 15L)
+    private val _foregroundSyncIntervalMinutes = LongSetting(SettingsConstants.KEY_FOREGROUND_SYNC_INTERVAL_MINUTES, 5L)
     private val _syncModeBook = NonNullStringSetting(SettingsConstants.KEY_SYNC_MODE_BOOK, "TWO_WAY")
     private val _syncModeTts = NonNullStringSetting(SettingsConstants.KEY_SYNC_MODE_TTS, "TWO_WAY")
     private val _syncModeStats = NonNullStringSetting(SettingsConstants.KEY_SYNC_MODE_STATS, "RESTORE_ONLY")
@@ -78,6 +79,7 @@ class CloudSettingsRepository(
 
     override val isCloudSyncEnabledFlow = _isCloudSyncEnabled.flow
     override val syncIntervalMinutesFlow = _syncIntervalMinutes.flow
+    override val foregroundSyncIntervalMinutesFlow = _foregroundSyncIntervalMinutes.flow
     override val syncModeBookFlow = _syncModeBook.flow
     override val syncModeTtsFlow = _syncModeTts.flow
     override val syncModeStatsFlow = _syncModeStats.flow
@@ -104,6 +106,7 @@ class CloudSettingsRepository(
 
     override var isCloudSyncEnabled: Boolean by _isCloudSyncEnabled
     override var syncIntervalMinutes: Long by _syncIntervalMinutes
+    override var foregroundSyncIntervalMinutes: Long by _foregroundSyncIntervalMinutes
     override var syncModeBook: String by _syncModeBook
     override var syncModeTts: String by _syncModeTts
     override var syncModeStats: String by _syncModeStats
@@ -145,6 +148,7 @@ class CloudSettingsRepository(
         migrateOldSyncMode()
         _isCloudSyncEnabled.refresh()
         _syncIntervalMinutes.refresh()
+        _foregroundSyncIntervalMinutes.refresh()
         _syncModeBook.refresh()
         _syncModeTts.refresh()
         _syncModeStats.refresh()

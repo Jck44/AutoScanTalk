@@ -8,6 +8,9 @@ interface CloudSettings {
     val isCloudSyncEnabledFlow: StateFlow<Boolean>
     var syncIntervalMinutes: Long
     val syncIntervalMinutesFlow: StateFlow<Long>
+    var foregroundSyncIntervalMinutes: Long
+    val foregroundSyncIntervalMinutesFlow: StateFlow<Long>
+
     var syncModeBook: String
     val syncModeBookFlow: StateFlow<String>
     var syncModeTts: String

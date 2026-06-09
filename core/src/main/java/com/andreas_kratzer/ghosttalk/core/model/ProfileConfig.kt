@@ -105,11 +105,13 @@ data class ProfileConfig(
 
     // Cloud Sync Verhalten
     val syncIntervalMinutes: Long = 60,
+    val foregroundSyncIntervalMinutes: Long = 5,
     val syncModeBook: String = "TWO_WAY",
     val syncModeStats: String = "RESTORE_ONLY",
     val syncModeTts: String = "TWO_WAY",
     val syncModeLogs: String = "TWO_WAY",
     val syncLogsIntervalHours: Long = 24,
+
 
     // Semantisches Audio-Routing
     val preferredMainSpeakerName: String? = null,

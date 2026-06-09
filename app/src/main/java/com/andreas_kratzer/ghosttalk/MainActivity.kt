@@ -317,6 +317,25 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        // Periodic foreground sync check loop
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.RESUMED) {
+                while (true) {
+                    delay(60000) // Check every 60 seconds (1 minute)
+                    if (settingsRepository.isCloudSyncEnabled) {
+                        val lastSync = settingsRepository.lastSuccessfulSyncTime
+                        val intervalMs = settingsRepository.foregroundSyncIntervalMinutes * 60 * 1000L
+                        val now = System.currentTimeMillis()
+                        if (now - lastSync >= intervalMs) {
+                            Log.d("MainActivity", "Foreground periodic sync check triggered: ${now - lastSync}ms elapsed since last sync (interval: ${intervalMs}ms)")
+                            triggerForegroundSyncSilently()
+                        }
+                    }
+                }
+            }
+        }
+
+
 
         setContent {
             if (!isDbInitialized) {
@@ -475,6 +494,35 @@ class MainActivity : AppCompatActivity() {
             Log.d("MainActivity", "Triggered background one-time sync because app was minimized (isSaf: $isSaf)")
         } catch (e: Exception) {
             Log.e("MainActivity", "Failed to trigger background sync on stop: ${e.message}", e)
+        }
+    }
+
+    private fun triggerForegroundSyncSilently() {
+        try {
+            val workManager = androidx.work.WorkManager.getInstance(applicationContext)
+            val targetType = settingsRepository.syncTargetType
+            val isSaf = targetType == "LOCAL_FOLDER_SAF"
+
+            val constraintsBuilder = androidx.work.Constraints.Builder()
+            if (!isSaf) {
+                constraintsBuilder.setRequiredNetworkType(androidx.work.NetworkType.CONNECTED)
+            }
+            val constraints = constraintsBuilder.build()
+
+            val workRequest = androidx.work.OneTimeWorkRequest.Builder(
+                com.andreas_kratzer.ghosttalk.core.cloud.CloudSyncWorker::class.java
+            )
+                .setConstraints(constraints)
+                .build()
+
+            workManager.enqueueUniqueWork(
+                "CloudSyncWorker_OneTime",
+                androidx.work.ExistingWorkPolicy.KEEP,
+                workRequest
+            )
+            Log.d("MainActivity", "Triggered foreground silent sync check (isSaf: $isSaf)")
+        } catch (e: Exception) {
+            Log.e("MainActivity", "Failed to trigger foreground sync: ${e.message}", e)
         }
     }
 

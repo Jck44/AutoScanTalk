@@ -59,6 +59,7 @@ fun CloudSettingsSection(
     val syncModeStats by viewModel.syncModeStats.collectAsState()
     val syncModeSettings by viewModel.syncModeSettings.collectAsState()
     val syncIntervalMinutes by viewModel.syncIntervalMinutes.collectAsState()
+    val foregroundSyncIntervalMinutes by viewModel.foregroundSyncIntervalMinutes.collectAsState()
     val isCloudSyncEnabled by viewModel.isCloudSyncEnabled.collectAsState()
     val lastSyncTime by viewModel.lastSuccessfulSyncTime.collectAsState()
 
@@ -446,6 +447,14 @@ fun CloudSettingsSection(
                         selectedOption = syncIntervalMinutes.toString(),
                         options = listOf("15", "30", "60", "120", "360", "1440").map { interval ->
                             interval to { viewModel.setSyncIntervalMinutes(interval.toLong()) }
+                        }
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    SettingsDropdownItem(
+                        label = stringResource(R.string.settings_foreground_sync_interval),
+                        selectedOption = foregroundSyncIntervalMinutes.toString(),
+                        options = listOf("1", "2", "5", "10", "15", "30").map { interval ->
+                            interval to { viewModel.setForegroundSyncIntervalMinutes(interval.toLong()) }
                         }
                     )
                 }

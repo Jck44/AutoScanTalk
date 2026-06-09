@@ -245,6 +245,7 @@ class SettingsRepositoryImpl @Inject constructor(
                             backgroundWeatherEnabled = prefs.getBoolean(SettingsConstants.KEY_BACKGROUND_WEATHER_ENABLED, false),
                             backgroundWeatherInterval = prefs.getLong(SettingsConstants.KEY_BACKGROUND_WEATHER_INTERVAL, 4L),
                             syncIntervalMinutes = prefs.getLong(SettingsConstants.KEY_SYNC_INTERVAL_MINUTES, 60L),
+                            foregroundSyncIntervalMinutes = prefs.getLong(SettingsConstants.KEY_FOREGROUND_SYNC_INTERVAL_MINUTES, 5L),
                             syncModeBook = prefs.getString(SettingsConstants.KEY_SYNC_MODE_BOOK, "TWO_WAY") ?: "TWO_WAY",
                             syncModeStats = prefs.getString(SettingsConstants.KEY_SYNC_MODE_STATS, "RESTORE_ONLY") ?: "RESTORE_ONLY",
                             syncModeTts = prefs.getString(SettingsConstants.KEY_SYNC_MODE_TTS, "TWO_WAY") ?: "TWO_WAY",
@@ -391,6 +392,7 @@ class SettingsRepositoryImpl @Inject constructor(
     override val lateClickThresholdFlow: StateFlow<Long> get() = scanningSettings.lateClickThresholdFlow
 
     override val syncIntervalMinutesFlow: StateFlow<Long> get() = cloudSettings.syncIntervalMinutesFlow
+    override val foregroundSyncIntervalMinutesFlow: StateFlow<Long> get() = cloudSettings.foregroundSyncIntervalMinutesFlow
     override val syncModeBookFlow: StateFlow<String> get() = cloudSettings.syncModeBookFlow
     override val syncModeTtsFlow: StateFlow<String> get() = cloudSettings.syncModeTtsFlow
     override val syncModeStatsFlow: StateFlow<String> get() = cloudSettings.syncModeStatsFlow
@@ -611,6 +613,9 @@ class SettingsRepositoryImpl @Inject constructor(
     override var syncIntervalMinutes: Long
         get() = cloudSettings.syncIntervalMinutes
         set(value) { cloudSettings.syncIntervalMinutes = value }
+    override var foregroundSyncIntervalMinutes: Long
+        get() = cloudSettings.foregroundSyncIntervalMinutes
+        set(value) { cloudSettings.foregroundSyncIntervalMinutes = value }
 
     override var syncModeBook: String
         get() = cloudSettings.syncModeBook

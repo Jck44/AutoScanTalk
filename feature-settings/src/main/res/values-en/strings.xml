@@ -104,6 +104,7 @@
     <string name="settings_cloud_sync_enabled">Automatic Sync</string>
     <string name="settings_cloud_sync_mode">Sync Mode</string>
     <string name="settings_cloud_sync_interval">Sync interval (minutes)</string>
+    <string name="settings_foreground_sync_interval">Foreground sync check interval (minutes)</string>
     <string name="settings_cloud_sync_mode_off">Off (Disabled)</string>
     <string name="settings_cloud_sync_mode_book">Book Synchronization</string>
     <string name="settings_cloud_sync_mode_tts">TTS Cache Synchronization</string>

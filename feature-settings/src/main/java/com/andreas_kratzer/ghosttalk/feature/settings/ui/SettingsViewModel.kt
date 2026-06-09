@@ -146,6 +146,7 @@ class SettingsViewModel @Inject constructor(
     val syncModeSettings = settingsRepository.syncModeSettingsFlow
     val lastSuccessfulSyncTime = settingsRepository.lastSuccessfulSyncTimeFlow
     val syncIntervalMinutes = settingsRepository.syncIntervalMinutesFlow
+    val foregroundSyncIntervalMinutes = settingsRepository.foregroundSyncIntervalMinutesFlow
     val googleDriveFolderId = settingsRepository.googleDriveFolderIdFlow
     val googleDriveFolderName = settingsRepository.googleDriveFolderNameFlow
     val syncTargetType = settingsRepository.syncTargetTypeFlow
@@ -543,6 +544,9 @@ class SettingsViewModel @Inject constructor(
     fun setSyncIntervalMinutes(minutes: Long) {
         settingsRepository.syncIntervalMinutes = minutes
         cloudSyncDelegate.reschedule()
+    }
+    fun setForegroundSyncIntervalMinutes(minutes: Long) {
+        settingsRepository.foregroundSyncIntervalMinutes = minutes
     }
     fun setSyncTargetType(type: String) {
         settingsRepository.syncTargetType = type
