@@ -367,8 +367,11 @@ open class ElevenLabsTtsProvider @Inject constructor(
 
     init {
         migrateCacheToFilesDir()
-        // Fetch voices immediately on initialization
-        fetchVoices()
+        // Only fetch voices immediately if an API key is already configured.
+        // Otherwise, the flow below will trigger fetchVoices() as soon as one is set.
+        if (!cloudSettings.elevenLabsApiKey.isNullOrEmpty()) {
+            fetchVoices()
+        }
         
         scope.launch {
             cloudSettings.elevenLabsApiKeyFlow.collect { key ->

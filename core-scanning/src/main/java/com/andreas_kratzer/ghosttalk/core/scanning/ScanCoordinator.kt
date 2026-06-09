@@ -75,7 +75,7 @@ class ScanCoordinator @Inject constructor(
     private var lastCuePageId: String? = null
 
     private fun debugLog(message: String) {
-        println("ScanCoordinator: $message")
+        android.util.Log.d("ScanCoordinator", message)
     }
 
     private var lastFocusTimestamp = -1L

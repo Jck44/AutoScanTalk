@@ -27,6 +27,7 @@ class GhostTalkApplication : Application(), Configuration.Provider {
     override val workManagerConfiguration: Configuration
         get() = Configuration.Builder()
             .setWorkerFactory(workerFactory)
+            .setDefaultProcessName("com.andreas_kratzer.ghosttalk")
             .build()
 
     override fun onCreate() {
