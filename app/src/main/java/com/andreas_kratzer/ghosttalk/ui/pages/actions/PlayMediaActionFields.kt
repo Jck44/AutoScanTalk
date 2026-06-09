@@ -252,7 +252,7 @@ fun PlayMediaActionFields(
                 }
             }
 
-            // Return delay to GoSTalk
+            // Return delay to GhostTalk
             SettingsEditTextItem(
                 label = stringResource(R.string.button_media_delay_label),
                 value = returnToAppDelaySec,

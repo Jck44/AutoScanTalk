@@ -1,10 +1,10 @@
-# GoSTalk - System Architecture & Behavior Documentation
+# GhostTalk - System Architecture & Behavior Documentation
 
 **Timestamp:** 2026-03-06T14:28:00+01:00  
 **Git Commit Hash:** 9e99afda1cd69b2cc94779f712b39d412a68e8bc
 
 ## Executive Summary
-GoSTalk is an Android AAC (Augmented and Alternative Communication) application designed for switch-based or touch-based interaction. It revolves around a scanning engine that selects items from a grid, which then execute multi-modal actions (Speech, Navigation, Cloud AI).
+GhostTalk is an Android AAC (Augmented and Alternative Communication) application designed for switch-based or touch-based interaction. It revolves around a scanning engine that selects items from a grid, which then execute multi-modal actions (Speech, Navigation, Cloud AI).
 
 ---
 
@@ -36,7 +36,7 @@ Actions are executed via an `ActionExecutor` which delegates to specialized hand
 ---
 
 ## 4. Multi-Modal TTS & Audio (`tts` & `audio`)
-A critical component of GoSTalk is **Audio Routing**:
+A critical component of GhostTalk is **Audio Routing**:
 - **RoutedAudioPlayer**: Can send audio to specific internal/external devices (Bluetooth, Earpiece) using `AudioDeviceManager`.
 - **TextToSpeechHelper**: Wraps Android's `TextToSpeech` API.
     - Supports **Cues vs. Main Speech**: Allows auditory prompts to be heard privately while main speech is loud.
@@ -59,7 +59,7 @@ A critical component of GoSTalk is **Audio Routing**:
 ---
 
 ## 7. Rebuild Principles
-To rebuild GoSTalk from scratch:
+To rebuild GhostTalk from scratch:
 1.  **Architecture**: Use Clean Architecture (Domain/Data/UI separation).
 2.  **Dependencies**: Hilt for DI, Room for DB, Coroutines for Async.
 3.  **Key Challenge**: The scanning engine must remain decoupled from the UI grids via a shared `ScannerEngine` state.

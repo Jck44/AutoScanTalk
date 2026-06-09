@@ -1,10 +1,10 @@
-# GoSTalk - Benutzerhandbuch & Konfigurationshilfe
+# GhostTalk - Benutzerhandbuch & Konfigurationshilfe
 
 **Timestamp:** 2026-03-06T14:32:00+01:00  
 **Git Commit Hash:** 9e99afda1cd69b2cc94779f712b39d412a68e8bc
 
-## Willkommen bei GoSTalk
-GoSTalk ist eine App zur Unterstützten Kommunikation (AAC), die speziell für die Nutzung mit Tastern (Scanning) oder Touch-Eingabe entwickelt wurde. Sie ermöglicht es Menschen mit kommunikativen Einschränkungen, sich über ein Raster von Schaltflächen auszudrücken.
+## Willkommen bei GhostTalk
+GhostTalk ist eine App zur Unterstützten Kommunikation (AAC), die speziell für die Nutzung mit Tastern (Scanning) oder Touch-Eingabe entwickelt wurde. Sie ermöglicht es Menschen mit kommunikativen Einschränkungen, sich über ein Raster von Schaltflächen auszudrücken.
 
 ---
 
@@ -23,7 +23,7 @@ Jeder Button im Raster kann eine oder mehrere **Aktionen** ausführen:
 ---
 
 ## 2. Bedienung (Scanning)
-GoSTalk unterstützt das **Scanning-Verfahren**. Ein Rahmen bewegt sich automatisch über die Schaltflächen.
+GhostTalk unterstützt das **Scanning-Verfahren**. Ein Rahmen bewegt sich automatisch über die Schaltflächen.
 
 ### Scan-Muster
 1. **Linear**: Der Rahmen wandert Button für Button durch das Raster.

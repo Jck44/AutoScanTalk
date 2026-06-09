@@ -443,7 +443,7 @@ class ControlDeviceActionHandler @Inject constructor(
         val bm = context.getSystemService(Context.BATTERY_SERVICE) as android.os.BatteryManager
         val percentage = bm.getIntProperty(android.os.BatteryManager.BATTERY_PROPERTY_CAPACITY)
         
-        // We use the provided getString lambda (likely IDs from GoSTalk app's R.string)
+        // We use the provided getString lambda (likely IDs from GhostTalk app's R.string)
         val ssml = getString(-1001, arrayOf(percentage)) 
         val plain = getString(-1002, arrayOf(percentage)) 
         

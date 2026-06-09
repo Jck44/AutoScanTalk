@@ -157,10 +157,10 @@ class PlayMediaActionHandler @Inject constructor(
                         controller.transportControls.play()
                         actionLogger.log("Wiedergabesteuerung über MediaSession gesendet an $targetPackage", action, buttonConfig.label)
                         
-                        // Return to GoSTalk after successful play
+                        // Return to GhostTalk after successful play
                         if (mediaAction.returnToAppDelayMs > 0) {
                             val remainingDelay = (mediaAction.returnToAppDelayMs - 2000L).coerceAtLeast(0L)
-                            returnToGoSTalk(remainingDelay, buttonConfig, mediaAction, executionId)
+                            returnToGhostTalk(remainingDelay, buttonConfig, mediaAction, executionId)
                         }
                         
                         onFinish(executionId)
@@ -173,7 +173,7 @@ class PlayMediaActionHandler @Inject constructor(
                             executionId = executionId,
                             onFinish = { execId ->
                                 if (mediaAction.returnToAppDelayMs > 0) {
-                                    returnToGoSTalk(0L, buttonConfig, mediaAction, execId)
+                                    returnToGhostTalk(0L, buttonConfig, mediaAction, execId)
                                 }
                                 onFinish(execId)
                             }
@@ -188,7 +188,7 @@ class PlayMediaActionHandler @Inject constructor(
                         executionId = executionId,
                         onFinish = { execId ->
                             if (mediaAction.returnToAppDelayMs > 0) {
-                                returnToGoSTalk(0L, buttonConfig, mediaAction, execId)
+                                returnToGhostTalk(0L, buttonConfig, mediaAction, execId)
                             }
                             onFinish(execId)
                         }
@@ -196,28 +196,28 @@ class PlayMediaActionHandler @Inject constructor(
                 } catch (e: Exception) {
                     Log.e("PlayMediaActionHandler", "Error querying active sessions", e)
                     if (mediaAction.returnToAppDelayMs > 0) {
-                        returnToGoSTalk(0L, buttonConfig, mediaAction, executionId)
+                        returnToGhostTalk(0L, buttonConfig, mediaAction, executionId)
                     }
                     onFinish(executionId)
                 }
             }, 2000L)
         } else {
-            // Return to GoSTalk after delay if configured (no MediaSession control)
+            // Return to GhostTalk after delay if configured (no MediaSession control)
             if (mediaAction.returnToAppDelayMs > 0) {
-                returnToGoSTalk(mediaAction.returnToAppDelayMs, buttonConfig, mediaAction, executionId)
+                returnToGhostTalk(mediaAction.returnToAppDelayMs, buttonConfig, mediaAction, executionId)
             }
             onFinish(executionId)
         }
     }
 
-    private fun returnToGoSTalk(
+    private fun returnToGhostTalk(
         delayMs: Long,
         buttonConfig: ButtonConfig,
         action: PlayMediaButtonAction,
         executionId: Int
     ) {
         if (!android.provider.Settings.canDrawOverlays(context)) {
-            Log.w("PlayMediaActionHandler", "Overlay permission not granted. Cannot return to GoSTalk.")
+            Log.w("PlayMediaActionHandler", "Overlay permission not granted. Cannot return to GhostTalk.")
             speakError(
                 text = "GhostTalk kann nicht zurückkehren, da die Berechtigung zum Einblenden über anderen Apps fehlt.",
                 buttonConfig = buttonConfig,
@@ -243,17 +243,17 @@ class PlayMediaActionHandler @Inject constructor(
             if (returnIntent != null) {
                 returnIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
                 context.startActivity(returnIntent)
-                Log.d("PlayMediaActionHandler", "Successfully returned to GoSTalk using direct startActivity")
+                Log.d("PlayMediaActionHandler", "Successfully returned to GhostTalk using direct startActivity")
             } else {
                 val fallbackIntent = Intent().apply {
                     setClassName(context.packageName, "com.andreas_kratzer.ghosttalk.MainActivity")
                     addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
                 }
                 context.startActivity(fallbackIntent)
-                Log.d("PlayMediaActionHandler", "Successfully returned to GoSTalk using fallback startActivity")
+                Log.d("PlayMediaActionHandler", "Successfully returned to GhostTalk using fallback startActivity")
             }
         } catch (e: Exception) {
-            Log.e("PlayMediaActionHandler", "Failed to return to GoSTalk", e)
+            Log.e("PlayMediaActionHandler", "Failed to return to GhostTalk", e)
         }
     }
 

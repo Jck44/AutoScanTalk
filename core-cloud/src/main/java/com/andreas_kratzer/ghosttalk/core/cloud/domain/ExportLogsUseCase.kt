@@ -44,7 +44,7 @@ class ExportLogsUseCase @Inject constructor(
         
         // 1. Device and Application Metadata Header
         sb.append("=========================================\n")
-        sb.append("GhosTTalk FEHLERBERICHT / LOGCAT AUSZUG\n")
+        sb.append("GhostTalk FEHLERBERICHT / LOGCAT AUSZUG\n")
         sb.append("=========================================\n")
         sb.append("Erstellungsdatum : ").append(timestampFormat.format(Date())).append("\n")
         sb.append("Geräte-Hersteller: ").append(Build.MANUFACTURER).append("\n")
@@ -245,7 +245,7 @@ class ExportLogsUseCase @Inject constructor(
 
     suspend fun shareLogs(context: Context) = withContext(Dispatchers.IO) {
         val logContent = generateLogString()
-        val tempFile = File(context.cacheDir, "gostalk_error_log.txt")
+        val tempFile = File(context.cacheDir, "ghosttalk_error_log.txt")
         tempFile.writeText(logContent)
         
         val authority = "${context.packageName}.fileprovider"
@@ -254,7 +254,7 @@ class ExportLogsUseCase @Inject constructor(
         val shareIntent = Intent(Intent.ACTION_SEND).apply {
             type = "text/plain"
             putExtra(Intent.EXTRA_STREAM, contentUri)
-            putExtra(Intent.EXTRA_SUBJECT, "GhosTTalk Fehlerbericht")
+            putExtra(Intent.EXTRA_SUBJECT, "GhostTalk Fehlerbericht")
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         }
         
@@ -279,7 +279,7 @@ class ExportLogsUseCase @Inject constructor(
         }
         
         val deviceId = Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID) ?: "unknown"
-        val logFileName = "gostalk_log_${deviceId}.txt"
+        val logFileName = "ghosttalk_log_${deviceId}.txt"
         val tempFile = File(context.cacheDir, logFileName)
         
         try {
@@ -317,7 +317,7 @@ class ExportLogsUseCase @Inject constructor(
                 credential.initialize(request)
                 request.connectTimeout = 3 * 60 * 1000
                 request.readTimeout = 3 * 60 * 1000
-            }.setApplicationName("GhosTTalk").build()
+            }.setApplicationName("GhostTalk").build()
         }
         uploadLogs(drive, force)
     }
