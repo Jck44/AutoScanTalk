@@ -31,11 +31,11 @@ class SyncStorageResolverTest {
         mockDrive = mockk(relaxed = true)
 
         io.mockk.mockkStatic(android.net.Uri::class)
-        val mockUri = io.mockk.mockk<android.net.Uri>(relaxed = true)
-        io.mockk.every { android.net.Uri.parse(any()) } returns mockUri
+        val mockUri = mockk<android.net.Uri>(relaxed = true)
+        every { android.net.Uri.parse(any()) } returns mockUri
 
         io.mockk.mockkStatic(androidx.documentfile.provider.DocumentFile::class)
-        io.mockk.every { androidx.documentfile.provider.DocumentFile.fromTreeUri(any(), any()) } returns io.mockk.mockk(relaxed = true)
+        every { androidx.documentfile.provider.DocumentFile.fromTreeUri(any(), any()) } returns mockk(relaxed = true)
 
         resolver = SyncStorageResolver(mockContext, mockSettingsRepository, mockLogger)
     }

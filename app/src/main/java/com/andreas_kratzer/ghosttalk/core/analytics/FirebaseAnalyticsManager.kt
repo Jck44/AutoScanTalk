@@ -24,7 +24,7 @@ class FirebaseAnalyticsManager @Inject constructor(
      */
     fun updateConsent(enabled: Boolean) {
         firebaseAnalytics.setAnalyticsCollectionEnabled(enabled)
-        FirebaseCrashlytics.getInstance().setCrashlyticsCollectionEnabled(enabled)
+        FirebaseCrashlytics.getInstance().isCrashlyticsCollectionEnabled = enabled
     }
 
     /**

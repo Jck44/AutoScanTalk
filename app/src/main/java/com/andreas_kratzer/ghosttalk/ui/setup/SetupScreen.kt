@@ -60,7 +60,13 @@ import androidx.core.net.toUri
 import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.SettingsViewModel
-import com.andreas_kratzer.ghosttalk.ui.setup.steps.*
+import com.andreas_kratzer.ghosttalk.ui.setup.steps.BasicPermissionsStepContent
+import com.andreas_kratzer.ghosttalk.ui.setup.steps.CompletedStepContent
+import com.andreas_kratzer.ghosttalk.ui.setup.steps.DeviceSettingsStepContent
+import com.andreas_kratzer.ghosttalk.ui.setup.steps.DialerStepContent
+import com.andreas_kratzer.ghosttalk.ui.setup.steps.NotificationListenerStepContent
+import com.andreas_kratzer.ghosttalk.ui.setup.steps.OverlayStepContent
+import com.andreas_kratzer.ghosttalk.ui.setup.steps.WelcomeStepContent
 import kotlinx.coroutines.launch
 import java.io.BufferedReader
 import java.io.InputStreamReader

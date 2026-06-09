@@ -4,7 +4,10 @@ import android.content.Context
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
 import com.google.firebase.analytics.FirebaseAnalytics
 import com.google.firebase.crashlytics.FirebaseCrashlytics
-import io.mockk.*
+import io.mockk.every
+import io.mockk.mockk
+import io.mockk.mockkStatic
+import io.mockk.verify
 import org.junit.Before
 import org.junit.Test
 
@@ -36,13 +39,13 @@ class FirebaseAnalyticsManagerTest {
     fun testUpdateConsentEnabled() {
         manager.updateConsent(true)
         verify { firebaseAnalytics.setAnalyticsCollectionEnabled(true) }
-        verify { firebaseCrashlytics.setCrashlyticsCollectionEnabled(true) }
+        verify { firebaseCrashlytics.isCrashlyticsCollectionEnabled = true }
     }
 
     @Test
     fun testUpdateConsentDisabled() {
         manager.updateConsent(false)
         verify { firebaseAnalytics.setAnalyticsCollectionEnabled(false) }
-        verify { firebaseCrashlytics.setCrashlyticsCollectionEnabled(false) }
+        verify { firebaseCrashlytics.isCrashlyticsCollectionEnabled = false }
     }
 }

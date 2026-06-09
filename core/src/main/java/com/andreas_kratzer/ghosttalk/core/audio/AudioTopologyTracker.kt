@@ -20,7 +20,7 @@ data class AudioTopology(
 
 @Singleton
 class AudioTopologyTracker @Inject constructor(
-    @ApplicationContext private val context: Context
+    @param:ApplicationContext private val context: Context
 ) {
     private val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
 

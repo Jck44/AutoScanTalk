@@ -7,13 +7,12 @@ import com.andreas_kratzer.ghosttalk.core.model.AudioOutputDevice
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
 class AudioDeviceManager @Inject constructor(
-    @ApplicationContext private val context: Context,
+    @param:ApplicationContext private val context: Context,
     private val topologyTracker: AudioTopologyTracker
 ) {
     private val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager

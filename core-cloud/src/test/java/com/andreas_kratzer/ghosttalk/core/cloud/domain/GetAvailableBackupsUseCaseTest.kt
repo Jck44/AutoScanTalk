@@ -6,7 +6,6 @@ import com.andreas_kratzer.ghosttalk.core.util.Logger
 import com.google.api.services.drive.Drive
 import io.mockk.coEvery
 import io.mockk.coVerify
-import io.mockk.every
 import io.mockk.mockk
 import io.mockk.mockkConstructor
 import io.mockk.spyk

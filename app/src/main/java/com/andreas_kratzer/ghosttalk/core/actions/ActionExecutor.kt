@@ -1,6 +1,7 @@
 package com.andreas_kratzer.ghosttalk.core.actions
 
 import android.content.Context
+import com.andreas_kratzer.ghosttalk.core.analytics.FirebaseAnalyticsManager
 import com.andreas_kratzer.ghosttalk.core.data.ButtonUsageRepository
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.core.di.ApplicationScope
@@ -15,8 +16,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 import javax.inject.Singleton
-
-import com.andreas_kratzer.ghosttalk.core.analytics.FirebaseAnalyticsManager
 
 @Singleton
 class ActionExecutor @Inject constructor(

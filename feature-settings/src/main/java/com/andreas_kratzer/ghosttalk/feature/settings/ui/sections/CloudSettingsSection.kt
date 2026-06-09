@@ -57,7 +57,6 @@ fun CloudSettingsSection(
     val syncModeBook by viewModel.syncModeBook.collectAsState()
     val syncModeTts by viewModel.syncModeTts.collectAsState()
     val syncModeStats by viewModel.syncModeStats.collectAsState()
-    val syncModeSettings by viewModel.syncModeSettings.collectAsState()
     val syncIntervalMinutes by viewModel.syncIntervalMinutes.collectAsState()
     val foregroundSyncIntervalMinutes by viewModel.foregroundSyncIntervalMinutes.collectAsState()
     val isDataCloudSyncEnabled by viewModel.isDataCloudSyncEnabled.collectAsState()

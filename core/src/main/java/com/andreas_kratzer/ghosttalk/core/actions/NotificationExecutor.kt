@@ -10,7 +10,7 @@ import javax.inject.Singleton
 
 @Singleton
 class NotificationExecutor @Inject constructor(
-    @ApplicationContext private val context: Context,
+    @param:ApplicationContext private val context: Context,
     private val actionLogger: ActionLogger,
     private val settings: ControlDeviceSettings,
     private val ttsProxyLazy: dagger.Lazy<ControlDeviceTtsProxy>

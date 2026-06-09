@@ -271,7 +271,7 @@ class BookMergeService @Inject constructor(
 
     private fun readJsonFromFile(file: File): String {
         if (file.name.endsWith(".zip")) {
-            java.util.zip.ZipInputStream(file.inputStream()).use { zip ->
+            ZipInputStream(file.inputStream()).use { zip ->
                 var entry = zip.nextEntry
                 while (entry != null) {
                     if (entry.name == "backup.json") {

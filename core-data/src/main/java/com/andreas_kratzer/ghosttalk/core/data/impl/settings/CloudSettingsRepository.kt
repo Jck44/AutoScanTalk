@@ -4,9 +4,9 @@ import android.content.SharedPreferences
 import androidx.core.content.edit
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_CLOUD_SYNC_ENABLED
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_GOOGLE_DRIVE_FOLDER_ID
-import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_GOOGLE_DRIVE_PROFILES_FOLDER_ID
-import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_GOOGLE_DRIVE_LOGS_FOLDER_ID
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_GOOGLE_DRIVE_FOLDER_NAME
+import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_GOOGLE_DRIVE_LOGS_FOLDER_ID
+import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_GOOGLE_DRIVE_PROFILES_FOLDER_ID
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_LAST_FOLDER_VALIDATION_TIME
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_LAST_SYNC_TIME
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_SYNC_INTERVAL_MINUTES
