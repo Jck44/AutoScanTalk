@@ -2,11 +2,7 @@ package com.andreas_kratzer.ghosttalk.tts
 
 import android.content.Context
 import android.util.Log
-import com.andreas_kratzer.ghosttalk.core.audio.AudioDeviceManager
-import com.andreas_kratzer.ghosttalk.core.audio.AudioSettings
-import com.andreas_kratzer.ghosttalk.core.audio.RoutedAudioPlayer
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
-import com.andreas_kratzer.ghosttalk.core.model.AudioOutputDevice
 import com.andreas_kratzer.ghosttalk.core.tts.AndroidTtsProvider
 import com.andreas_kratzer.ghosttalk.core.tts.ElevenLabsTtsProvider
 import com.andreas_kratzer.ghosttalk.core.tts.TextToSpeechHelper
@@ -19,7 +15,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import java.io.File
 import javax.inject.Inject
 import javax.inject.Provider
 import javax.inject.Singleton
@@ -79,21 +74,4 @@ class TtsRecordingHelper @Inject constructor(
         _spokenTexts.value = emptyList()
     }
 
-    // Manual doubles to avoid MockK
-    private class TestAudioDeviceManager(context: Context) : AudioDeviceManager(context, com.andreas_kratzer.ghosttalk.core.audio.AudioTopologyTracker(context)) {
-        override fun getAvailableOutputDevices(): List<AudioOutputDevice> = emptyList()
-        override fun getAudioDeviceInfo(address: String?) = null
-        override fun getBuiltInSpeaker() = null
-    }
-
-    private class TestRoutedAudioPlayer(
-        context: Context, 
-        topologyTracker: com.andreas_kratzer.ghosttalk.core.audio.AudioTopologyTracker, 
-        settings: AudioSettings
-    ) : RoutedAudioPlayer(context, topologyTracker, settings, CoroutineScope(Dispatchers.Main)) {
-        override fun playAudioFile(file: File, deviceAddress: String?, volumeMultiplier: Float, playbackSpeed: Float, onCompletion: (() -> Unit)?) {
-            onCompletion?.invoke()
-        }
-        override fun stopAll() {}
-    }
 }
