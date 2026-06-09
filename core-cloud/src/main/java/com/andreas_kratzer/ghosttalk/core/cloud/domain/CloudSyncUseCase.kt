@@ -1143,18 +1143,104 @@ class CloudSyncUseCase @Inject constructor(
         return uri.buildUpon().path(treePath).build().toString()
     }
 
+    private suspend fun resolveLogsStorageProvider(drive: Drive?): SyncStorageProvider {
+        val folderId = settingsRepository.googleDriveFolderId
+        if (drive == null && folderId?.startsWith("content://") == true) {
+            val rootDoc = androidx.documentfile.provider.DocumentFile.fromTreeUri(context, Uri.parse(folderId))
+            val logsDoc = rootDoc?.findFile("Logs") ?: rootDoc?.createDirectory("Logs")
+            val targetUri = logsDoc?.uri?.toString() ?: folderId
+            return DocumentFolderSyncStorageProvider(context, targetUri)
+        }
+        val actualDrive = drive ?: throw IllegalStateException("Drive API client not available.")
+        val helper = DriveServiceHelper(actualDrive)
+        val parentFolderId = folderId ?: helper.findFolder(FOLDER_NAME) ?: helper.createFolder(FOLDER_NAME) ?: throw IllegalStateException("Failed to resolve sync folder.")
+        val logsFolderId = helper.findFolder("Logs", parentFolderId) ?: helper.createFolder("Logs", parentFolderId) ?: parentFolderId
+        return DriveApiSyncStorageProvider(actualDrive, logsFolderId)
+    }
+
+    suspend fun syncProfilesOnly(
+        drive: Drive?,
+        onProgress: (Float, String) -> Unit = { _, _ -> }
+    ): Boolean = SyncConcurrencyGuard.runExclusive {
+        withContext(Dispatchers.IO) {
+            logger.d(TAG, "syncProfilesOnly: Starting lightweight profiles sync")
+            try {
+                val profilesProvider = resolveProfilesStorageProvider(drive)
+                val remoteProfileFiles = profilesProvider.listFiles()
+
+                // 1. Sync all local profiles
+                val localProfiles = settingsRepository.getAllProfiles()
+                logger.d(TAG, "syncProfilesOnly: Syncing ${localProfiles.size} local profiles")
+                localProfiles.forEachIndexed { index, profile ->
+                    onProgress(0.1f + 0.4f * (index.toFloat() / localProfiles.size.coerceAtLeast(1).toFloat()), "Synchronisiere Profil: ${profile.name}")
+                    configSyncHelper.syncProfile(profilesProvider, remoteProfileFiles, profile, settingsRepository)
+                }
+
+                // 2. Scan and download/import all other remote profiles
+                val jsonSerializer = kotlinx.serialization.json.Json { ignoreUnknownKeys = true; prettyPrint = true; encodeDefaults = true }
+                remoteProfileFiles.forEachIndexed { index, file ->
+                    if (file.name.startsWith("profile_") && file.name.endsWith(".json")) {
+                        val remoteProfileId = file.name.substringAfter("profile_").substringBefore(".json")
+                        if (settingsRepository.getProfileById(remoteProfileId) == null) {
+                            onProgress(0.5f + 0.4f * (index.toFloat() / remoteProfileFiles.size.coerceAtLeast(1).toFloat()), "Importiere Profil: ${file.name}")
+                            logger.d(TAG, "syncProfilesOnly: Auto-importing new remote profile: ${file.name}")
+                            val tempFile = File(context.cacheDir, "import_${file.name}")
+                            try {
+                                if (profilesProvider.downloadFile(file.id, tempFile)) {
+                                    val profileJson = tempFile.readText()
+                                    val importedProfile = try {
+                                        jsonSerializer.decodeFromString(com.andreas_kratzer.ghosttalk.core.model.SettingsProfile.serializer(), profileJson)
+                                    } catch (_: Exception) {
+                                        try {
+                                            val config = jsonSerializer.decodeFromString(com.andreas_kratzer.ghosttalk.core.model.ProfileConfig.serializer(), profileJson)
+                                            com.andreas_kratzer.ghosttalk.core.model.SettingsProfile(
+                                                id = remoteProfileId,
+                                                name = file.description ?: "Importiertes Profil",
+                                                config = config,
+                                                profileVersionSequence = file.version ?: 1L,
+                                                updatedAt = file.modifiedTime
+                                            )
+                                        } catch (e2: Exception) {
+                                            logger.e(TAG, "syncProfilesOnly: Failed to parse imported profile JSON", e2)
+                                            null
+                                        }
+                                    }
+
+                                    if (importedProfile != null) {
+                                        settingsRepository.insertProfile(importedProfile)
+                                        syncLogProvider.addLogEntry("Remote-Profil ${importedProfile.name} importiert", importedProfile.id, importedProfile.name)
+                                    }
+                                }
+                            } catch (ex: Exception) {
+                                logger.e(TAG, "syncProfilesOnly: Failed to auto-import remote profile ${file.name}", ex)
+                            } finally {
+                                tempFile.delete()
+                            }
+                        }
+                    }
+                }
+                onProgress(1.0f, "Fertig")
+                true
+            } catch (e: Exception) {
+                logger.e(TAG, "syncProfilesOnly: Profile-only sync failed", e)
+                false
+            }
+        }
+    } ?: false
+
     suspend fun uploadLogFile(
         drive: Drive?,
         logFile: File
     ): Boolean = withContext(Dispatchers.IO) {
         try {
-            val storageProvider = getStorageProvider(drive)
+            val storageProvider = resolveLogsStorageProvider(drive)
             val existingFile = storageProvider.listFiles().find { it.name == logFile.name }
-            if (existingFile != null) {
-                                storageProvider.updateFile(existingFile.id, logFile, "text/plain", buildLogDescription())
-                            } else {
-                                storageProvider.uploadFile(logFile, "text/plain", buildLogDescription()) != null
-                            }
+            val success = if (existingFile != null) {
+                storageProvider.updateFile(existingFile.id, logFile, "text/plain", buildLogDescription())
+            } else {
+                storageProvider.uploadFile(logFile, "text/plain", buildLogDescription()) != null
+            }
+            success
         } catch (e: Exception) {
             logger.e(TAG, "Failed to upload log file to remote storage provider", e)
             false

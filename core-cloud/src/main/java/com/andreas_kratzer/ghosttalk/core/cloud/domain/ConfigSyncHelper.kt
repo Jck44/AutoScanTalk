@@ -287,10 +287,15 @@ class ConfigSyncHelper(
 
         val jsonSerializer = Json { ignoreUnknownKeys = true; prettyPrint = true; encodeDefaults = true }
         val localJson = jsonSerializer.encodeToString(com.andreas_kratzer.ghosttalk.core.model.SettingsProfile.serializer(), encryptedActiveProfile)
-        calculateMd5(localJson)
+        val localMd5 = com.andreas_kratzer.ghosttalk.core.cloud.CloudSyncOptimizer().calculateMD5(localJson)
 
         val baseBackupFile = File(File(context.filesDir, "local_backups"), profileFileName)
         val baseJson = if (baseBackupFile.exists()) baseBackupFile.readText() else null
+
+        if (remoteFile != null && remoteFile.md5Checksum == localMd5) {
+            logger.d(TAG, "Profile $profileFileName is identical to remote (MD5 match). Skipping sync.")
+            return@withContext
+        }
 
         if (remoteFile == null) {
             logger.d(TAG, "Uploading profile $profileFileName to cloud...")
@@ -413,6 +418,9 @@ class ConfigSyncHelper(
             
             // Save local merge
             settingsRepository.updateProfile(updatedProfile)
+            if (updatedProfile.id == settingsRepository.activeProfileId) {
+                settingsRepository.loadProfile(updatedProfile.id)
+            }
 
             // Update to cloud
             val (properties, description) = buildConfigPropertiesAndDescription("profile", updatedProfile.name, updatedProfile.updatedAt)

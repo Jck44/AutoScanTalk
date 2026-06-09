@@ -43,6 +43,7 @@ import com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates.ScanningSetti
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates.SpotifySettingsDelegate
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates.TtsPrefetchSettingsDelegate
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates.TtsSettingsDelegate
+import com.andreas_kratzer.ghosttalk.core.cloud.domain.PerformProfilesSyncUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -93,6 +94,7 @@ class SettingsViewModel @Inject constructor(
     private val callActionProxy: dagger.Lazy<CallActionProxy>,
     private val exportLogsUseCase: ExportLogsUseCase,
     private val rescheduleLogUploadUseCase: RescheduleLogUploadUseCase,
+    private val performProfilesSyncUseCase: PerformProfilesSyncUseCase,
     val authManager: com.andreas_kratzer.ghosttalk.core.cloud.AuthManager
 ) : AndroidViewModel(application) {
 
@@ -288,7 +290,11 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
+    private val _isProfileSyncing = MutableStateFlow(false)
+    val isProfileSyncing = _isProfileSyncing.asStateFlow()
+
     private var prefetchJob: kotlinx.coroutines.Job? = null
+    private var debouncedSyncJob: kotlinx.coroutines.Job? = null
 
     init {
         ttsDelegate.initialize(viewModelScope)
@@ -298,6 +304,72 @@ class SettingsViewModel @Inject constructor(
         spotifyDelegate.initialize(viewModelScope)
         prefetchDelegate.initialize(viewModelScope)
         backupDelegate.initialize(viewModelScope)
+        setupDebouncedProfileUpload()
+    }
+
+    private fun setupDebouncedProfileUpload() {
+        viewModelScope.launch {
+            var lastUploadedSequence: Long? = null
+            var lastUploadedTimestamp: Long? = null
+
+            // Initial load of version/timestamp
+            val activeId = settingsRepository.activeProfileId
+            settingsRepository.getProfileById(activeId)?.let { initialProfile ->
+                lastUploadedSequence = initialProfile.profileVersionSequence
+                lastUploadedTimestamp = initialProfile.updatedAt
+            }
+
+            kotlinx.coroutines.flow.combine(
+                settingsRepository.activeProfileIdFlow,
+                settingsRepository.getAllProfilesFlow()
+            ) { activeId, allProfiles ->
+                allProfiles.find { it.id == activeId }
+            }.collect { profile ->
+                if (profile == null) return@collect
+
+                val isLocalChange = !cloudSyncDelegate.isSyncing.value && !_isProfileSyncing.value &&
+                        (lastUploadedSequence == null || profile.profileVersionSequence > lastUploadedSequence!! || profile.updatedAt > lastUploadedTimestamp!!)
+
+                if (isLocalChange) {
+                    lastUploadedSequence = profile.profileVersionSequence
+                    lastUploadedTimestamp = profile.updatedAt
+
+                    scheduleDebouncedProfileSync()
+                }
+            }
+        }
+    }
+
+    private fun scheduleDebouncedProfileSync() {
+        debouncedSyncJob?.cancel()
+        debouncedSyncJob = viewModelScope.launch {
+            delay(5000)
+            if (!settingsRepository.isCloudSyncEnabled || userEmail.value == null) return@launch
+            try {
+                performProfilesSyncUseCase.execute()
+            } catch (e: Exception) {
+                android.util.Log.e("SettingsViewModel", "Debounced profiles sync failed", e)
+            }
+        }
+    }
+
+    fun autoSyncProfilesOnOpen() {
+        if (!settingsRepository.isCloudSyncEnabled || userEmail.value == null) return
+
+        viewModelScope.launch {
+            _isProfileSyncing.value = true
+            try {
+                val result = performProfilesSyncUseCase.execute()
+                if (result is PerformProfilesSyncUseCase.Result.Success) {
+                    val activeId = settingsRepository.activeProfileId
+                    settingsRepository.loadProfile(activeId)
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("SettingsViewModel", "Auto profiles sync on open failed", e)
+            } finally {
+                _isProfileSyncing.value = false
+            }
+        }
     }
     
     fun triggerStartSetupWizard() {

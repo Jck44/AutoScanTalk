@@ -18,6 +18,12 @@ class CloudSyncOptimizer {
         return digest.digest().joinToString("") { "%02x".format(it) }
     }
 
+    fun calculateMD5(content: String): String {
+        val digest = MessageDigest.getInstance("MD5")
+        val hash = digest.digest(content.toByteArray(Charsets.UTF_8))
+        return hash.joinToString("") { "%02x".format(it) }
+    }
+
     /**
      * Evaluiert den Sync-Zustand inhalts- und versionsbasiert.
      * Schützt vor Endlosschleifen durch mutierte Datei-Zeitstempel.

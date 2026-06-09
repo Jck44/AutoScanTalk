@@ -124,6 +124,7 @@ class TtsPrefetchTest {
             callActionProxy = { mockk(relaxed = true) },
             exportLogsUseCase = mockk(relaxed = true),
             rescheduleLogUploadUseCase = mockk(relaxed = true),
+            performProfilesSyncUseCase = mockk(relaxed = true),
             authManager = mockk(relaxed = true)
         )
     }

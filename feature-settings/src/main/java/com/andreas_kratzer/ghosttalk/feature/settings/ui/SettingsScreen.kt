@@ -281,6 +281,7 @@ fun SettingsScreen(
 
     LaunchedEffect(Unit) {
         viewModel.refresh()
+        viewModel.autoSyncProfilesOnOpen()
     }
 
     LaunchedEffect(signInError) {
@@ -349,198 +350,227 @@ fun SettingsScreen(
                 isLargeScreen = isLargeScreen,
                 onBack = handleBack
             )
-        }
-    ) { paddingValues ->
-        if (isLargeScreen) {
-            Row(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues)
-            ) {
-                // Sidebar
-                Column(
-                    modifier = Modifier
-                        .width(320.dp)
-                        .fillMaxHeight()
-                        .padding(horizontal = dimensions.paddingMedium, vertical = dimensions.paddingSmall)
-                ) {
-                    SettingsSearchBar(
-                        query = searchQuery,
-                        onQueryChange = { searchQuery = it }
-                    )
-                    
-                    Spacer(modifier = Modifier.height(dimensions.paddingMedium))
-                    
-                    if (searchQuery.isNotBlank()) {
-                        val searchItems = getSearchableItems()
-                        val results = searchItems.filter {
-                            it.title.contains(searchQuery, ignoreCase = true) ||
-                            it.description.contains(searchQuery, ignoreCase = true)
-                        }
-                        LazyColumn(
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            if (results.isEmpty()) {
-                                item {
-                                    Text(
-                                        text = stringResource(R.string.settings_no_results),
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        modifier = Modifier.padding(dimensions.paddingMedium)
-                                    )
-                                }
-                            } else {
-                                items(results) { result ->
-                                    SearchResultItem(
-                                        result = result,
-                                        onClick = {
-                                            selectedSection = result.section
-                                            viewModel.setHighlightedSettingKey(result.title)
-                                            searchQuery = ""
-                                        }
-                                    )
-                                }
-                            }
-                        }
-                    } else {
-                        LazyColumn(
-                            modifier = Modifier.weight(1f),
-                            verticalArrangement = Arrangement.spacedBy(dimensions.paddingSmall)
-                        ) {
-                            items(SettingsSection.entries) { section ->
-                                val isSelected = selectedSection == section
-                                Surface(
-                                    onClick = { selectedSection = section },
-                                    shape = MaterialTheme.shapes.large,
-                                    color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerLow,
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    ListItem(
-                                        headlineContent = {
-                                            Text(
-                                                text = stringResource(section.getTitleRes()),
-                                                style = MaterialTheme.typography.bodyLarge,
-                                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                                color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface
-                                            )
-                                        },
-                                        leadingContent = {
-                                            Icon(
-                                                imageVector = section.icon,
-                                                contentDescription = null,
-                                                tint = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                                                modifier = Modifier.size(24.dp)
-                                            )
-                                        },
-                                        colors = ListItemDefaults.colors(containerColor = Color.Transparent)
-                                    )
-                                }
-                            }
-                        }
-                    }
-                    
-                    HorizontalDivider(modifier = Modifier.padding(vertical = dimensions.paddingMedium))
-                    VersionInfo()
-                }
-
-                VerticalDivider()
-
-                // Details Pane
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxHeight()
-                ) {
-                    selectedSection?.let { section ->
-                        SettingsSubMenu(
-                            section = section,
-                            padding = PaddingValues(0.dp),
-                            dimensions = dimensions,
-                            viewModel = viewModel,
-                            onNavigateBack = onNavigateBack,
-                            onBookDeleted = onBookDeleted,
-                            onLockClicked = {
-                                viewModel.lock()
-                                onNavigateToStart()
-                            },
-                            onLocalExport = { localExportLauncher.launch("GhostTalk_Backup.zip") },
-                            onLocalImport = { localImportLauncher.launch("*/*") },
-                            onSelectSafFolderForImport = { safImportFolderLauncher.launch(null) },
-                            onNavigateToVocalTraining = onNavigateToVocalTraining
-                        )
-                    }
-                }
-            }
-        } else {
-            // Mobile (Single Pane)
-            if (selectedSection == null) {
-                Column(
+        }    ) { paddingValues ->
+        Box(modifier = Modifier.fillMaxSize()) {
+            if (isLargeScreen) {
+                Row(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(paddingValues)
-                        .padding(horizontal = dimensions.paddingLarge, vertical = dimensions.paddingMedium)
                 ) {
-                    SettingsSearchBar(
-                        query = searchQuery,
-                        onQueryChange = { searchQuery = it }
-                    )
-                    
-                    Spacer(modifier = Modifier.height(dimensions.paddingMedium))
-
-                    if (searchQuery.isNotBlank()) {
-                        val searchItems = getSearchableItems()
-                        val results = searchItems.filter {
-                            it.title.contains(searchQuery, ignoreCase = true) ||
-                            it.description.contains(searchQuery, ignoreCase = true)
-                        }
-                        LazyColumn(
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            if (results.isEmpty()) {
-                                item {
-                                    Text(
-                                        text = stringResource(R.string.settings_no_results),
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        modifier = Modifier.padding(dimensions.paddingMedium)
-                                    )
+                    // Sidebar
+                    Column(
+                        modifier = Modifier
+                            .width(320.dp)
+                            .fillMaxHeight()
+                            .padding(horizontal = dimensions.paddingMedium, vertical = dimensions.paddingSmall)
+                    ) {
+                        SettingsSearchBar(
+                            query = searchQuery,
+                            onQueryChange = { searchQuery = it }
+                        )
+                        
+                        Spacer(modifier = Modifier.height(dimensions.paddingMedium))
+                        
+                        if (searchQuery.isNotBlank()) {
+                            val searchItems = getSearchableItems()
+                            val results = searchItems.filter {
+                                it.title.contains(searchQuery, ignoreCase = true) ||
+                                it.description.contains(searchQuery, ignoreCase = true)
+                            }
+                            LazyColumn(
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                if (results.isEmpty()) {
+                                    item {
+                                        Text(
+                                            text = stringResource(R.string.settings_no_results),
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            modifier = Modifier.padding(dimensions.paddingMedium)
+                                        )
+                                    }
+                                } else {
+                                    items(results) { result ->
+                                        SearchResultItem(
+                                            result = result,
+                                            onClick = {
+                                                selectedSection = result.section
+                                                viewModel.setHighlightedSettingKey(result.title)
+                                                searchQuery = ""
+                                            }
+                                        )
+                                    }
                                 }
-                            } else {
-                                items(results) { result ->
-                                    SearchResultItem(
-                                        result = result,
-                                        onClick = {
-                                            selectedSection = result.section
-                                            viewModel.setHighlightedSettingKey(result.title)
-                                            searchQuery = ""
-                                        }
-                                    )
+                            }
+                        } else {
+                            LazyColumn(
+                                modifier = Modifier.weight(1f),
+                                verticalArrangement = Arrangement.spacedBy(dimensions.paddingSmall)
+                            ) {
+                                items(SettingsSection.entries) { section ->
+                                    val isSelected = selectedSection == section
+                                    Surface(
+                                        onClick = { selectedSection = section },
+                                        shape = MaterialTheme.shapes.large,
+                                        color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerLow,
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        ListItem(
+                                            headlineContent = {
+                                                Text(
+                                                    text = stringResource(section.getTitleRes()),
+                                                    style = MaterialTheme.typography.bodyLarge,
+                                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                                    color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface
+                                                )
+                                            },
+                                            leadingContent = {
+                                                Icon(
+                                                    imageVector = section.icon,
+                                                    contentDescription = null,
+                                                    tint = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                                    modifier = Modifier.size(24.dp)
+                                                )
+                                            },
+                                            colors = ListItemDefaults.colors(containerColor = Color.Transparent)
+                                        )
+                                    }
                                 }
                             }
                         }
-                    } else {
-                        SettingsMainMenu(
-                            padding = PaddingValues(0.dp),
-                            dimensions = dimensions,
-                            onSectionSelected = { selectedSection = it }
-                        )
+                        
+                        HorizontalDivider(modifier = Modifier.padding(vertical = dimensions.paddingMedium))
+                        VersionInfo()
+                    }
+
+                    VerticalDivider()
+
+                    // Details Pane
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxHeight()
+                    ) {
+                        selectedSection?.let { section ->
+                            SettingsSubMenu(
+                                section = section,
+                                padding = PaddingValues(0.dp),
+                                dimensions = dimensions,
+                                viewModel = viewModel,
+                                onNavigateBack = onNavigateBack,
+                                onBookDeleted = onBookDeleted,
+                                onLockClicked = {
+                                    viewModel.lock()
+                                    onNavigateToStart()
+                                },
+                                onLocalExport = { localExportLauncher.launch("GhostTalk_Backup.zip") },
+                                onLocalImport = { localImportLauncher.launch("*/*") },
+                                onSelectSafFolderForImport = { safImportFolderLauncher.launch(null) },
+                                onNavigateToVocalTraining = onNavigateToVocalTraining
+                            )
+                        }
                     }
                 }
             } else {
-                SettingsSubMenu(
-                    section = selectedSection!!,
-                    padding = paddingValues,
-                    dimensions = dimensions,
-                    viewModel = viewModel,
-                    onNavigateBack = onNavigateBack,
-                    onBookDeleted = onBookDeleted,
-                    onLockClicked = {
-                        viewModel.lock()
-                        onNavigateToStart()
-                    },
-                    onLocalExport = { localExportLauncher.launch("GhostTalk_Backup.zip") },
-                    onLocalImport = { localImportLauncher.launch("*/*") },
-                    onSelectSafFolderForImport = { safImportFolderLauncher.launch(null) },
-                    onNavigateToVocalTraining = onNavigateToVocalTraining
-                )
+                // Mobile (Single Pane)
+                if (selectedSection == null) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(paddingValues)
+                            .padding(horizontal = dimensions.paddingLarge, vertical = dimensions.paddingMedium)
+                    ) {
+                        SettingsSearchBar(
+                            query = searchQuery,
+                            onQueryChange = { searchQuery = it }
+                        )
+                        
+                        Spacer(modifier = Modifier.height(dimensions.paddingMedium))
+
+                        if (searchQuery.isNotBlank()) {
+                            val searchItems = getSearchableItems()
+                            val results = searchItems.filter {
+                                it.title.contains(searchQuery, ignoreCase = true) ||
+                                it.description.contains(searchQuery, ignoreCase = true)
+                            }
+                            LazyColumn(
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                if (results.isEmpty()) {
+                                    item {
+                                        Text(
+                                            text = stringResource(R.string.settings_no_results),
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            modifier = Modifier.padding(dimensions.paddingMedium)
+                                        )
+                                    }
+                                } else {
+                                    items(results) { result ->
+                                        SearchResultItem(
+                                            result = result,
+                                            onClick = {
+                                                selectedSection = result.section
+                                                viewModel.setHighlightedSettingKey(result.title)
+                                                searchQuery = ""
+                                            }
+                                        )
+                                    }
+                                }
+                            }
+                        } else {
+                            SettingsMainMenu(
+                                padding = PaddingValues(0.dp),
+                                dimensions = dimensions,
+                                onSectionSelected = { selectedSection = it }
+                            )
+                        }
+                    }
+                } else {
+                    SettingsSubMenu(
+                        section = selectedSection!!,
+                        padding = paddingValues,
+                        dimensions = dimensions,
+                        viewModel = viewModel,
+                        onNavigateBack = onNavigateBack,
+                        onBookDeleted = onBookDeleted,
+                        onLockClicked = {
+                            viewModel.lock()
+                            onNavigateToStart()
+                        },
+                        onLocalExport = { localExportLauncher.launch("GhostTalk_Backup.zip") },
+                        onLocalImport = { localImportLauncher.launch("*/*") },
+                        onSelectSafFolderForImport = { safImportFolderLauncher.launch(null) },
+                        onNavigateToVocalTraining = onNavigateToVocalTraining
+                    )
+                }
+            }
+
+            val isProfileSyncing by viewModel.isProfileSyncing.collectAsState()
+            if (isProfileSyncing) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color.Black.copy(alpha = 0.4f))
+                        .clickable(enabled = true, onClick = {}) // Konsumiert Klicks
+                ) {
+                    Card(
+                        modifier = Modifier.align(androidx.compose.ui.Alignment.Center),
+                        shape = MaterialTheme.shapes.medium,
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(24.dp),
+                            horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally
+                        ) {
+                            androidx.compose.material3.CircularProgressIndicator()
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Text(
+                                text = "Profile werden synchronisiert...",
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                        }
+                    }
+                }
             }
         }
     }
