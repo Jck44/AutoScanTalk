@@ -35,7 +35,8 @@ class ActionExecutorLazyTest {
             handlers = emptySet(),
             actionCoordinator = actionCoordinator,
             ttsHelper = ttsHelper,
-            scanCoordinatorProvider = mockk(relaxed = true)
+            scanCoordinatorProvider = mockk(relaxed = true),
+            firebaseAnalyticsManager = mockk(relaxed = true)
         )
         val action = NavigateToPageButtonAction("p2")
         val config = ButtonConfig(id = "b1", label = "Go", buttonAction = action, auditoryCue = null)
@@ -57,7 +58,8 @@ class ActionExecutorLazyTest {
             handlers = setOf(failingHandler),
             actionCoordinator = actionCoordinator,
             ttsHelper = ttsHelper,
-            scanCoordinatorProvider = mockk(relaxed = true)
+            scanCoordinatorProvider = mockk(relaxed = true),
+            firebaseAnalyticsManager = mockk(relaxed = true)
         )
 
         val action = GeminiButtonAction("Hello")

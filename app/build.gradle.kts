@@ -5,6 +5,8 @@ plugins {
     alias(libs.plugins.play.publisher)
     alias(libs.plugins.hilt)
     alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.google.services)
+    alias(libs.plugins.firebase.crashlytics)
 }
 
 android {
@@ -16,8 +18,8 @@ android {
         applicationId = "com.andreas_kratzer.ghosttalk"
         minSdk = 35
         targetSdk = 37
-        versionCode = 130
-        versionName = "2.4.4"
+        versionCode = 131
+        versionName = "2.5.0"
 
         testInstrumentationRunner = "com.andreas_kratzer.ghosttalk.HiltTestRunner"
         
@@ -105,6 +107,7 @@ android {
     buildFeatures {
         compose = true
         prefab = false
+        buildConfig = true
     }
 }
 
@@ -137,6 +140,11 @@ dependencies {
     implementation(project(":feature-settings"))
 
     implementation(libs.androidx.core.ktx)
+    // Firebase
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.analytics)
+    implementation(libs.firebase.crashlytics)
+    
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.lifecycle.process)
     implementation(libs.androidx.activity.compose)

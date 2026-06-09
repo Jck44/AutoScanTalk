@@ -109,6 +109,7 @@
     <string name="settings_cloud_sync_mode_tts">TTS Cache Synchronization</string>
     <string name="settings_cloud_sync_mode_stats">Statistics Sync</string>
     <string name="settings_cloud_sync_mode_settings">Settings Sync</string>
+    <string name="settings_cloud_sync_profiles_always_synced">Profiles &amp; global settings are always synchronized (2-Way).</string>
     <string name="settings_cloud_sync_mode_two_way">2-Way (Backup &amp; Restore)</string>
     <string name="settings_cloud_sync_mode_backup">1-Way (Backup only)</string>
     <string name="settings_cloud_sync_mode_restore">1-Way (Restore only)</string>
@@ -429,6 +430,8 @@
     <!-- Stats Retention & Aggregation Settings -->
     <string name="settings_category_stats_privacy">Privacy &amp; History</string>
     <string name="settings_stats_only_hardware_label">Only record hardware button triggers</string>
+    <string name="settings_firebase_analytics_label">Share Firebase diagnostics</string>
+    <string name="settings_firebase_analytics_desc">Shares anonymous usage statistics and crash reports to help improve the app. Active by default, can be disabled at any time.</string>
     <string name="settings_stats_retention_label">Statistics Retention Period</string>
     <string name="settings_stats_retention_days_format">%1$d Days</string>
     <string name="settings_stats_retention_desc">Older usage data is automatically deleted to save storage space and protect privacy.</string>

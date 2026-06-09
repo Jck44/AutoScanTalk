@@ -234,6 +234,7 @@ class SettingsRepositoryImpl @Inject constructor(
                             persistActionLogs = prefs.getBoolean(SettingsConstants.KEY_PERSIST_ACTION_LOGS, true),
                             showPageIdInLog = prefs.getBoolean(SettingsConstants.KEY_SHOW_PAGE_ID_IN_LOG, false),
                             onlyRecordHardwareStats = prefs.getBoolean(SettingsConstants.KEY_ONLY_RECORD_HARDWARE_STATS, false),
+                            firebaseAnalyticsEnabled = prefs.getBoolean(SettingsConstants.KEY_FIREBASE_ANALYTICS_ENABLED, true),
                             statsRetentionDays = prefs.getInt(SettingsConstants.KEY_STATS_RETENTION_DAYS, 30),
                             statsAggregationHours = prefs.getInt(SettingsConstants.KEY_STATS_AGGREGATION_HOURS, 24),
                             actionLogsStorage = prefs.getString(SettingsConstants.KEY_ACTION_LOGS_STORAGE, null),
@@ -351,6 +352,7 @@ class SettingsRepositoryImpl @Inject constructor(
     override val statsRetentionDaysFlow: StateFlow<Int> get() = userSettings.statsRetentionDaysFlow
     override val statsAggregationHoursFlow: StateFlow<Int> get() = userSettings.statsAggregationHoursFlow
     override val onlyRecordHardwareStatsFlow: StateFlow<Boolean> get() = userSettings.onlyRecordHardwareStatsFlow
+    override val firebaseAnalyticsEnabledFlow: StateFlow<Boolean> get() = userSettings.firebaseAnalyticsEnabledFlow
 
     // --- AdvancedSettings ---
     override val persistActionLogsFlow: StateFlow<Boolean> get() = advancedSettings.persistActionLogsFlow
@@ -730,6 +732,10 @@ class SettingsRepositoryImpl @Inject constructor(
     override var onlyRecordHardwareStats: Boolean
         get() = userSettings.onlyRecordHardwareStats
         set(value) { userSettings.onlyRecordHardwareStats = value }
+
+    override var firebaseAnalyticsEnabled: Boolean
+        get() = userSettings.firebaseAnalyticsEnabled
+        set(value) { userSettings.firebaseAnalyticsEnabled = value }
 
     override var geminiTimeout: Long
         get() = genAiSettings.geminiTimeout
@@ -1271,6 +1277,7 @@ class SettingsRepositoryImpl @Inject constructor(
             editor.putBoolean(SettingsConstants.KEY_PERSIST_ACTION_LOGS, config.persistActionLogs)
             editor.putBoolean(SettingsConstants.KEY_SHOW_PAGE_ID_IN_LOG, config.showPageIdInLog)
             editor.putBoolean(SettingsConstants.KEY_ONLY_RECORD_HARDWARE_STATS, config.onlyRecordHardwareStats)
+            editor.putBoolean(SettingsConstants.KEY_FIREBASE_ANALYTICS_ENABLED, config.firebaseAnalyticsEnabled)
             editor.putInt(SettingsConstants.KEY_STATS_RETENTION_DAYS, config.statsRetentionDays)
             editor.putInt(SettingsConstants.KEY_STATS_AGGREGATION_HOURS, config.statsAggregationHours)
             editor.putString(SettingsConstants.KEY_ACTION_LOGS_STORAGE, config.actionLogsStorage)

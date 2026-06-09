@@ -44,7 +44,8 @@ class ActionExecutorTest {
             handlers = setOf(mockHandler),
             actionCoordinator = actionCoordinator,
             ttsHelper = ttsHelper,
-            scanCoordinatorProvider = mockk(relaxed = true)
+            scanCoordinatorProvider = mockk(relaxed = true),
+            firebaseAnalyticsManager = mockk(relaxed = true)
         )
     }
 

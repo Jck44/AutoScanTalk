@@ -135,5 +135,6 @@ object SettingsConstants {
     const val KEY_LAST_UPLOADED_LOG_HASH = "last_uploaded_log_hash"
     const val KEY_LATE_CLICK_THRESHOLD_MILLIS = "late_click_threshold_millis"
     const val KEY_VOCAL_SWITCH_ENABLED = "vocal_switch_enabled"
+    const val KEY_FIREBASE_ANALYTICS_ENABLED = "firebase_analytics_enabled"
 }
 

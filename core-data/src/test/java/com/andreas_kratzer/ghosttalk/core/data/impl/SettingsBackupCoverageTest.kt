@@ -96,7 +96,9 @@ class SettingsBackupCoverageTest {
         "isCaregiverDevice",
         "isCaregiverDeviceFlow",
         "isGeminiVerified",
-        "isGeminiVerifiedFlow"
+        "isGeminiVerifiedFlow",
+        "firebaseAnalyticsEnabled",
+        "firebaseAnalyticsEnabledFlow"
     )
 
     private val propertyMappings = mapOf(

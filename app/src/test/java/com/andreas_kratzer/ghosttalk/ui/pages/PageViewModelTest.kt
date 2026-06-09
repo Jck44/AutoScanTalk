@@ -276,7 +276,8 @@ class PageViewModelTest {
             handlers = setOf(navHandler),
             actionCoordinator = actionCoordinator,
             ttsHelper = ttsHelper,
-            scanCoordinatorProvider = mockk(relaxed = true)
+            scanCoordinatorProvider = mockk(relaxed = true),
+            firebaseAnalyticsManager = mockk(relaxed = true)
         )
 
         val scanCoordinator = mockk<ScanCoordinator>(relaxed = true)

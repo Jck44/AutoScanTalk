@@ -385,4 +385,19 @@ class SettingsRepositoryTest {
         assertEquals("RESTORE_ONLY", newRepo.syncModeStats)
         org.junit.Assert.assertFalse(mockedPrefsStore.containsKey("book-other_sync_mode"))
     }
+
+    @Test
+    fun firebaseAnalyticsEnabled_initializesTrue() = runBlocking {
+        assertEquals(true, repository.firebaseAnalyticsEnabled)
+        assertEquals(true, repository.firebaseAnalyticsEnabledFlow.first())
+    }
+
+    @Test
+    fun firebaseAnalyticsEnabled_savesAndEmitsValue() = runBlocking {
+        repository.firebaseAnalyticsEnabled = false
+
+        assertEquals("false", mockedPrefsStore["firebase_analytics_enabled"])
+        assertEquals(false, repository.firebaseAnalyticsEnabled)
+        assertEquals(false, repository.firebaseAnalyticsEnabledFlow.first())
+    }
 }

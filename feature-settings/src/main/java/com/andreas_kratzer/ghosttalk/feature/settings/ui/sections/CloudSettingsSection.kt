@@ -353,24 +353,12 @@ fun CloudSettingsSection(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                val syncModeSettingsLabel = when (syncModeSettings) {
-                    "OFF" -> stringResource(R.string.settings_cloud_sync_mode_off)
-                    "BACKUP_ONLY" -> stringResource(R.string.settings_cloud_sync_mode_backup)
-                    "RESTORE_ONLY" -> stringResource(R.string.settings_cloud_sync_mode_restore)
-                    else -> stringResource(R.string.settings_cloud_sync_mode_two_way)
-                }
-
-                SettingsDropdownItem(
-                    label = stringResource(R.string.settings_cloud_sync_mode_settings),
-                    selectedOption = syncModeSettingsLabel,
-                    options = listOf(
-                        "TWO_WAY" to R.string.settings_cloud_sync_mode_two_way,
-                        "BACKUP_ONLY" to R.string.settings_cloud_sync_mode_backup,
-                        "RESTORE_ONLY" to R.string.settings_cloud_sync_mode_restore,
-                        "OFF" to R.string.settings_cloud_sync_mode_off
-                    ).map { (mode, resId) ->
-                        stringResource(resId) to { viewModel.setSyncModeSettings(mode) }
-                    }
+                // Profiles/Settings are always synchronized, so we display a text instead of the dropdown
+                Text(
+                    text = stringResource(R.string.settings_cloud_sync_profiles_always_synced),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(vertical = 4.dp)
                 )
 
                 Spacer(modifier = Modifier.height(8.dp))
@@ -520,12 +508,27 @@ fun CloudSettingsSection(
             val statsRetentionDays by viewModel.statsRetentionDays.collectAsState()
             val statsAggregationHours by viewModel.statsAggregationHours.collectAsState()
             val onlyRecordHardwareStats by viewModel.onlyRecordHardwareStats.collectAsState()
+            val firebaseAnalyticsEnabled by viewModel.firebaseAnalyticsEnabled.collectAsState()
             
             PreferenceCategory(stringResource(R.string.settings_category_stats_privacy)) {
                 SettingsToggleItem(
                     label = stringResource(R.string.settings_stats_only_hardware_label),
                     checked = onlyRecordHardwareStats,
                     onCheckedChange = { viewModel.setOnlyRecordHardwareStats(it) }
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                SettingsToggleItem(
+                    label = stringResource(R.string.settings_firebase_analytics_label),
+                    checked = firebaseAnalyticsEnabled,
+                    onCheckedChange = { viewModel.setFirebaseAnalyticsEnabled(it) }
+                )
+                Text(
+                    text = stringResource(R.string.settings_firebase_analytics_desc),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
                 )
 
                 Spacer(modifier = Modifier.height(8.dp))

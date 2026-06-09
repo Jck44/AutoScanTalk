@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "383693963870",
+    "project_id": "ghosttalk-bf4df",
+    "storage_bucket": "ghosttalk-bf4df.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:383693963870:android:82c7e4230ae9dd9ba8aacf",
+        "android_client_info": {
+          "package_name": "com.andreas_kratzer.ghosttalk"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD_z7ayFNN3IIJniDSabv8UrlGUyRt-I44"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

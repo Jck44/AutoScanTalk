@@ -16,6 +16,8 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 import javax.inject.Singleton
 
+import com.andreas_kratzer.ghosttalk.core.analytics.FirebaseAnalyticsManager
+
 @Singleton
 class ActionExecutor @Inject constructor(
     @param:ApplicationScope private val scope: CoroutineScope,
@@ -25,6 +27,7 @@ class ActionExecutor @Inject constructor(
     private val actionCoordinator: ActionCoordinator,
     private val ttsHelper: TextToSpeechHelper,
     private val scanCoordinatorProvider: javax.inject.Provider<com.andreas_kratzer.ghosttalk.core.scanning.ScanCoordinator>,
+    private val firebaseAnalyticsManager: FirebaseAnalyticsManager,
     @param:ApplicationContext private val context: Context? = null
 ) : ScannerActionProvider {
     private var timeProvider: () -> Long = { System.currentTimeMillis() }
@@ -204,6 +207,21 @@ class ActionExecutor @Inject constructor(
         val handler = handlers.find { it.canHandle(action) }
         
         if (handler != null) {
+            val featureType = when (action) {
+                is com.andreas_kratzer.ghosttalk.core.model.SpeakTextButtonAction -> "tts_speak"
+                is com.andreas_kratzer.ghosttalk.core.model.NavigateToPageButtonAction,
+                is com.andreas_kratzer.ghosttalk.core.model.NavigateBackButtonAction,
+                is com.andreas_kratzer.ghosttalk.core.model.NavigateToStartPageButtonAction -> "navigation"
+                is com.andreas_kratzer.ghosttalk.core.model.WeatherButtonAction -> "weather"
+                is com.andreas_kratzer.ghosttalk.core.model.GeminiVisionButtonAction -> "gemini_vision"
+                is com.andreas_kratzer.ghosttalk.core.model.SmartHomeButtonAction -> "smarthome_hue"
+                is com.andreas_kratzer.ghosttalk.core.model.PlayMediaButtonAction -> "play_media"
+                is com.andreas_kratzer.ghosttalk.core.model.ControlDeviceButtonAction -> "control_device"
+                is com.andreas_kratzer.ghosttalk.core.model.FrequentActionButtonAction -> "smart_prediction"
+                else -> action::class.java.simpleName.lowercase().replace("buttonaction", "").replace("action", "")
+            }
+            firebaseAnalyticsManager.logFeatureUsed(featureType)
+
             try {
                 handler.handle(
                     buttonConfig,

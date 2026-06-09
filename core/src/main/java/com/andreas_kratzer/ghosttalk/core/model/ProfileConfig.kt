@@ -132,5 +132,6 @@ data class ProfileConfig(
     // Cloud Sync
     val isCloudSyncEnabled: Boolean = false,
     val googleDriveFolderId: String? = null,
-    val googleDriveFolderName: String? = null
+    val googleDriveFolderName: String? = null,
+    val firebaseAnalyticsEnabled: Boolean = true
 )

@@ -65,7 +65,8 @@ class ControlDeviceIntegrationTest {
             ttsHelper = ttsHelper,
             scanCoordinatorProvider = object : javax.inject.Provider<com.andreas_kratzer.ghosttalk.core.scanning.ScanCoordinator> {
                 override fun get() = mockk<com.andreas_kratzer.ghosttalk.core.scanning.ScanCoordinator>(relaxed = true)
-            }
+            },
+            firebaseAnalyticsManager = mockk(relaxed = true)
         )
 
         val action = ControlDeviceButtonAction(DeviceActionType.MEDIA_NEXT)

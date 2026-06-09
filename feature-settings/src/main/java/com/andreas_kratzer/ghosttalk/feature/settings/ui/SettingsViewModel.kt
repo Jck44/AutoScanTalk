@@ -192,6 +192,7 @@ class SettingsViewModel @Inject constructor(
     val statsRetentionDays = settingsRepository.statsRetentionDaysFlow
     val statsAggregationHours = settingsRepository.statsAggregationHoursFlow
     val onlyRecordHardwareStats = settingsRepository.onlyRecordHardwareStatsFlow
+    val firebaseAnalyticsEnabled = settingsRepository.firebaseAnalyticsEnabledFlow
     val geminiTimeout = settingsRepository.geminiTimeoutFlow
     val geminiRedoPrediction = settingsRepository.geminiRedoPredictionFlow
     val blockVolumeKeys = settingsRepository.blockVolumeKeysFlow
@@ -733,6 +734,7 @@ class SettingsViewModel @Inject constructor(
     }
     fun setStatsAggregationHours(hours: Int) { settingsRepository.statsAggregationHours = hours }
     fun setOnlyRecordHardwareStats(e: Boolean) { settingsRepository.onlyRecordHardwareStats = e }
+    fun setFirebaseAnalyticsEnabled(e: Boolean) { settingsRepository.firebaseAnalyticsEnabled = e }
     fun setGeminiTimeoutInput(input: String) {
         input.toLongOrNull()?.let { settingsRepository.geminiTimeout = it }
     }

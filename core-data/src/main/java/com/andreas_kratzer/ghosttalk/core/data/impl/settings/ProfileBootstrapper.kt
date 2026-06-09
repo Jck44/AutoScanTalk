@@ -139,7 +139,8 @@ class ProfileBootstrapper @Inject constructor(
                 blockVolumeKeys = prefs.getBoolean(SettingsConstants.KEY_BLOCK_VOLUME_KEYS, false),
                 isCloudSyncEnabled = prefs.getBoolean(SettingsConstants.KEY_CLOUD_SYNC_ENABLED, false),
                 googleDriveFolderId = prefs.getString(SettingsConstants.KEY_GOOGLE_DRIVE_FOLDER_ID, null),
-                googleDriveFolderName = prefs.getString(SettingsConstants.KEY_GOOGLE_DRIVE_FOLDER_NAME, null)
+                googleDriveFolderName = prefs.getString(SettingsConstants.KEY_GOOGLE_DRIVE_FOLDER_NAME, null),
+                firebaseAnalyticsEnabled = prefs.getBoolean(SettingsConstants.KEY_FIREBASE_ANALYTICS_ENABLED, true)
             )
 
             val configJson = json.encodeToString(ProfileConfig.serializer(), legacyConfig)
