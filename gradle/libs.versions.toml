@@ -39,10 +39,10 @@ camerax = "1.6.1"
 okhttp = "5.3.2"
 #noinspection GradleDependency
 mediapipe = "0.10.35"
-browser = "1.8.0"
-googleServices = "4.4.2"
-firebaseBom = "33.1.0"
-firebaseCrashlyticsPlugin = "3.0.1"
+browser = "1.10.0"
+googleServices = "4.4.4"
+firebaseBom = "34.14.1"
+firebaseCrashlyticsPlugin = "3.0.7"
 
 [libraries]
 

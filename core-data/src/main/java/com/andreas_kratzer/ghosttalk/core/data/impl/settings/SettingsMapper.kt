@@ -116,14 +116,13 @@ class SettingsMapper @Inject constructor(
         data.geminiTimeout?.let { settingsRepository.geminiTimeout = it }
         data.isGeminiEnabled?.let { settingsRepository.isGeminiEnabled = it }
         data.useLocalGenerativeAi?.let { settingsRepository.useLocalGenerativeAi = it }
-        // Cloud sync settings are device-specific and should never be overwritten by an import.
-        // They are still exported for diagnostic/backup visibility but intentionally skipped here.
-        // data.isCloudSyncEnabled?.let { settingsRepository.isCloudSyncEnabled = it }
-        // data.syncIntervalMinutes?.let { settingsRepository.syncIntervalMinutes = it }
-        // data.syncModeBook?.let { settingsRepository.syncModeBook = it }
-        // data.syncModeTts?.let { settingsRepository.syncModeTts = it }
-        // data.syncModeStats?.let { settingsRepository.syncModeStats = it }
-        // data.syncModeSettings?.let { settingsRepository.syncModeSettings = it }
+        // Cloud sync settings are now imported to allow remote control.
+        data.isCloudSyncEnabled?.let { settingsRepository.isCloudSyncEnabled = it }
+        data.syncIntervalMinutes?.let { settingsRepository.syncIntervalMinutes = it }
+        data.syncModeBook?.let { settingsRepository.syncModeBook = it }
+        data.syncModeTts?.let { settingsRepository.syncModeTts = it }
+        data.syncModeStats?.let { settingsRepository.syncModeStats = it }
+        data.syncModeSettings?.let { settingsRepository.syncModeSettings = it }
         data.ttsLanguage?.let { settingsRepository.ttsLanguage = it }
         data.ttsVoiceName?.let { settingsRepository.ttsVoiceName = it }
         data.smartPredictionDelay?.let { settingsRepository.smartPredictionDelay = it }
