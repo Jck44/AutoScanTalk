@@ -9,7 +9,8 @@ import android.util.Log
 import android.widget.Toast
 import com.andreas_kratzer.ghosttalk.core.cloud.AuthManager
 import com.andreas_kratzer.ghosttalk.core.cloud.GoogleWebAuthManager
-import com.andreas_kratzer.ghosttalk.core.cloud.domain.CloudSyncUseCase
+import com.andreas_kratzer.ghosttalk.core.cloud.domain.GetAvailableBackupsUseCase
+import com.andreas_kratzer.ghosttalk.core.cloud.domain.ImportCloudBackupUseCase
 import com.andreas_kratzer.ghosttalk.core.cloud.domain.GetDriveFoldersUseCase
 import com.andreas_kratzer.ghosttalk.core.cloud.domain.PerformManualSyncUseCase
 import com.andreas_kratzer.ghosttalk.core.cloud.domain.RemoteBackupInfo
@@ -45,7 +46,8 @@ class CloudSyncSettingsDelegate @Inject constructor(
     private val settingsRepository: SettingsRepository,
     private val setCloudSyncEnabledUseCase: SetCloudSyncEnabledUseCase,
     private val performManualSyncUseCase: PerformManualSyncUseCase,
-    private val cloudSyncUseCase: CloudSyncUseCase,
+    private val getAvailableBackupsUseCase: GetAvailableBackupsUseCase,
+    private val importCloudBackupUseCase: ImportCloudBackupUseCase,
     private val getDriveFoldersUseCase: GetDriveFoldersUseCase,
     private val signInUseCase: SignInUseCase,
     private val signOutUseCase: SignOutUseCase,
@@ -247,7 +249,7 @@ class CloudSyncSettingsDelegate @Inject constructor(
         scope.launch {
             _isSyncing.value = true
             try {
-                val backups = cloudSyncUseCase.getAvailableBackups(null, uri)
+                val backups = getAvailableBackupsUseCase.execute(null, uri)
                 _availableBackups.value = backups
                 if (backups.isEmpty()) {
                     Toast.makeText(application, "Keine Backups in dem ausgewählten Ordner gefunden.", Toast.LENGTH_LONG).show()
@@ -269,14 +271,14 @@ class CloudSyncSettingsDelegate @Inject constructor(
             _isSyncing.value = true
             try {
                 val backups = if (isSaf) {
-                    cloudSyncUseCase.getAvailableBackups(null, null)
+                    getAvailableBackupsUseCase.execute(null, null)
                 } else {
                     val drive = buildDriveClient()
                     if (drive == null) {
                         Toast.makeText(application, "Kein Cloud-Konto verbunden.", Toast.LENGTH_LONG).show()
                         return@launch
                     }
-                    cloudSyncUseCase.getAvailableBackups(drive, folderId)
+                    getAvailableBackupsUseCase.execute(drive, folderId)
                 }
 
                 _availableBackups.value = backups
@@ -322,7 +324,7 @@ class CloudSyncSettingsDelegate @Inject constructor(
                     d
                 }
 
-                val result = cloudSyncUseCase.importCloudBackup(drive, backupInfo.fileId, backupInfo.fileName, onProgress)
+                val result = importCloudBackupUseCase.execute(drive, backupInfo.fileId, backupInfo.fileName, onProgress)
                 if (result.isSuccess) {
                     val bookId = result.getOrThrow()
                     settingsRepository.activeBookId = bookId

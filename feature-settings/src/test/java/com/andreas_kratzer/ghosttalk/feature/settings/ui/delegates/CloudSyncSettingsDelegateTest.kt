@@ -4,7 +4,8 @@ import android.app.Activity
 import android.app.Application
 import android.widget.Toast
 import com.andreas_kratzer.ghosttalk.core.cloud.GoogleAuthManager
-import com.andreas_kratzer.ghosttalk.core.cloud.domain.CloudSyncUseCase
+import com.andreas_kratzer.ghosttalk.core.cloud.domain.GetAvailableBackupsUseCase
+import com.andreas_kratzer.ghosttalk.core.cloud.domain.ImportCloudBackupUseCase
 import com.andreas_kratzer.ghosttalk.core.cloud.domain.PerformManualSyncUseCase
 import com.andreas_kratzer.ghosttalk.core.cloud.domain.SetCloudSyncEnabledUseCase
 import com.andreas_kratzer.ghosttalk.core.cloud.domain.SignInUseCase
@@ -42,7 +43,8 @@ class CloudSyncSettingsDelegateTest {
     private lateinit var settingsRepository: com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
     private lateinit var setCloudSyncEnabledUseCase: SetCloudSyncEnabledUseCase
     private lateinit var performManualSyncUseCase: PerformManualSyncUseCase
-    private lateinit var cloudSyncUseCase: CloudSyncUseCase
+    private lateinit var getAvailableBackupsUseCase: GetAvailableBackupsUseCase
+    private lateinit var importCloudBackupUseCase: ImportCloudBackupUseCase
     private lateinit var getDriveFoldersUseCase: com.andreas_kratzer.ghosttalk.core.cloud.domain.GetDriveFoldersUseCase
     private lateinit var signInUseCase: SignInUseCase
     private lateinit var signOutUseCase: SignOutUseCase
@@ -64,7 +66,8 @@ class CloudSyncSettingsDelegateTest {
         settingsRepository = mockk(relaxed = true)
         setCloudSyncEnabledUseCase = mockk(relaxed = true)
         performManualSyncUseCase = mockk(relaxed = true)
-        cloudSyncUseCase = mockk(relaxed = true)
+        getAvailableBackupsUseCase = mockk(relaxed = true)
+        importCloudBackupUseCase = mockk(relaxed = true)
         getDriveFoldersUseCase = mockk(relaxed = true)
         signInUseCase = mockk(relaxed = true)
         signOutUseCase = mockk(relaxed = true)
@@ -81,7 +84,8 @@ class CloudSyncSettingsDelegateTest {
             settingsRepository = settingsRepository,
             setCloudSyncEnabledUseCase = setCloudSyncEnabledUseCase,
             performManualSyncUseCase = performManualSyncUseCase,
-            cloudSyncUseCase = cloudSyncUseCase,
+            getAvailableBackupsUseCase = getAvailableBackupsUseCase,
+            importCloudBackupUseCase = importCloudBackupUseCase,
             getDriveFoldersUseCase = getDriveFoldersUseCase,
             signInUseCase = signInUseCase,
             signOutUseCase = signOutUseCase,
@@ -143,7 +147,7 @@ class CloudSyncSettingsDelegateTest {
     @Test
     fun `fetchAvailableBackupsForImport handles success`() = runTest {
         coEvery { googleAuthManager.getGoogleCredential() } returns mockk(relaxed = true)
-        coEvery { cloudSyncUseCase.getAvailableBackups(any()) } returns listOf(
+        coEvery { getAvailableBackupsUseCase.execute(any()) } returns listOf(
             com.andreas_kratzer.ghosttalk.core.cloud.domain.RemoteBackupInfo("id", "file", "book", 123L)
         )
         
@@ -203,7 +207,7 @@ class CloudSyncSettingsDelegateTest {
 
     @Test
     fun `fetchAvailableBackupsFromSaf shows dialog when backups found`() = runTest {
-        coEvery { cloudSyncUseCase.getAvailableBackups(null, "content://test/uri") } returns listOf(
+        coEvery { getAvailableBackupsUseCase.execute(null, "content://test/uri") } returns listOf(
             com.andreas_kratzer.ghosttalk.core.cloud.domain.RemoteBackupInfo("content://test/uri/book.zip", "book.zip", "My Book", 123L)
         )
 
@@ -216,7 +220,7 @@ class CloudSyncSettingsDelegateTest {
 
     @Test
     fun `fetchAvailableBackupsFromSaf does not show dialog when no backups found`() = runTest {
-        coEvery { cloudSyncUseCase.getAvailableBackups(null, "content://test/empty") } returns emptyList()
+        coEvery { getAvailableBackupsUseCase.execute(null, "content://test/empty") } returns emptyList()
 
         delegate.fetchAvailableBackupsFromSaf("content://test/empty", "Leerer Ordner", testScope)
         testDispatcher.scheduler.advanceUntilIdle()
@@ -227,7 +231,7 @@ class CloudSyncSettingsDelegateTest {
 
     @Test
     fun `fetchAvailableBackupsFromSaf sets isSyncing false after completion`() = runTest {
-        coEvery { cloudSyncUseCase.getAvailableBackups(null, any()) } returns emptyList()
+        coEvery { getAvailableBackupsUseCase.execute(null, any()) } returns emptyList()
 
         delegate.fetchAvailableBackupsFromSaf("content://test/uri", "Ordner", testScope)
         testDispatcher.scheduler.advanceUntilIdle()

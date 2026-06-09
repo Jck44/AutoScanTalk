@@ -15,6 +15,7 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.mockkConstructor
 import io.mockk.mockkStatic
+import io.mockk.spyk
 import io.mockk.unmockkAll
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
@@ -38,6 +39,7 @@ class CloudSyncUseCaseTest {
     private lateinit var mockLogger: Logger
     private lateinit var mockSyncLogProvider: SyncLogProvider
     private lateinit var mockSettingsRepository: com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
+    private lateinit var spyStorageResolver: SyncStorageResolver
 
     @Before
     fun setup() {
@@ -81,7 +83,12 @@ class CloudSyncUseCaseTest {
         coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().findFolder(any(), any()) } returns null
         coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().createFolder(any(), any()) } returns "folder_1"
 
-        useCase = CloudSyncUseCase(mockContext, mockBookRepository, mockImportExportManager, mockSettingsRepository, mockSyncLogProvider, mockLogger)
+        spyStorageResolver = spyk(SyncStorageResolver(mockContext, mockSettingsRepository, mockLogger))
+        val decisionEngine = SyncDecisionEngine()
+        val bookMergeService = BookMergeService(mockContext, mockBookRepository, mockImportExportManager, mockSyncLogProvider, mockLogger, spyStorageResolver)
+        val profileSyncOrchestrator = ProfileSyncOrchestrator(mockContext, mockSettingsRepository, mockImportExportManager, mockSyncLogProvider, mockLogger, spyStorageResolver)
+        val importCloudBackupUseCase = ImportCloudBackupUseCase(mockContext, mockBookRepository, mockImportExportManager, mockSyncLogProvider, spyStorageResolver, mockLogger)
+        useCase = CloudSyncUseCase(mockContext, mockBookRepository, mockImportExportManager, mockSettingsRepository, mockSyncLogProvider, mockLogger, spyStorageResolver, decisionEngine, bookMergeService, profileSyncOrchestrator, importCloudBackupUseCase)
     }
 
     @After
@@ -329,46 +336,6 @@ class CloudSyncUseCaseTest {
         advanceUntilIdle()
 
         assert(!result)
-    }
-
-    @Test
-    fun `getAvailableBackups parses metadata correctly`() = runTest {
-        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().findFolder(any()) } returns "folder_1"
-        
-        val remoteFile1 = com.google.api.services.drive.model.File().apply {
-            id = "f1"
-            name = "book_1.zip"
-            description = "Test Book"
-            modifiedTime = com.google.api.client.util.DateTime(1000L)
-        }
-        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().listFiles("folder_1") } returns listOf(remoteFile1)
-
-        val backups = useCase.getAvailableBackups(mockDrive)
-        advanceUntilIdle()
-
-        assertEquals(1, backups.size)
-        assertEquals("Test Book", backups[0].bookName)
-        assertEquals(1000L, backups[0].lastModified)
-    }
-
-    @Test
-    fun `getAvailableBackups reads bookName from custom properties and avoids download`() = runTest {
-        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().findFolder(any()) } returns "folder_1"
-        
-        val remoteFile1 = com.google.api.services.drive.model.File().apply {
-            id = "f1"
-            name = "book_1.json"
-            properties = mapOf("book_name" to "Properties Book Name")
-            modifiedTime = com.google.api.client.util.DateTime(1000L)
-        }
-        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().listFiles("folder_1") } returns listOf(remoteFile1)
-
-        val backups = useCase.getAvailableBackups(mockDrive)
-        advanceUntilIdle()
-
-        assertEquals(1, backups.size)
-        assertEquals("Properties Book Name", backups[0].bookName)
-        coVerify(exactly = 0) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().downloadFile(any(), any(), any()) }
     }
 
     @Test
@@ -835,19 +802,6 @@ class CloudSyncUseCaseTest {
         val bookId = "test-book"
         val now = System.currentTimeMillis()
 
-        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().findFolder("GhosTTalk_Sync") } returns "parent_folder_1"
-        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().findFolder("Profiles", "parent_folder_1") } returns "profiles_folder_1"
-
-        val remoteProfileFile = com.google.api.services.drive.model.File().apply {
-            id = "profile_file_1"
-            name = "profile_profile1.json"
-            description = "My Custom Profile"
-            version = 2L
-            modifiedTime = com.google.api.client.util.DateTime(now)
-        }
-        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().listFiles("profiles_folder_1") } returns listOf(remoteProfileFile)
-        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().listFiles("parent_folder_1") } returns emptyList()
-
         val jsonSerializer = kotlinx.serialization.json.Json { ignoreUnknownKeys = true; prettyPrint = true; encodeDefaults = true }
         val testProfile = com.andreas_kratzer.ghosttalk.core.model.SettingsProfile(
             id = "profile1",
@@ -861,11 +815,27 @@ class CloudSyncUseCaseTest {
         )
         val modernJson = jsonSerializer.encodeToString(com.andreas_kratzer.ghosttalk.core.model.SettingsProfile.serializer(), testProfile)
 
-        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().downloadFile("profile_file_1", any(), any()) } answers {
+        val mockProfilesProvider = mockk<SyncStorageProvider>(relaxed = true)
+        coEvery { spyStorageResolver.resolveProfilesStorageProvider(any()) } returns mockProfilesProvider
+
+        coEvery { mockProfilesProvider.listFiles() } returns listOf(
+            RemoteSyncFile(
+                id = "profile_file_1",
+                name = "profile_profile1.json",
+                description = "My Custom Profile",
+                version = 2L,
+                modifiedTime = now
+            )
+        )
+
+        coEvery { mockProfilesProvider.downloadFile("profile_file_1", any(), any()) } answers {
             val file = args[1] as File
             file.writeText(modernJson)
             true
         }
+
+        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().findFolder("GhosTTalk_Sync") } returns "parent_folder_1"
+        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().listFiles("parent_folder_1") } returns emptyList()
 
         coEvery { mockSettingsRepository.getAllProfiles() } returns emptyList()
         coEvery { mockSettingsRepository.getProfileById("profile1") } returns null
@@ -887,19 +857,6 @@ class CloudSyncUseCaseTest {
         val bookId = "test-book"
         val now = System.currentTimeMillis()
 
-        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().findFolder("GhosTTalk_Sync") } returns "parent_folder_1"
-        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().findFolder("Profiles", "parent_folder_1") } returns "profiles_folder_1"
-
-        val remoteProfileFile = com.google.api.services.drive.model.File().apply {
-            id = "profile_file_1"
-            name = "profile_profile1.json"
-            description = "Legacy Profile Description"
-            version = 1L
-            modifiedTime = com.google.api.client.util.DateTime(now)
-        }
-        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().listFiles("profiles_folder_1") } returns listOf(remoteProfileFile)
-        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().listFiles("parent_folder_1") } returns emptyList()
-
         val jsonSerializer = kotlinx.serialization.json.Json { ignoreUnknownKeys = true; prettyPrint = true; encodeDefaults = true }
         val legacyConfig = com.andreas_kratzer.ghosttalk.core.model.ProfileConfig(
             favoriteBookId = "book_legacy",
@@ -907,11 +864,27 @@ class CloudSyncUseCaseTest {
         )
         val legacyJson = jsonSerializer.encodeToString(com.andreas_kratzer.ghosttalk.core.model.ProfileConfig.serializer(), legacyConfig)
 
-        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().downloadFile("profile_file_1", any(), any()) } answers {
+        val mockProfilesProvider = mockk<SyncStorageProvider>(relaxed = true)
+        coEvery { spyStorageResolver.resolveProfilesStorageProvider(any()) } returns mockProfilesProvider
+
+        coEvery { mockProfilesProvider.listFiles() } returns listOf(
+            RemoteSyncFile(
+                id = "profile_file_1",
+                name = "profile_profile1.json",
+                description = "Legacy Profile Description",
+                version = 1L,
+                modifiedTime = now
+            )
+        )
+
+        coEvery { mockProfilesProvider.downloadFile("profile_file_1", any(), any()) } answers {
             val file = args[1] as File
             file.writeText(legacyJson)
             true
         }
+
+        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().findFolder("GhosTTalk_Sync") } returns "parent_folder_1"
+        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().listFiles("parent_folder_1") } returns emptyList()
 
         coEvery { mockSettingsRepository.getAllProfiles() } returns emptyList()
         coEvery { mockSettingsRepository.getProfileById("profile1") } returns null
@@ -932,19 +905,6 @@ class CloudSyncUseCaseTest {
     fun `syncBook merges settings profile when local and remote differ`() = runTest {
         val bookId = "test-book"
         val now = System.currentTimeMillis()
-
-        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().findFolder("GhosTTalk_Sync") } returns "parent_folder_1"
-        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().findFolder("Profiles", "parent_folder_1") } returns "profiles_folder_1"
-
-        val remoteProfileFile = com.google.api.services.drive.model.File().apply {
-            id = "profile_file_1"
-            name = "profile_profile1.json"
-            description = "Remote Profile Name"
-            version = 1L
-            modifiedTime = com.google.api.client.util.DateTime(now)
-        }
-        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().listFiles("profiles_folder_1") } returns listOf(remoteProfileFile)
-        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().listFiles("parent_folder_1") } returns emptyList()
 
         val jsonSerializer = kotlinx.serialization.json.Json { ignoreUnknownKeys = true; prettyPrint = true; encodeDefaults = true }
         
@@ -991,13 +951,29 @@ class CloudSyncUseCaseTest {
         val baseJson = jsonSerializer.encodeToString(com.andreas_kratzer.ghosttalk.core.model.SettingsProfile.serializer(), baseProfile)
         baseBackupFile.writeText(baseJson)
 
-        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().downloadFile("profile_file_1", any(), any()) } answers {
+        val mockProfilesProvider = mockk<SyncStorageProvider>(relaxed = true)
+        coEvery { spyStorageResolver.resolveProfilesStorageProvider(any()) } returns mockProfilesProvider
+
+        coEvery { mockProfilesProvider.listFiles() } returns listOf(
+            RemoteSyncFile(
+                id = "profile_file_1",
+                name = "profile_profile1.json",
+                description = "Remote Profile Name",
+                version = 1L,
+                modifiedTime = now
+            )
+        )
+
+        coEvery { mockProfilesProvider.downloadFile("profile_file_1", any(), any()) } answers {
             val file = args[1] as File
             file.writeText(remoteJson)
             true
         }
 
-        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().updateFile("profile_file_1", any(), any(), any(), any(), any()) } returns true
+        coEvery { mockProfilesProvider.updateFile("profile_file_1", any(), any(), any(), any(), any()) } returns true
+
+        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().findFolder("GhosTTalk_Sync") } returns "parent_folder_1"
+        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().listFiles("parent_folder_1") } returns emptyList()
 
         coEvery { mockSettingsRepository.getAllProfiles() } returns listOf(localProfile)
         coEvery { mockSettingsRepository.getProfileById("profile1") } returns localProfile
@@ -1013,7 +989,7 @@ class CloudSyncUseCaseTest {
             assertEquals(3L, it.profileVersionSequence)
         }) }
 
-        coVerify(exactly = 1) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().updateFile("profile_file_1", any(), "application/json", any(), any(), any()) }
+        coVerify(exactly = 1) { mockProfilesProvider.updateFile("profile_file_1", any(), "application/json", any(), any(), any()) }
 
         baseBackupFile.delete()
     }
