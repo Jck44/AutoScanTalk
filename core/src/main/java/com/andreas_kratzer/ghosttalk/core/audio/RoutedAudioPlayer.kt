@@ -21,7 +21,7 @@ import javax.inject.Singleton
 @Singleton
 open class RoutedAudioPlayer @Inject constructor(
     @param:ApplicationContext private val context: Context,
-    private val audioDeviceManager: AudioDeviceManager,
+    private val topologyTracker: AudioTopologyTracker,
     private val audioSettings: AudioSettings,
     @param:ApplicationScope private val scope: CoroutineScope
 ) {
@@ -62,11 +62,24 @@ open class RoutedAudioPlayer @Inject constructor(
 
             try {
                 // Determine target device
+                val devices = audioManager.getDevices(AudioManager.GET_DEVICES_OUTPUTS)
                 if (deviceAddress != null) {
-                    targetDevice = audioDeviceManager.getAudioDeviceInfo(deviceAddress)
+                    val parts = deviceAddress.split("|", limit = 2)
+                    val idPart = parts.getOrNull(0)?.toIntOrNull()
+                    val fallbackPart = if (parts.size > 1) parts[1] else parts[0]
+                    targetDevice = if (idPart != null) {
+                        devices.find { it.id == idPart }
+                    } else null
+                    if (targetDevice == null) {
+                        targetDevice = devices.find { 
+                            val safeProductName = it.productName?.toString()?.replace(" ", "_") ?: "unknown"
+                            val computedPersistentId = if (it.address.isNotBlank()) it.address else "type_${it.type}_$safeProductName"
+                            computedPersistentId == fallbackPart
+                        }
+                    }
                 }
                 if (targetDevice == null) {
-                    targetDevice = audioDeviceManager.getBuiltInSpeaker()
+                    targetDevice = devices.find { it.type == AudioDeviceInfo.TYPE_BUILTIN_SPEAKER } ?: devices.firstOrNull()
                     Log.d("RoutedAudioPlayer", "Target device not found or not set, falling back to built-in speaker.")
                 } else {
                     Log.d("RoutedAudioPlayer", "Target device: ${targetDevice.productName}, Type: ${targetDevice.type}, Address: ${targetDevice.address}")

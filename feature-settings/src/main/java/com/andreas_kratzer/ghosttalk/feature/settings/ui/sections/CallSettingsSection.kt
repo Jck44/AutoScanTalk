@@ -40,8 +40,8 @@ import com.andreas_kratzer.ghosttalk.feature.settings.ui.SettingsViewModel
 fun CallSettingsSection(viewModel: SettingsViewModel) {
     val context = LocalContext.current
     val dimensions = LocalDimensions.current
-    val forceKeyboard by viewModel.forceSoftKeyboard.collectAsState(false)
-    val simulateCallsEnabled by viewModel.simulateCallsEnabled.collectAsState(false)
+    val forceKeyboard by viewModel.forceSoftKeyboard.collectAsState()
+    val simulateCallsEnabled by viewModel.simulateCallsEnabled.collectAsState()
 
     FlowRow(
         modifier = Modifier.fillMaxWidth(),
@@ -51,18 +51,18 @@ fun CallSettingsSection(viewModel: SettingsViewModel) {
     ) {
         val categoryCall = stringResource(R.string.settings_category_call)
         PreferenceCategory(categoryCall, modifier = Modifier.weight(1f)) {
-            val maxCallDurationSeconds by viewModel.maxCallDurationSeconds.collectAsState(0)
-            val callDurationFeedbackIntervalSeconds by viewModel.callDurationFeedbackIntervalSeconds.collectAsState(60)
-            val outgoingCallIntro by viewModel.outgoingCallIntro.collectAsState("")
-            val incomingCallIntro by viewModel.incomingCallIntro.collectAsState("")
-            val incomingCallScanLimitActive by viewModel.incomingCallScanLimitUserModeActive.collectAsState(2)
-            val incomingCallAutoActionActive by viewModel.incomingCallAutoActionUserModeActive.collectAsState("NONE")
-            val incomingCallDelayInactive by viewModel.incomingCallDelayUserModeInactive.collectAsState(15)
-            val incomingCallAutoActionInactive by viewModel.incomingCallAutoActionUserModeInactive.collectAsState("NONE")
-            val callAnnouncementAsCue by viewModel.callAnnouncementAsCue.collectAsState(true)
-            val autoEnableSpeakerphone by viewModel.autoEnableSpeakerphone.collectAsState(true)
-            val hangUpPressesRequired by viewModel.hangUpPressesRequired.collectAsState(2)
-            val filterCallsNotInContacts by viewModel.filterCallsNotInContacts.collectAsState(false)
+            val maxCallDurationSeconds by viewModel.maxCallDurationSeconds.collectAsState()
+            val callDurationFeedbackIntervalSeconds by viewModel.callDurationFeedbackIntervalSeconds.collectAsState()
+            val outgoingCallIntro by viewModel.outgoingCallIntro.collectAsState()
+            val incomingCallIntro by viewModel.incomingCallIntro.collectAsState()
+            val incomingCallScanLimitActive by viewModel.incomingCallScanLimitUserModeActive.collectAsState()
+            val incomingCallAutoActionActive by viewModel.incomingCallAutoActionUserModeActive.collectAsState()
+            val incomingCallDelayInactive by viewModel.incomingCallDelayUserModeInactive.collectAsState()
+            val incomingCallAutoActionInactive by viewModel.incomingCallAutoActionUserModeInactive.collectAsState()
+            val callAnnouncementAsCue by viewModel.callAnnouncementAsCue.collectAsState()
+            val autoEnableSpeakerphone by viewModel.autoEnableSpeakerphone.collectAsState()
+            val hangUpPressesRequired by viewModel.hangUpPressesRequired.collectAsState()
+            val filterCallsNotInContacts by viewModel.filterCallsNotInContacts.collectAsState()
 
             var isDefaultDialer by remember { mutableStateOf(false) }
             val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current

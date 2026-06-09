@@ -81,7 +81,7 @@ fun PermissionsSettingsSection(viewModel: SettingsViewModel) {
     val dimensions = LocalDimensions.current
     val packageName = context.packageName
 
-    val monitoredApps by viewModel.monitoredNotificationApps.collectAsState(emptySet())
+    val monitoredApps by viewModel.monitoredNotificationApps.collectAsState()
     
     // Permission States
     var cameraGranted by remember { 
@@ -161,7 +161,7 @@ fun PermissionsSettingsSection(viewModel: SettingsViewModel) {
             )
 
             if (notificationListenerGranted) {
-                val isReadingEnabled by viewModel.isNotificationReadingEnabled.collectAsState(false)
+                val isReadingEnabled by viewModel.isNotificationReadingEnabled.collectAsState()
                 SettingsToggleItem(
                     label = "Benachrichtigungen vorlesen",
                     checked = isReadingEnabled,
@@ -190,7 +190,7 @@ fun PermissionsSettingsSection(viewModel: SettingsViewModel) {
                     Spacer(modifier = Modifier.height(dimensions.paddingSmall))
 
                     // Auto Read Mode Dropdown
-                    val autoReadModeVal by viewModel.autoReadMode.collectAsState(com.andreas_kratzer.ghosttalk.core.settings.AutoReadMode.OFF)
+                    val autoReadModeVal by viewModel.autoReadMode.collectAsState()
                     var modeExpanded by remember { mutableStateOf(false) }
 
                     Column(verticalArrangement = Arrangement.spacedBy(dimensions.paddingSmall)) {
@@ -243,7 +243,7 @@ fun PermissionsSettingsSection(viewModel: SettingsViewModel) {
                     }
 
                     if (autoReadModeVal != com.andreas_kratzer.ghosttalk.core.settings.AutoReadMode.OFF) {
-                        val autoReadOnlyInUserModeVal by viewModel.autoReadOnlyInUserMode.collectAsState(true)
+                        val autoReadOnlyInUserModeVal by viewModel.autoReadOnlyInUserMode.collectAsState()
                         SettingsToggleItem(
                             label = "Nur im Benutzermodus aktiv",
                             checked = autoReadOnlyInUserModeVal,
@@ -251,7 +251,7 @@ fun PermissionsSettingsSection(viewModel: SettingsViewModel) {
                             onCheckedChange = { viewModel.setAutoReadOnlyInUserMode(it) }
                         )
 
-                        val autoReadInStandbyVal by viewModel.autoReadInStandby.collectAsState(false)
+                        val autoReadInStandbyVal by viewModel.autoReadInStandby.collectAsState()
                         SettingsToggleItem(
                             label = "Auch im Standby vorlesen",
                             checked = autoReadInStandbyVal,

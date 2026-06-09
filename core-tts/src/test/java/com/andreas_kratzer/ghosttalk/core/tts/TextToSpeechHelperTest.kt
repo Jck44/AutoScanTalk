@@ -41,6 +41,7 @@ class TextToSpeechHelperTest {
         every { mockSettingsRepository.ttsLanguageFlow } returns MutableStateFlow("de-DE")
         every { mockSettingsRepository.ttsVoiceNameFlow } returns MutableStateFlow("default")
         every { mockSettingsRepository.ttsEngineFlow } returns ttsEngineFlow
+        every { mockSettingsRepository.appLanguageFlow } returns MutableStateFlow("de")
         
         every { mockContext.cacheDir } returns File("/tmp")
 

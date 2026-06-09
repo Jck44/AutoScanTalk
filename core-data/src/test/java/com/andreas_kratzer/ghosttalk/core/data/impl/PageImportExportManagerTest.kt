@@ -66,6 +66,7 @@ class PageImportExportManagerTest {
         userModeSessionRepository = userModeSessionRepository,
         vocalProfileRepository = vocalProfileRepository,
         deletedEntityDao = mockk(relaxed = true),
+        zipArchiver = ZipArchiver(),
         logger = mockk(relaxed = true)
     )
 
@@ -995,6 +996,7 @@ class PageImportExportManagerTest {
             userModeSessionRepository = userModeSessionRepository,
             vocalProfileRepository = vocalProfileRepository,
             deletedEntityDao = mockk(relaxed = true),
+            zipArchiver = ZipArchiver(),
             logger = mockk(relaxed = true)
         )
 
@@ -1085,6 +1087,7 @@ class PageImportExportManagerTest {
             userModeSessionRepository = userModeSessionRepository,
             vocalProfileRepository = vocalProfileRepository,
             deletedEntityDao = mockk(relaxed = true),
+            zipArchiver = ZipArchiver(),
             logger = mockk(relaxed = true)
         )
 
@@ -1131,6 +1134,7 @@ class PageImportExportManagerTest {
             userModeSessionRepository = userModeSessionRepository,
             vocalProfileRepository = vocalProfileRepository,
             deletedEntityDao = mockk(relaxed = true),
+            zipArchiver = ZipArchiver(),
             logger = mockk(relaxed = true)
         )
 
@@ -1177,6 +1181,7 @@ class PageImportExportManagerTest {
             userModeSessionRepository = mockUserModeSessionRepository,
             vocalProfileRepository = vocalProfileRepository,
             deletedEntityDao = mockk(relaxed = true),
+            zipArchiver = ZipArchiver(),
             logger = mockk(relaxed = true)
         )
 

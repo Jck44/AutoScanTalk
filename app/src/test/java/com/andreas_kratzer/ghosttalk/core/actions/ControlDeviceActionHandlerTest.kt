@@ -50,25 +50,42 @@ class ControlDeviceActionHandlerTest {
 
         every { context.getSystemService(Context.AUDIO_SERVICE) } returns audioManager
         
+        val ttsProxyLazy = object : dagger.Lazy<ControlDeviceTtsProxy> {
+            override fun get() = ttsProxy
+        }
+        val scanControllerLazy = object : dagger.Lazy<ScannerController> {
+            override fun get() = scannerController
+        }
+        val callActionProxyLazy = object : dagger.Lazy<CallActionProxy> {
+            override fun get() = callActionProxy
+        }
+        val syncActionProxyLazy = object : dagger.Lazy<SyncActionProxy> {
+            override fun get() = syncActionProxy
+        }
+
+        val smsExecutor = SmsExecutor(context, actionLogger, settings, ttsProxyLazy)
+        val notificationExecutor = NotificationExecutor(context, actionLogger, settings, ttsProxyLazy)
+        val deviceStatusExecutor = DeviceStatusExecutor(context, actionLogger, settings, ttsProxyLazy)
+        val calendarExecutor = CalendarExecutor(context, actionLogger, settings, ttsProxyLazy)
+        val volumeExecutor = VolumeExecutor(context, actionLogger, settings)
+        val systemActionExecutor = SystemActionExecutor(
+            context = context,
+            actionLogger = actionLogger,
+            settings = settings,
+            scanControllerLazy = scanControllerLazy,
+            callActionProxy = callActionProxyLazy,
+            syncActionProxy = syncActionProxyLazy
+        )
+
         handler = ControlDeviceActionHandler(
             context = context,
-            settings = settings,
-            ttsProxyLazy = object : dagger.Lazy<ControlDeviceTtsProxy> {
-                override fun get() = ttsProxy
-            },
-            scanControllerLazy = object : dagger.Lazy<ScannerController> {
-                override fun get() = scannerController
-            },
-            callActionProxy = object : dagger.Lazy<CallActionProxy> {
-                override fun get() = callActionProxy
-            },
             actionLogger = actionLogger,
-            updateManagerLazy = object : dagger.Lazy<UpdateManager> {
-                override fun get() = updateManager
-            },
-            syncActionProxy = object : dagger.Lazy<SyncActionProxy> {
-                override fun get() = syncActionProxy
-            }
+            smsExecutor = smsExecutor,
+            notificationExecutor = notificationExecutor,
+            deviceStatusExecutor = deviceStatusExecutor,
+            calendarExecutor = calendarExecutor,
+            volumeExecutor = volumeExecutor,
+            systemActionExecutor = systemActionExecutor
         )
         
         every { ttsProxy.isReadingNotification = any() } just Runs

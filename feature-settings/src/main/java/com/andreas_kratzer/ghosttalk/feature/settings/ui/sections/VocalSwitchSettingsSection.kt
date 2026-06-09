@@ -21,7 +21,7 @@ fun VocalSwitchSettingsSection(
     viewModel: SettingsViewModel,
     onNavigateToVocalTraining: () -> Unit
 ) {
-    val isVocalSwitchEnabled by viewModel.isVocalSwitchEnabled.collectAsState(false)
+    val isVocalSwitchEnabled by viewModel.isVocalSwitchEnabled.collectAsState()
     val dimensions = LocalDimensions.current
 
     FlowRow(

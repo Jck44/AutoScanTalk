@@ -58,6 +58,7 @@ class SettingsRoundTripTest {
             userModeSessionRepository = userModeSessionRepository,
             vocalProfileRepository = vocalProfileRepository,
             deletedEntityDao = deletedEntityDao,
+            zipArchiver = ZipArchiver(),
             logger = logger
         )
 

@@ -106,7 +106,7 @@ class SettingsViewModel @Inject constructor(
         .flatMapLatest { bookId ->
             if (bookId == null) flowOf(null) else bookRepository.getBookByIdFlow(bookId)
         }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+        .stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
     // --- Observable State from Repository ---
     val availableLanguages = ttsDelegate.availableLanguages
@@ -1320,7 +1320,7 @@ class SettingsViewModel @Inject constructor(
     val activeProfileIdFlow = settingsRepository.activeProfileIdFlow
     val allSettingsProfilesFlow = settingsRepository.getAllProfilesFlow().stateIn(
         scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5000),
+        started = SharingStarted.Eagerly,
         initialValue = emptyList()
     )
 

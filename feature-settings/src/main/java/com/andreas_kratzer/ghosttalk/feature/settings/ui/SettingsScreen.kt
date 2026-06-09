@@ -64,7 +64,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -938,13 +937,13 @@ fun SubmenuContent(
             VocalSwitchSettingsSection(viewModel, onNavigateToVocalTraining = onNavigateToVocalTraining)
         }
         SettingsSection.SECURITY -> {
-            val pin by viewModel.securityPin.collectAsState(null)
-            val timeout by viewModel.securityPinTimeoutMinutes.collectAsState(30L)
-            val reqDeletion by viewModel.isPinRequiredForDeletion.collectAsState(false)
-            val biometricEnabled by viewModel.isBiometricEnabled.collectAsState(false)
-            val reqEdit by viewModel.isSecurityRequiredForEdit.collectAsState(false)
-            val reqSettings by viewModel.isSecurityRequiredForSettings.collectAsState(false)
-            val reqAnalytics by viewModel.isSecurityRequiredForAnalytics.collectAsState(false)
+            val pin by viewModel.securityPin.collectAsState()
+            val timeout by viewModel.securityPinTimeoutMinutes.collectAsState()
+            val reqDeletion by viewModel.isPinRequiredForDeletion.collectAsState()
+            val biometricEnabled by viewModel.isBiometricEnabled.collectAsState()
+            val reqEdit by viewModel.isSecurityRequiredForEdit.collectAsState()
+            val reqSettings by viewModel.isSecurityRequiredForSettings.collectAsState()
+            val reqAnalytics by viewModel.isSecurityRequiredForAnalytics.collectAsState()
             
             SecuritySettingsSection(
                 securityPin = pin,

@@ -97,7 +97,7 @@ fun CloudSettingsSection(
             Spacer(modifier = Modifier.height(8.dp))
         }
 
-        val elevenLabsApiKey by viewModel.elevenLabsApiKey.collectAsState("")
+        val elevenLabsApiKey by viewModel.elevenLabsApiKey.collectAsState()
 
         if (!showSyncSettings) {
             PreferenceCategory(stringResource(R.string.settings_category_cloud_account)) {
@@ -705,7 +705,7 @@ fun CloudSettingsSection(
 fun ProfileSettingsSection(
     viewModel: SettingsViewModel
 ) {
-    val activeProfileId by viewModel.activeProfileIdFlow.collectAsState("profile-default")
+    val activeProfileId by viewModel.activeProfileIdFlow.collectAsState()
     val allProfiles by viewModel.allSettingsProfilesFlow.collectAsState()
     val showCreateProfileDialog = remember { mutableStateOf(false) }
     val newProfileName = remember { mutableStateOf("") }

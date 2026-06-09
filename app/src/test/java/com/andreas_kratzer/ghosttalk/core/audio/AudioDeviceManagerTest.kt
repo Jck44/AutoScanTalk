@@ -14,12 +14,14 @@ class AudioDeviceManagerTest {
 
     private val mockContext = mockk<Context>(relaxed = true)
     private val mockAudioManager = mockk<AudioManager>(relaxed = true)
+    private lateinit var tracker: AudioTopologyTracker
     private lateinit var audioDeviceManager: AudioDeviceManager
 
     @Before
     fun setup() {
         every { mockContext.getSystemService(Context.AUDIO_SERVICE) } returns mockAudioManager
-        audioDeviceManager = AudioDeviceManager(mockContext)
+        tracker = AudioTopologyTracker(mockContext)
+        audioDeviceManager = AudioDeviceManager(mockContext, tracker)
     }
 
     @Test
@@ -40,6 +42,7 @@ class AudioDeviceManagerTest {
         every { telephony.type } returns AudioDeviceInfo.TYPE_TELEPHONY
 
         every { mockAudioManager.getDevices(AudioManager.GET_DEVICES_OUTPUTS) } returns arrayOf(speaker, bluetooth, telephony)
+        tracker.updateTopology()
 
         val devices = audioDeviceManager.getAvailableOutputDevices()
 

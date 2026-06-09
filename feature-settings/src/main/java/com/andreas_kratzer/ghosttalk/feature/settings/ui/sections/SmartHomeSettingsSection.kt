@@ -33,12 +33,12 @@ fun SmartHomeSettingsSection(
 ) {
     val dimensions = LocalDimensions.current
     
-    val hueBridgeIp by viewModel.hueBridgeIp.collectAsState("")
-    val hueUsername by viewModel.hueUsername.collectAsState("")
-    val huePairingStatus by viewModel.huePairingStatus.collectAsState(null)
-    val pendingCertInfo by viewModel.pendingCertificateInfo.collectAsState(null)
-    val hueCachedDevices by viewModel.hueCachedDevices.collectAsState("")
-    val isUpdatingHueCache by viewModel.isUpdatingHueCache.collectAsState(false)
+    val hueBridgeIp by viewModel.hueBridgeIp.collectAsState()
+    val hueUsername by viewModel.hueUsername.collectAsState()
+    val huePairingStatus by viewModel.huePairingStatus.collectAsState()
+    val pendingCertInfo by viewModel.pendingCertificateInfo.collectAsState()
+    val hueCachedDevices by viewModel.hueCachedDevices.collectAsState()
+    val isUpdatingHueCache by viewModel.isUpdatingHueCache.collectAsState()
 
     val cachedCount = androidx.compose.runtime.remember(hueCachedDevices) {
         if (hueCachedDevices.isBlank()) 0 else {

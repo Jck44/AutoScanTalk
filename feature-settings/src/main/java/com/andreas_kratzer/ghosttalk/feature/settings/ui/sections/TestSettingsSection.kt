@@ -31,9 +31,9 @@ import com.andreas_kratzer.ghosttalk.feature.settings.ui.dialogs.AudioCacheDialo
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun TestSettingsSection(viewModel: SettingsViewModel, isGlobal: Boolean) {
-    val showTestButtons by viewModel.showTestButtons.collectAsState(false)
-    val showPageId by viewModel.showPageIdInLog.collectAsState(true)
-    val volumeKeysActivate by viewModel.volumeKeysActivate.collectAsState(false)
+    val showTestButtons by viewModel.showTestButtons.collectAsState()
+    val showPageId by viewModel.showPageIdInLog.collectAsState()
+    val volumeKeysActivate by viewModel.volumeKeysActivate.collectAsState()
     val dimensions = LocalDimensions.current
 
     FlowRow(

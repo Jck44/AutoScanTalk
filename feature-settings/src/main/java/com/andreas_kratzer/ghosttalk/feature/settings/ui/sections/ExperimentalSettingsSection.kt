@@ -22,7 +22,7 @@ fun ExperimentalSettingsSection(viewModel: SettingsViewModel) {
             numericOnly = true
         )
 
-        val backgroundLocationEnabled by viewModel.backgroundLocationEnabled.collectAsState(false)
+        val backgroundLocationEnabled by viewModel.backgroundLocationEnabled.collectAsState()
         val backgroundLocationInterval by viewModel.backgroundLocationInterval.collectAsState(1L)
 
         SettingsToggleItem(
@@ -50,7 +50,7 @@ fun ExperimentalSettingsSection(viewModel: SettingsViewModel) {
             )
         }
 
-        val backgroundWeatherEnabled by viewModel.backgroundWeatherEnabled.collectAsState(false)
+        val backgroundWeatherEnabled by viewModel.backgroundWeatherEnabled.collectAsState()
         val backgroundWeatherInterval by viewModel.backgroundWeatherInterval.collectAsState(6L)
 
         SettingsToggleItem(

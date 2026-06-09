@@ -46,13 +46,13 @@ import com.andreas_kratzer.ghosttalk.feature.settings.ui.SettingsViewModel
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun GenAiSettingsSection(viewModel: SettingsViewModel) {
-    val isEnabled by viewModel.isGeminiEnabled.collectAsState(false)
-    val geminiApiKey by viewModel.geminiApiKey.collectAsState("")
-    val useGeminiApiKey by viewModel.useGeminiApiKey.collectAsState(false)
+    val isEnabled by viewModel.isGeminiEnabled.collectAsState()
+    val geminiApiKey by viewModel.geminiApiKey.collectAsState()
+    val useGeminiApiKey by viewModel.useGeminiApiKey.collectAsState()
     val userEmail by viewModel.userEmail.collectAsState()
 
-    val smartEnabled by viewModel.isSmartPredictionEnabled.collectAsState(false)
-    val isVerified by viewModel.isGeminiVerified.collectAsState(false)
+    val smartEnabled by viewModel.isSmartPredictionEnabled.collectAsState()
+    val isVerified by viewModel.isGeminiVerified.collectAsState()
 
     val context = LocalContext.current
     val dimensions = LocalDimensions.current

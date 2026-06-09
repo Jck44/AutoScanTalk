@@ -80,7 +80,7 @@ class TtsRecordingHelper @Inject constructor(
     }
 
     // Manual doubles to avoid MockK
-    private class TestAudioDeviceManager(context: Context) : AudioDeviceManager(context) {
+    private class TestAudioDeviceManager(context: Context) : AudioDeviceManager(context, com.andreas_kratzer.ghosttalk.core.audio.AudioTopologyTracker(context)) {
         override fun getAvailableOutputDevices(): List<AudioOutputDevice> = emptyList()
         override fun getAudioDeviceInfo(address: String?) = null
         override fun getBuiltInSpeaker() = null
@@ -88,9 +88,9 @@ class TtsRecordingHelper @Inject constructor(
 
     private class TestRoutedAudioPlayer(
         context: Context, 
-        deviceManager: AudioDeviceManager, 
+        topologyTracker: com.andreas_kratzer.ghosttalk.core.audio.AudioTopologyTracker, 
         settings: AudioSettings
-    ) : RoutedAudioPlayer(context, deviceManager, settings, CoroutineScope(Dispatchers.Main)) {
+    ) : RoutedAudioPlayer(context, topologyTracker, settings, CoroutineScope(Dispatchers.Main)) {
         override fun playAudioFile(file: File, deviceAddress: String?, volumeMultiplier: Float, playbackSpeed: Float, onCompletion: (() -> Unit)?) {
             onCompletion?.invoke()
         }

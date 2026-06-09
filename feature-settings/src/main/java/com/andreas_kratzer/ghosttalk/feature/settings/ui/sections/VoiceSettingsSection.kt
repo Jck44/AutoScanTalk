@@ -39,17 +39,17 @@ import java.util.Locale
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun VoiceSettingsSection(viewModel: SettingsViewModel, isGlobal: Boolean) {
-    val selectedLanguage by viewModel.selectedLanguageTag.collectAsState("default")
+    val selectedLanguage by viewModel.selectedLanguageTag.collectAsState()
     val availableLanguages by viewModel.availableLanguages.collectAsState()
-    val selectedVoiceName by viewModel.selectedVoiceName.collectAsState(null)
+    val selectedVoiceName by viewModel.selectedVoiceName.collectAsState()
     val availableVoices by viewModel.availableVoices.collectAsState()
     val availableAudioDevices by viewModel.availableAudioDevices.collectAsState()
     val cachedAudioDevices by viewModel.cachedAudioDevices.collectAsState()
-    val selectedTtsAddress by viewModel.selectedTtsAudioDeviceAddress.collectAsState(null)
-    val selectedCuesAddress by viewModel.selectedCuesAudioDeviceAddress.collectAsState(null)
-    val blockVolumeKeys by viewModel.blockVolumeKeys.collectAsState(false)
-    val speakerVolume by viewModel.speakerVolume.collectAsState(100)
-    val headphoneVolume by viewModel.headphoneVolume.collectAsState(100)
+    val selectedTtsAddress by viewModel.selectedTtsAudioDeviceAddress.collectAsState()
+    val selectedCuesAddress by viewModel.selectedCuesAudioDeviceAddress.collectAsState()
+    val blockVolumeKeys by viewModel.blockVolumeKeys.collectAsState()
+    val speakerVolume by viewModel.speakerVolume.collectAsState()
+    val headphoneVolume by viewModel.headphoneVolume.collectAsState()
 
     var expandedLanguage by remember { mutableStateOf(false) }
     var expandedTtsDevice by remember { mutableStateOf(false) }
@@ -73,8 +73,8 @@ fun VoiceSettingsSection(viewModel: SettingsViewModel, isGlobal: Boolean) {
         maxItemsInEachRow = 2
     ) {
         if (!isGlobal) {
-            val ttsEngine by viewModel.ttsEngine.collectAsState("google")
-            val elevenLabsModel by viewModel.elevenLabsModel.collectAsState("eleven_multilingual_v2")
+            val ttsEngine by viewModel.ttsEngine.collectAsState()
+            val elevenLabsModel by viewModel.elevenLabsModel.collectAsState()
             
             PreferenceCategory(
                 title = stringResource(R.string.settings_category_voice),
@@ -123,8 +123,8 @@ fun VoiceSettingsSection(viewModel: SettingsViewModel, isGlobal: Boolean) {
                         options = modelOptions
                     )
 
-                    val stability by viewModel.elevenLabsStability.collectAsState(0.5f)
-                    val similarityBoost by viewModel.elevenLabsSimilarityBoost.collectAsState(0.75f)
+                    val stability by viewModel.elevenLabsStability.collectAsState()
+                    val similarityBoost by viewModel.elevenLabsSimilarityBoost.collectAsState()
 
                     SettingsSliderItem(
                         label = stringResource(R.string.elevenlabs_stability),
@@ -217,7 +217,7 @@ fun VoiceSettingsSection(viewModel: SettingsViewModel, isGlobal: Boolean) {
                     options = voiceOptions
                 )
 
-                val playbackSpeed by viewModel.ttsPlaybackSpeed.collectAsState(1.0f)
+                val playbackSpeed by viewModel.ttsPlaybackSpeed.collectAsState()
 
                 SettingsSliderItem(
                     label = stringResource(R.string.settings_tts_playback_speed),
@@ -249,7 +249,7 @@ fun VoiceSettingsSection(viewModel: SettingsViewModel, isGlobal: Boolean) {
         }
 
         if (isGlobal) {
-            val bluetoothDelay by viewModel.bluetoothDelay.collectAsState(1500L)
+            val bluetoothDelay by viewModel.bluetoothDelay.collectAsState()
             
             PreferenceCategory(
                 title = stringResource(R.string.settings_category_audio_hardware),
@@ -306,7 +306,7 @@ fun VoiceSettingsSection(viewModel: SettingsViewModel, isGlobal: Boolean) {
                 )
 
                 // Recording Audio Source Select
-                val recordingSource by viewModel.recordingAudioSource.collectAsState(MediaRecorder.AudioSource.VOICE_COMMUNICATION)
+                val recordingSource by viewModel.recordingAudioSource.collectAsState()
                 val recordingSourceOptions = listOf(
                     MediaRecorder.AudioSource.VOICE_RECOGNITION to R.string.settings_recording_source_voice_recognition,
                     MediaRecorder.AudioSource.VOICE_COMMUNICATION to R.string.settings_recording_source_voice_communication,

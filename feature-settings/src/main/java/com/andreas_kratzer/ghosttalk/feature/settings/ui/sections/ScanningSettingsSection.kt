@@ -24,12 +24,12 @@ fun ScanningSettingsSection(
     viewModel: SettingsViewModel,
     isGlobal: Boolean
 ) {
-    val autoStart by viewModel.autoStartScanning.collectAsState(true)
-    val scanDelay by viewModel.scanDelayMillis.collectAsState(1000L)
-    val resumeFromStart by viewModel.resumeScanningFromStart.collectAsState(true)
-    val scanPattern by viewModel.defaultScanPattern.collectAsState("linear")
-    val holdingTime by viewModel.holdingTimeMillis.collectAsState(0L)
-    val lateClickThreshold by viewModel.lateClickThresholdMillis.collectAsState(250L)
+    val autoStart by viewModel.autoStartScanning.collectAsState()
+    val scanDelay by viewModel.scanDelayMillis.collectAsState()
+    val resumeFromStart by viewModel.resumeScanningFromStart.collectAsState()
+    val scanPattern by viewModel.defaultScanPattern.collectAsState()
+    val holdingTime by viewModel.holdingTimeMillis.collectAsState()
+    val lateClickThreshold by viewModel.lateClickThresholdMillis.collectAsState()
 
     val dimensions = LocalDimensions.current
 
@@ -82,8 +82,8 @@ fun ScanningSettingsSection(
             SettingsToggleItem(stringResource(R.string.settings_restart_scan), resumeFromStart) { viewModel.setResumeScanningFromStart(it) }
 
             if (!isGlobal) {
-                val limitScanCycles by viewModel.limitScanCycles.collectAsState(false)
-                val scanCycleLimit by viewModel.scanCycleLimit.collectAsState(2)
+                val limitScanCycles by viewModel.limitScanCycles.collectAsState()
+                val scanCycleLimit by viewModel.scanCycleLimit.collectAsState()
 
                 SettingsToggleItem(
                     label = stringResource(R.string.settings_limit_scan_cycles),
@@ -106,7 +106,7 @@ fun ScanningSettingsSection(
             isCloudProfile = true,
             modifier = Modifier.weight(1f)
         ) {
-            val staticRowEnabled by viewModel.staticRowEnabled.collectAsState(false)
+            val staticRowEnabled by viewModel.staticRowEnabled.collectAsState()
 
             SettingsToggleItem(
                 label = stringResource(R.string.settings_show_static_row),
@@ -120,7 +120,7 @@ fun ScanningSettingsSection(
             isCloudProfile = true,
             modifier = Modifier.weight(1f)
         ) {
-            val switchKey by viewModel.switchActivationKey.collectAsState("Space")
+            val switchKey by viewModel.switchActivationKey.collectAsState()
             SettingsEditTextItem(
                 label = stringResource(R.string.settings_switch_key), 
                 value = switchKey,

@@ -58,6 +58,7 @@ class PageImportExportManager @Inject constructor(
     private val userModeSessionRepository: UserModeSessionRepository,
     private val vocalProfileRepository: VocalProfileRepository,
     private val deletedEntityDao: com.andreas_kratzer.ghosttalk.core.database.DeletedEntityDao,
+    private val zipArchiver: ZipArchiver,
     private val logger: Logger
 ) : PageImportExportProvider {
     private val TAG = "PageImportExportManager"
@@ -531,59 +532,40 @@ class PageImportExportManager @Inject constructor(
         includeTtsCache: Boolean,
         onProgress: (Float, String) -> Unit
     ) = withContext(Dispatchers.IO) {
-        ZipOutputStream(outputStream).use { zip ->
-            // 1. Write the backup.json (0-10%)
-            onProgress(0.05f, "Exporting database...")
-            val jsonContent = exportBookToJson(bookId)
-            zip.putNextEntry(ZipEntry("backup.json"))
-            zip.write(jsonContent.toByteArray(Charsets.UTF_8))
-            zip.closeEntry()
-
-            // 1.1 Write vocal_profiles.json
-            try {
-                val profiles = vocalProfileRepository.getAllProfilesFlow().first()
-                val profilesJson = json.encodeToString(profiles)
-                zip.putNextEntry(ZipEntry("vocal_profiles.json"))
-                zip.write(profilesJson.toByteArray(Charsets.UTF_8))
-                zip.closeEntry()
-                logger.d(TAG, "Exported ${profiles.size} vocal profiles to ZIP")
-            } catch (e: Exception) {
-                logger.e(TAG, "Failed to export vocal profiles to ZIP", e)
-            }
-
-            onProgress(0.1f, "Database exported.")
-
-            // 2. Gather all files to compress (10-100%)
-            val filesToCompress = mutableListOf<Pair<File, String>>()
-            
-            if (includeTtsCache) {
-                val cacheDir = File(context.filesDir, "elevenlabs")
-                if (cacheDir.exists() && cacheDir.isDirectory) {
-                    cacheDir.listFiles()?.filter { it.isFile && it.name.endsWith(".mp3") }?.forEach { file ->
-                        filesToCompress.add(file to "tts_cache/${file.name}")
-                    }
-                }
-            }
-            
-            val audioDir = File(context.filesDir, "audio_recordings")
-            if (audioDir.exists() && audioDir.isDirectory) {
-                audioDir.listFiles()?.filter { it.isFile && it.name.endsWith(".ogg") }?.forEach { file ->
-                    filesToCompress.add(file to "audio_recordings/${file.name}")
-                }
-            }
-            
-            val totalFiles = filesToCompress.size
-            filesToCompress.forEachIndexed { index, (file, entryPath) ->
-                val fileProgress = 0.1f + (index.toFloat() / totalFiles.coerceAtLeast(1)) * 0.9f
-                onProgress(fileProgress, "Compressing audio: ${file.name}")
-                zip.putNextEntry(ZipEntry(entryPath))
-                file.inputStream().use { input ->
-                    input.copyTo(zip)
-                }
-                zip.closeEntry()
-            }
-            onProgress(1f, "Backup complete.")
+        onProgress(0.05f, "Exporting database...")
+        val jsonContent = exportBookToJson(bookId)
+        val stringEntries = mutableMapOf<String, String>()
+        stringEntries["backup.json"] = jsonContent
+        
+        try {
+            val profiles = vocalProfileRepository.getAllProfilesFlow().first()
+            val profilesJson = json.encodeToString(profiles)
+            stringEntries["vocal_profiles.json"] = profilesJson
+            logger.d(TAG, "Exported ${profiles.size} vocal profiles to ZIP")
+        } catch (e: Exception) {
+            logger.e(TAG, "Failed to export vocal profiles to ZIP", e)
         }
+
+        onProgress(0.1f, "Database exported.")
+
+        val fileEntries = mutableListOf<Pair<File, String>>()
+        if (includeTtsCache) {
+            val cacheDir = File(context.filesDir, "elevenlabs")
+            if (cacheDir.exists() && cacheDir.isDirectory) {
+                cacheDir.listFiles()?.filter { it.isFile && it.name.endsWith(".mp3") }?.forEach { file ->
+                    fileEntries.add(file to "tts_cache/${file.name}")
+                }
+            }
+        }
+        
+        val audioDir = File(context.filesDir, "audio_recordings")
+        if (audioDir.exists() && audioDir.isDirectory) {
+            audioDir.listFiles()?.filter { it.isFile && it.name.endsWith(".ogg") }?.forEach { file ->
+                fileEntries.add(file to "audio_recordings/${file.name}")
+            }
+        }
+
+        zipArchiver.zip(outputStream, stringEntries, fileEntries, onProgress)
     }
 
     override suspend fun importFromZip(
@@ -595,77 +577,53 @@ class PageImportExportManager @Inject constructor(
     ): Result<Int> = withContext(Dispatchers.IO) {
         try {
             var jsonContent: String? = null
-            val zipIn = ZipInputStream(inputStream)
+            var vocalProfilesJson: String? = null
             
             val ttsCacheDir = File(context.filesDir, "elevenlabs")
             if (!ttsCacheDir.exists()) ttsCacheDir.mkdirs()
 
             val audioDir = File(context.filesDir, "audio_recordings")
             if (!audioDir.exists()) audioDir.mkdirs()
-            
-            var vocalProfilesJson: String? = null
-            var entry = zipIn.nextEntry
-            while (entry != null) {
-                onProgress(0.1f, "Extracting: ${entry.name}")
-                
-                if (entry.name == "backup.json") {
-                    val bytes = zipIn.readBytes()
-                    jsonContent = String(bytes, Charsets.UTF_8)
-                } else if (entry.name == "vocal_profiles.json") {
-                    val bytes = zipIn.readBytes()
-                    vocalProfilesJson = String(bytes, Charsets.UTF_8)
-                } else if (entry.name == "statistics.json") {
-                    val bytes = zipIn.readBytes()
-                    val statsJson = String(bytes, Charsets.UTF_8)
-                    val statsMode = settingsRepository.syncModeStats
-                    if (statsMode == "RESTORE_ONLY") {
-                        importStatisticsFromJson(statsJson, bookId)
-                    }
-                } else if (entry.name.startsWith("tts_cache/")) {
-                    val fileName = entry.name.substringAfter("tts_cache/")
-                    if (fileName.isNotEmpty()) {
-                        val targetFile = File(ttsCacheDir, fileName)
-                        if (!isSafeFile(ttsCacheDir, targetFile)) {
-                            throw SecurityException("Ungültiger Pfad in Zip-Eintrag (Directory Traversal Versuch): ${entry.name}")
-                        }
-                        val shouldExtract = !targetFile.exists() || (entry.time > targetFile.lastModified())
-                        if (shouldExtract) {
-                            FileOutputStream(targetFile).use { out ->
-                                zipIn.copyTo(out)
-                            }
-                            if (entry.time != -1L) {
-                                targetFile.setLastModified(entry.time)
-                            }
-                        }
-                    }
-                } else if (entry.name.startsWith("audio_recordings/")) {
-                    val fileName = entry.name.substringAfter("audio_recordings/")
-                    if (fileName.isNotEmpty()) {
-                        val targetFile = File(audioDir, fileName)
-                        if (!isSafeFile(audioDir, targetFile)) {
-                            throw SecurityException("Ungültiger Pfad in Zip-Eintrag (Directory Traversal Versuch): ${entry.name}")
-                        }
-                        val shouldExtract = !targetFile.exists() || (entry.time > targetFile.lastModified())
-                        if (shouldExtract) {
-                            FileOutputStream(targetFile).use { out ->
-                                zipIn.copyTo(out)
-                            }
-                            if (entry.time != -1L) {
-                                targetFile.setLastModified(entry.time)
+
+            val targetDirs = mapOf(
+                "tts_cache/" to ttsCacheDir,
+                "audio_recordings/" to audioDir
+            )
+
+            val handler = object : ZipArchiver.UnzipHandler {
+                override fun handleStringEntry(name: String, content: String) {
+                    if (name == "backup.json") {
+                        jsonContent = content
+                    } else if (name == "vocal_profiles.json") {
+                        vocalProfilesJson = content
+                    } else if (name == "statistics.json") {
+                        val statsMode = settingsRepository.syncModeStats
+                        if (statsMode == "RESTORE_ONLY") {
+                            kotlinx.coroutines.runBlocking {
+                                importStatisticsFromJson(content, bookId)
                             }
                         }
                     }
                 }
-                zipIn.closeEntry()
-                entry = zipIn.nextEntry
+
+                override fun handleFileEntry(name: String, time: Long, inputStream: InputStream, targetFile: File) {
+                    FileOutputStream(targetFile).use { out ->
+                        inputStream.copyTo(out)
+                    }
+                    if (time != -1L) {
+                        targetFile.setLastModified(time)
+                    }
+                }
             }
+
+            zipArchiver.unzip(inputStream, targetDirs, handler, onProgress)
 
             if (jsonContent == null) {
                 return@withContext Result.failure(Exception("Keine backup.json im ZIP gefunden."))
             }
 
             onProgress(0.9f, "Importing data...")
-            val result = importFromJson(jsonContent, bookId, regenerateIds, restoreSyncSettings)
+            val result = importFromJson(jsonContent!!, bookId, regenerateIds, restoreSyncSettings)
             
             vocalProfilesJson?.let {
                 try {
@@ -699,59 +657,45 @@ class PageImportExportManager @Inject constructor(
         outputStream: OutputStream,
         onProgress: (Float, String) -> Unit
     ) = withContext(Dispatchers.IO) {
-        ZipOutputStream(outputStream).use { zip ->
-            val cacheDir = File(context.filesDir, "elevenlabs")
-            val files = if (cacheDir.exists() && cacheDir.isDirectory) {
-                cacheDir.listFiles()?.filter { it.isFile && it.name.endsWith(".mp3") } ?: emptyArray<File>().toList()
-            } else {
-                emptyList()
-            }
-
-            val totalFiles = files.size
-            logger.d(TAG, "Exporting TTS cache: $totalFiles files")
-            files.forEachIndexed { index, file ->
-                val progress = index.toFloat() / totalFiles.coerceAtLeast(1)
-                onProgress(progress, "Compressing: ${file.name}")
-                zip.putNextEntry(ZipEntry("tts_cache/${file.name}"))
-                file.inputStream().use { input -> input.copyTo(zip) }
-                zip.closeEntry()
-            }
-            onProgress(1f, "TTS cache export complete.")
+        val cacheDir = File(context.filesDir, "elevenlabs")
+        val files = if (cacheDir.exists() && cacheDir.isDirectory) {
+            cacheDir.listFiles()?.filter { it.isFile && it.name.endsWith(".mp3") } ?: emptyArray<File>().toList()
+        } else {
+            emptyList()
         }
+
+        val fileEntries = files.map { it to "tts_cache/${it.name}" }
+        logger.d(TAG, "Exporting TTS cache: ${files.size} files")
+        zipArchiver.zip(outputStream, emptyMap(), fileEntries, onProgress)
     }
 
     override suspend fun importTtsCacheFromZip(
         inputStream: InputStream,
         onProgress: (Float, String) -> Unit
     ) = withContext(Dispatchers.IO) {
-        val zipIn = ZipInputStream(inputStream)
         val ttsCacheDir = File(context.filesDir, "elevenlabs")
         if (!ttsCacheDir.exists()) ttsCacheDir.mkdirs()
 
+        val targetDirs = mapOf("tts_cache/" to ttsCacheDir)
         var count = 0
-        var entry = zipIn.nextEntry
-        while (entry != null) {
-            if (entry.name.startsWith("tts_cache/")) {
-                val fileName = entry.name.substringAfter("tts_cache/")
-                if (fileName.isNotEmpty()) {
-                    val targetFile = File(ttsCacheDir, fileName)
-                    if (!isSafeFile(ttsCacheDir, targetFile)) {
-                        throw SecurityException("Ungültiger Pfad in Zip-Eintrag (Directory Traversal Versuch): ${entry.name}")
-                    }
-                    val shouldExtract = !targetFile.exists() || (entry.time > targetFile.lastModified())
-                    if (shouldExtract) {
-                        onProgress(0.5f, "Extracting: $fileName")
-                        FileOutputStream(targetFile).use { out -> zipIn.copyTo(out) }
-                        if (entry.time != -1L) {
-                            targetFile.setLastModified(entry.time)
-                        }
-                        count++
-                    }
+
+        val handler = object : ZipArchiver.UnzipHandler {
+            override fun handleStringEntry(name: String, content: String) {}
+
+            override fun handleFileEntry(name: String, time: Long, inputStream: InputStream, targetFile: File) {
+                val fileName = name.substringAfter("tts_cache/")
+                onProgress(0.5f, "Extracting: $fileName")
+                FileOutputStream(targetFile).use { out ->
+                    inputStream.copyTo(out)
                 }
+                if (time != -1L) {
+                    targetFile.setLastModified(time)
+                }
+                count++
             }
-            zipIn.closeEntry()
-            entry = zipIn.nextEntry
         }
+
+        zipArchiver.unzip(inputStream, targetDirs, handler, onProgress)
         logger.d(TAG, "Imported $count TTS cache files")
         onProgress(1f, "TTS cache import complete.")
     }
@@ -763,7 +707,6 @@ class PageImportExportManager @Inject constructor(
     ): Result<String> = withContext(Dispatchers.IO) {
         try {
             var jsonContent: String? = null
-            val zipIn = ZipInputStream(inputStream)
             
             val ttsCacheDir = File(context.filesDir, "elevenlabs")
             if (!ttsCacheDir.exists()) ttsCacheDir.mkdirs()
@@ -771,57 +714,36 @@ class PageImportExportManager @Inject constructor(
             val audioDir = File(context.filesDir, "audio_recordings")
             if (!audioDir.exists()) audioDir.mkdirs()
 
-            var entry = zipIn.nextEntry
-            while (entry != null) {
-                onProgress(0.1f, "Extracting: ${entry.name}")
-                if (entry.name == "backup.json") {
-                    val bytes = zipIn.readBytes()
-                    jsonContent = String(bytes, Charsets.UTF_8)
-                } else if (entry.name.startsWith("tts_cache/")) {
-                    val fileName = entry.name.substringAfter("tts_cache/")
-                    if (fileName.isNotEmpty()) {
-                        val targetFile = File(ttsCacheDir, fileName)
-                        if (!isSafeFile(ttsCacheDir, targetFile)) {
-                            throw SecurityException("Ungültiger Pfad in Zip-Eintrag (Directory Traversal Versuch): ${entry.name}")
-                        }
-                        val shouldExtract = !targetFile.exists() || (entry.time > targetFile.lastModified())
-                        if (shouldExtract) {
-                            FileOutputStream(targetFile).use { out ->
-                                zipIn.copyTo(out)
-                            }
-                            if (entry.time != -1L) {
-                                targetFile.setLastModified(entry.time)
-                            }
-                        }
-                    }
-                } else if (entry.name.startsWith("audio_recordings/")) {
-                    val fileName = entry.name.substringAfter("audio_recordings/")
-                    if (fileName.isNotEmpty()) {
-                        val targetFile = File(audioDir, fileName)
-                        if (!isSafeFile(audioDir, targetFile)) {
-                            throw SecurityException("Ungültiger Pfad in Zip-Eintrag (Directory Traversal Versuch): ${entry.name}")
-                        }
-                        val shouldExtract = !targetFile.exists() || (entry.time > targetFile.lastModified())
-                        if (shouldExtract) {
-                            FileOutputStream(targetFile).use { out ->
-                                zipIn.copyTo(out)
-                            }
-                            if (entry.time != -1L) {
-                                targetFile.setLastModified(entry.time)
-                            }
-                        }
+            val targetDirs = mapOf(
+                "tts_cache/" to ttsCacheDir,
+                "audio_recordings/" to audioDir
+            )
+
+            val handler = object : ZipArchiver.UnzipHandler {
+                override fun handleStringEntry(name: String, content: String) {
+                    if (name == "backup.json") {
+                        jsonContent = content
                     }
                 }
-                zipIn.closeEntry()
-                entry = zipIn.nextEntry
+
+                override fun handleFileEntry(name: String, time: Long, inputStream: InputStream, targetFile: File) {
+                    FileOutputStream(targetFile).use { out ->
+                        inputStream.copyTo(out)
+                    }
+                    if (time != -1L) {
+                        targetFile.setLastModified(time)
+                    }
+                }
             }
+
+            zipArchiver.unzip(inputStream, targetDirs, handler, onProgress)
 
             if (jsonContent == null) {
                 return@withContext Result.failure(Exception("Keine backup.json im ZIP gefunden."))
             }
 
             onProgress(0.9f, "Importing book...")
-            val result = importCloudBackup(jsonContent, cloudFileId)
+            val result = importCloudBackup(jsonContent!!, cloudFileId)
             onProgress(1.0f, "Import complete.")
             result
         } catch (e: Exception) {
@@ -965,29 +887,25 @@ class PageImportExportManager @Inject constructor(
         bookId: String,
         outputStream: OutputStream
     ) = withContext(Dispatchers.IO) {
-        ZipOutputStream(outputStream).use { zip ->
-            val statsJson = exportStatisticsToJson(bookId)
-            zip.putNextEntry(ZipEntry("statistics.json"))
-            zip.write(statsJson.toByteArray(Charsets.UTF_8))
-            zip.closeEntry()
-        }
+        val statsJson = exportStatisticsToJson(bookId)
+        zipArchiver.zip(outputStream, mapOf("statistics.json" to statsJson), emptyList())
     }
 
     override suspend fun importStatisticsFromZip(
         bookId: String,
         inputStream: InputStream
     ) = withContext(Dispatchers.IO) {
-        val zipIn = ZipInputStream(inputStream)
-        var entry = zipIn.nextEntry
-        while (entry != null) {
-            if (entry.name == "statistics.json") {
-                val bytes = zipIn.readBytes()
-                val statsJson = String(bytes, Charsets.UTF_8)
-                importStatisticsFromJson(statsJson, bookId)
-                break
+        val handler = object : ZipArchiver.UnzipHandler {
+            override fun handleStringEntry(name: String, content: String) {
+                if (name == "statistics.json") {
+                    kotlinx.coroutines.runBlocking {
+                        importStatisticsFromJson(content, bookId)
+                    }
+                }
             }
-            entry = zipIn.nextEntry
+            override fun handleFileEntry(name: String, time: Long, inputStream: InputStream, targetFile: File) {}
         }
+        zipArchiver.unzip(inputStream, emptyMap(), handler)
     }
 
     override suspend fun getStatisticsLastModified(bookId: String): Long = withContext(Dispatchers.IO) {
@@ -1001,59 +919,45 @@ class PageImportExportManager @Inject constructor(
         outputStream: OutputStream,
         onProgress: (Float, String) -> Unit
     ) = withContext(Dispatchers.IO) {
-        ZipOutputStream(outputStream).use { zip ->
-            val audioDir = File(context.filesDir, "audio_recordings")
-            val files = if (audioDir.exists() && audioDir.isDirectory) {
-                audioDir.listFiles()?.filter { it.isFile && it.name.endsWith(".ogg") } ?: emptyList()
-            } else {
-                emptyList()
-            }
-
-            val totalFiles = files.size
-            logger.d(TAG, "Exporting audio recordings: $totalFiles files")
-            files.forEachIndexed { index, file ->
-                val progress = index.toFloat() / totalFiles.coerceAtLeast(1)
-                onProgress(progress, "Compressing: ${file.name}")
-                zip.putNextEntry(ZipEntry("audio_recordings/${file.name}"))
-                file.inputStream().use { input -> input.copyTo(zip) }
-                zip.closeEntry()
-            }
-            onProgress(1f, "Audio recordings export complete.")
+        val audioDir = File(context.filesDir, "audio_recordings")
+        val files = if (audioDir.exists() && audioDir.isDirectory) {
+            audioDir.listFiles()?.filter { it.isFile && it.name.endsWith(".ogg") } ?: emptyList()
+        } else {
+            emptyList()
         }
+
+        val fileEntries = files.map { it to "audio_recordings/${it.name}" }
+        logger.d(TAG, "Exporting audio recordings: ${files.size} files")
+        zipArchiver.zip(outputStream, emptyMap(), fileEntries, onProgress)
     }
 
     override suspend fun importAudioRecordingsFromZip(
         inputStream: InputStream,
         onProgress: (Float, String) -> Unit
     ) = withContext(Dispatchers.IO) {
-        val zipIn = ZipInputStream(inputStream)
         val audioDir = File(context.filesDir, "audio_recordings")
         if (!audioDir.exists()) audioDir.mkdirs()
 
+        val targetDirs = mapOf("audio_recordings/" to audioDir)
         var count = 0
-        var entry = zipIn.nextEntry
-        while (entry != null) {
-            if (entry.name.startsWith("audio_recordings/")) {
-                val fileName = entry.name.substringAfter("audio_recordings/")
-                if (fileName.isNotEmpty()) {
-                    val targetFile = File(audioDir, fileName)
-                    if (!isSafeFile(audioDir, targetFile)) {
-                        throw SecurityException("Ungültiger Pfad in Zip-Eintrag (Directory Traversal Versuch): ${entry.name}")
-                    }
-                    val shouldExtract = !targetFile.exists() || (entry.time > targetFile.lastModified())
-                    if (shouldExtract) {
-                        onProgress(0.5f, "Extracting: $fileName")
-                        FileOutputStream(targetFile).use { out -> zipIn.copyTo(out) }
-                        if (entry.time != -1L) {
-                            targetFile.setLastModified(entry.time)
-                        }
-                        count++
-                    }
+
+        val handler = object : ZipArchiver.UnzipHandler {
+            override fun handleStringEntry(name: String, content: String) {}
+
+            override fun handleFileEntry(name: String, time: Long, inputStream: InputStream, targetFile: File) {
+                val fileName = name.substringAfter("audio_recordings/")
+                onProgress(0.5f, "Extracting: $fileName")
+                FileOutputStream(targetFile).use { out ->
+                    inputStream.copyTo(out)
                 }
+                if (time != -1L) {
+                    targetFile.setLastModified(time)
+                }
+                count++
             }
-            zipIn.closeEntry()
-            entry = zipIn.nextEntry
         }
+
+        zipArchiver.unzip(inputStream, targetDirs, handler, onProgress)
         logger.d(TAG, "Imported $count audio recording files")
         onProgress(1f, "Audio recordings import complete.")
     }

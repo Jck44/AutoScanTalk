@@ -48,11 +48,11 @@ fun GeneralSettingsSection(
     viewModel: SettingsViewModel,
     isGlobal: Boolean
 ) {
-    val theme by viewModel.themeMode.collectAsState("SYSTEM")
-    val persistLogs by viewModel.persistActionLogs.collectAsState(false)
-    val screenBehavior by viewModel.userModeScreenBehavior.collectAsState("NORMAL")
-    val startupBehavior by viewModel.startupBehavior.collectAsState("BOOK_SELECTION")
-    val forceKeyboard by viewModel.forceSoftKeyboard.collectAsState(false)
+    val theme by viewModel.themeMode.collectAsState()
+    val persistLogs by viewModel.persistActionLogs.collectAsState()
+    val screenBehavior by viewModel.userModeScreenBehavior.collectAsState()
+    val startupBehavior by viewModel.startupBehavior.collectAsState()
+    val forceKeyboard by viewModel.forceSoftKeyboard.collectAsState()
 
     val dimensions = LocalDimensions.current
     val highlightedKey by viewModel.highlightedSettingKey.collectAsState()
@@ -72,7 +72,7 @@ fun GeneralSettingsSection(
                 modifier = Modifier.weight(1f)
             ) {
                 // App Sprache
-                val selectedAppLanguage by viewModel.selectedAppLanguage.collectAsState("default")
+                val selectedAppLanguage by viewModel.selectedAppLanguage.collectAsState()
                 val appLanguageLabel = stringResource(R.string.settings_app_language)
                 val systemDefault = stringResource(R.string.settings_system_default)
                 
@@ -194,7 +194,7 @@ fun GeneralSettingsSection(
                 modifier = Modifier.weight(1f)
             ) {
                 // Combined Screen Behavior
-                val keepScreenOn by viewModel.keepScreenOnUserMode.collectAsState(true)
+                val keepScreenOn by viewModel.keepScreenOnUserMode.collectAsState()
 
                 val behaviorLabel = when {
                     !keepScreenOn -> stringResource(R.string.settings_system_default)
@@ -238,10 +238,10 @@ fun BookSettingsSection(
     onNavigateBack: () -> Unit = {},
     onBookDeleted: () -> Unit = onNavigateBack
 ) {
-    val defaultStartPageId by viewModel.defaultStartPageId.collectAsState(null)
+    val defaultStartPageId by viewModel.defaultStartPageId.collectAsState()
     val allPages by viewModel.allPages.collectAsState()
     val activeBook by viewModel.activeBook.collectAsState()
-    val forceKeyboard by viewModel.forceSoftKeyboard.collectAsState(false)
+    val forceKeyboard by viewModel.forceSoftKeyboard.collectAsState()
 
     val showDeleteConfirm = remember { mutableStateOf(false) }
     val showDeleteSecurity = remember { mutableStateOf(false) }

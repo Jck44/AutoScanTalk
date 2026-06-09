@@ -56,8 +56,9 @@ open class TextToSpeechHelper @Inject constructor(
         scope.launch {
             combine(
                 settingsRepository.googleTtsLanguageFlow,
-                settingsRepository.googleTtsVoiceNameFlow
-            ) { lang, voice -> lang to voice }
+                settingsRepository.googleTtsVoiceNameFlow,
+                settingsRepository.appLanguageFlow
+            ) { lang, voice, _ -> lang to voice }
                 .collect { (lang, voice) ->
                     Log.d("TextToSpeechHelper", "Google TTS Settings updated: lang=$lang, voice=$voice")
                     androidTtsProvider.get().setLanguageAndVoice(lang, voice)
@@ -68,8 +69,9 @@ open class TextToSpeechHelper @Inject constructor(
         scope.launch {
             combine(
                 settingsRepository.elevenLabsTtsLanguageFlow,
-                settingsRepository.elevenLabsTtsVoiceNameFlow
-            ) { lang, voice -> lang to voice }
+                settingsRepository.elevenLabsTtsVoiceNameFlow,
+                settingsRepository.appLanguageFlow
+            ) { lang, voice, _ -> lang to voice }
                 .collect { (lang, voice) ->
                     Log.d("TextToSpeechHelper", "ElevenLabs TTS Settings updated: lang=$lang, voice=$voice")
                     elevenLabsTtsProvider.get().setLanguageAndVoice(lang, voice)

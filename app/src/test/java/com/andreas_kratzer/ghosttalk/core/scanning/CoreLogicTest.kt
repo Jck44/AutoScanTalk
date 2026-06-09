@@ -67,7 +67,9 @@ class CoreLogicTest {
         val engine = ScannerEngine(
             scope = this,
             featureGuard = featureGuard,
-            feedbackProvider = feedbackProvider
+            feedbackProvider = feedbackProvider,
+            stateManager = ScanStateManager(),
+            scanTimer = ScanTimer()
         )
         
         // Mock buttons: 2 rows, 2 columns. 4 active configs

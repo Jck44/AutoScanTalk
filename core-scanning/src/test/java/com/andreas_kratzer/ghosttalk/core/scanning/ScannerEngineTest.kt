@@ -53,7 +53,9 @@ class ScannerEngineTest {
         val engine = ScannerEngine(
             scope = scope,
             featureGuard = featureGuard,
-            feedbackProvider = feedbackProvider
+            feedbackProvider = feedbackProvider,
+            stateManager = ScanStateManager(),
+            scanTimer = ScanTimer()
         )
         engine.scanDelayMillis = delayMs
         return engine

@@ -32,26 +32,40 @@ class ControlDeviceIntegrationTest {
 
     @Test
     fun `test ControlDeviceButtonAction dispatches to handler`() = runTest {
+        val ttsProxyLazy = object : dagger.Lazy<ControlDeviceTtsProxy> {
+            override fun get() = mockk<ControlDeviceTtsProxy>(relaxed = true)
+        }
+        val settingsMock = mockk<ControlDeviceSettings>(relaxed = true)
+        val smsExecutor = SmsExecutor(application, actionCoordinator, settingsMock, ttsProxyLazy)
+        val notificationExecutor = NotificationExecutor(application, actionCoordinator, settingsMock, ttsProxyLazy)
+        val deviceStatusExecutor = DeviceStatusExecutor(application, actionCoordinator, settingsMock, ttsProxyLazy)
+        val calendarExecutor = CalendarExecutor(application, actionCoordinator, settingsMock, ttsProxyLazy)
+        val volumeExecutor = VolumeExecutor(application, actionCoordinator, settingsMock)
+        val systemActionExecutor = SystemActionExecutor(
+            context = application,
+            actionLogger = actionCoordinator,
+            settings = settingsMock,
+            scanControllerLazy = object : dagger.Lazy<ScannerController> {
+                override fun get() = mockk<ScannerController>(relaxed = true)
+            },
+            callActionProxy = object : dagger.Lazy<CallActionProxy> {
+                override fun get() = mockk<CallActionProxy>(relaxed = true)
+            },
+            syncActionProxy = object : dagger.Lazy<SyncActionProxy> {
+                override fun get() = mockk<SyncActionProxy>(relaxed = true)
+            }
+        )
+
         val handlers = setOf(
             ControlDeviceActionHandler(
                 context = application,
-                settings = mockk(relaxed = true),
-                ttsProxyLazy = object : dagger.Lazy<ControlDeviceTtsProxy> {
-                    override fun get() = mockk<ControlDeviceTtsProxy>(relaxed = true)
-                },
-                scanControllerLazy = object : dagger.Lazy<ScannerController> {
-                    override fun get() = mockk<ScannerController>(relaxed = true)
-                },
-                callActionProxy = object : dagger.Lazy<CallActionProxy> {
-                    override fun get() = mockk<CallActionProxy>(relaxed = true)
-                },
                 actionLogger = actionCoordinator,
-                updateManagerLazy = object : dagger.Lazy<com.andreas_kratzer.ghosttalk.core.UpdateManager> {
-                    override fun get() = mockk<com.andreas_kratzer.ghosttalk.core.UpdateManager>(relaxed = true)
-                },
-                syncActionProxy = object : dagger.Lazy<SyncActionProxy> {
-                    override fun get() = mockk<SyncActionProxy>(relaxed = true)
-                }
+                smsExecutor = smsExecutor,
+                notificationExecutor = notificationExecutor,
+                deviceStatusExecutor = deviceStatusExecutor,
+                calendarExecutor = calendarExecutor,
+                volumeExecutor = volumeExecutor,
+                systemActionExecutor = systemActionExecutor
             )
         )
 

@@ -8,11 +8,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -21,13 +19,13 @@ import javax.inject.Singleton
 class ScannerEngine @Inject constructor(
     @param:ApplicationScope private val scope: CoroutineScope,
     private val featureGuard: FeatureGuardProxy,
-    private val feedbackProvider: ScannerFeedbackProvider
+    private val feedbackProvider: ScannerFeedbackProvider,
+    private val stateManager: ScanStateManager,
+    private val scanTimer: ScanTimer
 ) {
-    private val _focusedButtonIndex = MutableStateFlow<Int?>(null)
-    val focusedButtonIndex: StateFlow<Int?> = _focusedButtonIndex.asStateFlow()
-
-    private val _focusedRowIndex = MutableStateFlow<Int?>(null)
-    val focusedRowIndex: StateFlow<Int?> = _focusedRowIndex.asStateFlow()
+    val focusedButtonIndex: StateFlow<Int?> = stateManager.focusedButtonIndex
+    val focusedRowIndex: StateFlow<Int?> = stateManager.focusedRowIndex
+    val isScanning: StateFlow<Boolean> = stateManager.isScanning
 
     private var currentButtonConfigs: List<ButtonConfig?> = emptyList()
     private var currentRows: Int = 4
@@ -42,13 +40,15 @@ class ScannerEngine @Inject constructor(
     private var currentStaticRowPattern: String = "linear"
 
     private var scanJob: Job? = null
-    private val _isScanning = MutableStateFlow(false)
-    val isScanning: StateFlow<Boolean> = _isScanning.asStateFlow()
 
     private val _onCycleCompleted = MutableSharedFlow<Unit>()
     val onCycleCompleted: SharedFlow<Unit> = _onCycleCompleted.asSharedFlow()
     
-    var scanDelayMillis: Long = 1000L
+    var scanDelayMillis: Long
+        get() = scanTimer.scanDelayMillis
+        set(value) {
+            scanTimer.scanDelayMillis = value
+        }
 
     sealed interface ScanStep {
         data class Button(val index: Int, val config: ButtonConfig) : ScanStep
@@ -69,7 +69,7 @@ class ScannerEngine @Inject constructor(
         if (scanJob?.isActive == true &&
             currentPageId == pageId &&
             currentButtonConfigs == buttonConfigs &&
-            (currentStartIndex == startIndex || _focusedButtonIndex.value == startIndex || _focusedRowIndex.value == startIndex) &&
+            (currentStartIndex == startIndex || focusedButtonIndex.value == startIndex || focusedRowIndex.value == startIndex) &&
             currentPattern == pattern &&
             currentRows == rows &&
             currentColumns == columns &&
@@ -92,7 +92,7 @@ class ScannerEngine @Inject constructor(
         currentStaticRowPage = staticRowPage
         currentStaticRowPattern = staticRowPattern
 
-        _isScanning.value = true
+        stateManager.setScanning(true)
 
         val steps = mutableListOf<ScanStep>()
 
@@ -156,8 +156,7 @@ class ScannerEngine @Inject constructor(
         val job = scope.launch {
             try {
                 if (steps.isEmpty()) {
-                    _focusedButtonIndex.value = null
-                    _focusedRowIndex.value = null
+                    stateManager.clear()
                     return@launch
                 }
 
@@ -199,27 +198,27 @@ class ScannerEngine @Inject constructor(
                         // Execute current step focus & speak
                         when (step) {
                             is ScanStep.Button -> {
-                                _focusedRowIndex.value = null
-                                _focusedButtonIndex.value = step.index
+                                stateManager.setFocusedRowIndex(null)
+                                stateManager.setFocusedButtonIndex(step.index)
                                 val cue = step.config.auditoryCue
                                 val cueText = (cue as? com.andreas_kratzer.ghosttalk.core.model.AuditoryCue.TextToSpeechCue)?.text?.takeIf { it.isNotBlank() } ?: step.config.label
                                 handleSpeakCue(cueText)
                             }
                             is ScanStep.Row -> {
-                                _focusedButtonIndex.value = null
-                                _focusedRowIndex.value = step.rowIndex
+                                stateManager.setFocusedButtonIndex(null)
+                                stateManager.setFocusedRowIndex(step.rowIndex)
                                 handleSpeakCue(step.name)
                             }
                         }
 
-                        delay(scanDelayMillis)
+                        scanTimer.delayTick()
                     }
                     _onCycleCompleted.emit(Unit)
                     currentStepPos = 0
                 }
             } finally {
                 if (scanJob === this@launch) {
-                    _isScanning.value = false
+                    stateManager.setScanning(false)
                 }
             }
         }
@@ -235,7 +234,7 @@ class ScannerEngine @Inject constructor(
     }
 
     fun selectCurrentRow() {
-        val currentRowIndex = _focusedRowIndex.value ?: return
+        val currentRowIndex = focusedRowIndex.value ?: return
         val staticRowPage = currentStaticRowPage
         
         val rowButtons = mutableListOf<Pair<Int, ButtonConfig>>()
@@ -272,7 +271,7 @@ class ScannerEngine @Inject constructor(
         scanJob?.cancel()
         scanJob = null
         
-        _isScanning.value = true
+        stateManager.setScanning(true)
         val job = scope.launch {
             try {
                 delay(100)
@@ -280,7 +279,7 @@ class ScannerEngine @Inject constructor(
                 while (true) {
                     for (i in rowButtons.indices) {
                         val (globalIndex, config) = rowButtons[i]
-                        _focusedButtonIndex.value = globalIndex
+                        stateManager.setFocusedButtonIndex(globalIndex)
 
                         // Prefetch next button cue
                         val nextIndex = if (i + 1 < rowButtons.size) i + 1 else 0
@@ -296,13 +295,13 @@ class ScannerEngine @Inject constructor(
                         val cueText = (cue as? com.andreas_kratzer.ghosttalk.core.model.AuditoryCue.TextToSpeechCue)?.text?.takeIf { it.isNotBlank() } ?: config.label
                         handleSpeakCue(cueText)
                         
-                        delay(scanDelayMillis)
+                        scanTimer.delayTick()
                     }
                     _onCycleCompleted.emit(Unit)
                 }
             } finally {
                 if (scanJob === this@launch) {
-                    _isScanning.value = false
+                    stateManager.setScanning(false)
                 }
             }
         }
@@ -312,28 +311,26 @@ class ScannerEngine @Inject constructor(
     fun pauseScanning() {
         scanJob?.cancel()
         scanJob = null
-        _isScanning.value = false
+        stateManager.setScanning(false)
     }
 
     fun stopScanning() {
         scanJob?.cancel()
         scanJob = null
-        _isScanning.value = false
-        _focusedButtonIndex.value = null
-        _focusedRowIndex.value = null
+        stateManager.setScanning(false)
+        stateManager.clear()
     }
 
     fun setFocusedIndex(index: Int?) {
-        _focusedButtonIndex.value = index
+        stateManager.setFocusedButtonIndex(index)
     }
 
     fun setFocusedRowIndex(index: Int?) {
-        _focusedRowIndex.value = index
+        stateManager.setFocusedRowIndex(index)
     }
     
     fun clear() {
         scanJob?.cancel()
-        _focusedButtonIndex.value = null
-        _focusedRowIndex.value = null
+        stateManager.clear()
     }
 }

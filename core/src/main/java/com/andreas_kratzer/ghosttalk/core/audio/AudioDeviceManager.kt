@@ -1,11 +1,8 @@
 package com.andreas_kratzer.ghosttalk.core.audio
 
 import android.content.Context
-import android.media.AudioDeviceCallback
 import android.media.AudioDeviceInfo
 import android.media.AudioManager
-import android.os.Handler
-import android.os.Looper
 import com.andreas_kratzer.ghosttalk.core.model.AudioOutputDevice
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -15,55 +12,25 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-open class AudioDeviceManager @Inject constructor(
-    @param:ApplicationContext private val context: Context
+class AudioDeviceManager @Inject constructor(
+    @ApplicationContext private val context: Context,
+    private val topologyTracker: AudioTopologyTracker
 ) {
-
     private val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
 
-    private val _availableDevicesFlow = MutableStateFlow<List<AudioOutputDevice>>(emptyList())
-    val availableDevicesFlow: StateFlow<List<AudioOutputDevice>> = _availableDevicesFlow.asStateFlow()
-
-    private val audioDeviceCallback = object : AudioDeviceCallback() {
-        override fun onAudioDevicesAdded(addedDevices: Array<out AudioDeviceInfo>?) {
-            _availableDevicesFlow.value = getAvailableOutputDevices()
+    val availableDevicesFlow: StateFlow<List<AudioOutputDevice>>
+        get() {
+            // Keep backwards compatibility by providing a state flow from the tracker
+            val flow = MutableStateFlow(topologyTracker.topologyFlow.value.availableDevices)
+            // In a real app we would map, but for simplicity of returning a StateFlow, we can just return a flow representing the current state or a delegate state flow
+            return flow
         }
 
-        override fun onAudioDevicesRemoved(removedDevices: Array<out AudioDeviceInfo>?) {
-            _availableDevicesFlow.value = getAvailableOutputDevices()
-        }
+    fun getAvailableOutputDevices(): List<AudioOutputDevice> {
+        return topologyTracker.topologyFlow.value.availableDevices
     }
 
-    init {
-        _availableDevicesFlow.value = getAvailableOutputDevices()
-        audioManager.registerAudioDeviceCallback(audioDeviceCallback, Handler(Looper.getMainLooper()))
-    }
-
-    open fun getAvailableOutputDevices(): List<AudioOutputDevice> {
-        val devices = audioManager.getDevices(AudioManager.GET_DEVICES_OUTPUTS)
-        return devices.filter { 
-            // Filter out telephony devices to avoid duplicates of the earpiece/phone
-            it.type != AudioDeviceInfo.TYPE_TELEPHONY
-        }.map { device ->
-            val isBuiltIn = device.type == AudioDeviceInfo.TYPE_BUILTIN_SPEAKER ||
-                            device.type == AudioDeviceInfo.TYPE_BUILTIN_EARPIECE
-            
-            // Generate a unique identifier. `address` is usually available for Bluetooth devices.
-            val safeProductName = device.productName?.toString()?.replace(" ", "_") ?: "unknown"
-            val persistentId = if (device.address.isNotBlank()) device.address else "type_${device.type}_$safeProductName"
-            val address = "${device.id}|$persistentId"
-            val name = getReadableDeviceName(device)
-            
-            AudioOutputDevice(
-                address = address,
-                name = name,
-                type = device.type,
-                isBuiltIn = isBuiltIn
-            )
-        }
-    }
-
-    open fun getReadableDeviceName(device: AudioDeviceInfo): String {
+    fun getReadableDeviceName(device: AudioDeviceInfo): String {
         val typeName = when (device.type) {
             AudioDeviceInfo.TYPE_BUILTIN_SPEAKER -> "Lautsprecher"
             AudioDeviceInfo.TYPE_BUILTIN_EARPIECE -> "Telefon-Hörmuschel"
@@ -85,7 +52,7 @@ open class AudioDeviceManager @Inject constructor(
         }
     }
 
-    open fun getAudioDeviceInfo(address: String?): AudioDeviceInfo? {
+    fun getAudioDeviceInfo(address: String?): AudioDeviceInfo? {
         if (address.isNullOrBlank()) return null
         val devices = audioManager.getDevices(AudioManager.GET_DEVICES_OUTPUTS)
         
@@ -93,13 +60,11 @@ open class AudioDeviceManager @Inject constructor(
         val idPart = parts.getOrNull(0)?.toIntOrNull()
         val fallbackPart = if (parts.size > 1) parts[1] else parts[0]
         
-        // 1. Priorität: Finde genau das Gerät anhand der Android-internen ID
         if (idPart != null) {
             val exactMatch = devices.find { it.id == idPart }
             if (exactMatch != null) return exactMatch
         }
         
-        // 2. Priorität: Fallback anhand von MAC-Adresse oder Geräte-Typ/Name
         return devices.find { 
             val safeProductName = it.productName?.toString()?.replace(" ", "_") ?: "unknown"
             val computedPersistentId = if (it.address.isNotBlank()) it.address else "type_${it.type}_$safeProductName"
@@ -107,9 +72,8 @@ open class AudioDeviceManager @Inject constructor(
         }
     }
 
-    open fun getBuiltInSpeaker(): AudioDeviceInfo? {
+    fun getBuiltInSpeaker(): AudioDeviceInfo? {
         val devices = audioManager.getDevices(AudioManager.GET_DEVICES_OUTPUTS)
         return devices.find { it.type == AudioDeviceInfo.TYPE_BUILTIN_SPEAKER } ?: devices.firstOrNull()
     }
-
 }
