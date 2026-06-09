@@ -28,7 +28,6 @@ import com.andreas_kratzer.ghosttalk.core.model.Page
 import com.andreas_kratzer.ghosttalk.core.model.PageTemplate
 import com.andreas_kratzer.ghosttalk.ui.pages.ButtonConfigDialog
 import com.andreas_kratzer.ghosttalk.ui.pages.MoveHiddenPromptDialog
-import com.andreas_kratzer.ghosttalk.ui.pages.PageViewModel
 import com.andreas_kratzer.ghosttalk.ui.pages.TargetPageSelectionDialog
 import com.andreas_kratzer.ghosttalk.ui.util.GridEditorActions
 import kotlinx.coroutines.CoroutineScope
@@ -63,9 +62,9 @@ fun EditorDialogs(
     val moveSuccessText = stringResource(R.string.button_move_success)
     val duplicateSuccessText = stringResource(R.string.button_duplicate_success)
 
-    val spotifyPlaylists by (actions as? PageViewModel)?.spotifyPlaylists?.collectAsState(emptyList()) ?: remember { mutableStateOf(emptyList()) }
-    val isSpotifyLoadingPlaylists by (actions as? PageViewModel)?.isLoadingPlaylists?.collectAsState(false) ?: remember { mutableStateOf(false) }
-    val spotifyUserDisplayName by (actions as? PageViewModel)?.spotifyUserDisplayName?.collectAsState(null) ?: remember { mutableStateOf(null) }
+    val spotifyPlaylists by actions.spotifyPlaylists.collectAsState(emptyList())
+    val isSpotifyLoadingPlaylists by actions.isLoadingPlaylists.collectAsState(false)
+    val spotifyUserDisplayName by actions.spotifyUserDisplayName.collectAsState(null)
 
     val showSaveTemplateDialogConfig = remember { mutableStateOf<ButtonConfig?>(null) }
     var newTemplateName by remember { mutableStateOf("") }
@@ -86,9 +85,9 @@ fun EditorDialogs(
         )
     }
 
-    val buttonHistoryList by (actions as? PageViewModel)?.buttonHistory?.collectAsState(emptyList()) ?: remember { mutableStateOf(emptyList()) }
-    val pageMetricsMap by (actions as? PageViewModel)?.pageMetrics?.collectAsState(emptyMap()) ?: remember { mutableStateOf(emptyMap()) }
-    val shortcutRecommendations by (actions as? PageViewModel)?.shortcutRecommendations?.collectAsState(emptyList()) ?: remember { mutableStateOf(emptyList()) }
+    val buttonHistoryList by actions.buttonHistory.collectAsState(emptyList())
+    val pageMetricsMap by actions.pageMetrics.collectAsState(emptyMap())
+    val shortcutRecommendations by actions.shortcutRecommendations.collectAsState(emptyList())
 
     if (showDialog && selectedButtonIndex != null) {
         val buttonConfig = item.buttonConfigs.getOrNull(selectedButtonIndex) ?: ButtonConfig()
@@ -100,7 +99,7 @@ fun EditorDialogs(
             buttonConfig = buttonConfig,
             pages = availablePages,
             templates = templates,
-            defaultStartPageId = (actions as? PageViewModel)?.settingsRepository?.defaultStartPageId,
+            defaultStartPageId = actions.settingsRepository.defaultStartPageId,
             onDismiss = onDismissButtonDialog,
             onSave = { newConfig ->
                 actions.updateButtonConfig(item.id, selectedButtonIndex, newConfig)
@@ -154,10 +153,10 @@ fun EditorDialogs(
             isTextCached = { actions.isTextCached(it) },
             onPrefetchText = { text, onComplete -> actions.prefetchText(text, onComplete) },
             philipsHueManager = philipsHueManager,
-            hueBridgeIp = (actions as? PageViewModel)?.settingsRepository?.hueBridgeIp ?: "",
-            hueUsername = (actions as? PageViewModel)?.settingsRepository?.hueUsername ?: "",
-            hueCachedDevices = (actions as? PageViewModel)?.settingsRepository?.hueCachedDevices ?: "",
-            onRefreshHueCache = { silent, callback -> (actions as? PageViewModel)?.refreshHueDevicesCache(silent, callback) },
+            hueBridgeIp = actions.settingsRepository.hueBridgeIp ?: "",
+            hueUsername = actions.settingsRepository.hueUsername ?: "",
+            hueCachedDevices = actions.settingsRepository.hueCachedDevices ?: "",
+            onRefreshHueCache = { silent, callback -> actions.refreshHueDevicesCache(silent, callback) },
             featureGuard = featureGuard,
             onPlayTts = { text, onDone -> actions.speakTtsPreview(text, onDone) },
             onStopTts = { actions.stopTtsPreview() },
@@ -165,9 +164,9 @@ fun EditorDialogs(
             spotifyPlaylists = spotifyPlaylists,
             isLoadingSpotifyPlaylists = isSpotifyLoadingPlaylists,
             spotifyUserDisplayName = spotifyUserDisplayName,
-            onConnectSpotify = { (actions as? PageViewModel)?.connectSpotify(context) },
-            onDisconnectSpotify = { (actions as? PageViewModel)?.disconnectSpotify() },
-            onLoadSpotifyPlaylists = { (actions as? PageViewModel)?.loadSpotifyPlaylists() },
+            onConnectSpotify = { actions.connectSpotify(context) },
+            onDisconnectSpotify = { actions.disconnectSpotify() },
+            onLoadSpotifyPlaylists = { actions.loadSpotifyPlaylists() },
             onSaveAsTemplate = { config ->
                 onDismissButtonDialog()
                 newTemplateName = config.label
@@ -176,9 +175,9 @@ fun EditorDialogs(
             metrics = buttonMetrics,
             historyEvents = buttonHistory,
             recommendations = buttonRecommendations,
-            loadMarkovSuccessors = { (actions as? PageViewModel)?.getMarkovSuccessors(it) ?: emptyList() },
+            loadMarkovSuccessors = { actions.getMarkovSuccessors(it) },
             onApplyRecommendation = { recommendation ->
-                (actions as? PageViewModel)?.applyShortcutRecommendation(recommendation) { success, msg ->
+                actions.applyShortcutRecommendation(recommendation) { success, msg ->
                     if (success) {
                         onDismissButtonDialog()
                     }
@@ -343,7 +342,7 @@ fun EditorDialogs(
                     onClick = {
                         val config = showSaveTemplateDialogConfig.value
                         if (config != null && newTemplateName.isNotBlank()) {
-                            (actions as? PageViewModel)?.saveButtonAsTemplate(newTemplateName, config)
+                            actions.saveButtonAsTemplate(newTemplateName, config)
                             android.widget.Toast.makeText(context, "Vorlage gespeichert", android.widget.Toast.LENGTH_SHORT).show()
                         }
                         showSaveTemplateDialogConfig.value = null

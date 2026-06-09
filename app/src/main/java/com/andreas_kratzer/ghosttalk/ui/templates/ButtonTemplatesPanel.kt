@@ -55,16 +55,16 @@ import com.andreas_kratzer.ghosttalk.ui.components.CategoryHeaderDropTarget
 import com.andreas_kratzer.ghosttalk.ui.components.TemplateDropTarget
 import com.andreas_kratzer.ghosttalk.ui.components.dragSource
 import com.andreas_kratzer.ghosttalk.ui.components.dropTarget
-import com.andreas_kratzer.ghosttalk.ui.pages.PageViewModel
+import com.andreas_kratzer.ghosttalk.ui.util.GridEditorActions
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ButtonTemplatesPanel(
-    viewModel: PageViewModel,
+    actions: GridEditorActions,
     modifier: Modifier = Modifier,
     onEditTemplate: (ButtonTemplate) -> Unit = {}
 ) {
-    val templates by viewModel.buttonTemplates.collectAsState()
+    val templates by actions.buttonTemplates.collectAsState()
     val dimensions = LocalDimensions.current
     var searchQuery by remember { mutableStateOf("") }
     var expandedCategories by rememberSaveable {
@@ -215,7 +215,7 @@ fun ButtonTemplatesPanel(
                                         template = item,
                                         onEditTemplate = onEditTemplate,
                                         onDelete = {
-                                            viewModel.deleteButtonTemplate(item)
+                                             actions.deleteButtonTemplate(item)
                                         }
                                     )
                                 }

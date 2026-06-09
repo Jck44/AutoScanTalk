@@ -61,7 +61,7 @@ import javax.inject.Inject
 class PageViewModel @Inject constructor(
     application: Application,
     private val savedStateHandle: SavedStateHandle,
-    val settingsRepository: SettingsRepository,
+    override val settingsRepository: SettingsRepository,
     private val bookRepository: com.andreas_kratzer.ghosttalk.core.data.BookRepository,
     private val ttsHelper: TextToSpeechHelper,
     val featureGuard: FeatureGuard,
@@ -78,7 +78,7 @@ class PageViewModel @Inject constructor(
     private val geminiUseCase: GeminiUseCase,
     private val buttonTemplateRepository: ButtonTemplateRepository,
     val systemCallManager: com.andreas_kratzer.ghosttalk.core.call.SystemCallManager,
-    val philipsHueManager: PhilipsHueManager,
+    override val philipsHueManager: PhilipsHueManager,
     private val spotifyManager: SpotifyManager,
     private val buttonUsageRepository: com.andreas_kratzer.ghosttalk.core.data.ButtonUsageRepository,
     private val efficiencyAnalyzer: com.andreas_kratzer.ghosttalk.core.data.impl.analytics.EfficiencyAnalyzer,
@@ -117,15 +117,15 @@ class PageViewModel @Inject constructor(
     val templates = pageManagementDelegate.templates
     val activeTargetPageIds = pageManagementDelegate.activeTargetPageIds
 
-    val buttonTemplates: StateFlow<List<ButtonTemplate>> = buttonTemplateRepository.getTemplates()
+    override val buttonTemplates: StateFlow<List<ButtonTemplate>> = buttonTemplateRepository.getTemplates()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    val buttonHistory = buttonUsageRepository.buttonHistory
+    override val buttonHistory = buttonUsageRepository.buttonHistory
 
     private val _isCalculatingRecommendations = MutableStateFlow(false)
     val isCalculatingRecommendations: StateFlow<Boolean> = _isCalculatingRecommendations.asStateFlow()
 
-    val shortcutRecommendations: StateFlow<List<com.andreas_kratzer.ghosttalk.core.data.impl.analytics.PathAnalyzer.ShortcutRecommendation>> = combine(
+    override val shortcutRecommendations: StateFlow<List<com.andreas_kratzer.ghosttalk.core.data.impl.analytics.PathAnalyzer.ShortcutRecommendation>> = combine(
         buttonHistory,
         unfilteredPages,
         activeBookId
@@ -146,7 +146,7 @@ class PageViewModel @Inject constructor(
     .flowOn(Dispatchers.Default)
     .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    fun applyShortcutRecommendation(
+    override fun applyShortcutRecommendation(
         recommendation: com.andreas_kratzer.ghosttalk.core.data.impl.analytics.PathAnalyzer.ShortcutRecommendation,
         onResult: (Boolean, String) -> Unit
     ) {
@@ -187,7 +187,7 @@ class PageViewModel @Inject constructor(
         }
     }
 
-    fun saveButtonAsTemplate(name: String, config: ButtonConfig) {
+    override fun saveButtonAsTemplate(name: String, config: ButtonConfig) {
         viewModelScope.launch {
             buttonTemplateRepository.saveTemplate(
                 ButtonTemplate(
@@ -200,19 +200,19 @@ class PageViewModel @Inject constructor(
         }
     }
 
-    fun deleteButtonTemplate(template: ButtonTemplate) {
+    override fun deleteButtonTemplate(template: ButtonTemplate) {
         viewModelScope.launch {
             buttonTemplateRepository.deleteTemplate(template)
         }
     }
 
-    fun updateButtonTemplate(template: ButtonTemplate) {
+    override fun updateButtonTemplate(template: ButtonTemplate) {
         viewModelScope.launch {
             buttonTemplateRepository.saveTemplate(template)
         }
     }
 
-    fun updateButtonTemplatesOrder(templates: List<ButtonTemplate>) {
+    override fun updateButtonTemplatesOrder(templates: List<ButtonTemplate>) {
         viewModelScope.launch {
             buttonTemplateRepository.updateTemplateOrder(templates)
         }
@@ -234,13 +234,13 @@ class PageViewModel @Inject constructor(
     val defaultScanPattern = settingsRepository.defaultScanPatternFlow
     val showTestButtons = settingsRepository.showTestButtonsFlow
 
-    val spotifyUserDisplayName = settingsRepository.spotifyUserDisplayNameFlow
+    override val spotifyUserDisplayName = settingsRepository.spotifyUserDisplayNameFlow
     
     private val _spotifyPlaylists = MutableStateFlow<List<SpotifyPlaylist>>(emptyList())
-    val spotifyPlaylists: StateFlow<List<SpotifyPlaylist>> = _spotifyPlaylists.asStateFlow()
+    override val spotifyPlaylists: StateFlow<List<SpotifyPlaylist>> = _spotifyPlaylists.asStateFlow()
     
     private val _isLoadingPlaylists = MutableStateFlow(false)
-    val isLoadingPlaylists: StateFlow<Boolean> = _isLoadingPlaylists.asStateFlow()
+    override val isLoadingPlaylists: StateFlow<Boolean> = _isLoadingPlaylists.asStateFlow()
 
     val staticRowPage: StateFlow<Page?> = combine(
         activeBookId,
@@ -281,7 +281,7 @@ class PageViewModel @Inject constructor(
     .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
     private val _isEditPreviewActive = MutableStateFlow(false)
-    val isEditPreviewActive = _isEditPreviewActive.asStateFlow()
+    override val isEditPreviewActive = _isEditPreviewActive.asStateFlow()
 
     fun toggleEditPreviewActive() {
         _isEditPreviewActive.value = !_isEditPreviewActive.value
@@ -292,7 +292,7 @@ class PageViewModel @Inject constructor(
         userMode || editPreview
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), isUserModeActive.value || isEditPreviewActive.value)
 
-    val resolvedPage: StateFlow<Page?> = combine(
+    override val resolvedPage: StateFlow<Page?> = combine(
         currentPage,
         isPreviewOrUserMode,
         smartPredictions,
@@ -311,14 +311,14 @@ class PageViewModel @Inject constructor(
 
     // --- Caregiver Visual Analytics Overlay States ---
     private val _isAnalyticsOverlayEnabled = MutableStateFlow(false)
-    val isAnalyticsOverlayEnabled = _isAnalyticsOverlayEnabled.asStateFlow()
+    override val isAnalyticsOverlayEnabled = _isAnalyticsOverlayEnabled.asStateFlow()
 
     fun toggleAnalyticsOverlay() {
         _isAnalyticsOverlayEnabled.value = !_isAnalyticsOverlayEnabled.value
         Log.d("PageViewModel", "toggleAnalyticsOverlay: enabled = ${_isAnalyticsOverlayEnabled.value}")
     }
 
-    val pageMetrics: StateFlow<Map<String, com.andreas_kratzer.ghosttalk.core.model.ButtonEffortMetrics>> = combine(
+    override val pageMetrics: StateFlow<Map<String, com.andreas_kratzer.ghosttalk.core.model.ButtonEffortMetrics>> = combine(
         resolvedPage,
         activeBookId,
         buttonHistory
@@ -363,7 +363,7 @@ class PageViewModel @Inject constructor(
     .flowOn(Dispatchers.Default)
     .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
 
-    suspend fun getMarkovSuccessors(buttonId: String): List<Pair<String, Int>> {
+    override suspend fun getMarkovSuccessors(buttonId: String): List<Pair<String, Int>> {
         val bookId = activeBookId.value ?: return emptyList()
         return buttonUsageRepository.getMarkovSuccessors(bookId, buttonId)
     }
@@ -941,7 +941,7 @@ class PageViewModel @Inject constructor(
         ttsHelper.stopAll()
     }
 
-    fun refreshHueDevicesCache(silentOnFailure: Boolean = false, onResult: ((Boolean) -> Unit)? = null) {
+    override fun refreshHueDevicesCache(silentOnFailure: Boolean, onResult: ((Boolean) -> Unit)?) {
         val ip = settingsRepository.hueBridgeIp
         val username = settingsRepository.hueUsername
         if (ip.isBlank() || username.isBlank()) {
@@ -976,20 +976,20 @@ class PageViewModel @Inject constructor(
         }
     }
 
-    fun connectSpotify(ctx: android.content.Context) {
+    override fun connectSpotify(context: android.content.Context) {
         val authUrl = spotifyManager.getAuthorizationUrl()
         val intent = Intent(Intent.ACTION_VIEW, authUrl.toUri()).apply {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         }
-        ctx.startActivity(intent)
+        context.startActivity(intent)
     }
 
-    fun disconnectSpotify() {
+    override fun disconnectSpotify() {
         spotifyManager.disconnect()
         _spotifyPlaylists.value = emptyList()
     }
 
-    fun loadSpotifyPlaylists() {
+    override fun loadSpotifyPlaylists() {
         viewModelScope.launch {
             if (settingsRepository.spotifyAccessToken.isNullOrBlank()) {
                 _spotifyPlaylists.value = emptyList()

@@ -61,6 +61,44 @@ interface GridEditorActions {
     fun speakTtsPreview(text: String, onDone: () -> Unit = {}) {}
     fun stopTtsPreview() {}
     fun isTtsElevenLabs(): Boolean = false
+
+    // Decoupling PageViewModel from UI Components
+    val buttonTemplates: StateFlow<List<com.andreas_kratzer.ghosttalk.core.model.ButtonTemplate>>
+        get() = kotlinx.coroutines.flow.MutableStateFlow(emptyList())
+    val spotifyPlaylists: StateFlow<List<com.andreas_kratzer.ghosttalk.core.cloud.SpotifyPlaylist>>
+        get() = kotlinx.coroutines.flow.MutableStateFlow(emptyList())
+    val isLoadingPlaylists: StateFlow<Boolean>
+        get() = kotlinx.coroutines.flow.MutableStateFlow(false)
+    val spotifyUserDisplayName: kotlinx.coroutines.flow.Flow<String?>
+        get() = kotlinx.coroutines.flow.flowOf(null)
+    val buttonHistory: kotlinx.coroutines.flow.Flow<List<com.andreas_kratzer.ghosttalk.core.data.ButtonUsageRepository.ButtonUsageEvent>>
+        get() = kotlinx.coroutines.flow.flowOf(emptyList())
+    val shortcutRecommendations: StateFlow<List<com.andreas_kratzer.ghosttalk.core.data.impl.analytics.PathAnalyzer.ShortcutRecommendation>>
+        get() = kotlinx.coroutines.flow.MutableStateFlow(emptyList())
+    val pageMetrics: StateFlow<Map<String, com.andreas_kratzer.ghosttalk.core.model.ButtonEffortMetrics>>
+        get() = kotlinx.coroutines.flow.MutableStateFlow(emptyMap())
+    val isAnalyticsOverlayEnabled: StateFlow<Boolean>
+        get() = kotlinx.coroutines.flow.MutableStateFlow(false)
+    val isEditPreviewActive: StateFlow<Boolean>
+        get() = kotlinx.coroutines.flow.MutableStateFlow(false)
+    val resolvedPage: StateFlow<com.andreas_kratzer.ghosttalk.core.model.Page?>
+        get() = kotlinx.coroutines.flow.MutableStateFlow(null)
+    val philipsHueManager: com.andreas_kratzer.ghosttalk.core.cloud.PhilipsHueManager? get() = null
+    val settingsRepository: com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
+
+    fun updateButtonTemplate(template: com.andreas_kratzer.ghosttalk.core.model.ButtonTemplate) {}
+    fun deleteButtonTemplate(template: com.andreas_kratzer.ghosttalk.core.model.ButtonTemplate) {}
+    fun updateButtonTemplatesOrder(templates: List<com.andreas_kratzer.ghosttalk.core.model.ButtonTemplate>) {}
+    fun refreshHueDevicesCache(silentOnFailure: Boolean = false, onResult: ((Boolean) -> Unit)? = null) {}
+    fun connectSpotify(context: android.content.Context) {}
+    fun disconnectSpotify() {}
+    fun loadSpotifyPlaylists() {}
+    fun saveButtonAsTemplate(name: String, config: ButtonConfig) {}
+    suspend fun getMarkovSuccessors(buttonId: String): List<Pair<String, Int>> = emptyList()
+    fun applyShortcutRecommendation(
+        recommendation: com.andreas_kratzer.ghosttalk.core.data.impl.analytics.PathAnalyzer.ShortcutRecommendation,
+        onResult: (Boolean, String) -> Unit
+    ) {}
 }
 
 suspend fun generateSuggestButtonLabelPrompt(config: ButtonConfig, pageNameResolver: suspend (String) -> String?): String {

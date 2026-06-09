@@ -22,11 +22,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
+import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.core.model.Page
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
 import com.andreas_kratzer.ghosttalk.core.util.GridUtils
 import com.andreas_kratzer.ghosttalk.ui.pages.GridButton
-import com.andreas_kratzer.ghosttalk.ui.pages.PageViewModel
 
 @Composable
 fun ButtonGrid(
@@ -34,7 +34,8 @@ fun ButtonGrid(
     focusedButtonIndex: Int?,
     focusedRowIndex: Int?,
     isScanning: Boolean,
-    pageViewModel: PageViewModel,
+    isButtonVisible: (ButtonConfig) -> Boolean,
+    onButtonClick: (Int) -> Unit,
     staticRowPage: Page? = null
 ) {
     val dimensions = LocalDimensions.current
@@ -136,14 +137,14 @@ fun ButtonGrid(
                             val globalIndex = GridUtils.getGlobalIndex(0, c)
                             val buttonConfig = staticRowPage.buttonConfigs.getOrNull(globalIndex)
                             val isFocused = focusedButtonIndex == globalIndex
-                            val isVisible = buttonConfig != null && pageViewModel.featureGuard.isButtonVisible(buttonConfig)
+                            val isVisible = buttonConfig != null && isButtonVisible(buttonConfig)
                             if (buttonConfig != null && buttonConfig.isActive && isVisible) {
                                 GridButton(
                                     buttonConfig = buttonConfig,
                                     isFocused = isFocused,
                                     isRowFocused = isRowFocused,
                                     isEditorMode = false,
-                                    onClick = { pageViewModel.activateButtonAtIndex(globalIndex) },
+                                    onClick = { onButtonClick(globalIndex) },
                                     modifier = Modifier.weight(1f).fillMaxHeight()
                                 )
                             } else {
@@ -199,7 +200,7 @@ fun ButtonGrid(
 
                         val isFocused = focusedButtonIndex == (shiftOffset + globalIndex)
 
-                        val isVisible = buttonConfig != null && pageViewModel.featureGuard.isButtonVisible(buttonConfig)
+                        val isVisible = buttonConfig != null && isButtonVisible(buttonConfig)
 
                         if (buttonConfig != null && buttonConfig.isActive && isVisible) {
                             GridButton(
@@ -207,7 +208,7 @@ fun ButtonGrid(
                                 isFocused = isFocused,
                                 isRowFocused = isRowFocused,
                                 isEditorMode = false,
-                                onClick = { pageViewModel.activateButtonAtIndex(shiftOffset + globalIndex) },
+                                onClick = { onButtonClick(shiftOffset + globalIndex) },
                                 modifier = Modifier.weight(1f).fillMaxHeight()
                             )
                         } else {

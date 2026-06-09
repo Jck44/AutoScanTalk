@@ -62,7 +62,6 @@ import com.andreas_kratzer.ghosttalk.core.model.PageTemplate
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalCurrentPageId
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalIsUserModeActive
-import com.andreas_kratzer.ghosttalk.ui.pages.PageViewModel
 import com.andreas_kratzer.ghosttalk.ui.templates.ButtonTemplatesPanel
 import com.andreas_kratzer.ghosttalk.ui.util.GridEditorActions
 import kotlinx.coroutines.launch
@@ -84,8 +83,7 @@ fun GridEditorContent(
     bookDefaultScanPattern: String?,
     paddingValues: PaddingValues,
     onEditPage: ((String, String?) -> Unit)? = null,
-    initialButtonId: String? = null,
-    pageViewModel: PageViewModel? = null
+    initialButtonId: String? = null
 ) {
     CompositionLocalProvider(
         LocalCurrentPageId provides item.id,
@@ -132,16 +130,16 @@ fun GridEditorContent(
         var showSaveTemplateDialogConfig by remember { mutableStateOf<ButtonConfig?>(null) }
         var newTemplateName by remember { mutableStateOf("") }
         var editingTemplateId by rememberSaveable { mutableStateOf<String?>(null) }
-        val buttonTemplates by pageViewModel?.buttonTemplates?.collectAsState(initial = emptyList()) ?: remember { mutableStateOf(emptyList()) }
-        val spotifyPlaylists by pageViewModel?.spotifyPlaylists?.collectAsState(emptyList()) ?: remember { mutableStateOf(emptyList()) }
-        val isSpotifyLoadingPlaylists by pageViewModel?.isLoadingPlaylists?.collectAsState(false) ?: remember { mutableStateOf(false) }
-        val spotifyUserDisplayName by pageViewModel?.spotifyUserDisplayName?.collectAsState(null) ?: remember { mutableStateOf(null) }
-        val pageMetricsMap by pageViewModel?.pageMetrics?.collectAsState(emptyMap()) ?: remember { mutableStateOf(emptyMap()) }
-        val isAnalyticsOverlayEnabled by pageViewModel?.isAnalyticsOverlayEnabled?.collectAsState(false) ?: remember { mutableStateOf(false) }
+        val buttonTemplates by actions.buttonTemplates.collectAsState(initial = emptyList())
+        val spotifyPlaylists by actions.spotifyPlaylists.collectAsState(emptyList())
+        val isSpotifyLoadingPlaylists by actions.isLoadingPlaylists.collectAsState(false)
+        val spotifyUserDisplayName by actions.spotifyUserDisplayName.collectAsState(null)
+        val pageMetricsMap by actions.pageMetrics.collectAsState(emptyMap())
+        val isAnalyticsOverlayEnabled by actions.isAnalyticsOverlayEnabled.collectAsState(false)
         val pageMetrics = if (isAnalyticsOverlayEnabled) pageMetricsMap else emptyMap()
 
-        val isEditPreviewActive by pageViewModel?.isEditPreviewActive?.collectAsState(false) ?: remember { mutableStateOf(false) }
-        val resolvedPage by pageViewModel?.resolvedPage?.collectAsState(null) ?: remember { mutableStateOf(null) }
+        val isEditPreviewActive by actions.isEditPreviewActive.collectAsState(false)
+        val resolvedPage by actions.resolvedPage.collectAsState(null)
         val pageToShow = if (isEditPreviewActive) (resolvedPage ?: item) else item
 
         val editingTemplate = remember(editingTemplateId, buttonTemplates) {
@@ -199,53 +197,12 @@ fun GridEditorContent(
                             }
                         }
                         is TemplateDropTarget -> {
-                            if (pageViewModel != null) {
-                                val allTemplates = pageViewModel.buttonTemplates.value
-                                val fromItem = draggedItem
-                                val toItem = target.template
-                                if (fromItem.id != toItem.id) {
-                                    val fromCategory = ActionCategoryRegistry.getGroupForAction(fromItem.buttonConfig.buttonAction)
-                                    val toCategory = ActionCategoryRegistry.getGroupForAction(toItem.buttonConfig.buttonAction)
-                                    
-                                    if (fromCategory == toCategory) {
-                                        val categoryTemplates = allTemplates
-                                            .filter { ActionCategoryRegistry.getGroupForAction(it.buttonConfig.buttonAction) == fromCategory }
-                                            .sortedBy { it.orderIndex }
-                                            .toMutableList()
-                                            
-                                        val fromIdxInCat = categoryTemplates.indexOfFirst { it.id == fromItem.id }
-                                        val toIdxInCat = categoryTemplates.indexOfFirst { it.id == toItem.id }
-                                        
-                                        if (fromIdxInCat != -1 && toIdxInCat != -1) {
-                                            categoryTemplates.removeAt(fromIdxInCat)
-                                            categoryTemplates.add(toIdxInCat, fromItem)
-                                            
-                                            val grouped = allTemplates.groupBy {
-                                                ActionCategoryRegistry.getGroupForAction(it.buttonConfig.buttonAction)
-                                            }
-                                            
-                                            val newGlobalList = mutableListOf<ButtonTemplate>()
-                                            ActionCategoryRegistry.ALL_GROUPS.forEach { cat ->
-                                                val itemsInCat = if (cat == fromCategory) {
-                                                    categoryTemplates
-                                                } else {
-                                                    grouped[cat]?.sortedBy { it.orderIndex } ?: emptyList()
-                                                }
-                                                newGlobalList.addAll(itemsInCat)
-                                            }
-                                            
-                                            pageViewModel.updateButtonTemplatesOrder(newGlobalList)
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        is CategoryHeaderDropTarget -> {
-                            if (pageViewModel != null) {
-                                val allTemplates = pageViewModel.buttonTemplates.value
-                                val fromItem = draggedItem
+                            val allTemplates = actions.buttonTemplates.value
+                            val fromItem = draggedItem
+                            val toItem = target.template
+                            if (fromItem.id != toItem.id) {
                                 val fromCategory = ActionCategoryRegistry.getGroupForAction(fromItem.buttonConfig.buttonAction)
-                                val toCategory = target.groupName
+                                val toCategory = ActionCategoryRegistry.getGroupForAction(toItem.buttonConfig.buttonAction)
                                 
                                 if (fromCategory == toCategory) {
                                     val categoryTemplates = allTemplates
@@ -254,9 +211,11 @@ fun GridEditorContent(
                                         .toMutableList()
                                         
                                     val fromIdxInCat = categoryTemplates.indexOfFirst { it.id == fromItem.id }
-                                    if (fromIdxInCat != -1) {
+                                    val toIdxInCat = categoryTemplates.indexOfFirst { it.id == toItem.id }
+                                    
+                                    if (fromIdxInCat != -1 && toIdxInCat != -1) {
                                         categoryTemplates.removeAt(fromIdxInCat)
-                                        categoryTemplates.add(0, fromItem)
+                                        categoryTemplates.add(toIdxInCat, fromItem)
                                         
                                         val grouped = allTemplates.groupBy {
                                             ActionCategoryRegistry.getGroupForAction(it.buttonConfig.buttonAction)
@@ -272,8 +231,43 @@ fun GridEditorContent(
                                             newGlobalList.addAll(itemsInCat)
                                         }
                                         
-                                        pageViewModel.updateButtonTemplatesOrder(newGlobalList)
+                                        actions.updateButtonTemplatesOrder(newGlobalList)
                                     }
+                                }
+                            }
+                        }
+                        is CategoryHeaderDropTarget -> {
+                            val allTemplates = actions.buttonTemplates.value
+                            val fromItem = draggedItem
+                            val fromCategory = ActionCategoryRegistry.getGroupForAction(fromItem.buttonConfig.buttonAction)
+                            val toCategory = target.groupName
+                            
+                            if (fromCategory == toCategory) {
+                                val categoryTemplates = allTemplates
+                                    .filter { ActionCategoryRegistry.getGroupForAction(it.buttonConfig.buttonAction) == fromCategory }
+                                    .sortedBy { it.orderIndex }
+                                    .toMutableList()
+                                    
+                                val fromIdxInCat = categoryTemplates.indexOfFirst { it.id == fromItem.id }
+                                if (fromIdxInCat != -1) {
+                                    categoryTemplates.removeAt(fromIdxInCat)
+                                    categoryTemplates.add(0, fromItem)
+                                    
+                                    val grouped = allTemplates.groupBy {
+                                        ActionCategoryRegistry.getGroupForAction(it.buttonConfig.buttonAction)
+                                    }
+                                    
+                                    val newGlobalList = mutableListOf<ButtonTemplate>()
+                                    ActionCategoryRegistry.ALL_GROUPS.forEach { cat ->
+                                        val itemsInCat = if (cat == fromCategory) {
+                                            categoryTemplates
+                                        } else {
+                                            grouped[cat]?.sortedBy { it.orderIndex } ?: emptyList()
+                                        }
+                                        newGlobalList.addAll(itemsInCat)
+                                    }
+                                    
+                                    actions.updateButtonTemplatesOrder(newGlobalList)
                                 }
                             }
                         }
@@ -400,9 +394,9 @@ fun GridEditorContent(
                     }
                 }
 
-                if ((isLandscape || dimensions.isTablet) && pageViewModel != null) {
+                if (isLandscape || dimensions.isTablet) {
                     ButtonTemplatesPanel(
-                        viewModel = pageViewModel,
+                        actions = actions,
                         onEditTemplate = { template -> editingTemplateId = template.id },
                         modifier = Modifier
                             .width(if (isLandscape) 320.dp else 280.dp)
@@ -496,7 +490,7 @@ fun GridEditorContent(
                     }
                 },
                 onEditPage = onEditPage,
-                philipsHueManager = pageViewModel?.philipsHueManager
+                philipsHueManager = actions.philipsHueManager
             )
 
             if (editingTemplate != null) {
@@ -505,10 +499,10 @@ fun GridEditorContent(
                     buttonConfig = template.buttonConfig,
                     pages = availablePages,
                     templates = templates,
-                    defaultStartPageId = pageViewModel?.settingsRepository?.defaultStartPageId,
+                    defaultStartPageId = actions.settingsRepository.defaultStartPageId,
                     onDismiss = { editingTemplateId = null },
                     onSave = { newConfig ->
-                        pageViewModel?.updateButtonTemplate(template.copy(name = newConfig.label, buttonConfig = newConfig))
+                        actions.updateButtonTemplate(template.copy(name = newConfig.label, buttonConfig = newConfig))
                     },
                     onTest = { config ->
                         actions.executeButtonAction(config)
@@ -520,7 +514,7 @@ fun GridEditorContent(
                         android.widget.Toast.makeText(context, context.getString(R.string.editor_template_duplicate_not_supported), android.widget.Toast.LENGTH_SHORT).show()
                     },
                     onDelete = {
-                        pageViewModel?.deleteButtonTemplate(template)
+                        actions.deleteButtonTemplate(template)
                         editingTemplateId = null
                     },
                     onNavigateToPage = { targetPageId ->
@@ -535,11 +529,11 @@ fun GridEditorContent(
                     },
                     isTextCached = { actions.isTextCached(it) },
                     onPrefetchText = { text, onComplete -> actions.prefetchText(text, onComplete) },
-                    philipsHueManager = pageViewModel?.philipsHueManager,
-                    hueBridgeIp = pageViewModel?.settingsRepository?.hueBridgeIp ?: "",
-                    hueUsername = pageViewModel?.settingsRepository?.hueUsername ?: "",
-                    hueCachedDevices = pageViewModel?.settingsRepository?.hueCachedDevices ?: "",
-                    onRefreshHueCache = { silent, callback -> pageViewModel?.refreshHueDevicesCache(silent, callback) },
+                    philipsHueManager = actions.philipsHueManager,
+                    hueBridgeIp = actions.settingsRepository.hueBridgeIp ?: "",
+                    hueUsername = actions.settingsRepository.hueUsername ?: "",
+                    hueCachedDevices = actions.settingsRepository.hueCachedDevices ?: "",
+                    onRefreshHueCache = { silent, callback -> actions.refreshHueDevicesCache(silent, callback) },
                     featureGuard = featureGuard,
                     onPlayTts = { text, onDone -> actions.speakTtsPreview(text, onDone) },
                     onStopTts = { actions.stopTtsPreview() },
@@ -547,9 +541,9 @@ fun GridEditorContent(
                     spotifyPlaylists = spotifyPlaylists,
                     isLoadingSpotifyPlaylists = isSpotifyLoadingPlaylists,
                     spotifyUserDisplayName = spotifyUserDisplayName,
-                    onConnectSpotify = { pageViewModel?.connectSpotify(context) },
-                    onDisconnectSpotify = { pageViewModel?.disconnectSpotify() },
-                    onLoadSpotifyPlaylists = { pageViewModel?.loadSpotifyPlaylists() },
+                    onConnectSpotify = { actions.connectSpotify(context) },
+                    onDisconnectSpotify = { actions.disconnectSpotify() },
+                    onLoadSpotifyPlaylists = { actions.loadSpotifyPlaylists() },
                     onSaveAsTemplate = { }
                 )
             }
@@ -575,8 +569,8 @@ fun GridEditorContent(
                         TextButton(
                             onClick = {
                                 val config = showSaveTemplateDialogConfig
-                                if (config != null && newTemplateName.isNotBlank() && pageViewModel != null) {
-                                    pageViewModel.saveButtonAsTemplate(newTemplateName, config)
+                                if (config != null && newTemplateName.isNotBlank()) {
+                                    actions.saveButtonAsTemplate(newTemplateName, config)
                                     android.widget.Toast.makeText(context, context.getString(R.string.editor_template_saved), android.widget.Toast.LENGTH_SHORT).show()
                                 }
                                 showSaveTemplateDialogConfig = null

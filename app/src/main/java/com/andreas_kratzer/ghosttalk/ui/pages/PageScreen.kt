@@ -172,7 +172,8 @@ fun PageScreen(
                         focusedButtonIndex = focusedButtonIndex,
                         focusedRowIndex = focusedRowIndex,
                         isScanning = isScanning,
-                        pageViewModel = pageViewModel,
+                        isButtonVisible = { pageViewModel.featureGuard.isButtonVisible(it) },
+                        onButtonClick = { pageViewModel.activateButtonAtIndex(it) },
                         staticRowPage = staticRowPage
                     )
                 }
@@ -213,7 +214,8 @@ fun PageScreen(
                         focusedButtonIndex = focusedButtonIndex,
                         focusedRowIndex = focusedRowIndex,
                         isScanning = isScanning,
-                        pageViewModel = pageViewModel,
+                        isButtonVisible = { pageViewModel.featureGuard.isButtonVisible(it) },
+                        onButtonClick = { pageViewModel.activateButtonAtIndex(it) },
                         staticRowPage = staticRowPage
                     )
                 }

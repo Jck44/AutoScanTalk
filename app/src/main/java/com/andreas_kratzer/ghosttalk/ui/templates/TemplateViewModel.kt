@@ -28,7 +28,7 @@ import javax.inject.Inject
 class TemplateViewModel @Inject constructor(
     private val templateRepository: TemplateRepository,
     internal val pageRepository: com.andreas_kratzer.ghosttalk.core.data.PageRepository,
-    val settingsRepository: SettingsRepository,
+    override val settingsRepository: SettingsRepository,
     private val createTemplateUseCase: CreateTemplateUseCase,
     private val deleteTemplateUseCase: DeleteTemplateUseCase,
     private val updateButtonConfigInTemplateUseCase: UpdateButtonConfigInTemplateUseCase,

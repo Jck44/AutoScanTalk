@@ -208,8 +208,7 @@ fun PageEditorScreen(
             bookDefaultScanPattern = bookDefaultScanPattern,
             paddingValues = paddingValues,
             onEditPage = onEditPage,
-            initialButtonId = initialButtonId,
-            pageViewModel = pageViewModel
+            initialButtonId = initialButtonId
         )
 
         // Render Layout & Split Dialogs
