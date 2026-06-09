@@ -13,7 +13,7 @@ import javax.inject.Singleton
 @Singleton
 class FirebaseAnalyticsManager @Inject constructor(
     private val settingsRepository: SettingsRepository,
-    @ApplicationContext private val context: Context
+    @param:ApplicationContext private val context: Context
 ) {
     private val firebaseAnalytics: FirebaseAnalytics by lazy {
         FirebaseAnalytics.getInstance(context)
@@ -46,14 +46,14 @@ class FirebaseAnalyticsManager @Inject constructor(
             firebaseAnalytics.setUserProperty("static_row_enabled", settingsRepository.staticRowEnabled.toString())
             firebaseAnalytics.setUserProperty("vocal_switch_active", settingsRepository.isVocalSwitchEnabledFlow.value.toString())
             firebaseAnalytics.setUserProperty("theme_mode", settingsRepository.themeMode)
-            firebaseAnalytics.setUserProperty("only_record_hardware_stats", settingsRepository.onlyRecordHardwareStats.toString())
+            firebaseAnalytics.setUserProperty("only_record_hardware", settingsRepository.onlyRecordHardwareStats.toString())
 
             // Log a general setup status event
             val bundle = Bundle().apply {
                 putString("status", "initialized")
             }
             firebaseAnalytics.logEvent("app_config_sync", bundle)
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             // Prevent initialization issues from crashing the app
         }
     }
@@ -69,7 +69,7 @@ class FirebaseAnalyticsManager @Inject constructor(
                 putString("feature_type", featureType)
             }
             firebaseAnalytics.logEvent("feature_triggered", bundle)
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             // Fail-silent
         }
     }
