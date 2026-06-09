@@ -14,6 +14,7 @@ import com.andreas_kratzer.ghosttalk.core.model.HierarchyPageNode
 import com.andreas_kratzer.ghosttalk.core.model.NavigateToPageButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.PageButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.PageLayoutProposal
+import com.andreas_kratzer.ghosttalk.core.model.Page
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -31,6 +32,9 @@ class AiRestructureDelegate @Inject constructor(
     private val bookHierarchyProposalUseCase: BookHierarchyProposalUseCase,
     private val pageLayoutProposalUseCase: PageLayoutProposalUseCase
 ) {
+    private val _selectedPageIds = MutableStateFlow<Set<String>>(emptySet())
+    val selectedPageIds: StateFlow<Set<String>> = _selectedPageIds.asStateFlow()
+
     private val _aiRestructureProposal = MutableStateFlow<BookRestructureProposal?>(null)
     val aiRestructureProposal: StateFlow<BookRestructureProposal?> = _aiRestructureProposal.asStateFlow()
 
@@ -54,6 +58,30 @@ class AiRestructureDelegate @Inject constructor(
 
     private val _aiRestructureError = MutableStateFlow<String?>(null)
     val aiRestructureError: StateFlow<String?> = _aiRestructureError.asStateFlow()
+
+    fun togglePageSelection(pageId: String) {
+        val current = _selectedPageIds.value
+        _selectedPageIds.value = if (current.contains(pageId)) {
+            current - pageId
+        } else {
+            current + pageId
+        }
+    }
+
+    fun selectAllPages(pages: List<Page>) {
+        _selectedPageIds.value = pages.map { it.id }.toSet()
+    }
+
+    fun selectActivePagesOnly(pages: List<Page>, activeTargetPageIds: Set<String>) {
+        _selectedPageIds.value = pages
+            .filter { activeTargetPageIds.contains(it.id) }
+            .map { it.id }
+            .toSet()
+    }
+
+    fun setSelectedPageIds(ids: Set<String>) {
+        _selectedPageIds.value = ids
+    }
 
     fun setAiRestructureScope(scope: String) {
         _aiRestructureScope.value = scope
@@ -105,7 +133,6 @@ class AiRestructureDelegate @Inject constructor(
     fun generateAiHierarchyProposal(
         scope: CoroutineScope,
         bookId: String,
-        selectedPageIds: Set<String>,
         pageManagementDelegate: PageManagementDelegate,
         feedback: String? = null
     ) {
@@ -113,7 +140,7 @@ class AiRestructureDelegate @Inject constructor(
             _isAiHierarchyLoading.value = true
             _aiRestructureError.value = null
             try {
-                val pagesJsonString = buildRestructureSnapshotJson(bookId, selectedPageIds, pageManagementDelegate)
+                val pagesJsonString = buildRestructureSnapshotJson(bookId, _selectedPageIds.value, pageManagementDelegate)
                 
                 val currentHierarchy = _aiHierarchyProposal.value
                 val manualEditsJson = if (currentHierarchy != null) {
@@ -145,7 +172,6 @@ class AiRestructureDelegate @Inject constructor(
     fun loadPageLayoutProposal(
         scope: CoroutineScope,
         bookId: String,
-        selectedPageIds: Set<String>,
         pageManagementDelegate: PageManagementDelegate,
         pageName: String
     ) {
@@ -155,7 +181,7 @@ class AiRestructureDelegate @Inject constructor(
         scope.launch(Dispatchers.Default) {
             _isLoadingPageLayout.value = _isLoadingPageLayout.value + (pageName to true)
             try {
-                val pagesJsonString = buildRestructureSnapshotJson(bookId, selectedPageIds, pageManagementDelegate)
+                val pagesJsonString = buildRestructureSnapshotJson(bookId, _selectedPageIds.value, pageManagementDelegate)
 
                 val layout = pageLayoutProposalUseCase.execute(
                     targetPageName = node.name,
@@ -176,7 +202,6 @@ class AiRestructureDelegate @Inject constructor(
     fun applyHierarchyProposal(
         scope: CoroutineScope,
         currentBookId: String,
-        selectedPageIds: Set<String>,
         pageManagementDelegate: PageManagementDelegate,
         setActiveBookId: (String) -> Unit,
         loadPage: (com.andreas_kratzer.ghosttalk.core.model.Page) -> Unit,
@@ -188,7 +213,7 @@ class AiRestructureDelegate @Inject constructor(
         scope.launch(Dispatchers.IO) {
             _isAiHierarchyLoading.value = true
             try {
-                val pagesJsonString = buildRestructureSnapshotJson(currentBookId, selectedPageIds, pageManagementDelegate)
+                val pagesJsonString = buildRestructureSnapshotJson(currentBookId, _selectedPageIds.value, pageManagementDelegate)
                 
                 val missingPages = proposal.pages.filter { !layouts.containsKey(it.name) }
                 val resolvedLayouts = layouts.toMutableMap()

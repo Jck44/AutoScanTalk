@@ -48,6 +48,14 @@ import com.andreas_kratzer.ghosttalk.ui.pages.delegates.InteractionDelegate
 import com.andreas_kratzer.ghosttalk.ui.pages.delegates.PageManagementDelegate
 import com.andreas_kratzer.ghosttalk.ui.pages.delegates.ScreenManagementDelegate
 import com.andreas_kratzer.ghosttalk.ui.pages.delegates.SmartPredictionDelegate
+import com.andreas_kratzer.ghosttalk.ui.pages.delegates.SuggestionsDelegate
+import com.andreas_kratzer.ghosttalk.ui.pages.delegates.TtsPreviewDelegate
+import com.andreas_kratzer.ghosttalk.ui.pages.delegates.SmartIntegrationDelegate
+import com.andreas_kratzer.ghosttalk.ui.pages.delegates.PageSplitDelegate
+import com.andreas_kratzer.ghosttalk.ui.pages.delegates.AnalyticsDelegate
+import com.andreas_kratzer.ghosttalk.ui.pages.delegates.LayoutWizardDelegate
+import com.andreas_kratzer.ghosttalk.ui.pages.delegates.NavigationDelegate
+import com.andreas_kratzer.ghosttalk.ui.pages.delegates.ButtonTemplateDelegate
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
@@ -179,6 +187,7 @@ class PageViewModelTest {
         every { settingsRepository.autoStartScanning } returns false
         every { settingsRepository.resumeScanningFromStart } returns true
         every { settingsRepository.hangUpPressesRequired } returns 2
+        every { settingsRepository.isGeminiEnabled } returns true
         
         every { templateRepository.getAllTemplates() } returns MutableStateFlow<List<PageTemplate>>(emptyList())
         every { getPagesUseCase.execute(any()) } returns MutableStateFlow<List<Page>>(emptyList())
@@ -311,6 +320,61 @@ class PageViewModelTest {
             pageLayoutProposalUseCase = mockk(relaxed = true)
         )
 
+        val suggestionsDelegate = SuggestionsDelegate(
+            application = application,
+            settingsRepository = settingsRepository,
+            geminiUseCase = geminiUseCase,
+            pageManagementDelegate = pageManagementDelegate
+        )
+        val ttsPreviewDelegate = TtsPreviewDelegate(
+            ttsHelper = ttsHelper,
+            settingsRepository = settingsRepository
+        )
+        val smartIntegrationDelegate = SmartIntegrationDelegate(
+            application = application,
+            settingsRepository = settingsRepository,
+            spotifyManager = mockk(relaxed = true),
+            philipsHueManager = philipsHueManager,
+            geminiUseCase = geminiUseCase
+        )
+        val pageSplitDelegate = PageSplitDelegate(
+            application = application,
+            splitPageUseCase = mockk(relaxed = true),
+            settingsRepository = settingsRepository,
+            pageLayoutOptimizer = optimizer,
+            pageManagementDelegate = pageManagementDelegate,
+            createPageUseCase = createPageUseCase
+        )
+        val analyticsDelegate = AnalyticsDelegate(
+            buttonUsageRepository = buttonUsageRepository,
+            userModeSessionRepository = userModeSessionRepository,
+            pathAnalyzer = mockk(relaxed = true),
+            settingsRepository = settingsRepository,
+            efficiencyAnalyzer = mockk(relaxed = true),
+            pageManagementDelegate = pageManagementDelegate
+        )
+        val layoutWizardDelegate = LayoutWizardDelegate(
+            settingsRepository = settingsRepository,
+            bookRepository = bookRepository,
+            buttonUsageRepository = buttonUsageRepository,
+            geminiUseCase = geminiUseCase,
+            pageManagementDelegate = pageManagementDelegate,
+            pageSplitDelegate = pageSplitDelegate
+        )
+        val navigationDelegate = NavigationDelegate(
+            pageManagementDelegate = pageManagementDelegate,
+            actionExecutor = actionExecutor,
+            scanCoordinator = scanCoordinator,
+            settingsRepository = settingsRepository
+        )
+        val buttonTemplateDelegate = ButtonTemplateDelegate(
+            buttonTemplateRepository = buttonTemplateRepository
+        )
+        val pageResolutionDelegate = com.andreas_kratzer.ghosttalk.ui.pages.delegates.PageResolutionDelegate(
+            settingsRepository = settingsRepository,
+            pageRepository = pageRepository,
+            resolveDynamicButtonsUseCase = resolveDynamicButtonsUseCase
+        )
         return PageViewModel(
             application = application,
             savedStateHandle = SavedStateHandle(),
@@ -323,23 +387,24 @@ class PageViewModelTest {
             screenManagementDelegate = screenManagementDelegate,
             smartPredictionDelegate = smartPredictionDelegate,
             callManagementDelegate = callManagementDelegate,
+            navigationDelegate = navigationDelegate,
             aiRestructureDelegate = aiRestructureDelegate,
-            resolveDynamicButtonsUseCase = resolveDynamicButtonsUseCase,
+            analyticsDelegate = analyticsDelegate,
+            smartIntegrationDelegate = smartIntegrationDelegate,
+            suggestionsDelegate = suggestionsDelegate,
+            ttsPreviewDelegate = ttsPreviewDelegate,
+            pageSplitDelegate = pageSplitDelegate,
+            layoutWizardDelegate = layoutWizardDelegate,
+            buttonTemplateDelegate = buttonTemplateDelegate,
+            pageResolutionDelegate = pageResolutionDelegate,
             updateSmartPredictionsUseCase = updateSmartPredictionsUseCase,
             actionExecutor = actionExecutor,
             scanCoordinator = scanCoordinator,
             geminiUseCase = geminiUseCase,
-            buttonTemplateRepository = buttonTemplateRepository,
-            systemCallManager = systemCallManager,
             philipsHueManager = philipsHueManager,
-            spotifyManager = mockk(relaxed = true),
-            buttonUsageRepository = buttonUsageRepository,
-            efficiencyAnalyzer = mockk(relaxed = true),
-            pathAnalyzer = mockk(relaxed = true),
-            userModeSessionRepository = userModeSessionRepository,
-            splitPageUseCase = mockk(relaxed = true),
             createPageUseCase = createPageUseCase,
-            pageLayoutOptimizer = optimizer
+            buttonUsageRepository = buttonUsageRepository,
+            splitPageUseCase = mockk(relaxed = true)
         )
     }
 

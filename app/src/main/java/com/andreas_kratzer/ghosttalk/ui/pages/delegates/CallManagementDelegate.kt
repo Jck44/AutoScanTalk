@@ -1,6 +1,7 @@
 package com.andreas_kratzer.ghosttalk.ui.pages.delegates
 
 import android.app.Application
+import com.andreas_kratzer.ghosttalk.core.call.CallState
 import com.andreas_kratzer.ghosttalk.core.call.SystemCallManager
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.core.tts.TextToSpeechHelper
@@ -13,7 +14,7 @@ import javax.inject.Inject
 
 class CallManagementDelegate @Inject constructor(
     private val application: Application,
-    private val systemCallManager: SystemCallManager,
+    val systemCallManager: SystemCallManager,
     private val settingsRepository: SettingsRepository,
     private val ttsHelper: TextToSpeechHelper
 ) {
@@ -28,6 +29,7 @@ class CallManagementDelegate @Inject constructor(
     val hangUpPressCount = MutableStateFlow(0)
     val focusedCallScreenButton = MutableStateFlow("ANNEHMEN") // "ANNEHMEN" or "ABLEHNEN"
     private var callScanJob: Job? = null
+    private var lastCallPressTime = 0L
 
     fun speakCallScreenButton(button: String, isInitial: Boolean) {
         val textRes = if (button == "ANNEHMEN") {
@@ -67,5 +69,48 @@ class CallManagementDelegate @Inject constructor(
     fun stopCallScanning() {
         callScanJob?.cancel()
         callScanJob = null
+    }
+
+    fun resetHangUpState() {
+        isHangUpButtonFocused.value = false
+        hangUpPressCount.value = 0
+    }
+
+    fun handleCallButtonPress(): Boolean {
+        val state = systemCallManager.callState.value
+        if (state == CallState.RINGING) {
+            if (focusedCallScreenButton.value == "ANNEHMEN") {
+                systemCallManager.answerCall()
+            } else {
+                systemCallManager.hangUp()
+            }
+            return true
+        }
+
+        if (state == CallState.ACTIVE || state == CallState.DIALING) {
+            val currentTime = System.currentTimeMillis()
+            val holdingTime = settingsRepository.holdingTimeMillis
+            if (currentTime - lastCallPressTime < holdingTime) {
+                // Ignore rapid accidental presses (debounce / Haltezeit)
+                return true
+            }
+            lastCallPressTime = currentTime
+
+            val requiredPresses = settingsRepository.hangUpPressesRequired
+            val nextPressCount = hangUpPressCount.value + 1
+            hangUpPressCount.value = nextPressCount
+
+            if (requiredPresses <= 1 || nextPressCount >= requiredPresses) {
+                systemCallManager.hangUp()
+            } else {
+                isHangUpButtonFocused.value = true
+                val cueDevice = settingsRepository.cuesAudioDeviceAddress
+                val text = application.getString(com.andreas_kratzer.ghosttalk.R.string.call_hang_up)
+                ttsHelper.speakRouted(text, cueDevice, isForCues = true)
+            }
+            return true
+        }
+
+        return false
     }
 }

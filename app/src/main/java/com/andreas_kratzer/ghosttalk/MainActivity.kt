@@ -402,8 +402,8 @@ class MainActivity : AppCompatActivity() {
                                             callerName = callerName,
                                             callerPhone = callerPhone,
                                             focusedButton = focusedCallScreenButton,
-                                            onAnswer = { pageViewModel.systemCallManager.answerCall() },
-                                            onReject = { pageViewModel.systemCallManager.hangUp() },
+                                            onAnswer = { pageViewModel.callManagementDelegate.systemCallManager.answerCall() },
+                                            onReject = { pageViewModel.callManagementDelegate.systemCallManager.hangUp() },
                                             isSimulated = isSimulatedCall
                                         )
                                     }
@@ -416,7 +416,7 @@ class MainActivity : AppCompatActivity() {
                                             isDialing = callState == com.andreas_kratzer.ghosttalk.core.call.CallState.DIALING,
                                             isOutgoing = isOutgoing,
                                             isHangUpFocused = isHangUpButtonFocused,
-                                            onHangUp = { pageViewModel.systemCallManager.hangUp() },
+                                            onHangUp = { pageViewModel.callManagementDelegate.systemCallManager.hangUp() },
                                             isSimulated = isSimulatedCall
                                         )
                                     }
@@ -539,7 +539,7 @@ class MainActivity : AppCompatActivity() {
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
         securityManager.updateActivity()
         val isCallActive = if (::globalPageViewModel.isInitialized) {
-            globalPageViewModel.systemCallManager.callState.value != com.andreas_kratzer.ghosttalk.core.call.CallState.NONE
+            globalPageViewModel.callManagementDelegate.systemCallManager.callState.value != com.andreas_kratzer.ghosttalk.core.call.CallState.NONE
         } else {
             false
         }

@@ -7,6 +7,9 @@ import com.andreas_kratzer.ghosttalk.core.model.Page
 import com.andreas_kratzer.ghosttalk.core.scanning.ScanCoordinator
 import com.andreas_kratzer.ghosttalk.ui.pages.delegates.InteractionDelegate
 import com.andreas_kratzer.ghosttalk.ui.pages.delegates.PageManagementDelegate
+import com.andreas_kratzer.ghosttalk.ui.pages.delegates.LayoutWizardDelegate
+import com.andreas_kratzer.ghosttalk.ui.pages.delegates.NavigationDelegate
+import com.andreas_kratzer.ghosttalk.ui.pages.delegates.ButtonTemplateDelegate
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -133,6 +136,21 @@ class PageViewModelStateTest {
             bookHierarchyProposalUseCase = mockk(relaxed = true),
             pageLayoutProposalUseCase = mockk(relaxed = true)
         )
+        val navigationDelegate = NavigationDelegate(
+            pageManagementDelegate = pageManagementDelegate,
+            actionExecutor = actionExecutor,
+            scanCoordinator = scanCoordinator,
+            settingsRepository = settingsRepository
+        )
+        val buttonTemplateDelegate = ButtonTemplateDelegate(
+            buttonTemplateRepository = buttonTemplateRepository
+        )
+
+        val pageResolutionDelegate = com.andreas_kratzer.ghosttalk.ui.pages.delegates.PageResolutionDelegate(
+            settingsRepository = settingsRepository,
+            pageRepository = mockk(relaxed = true),
+            resolveDynamicButtonsUseCase = resolveDynamicButtonsUseCase
+        )
 
         // WHEN
         PageViewModel(
@@ -147,23 +165,24 @@ class PageViewModelStateTest {
             screenManagementDelegate = mockk(relaxed = true),
             smartPredictionDelegate = mockk(relaxed = true),
             callManagementDelegate = callManagementDelegate,
+            navigationDelegate = navigationDelegate,
             aiRestructureDelegate = aiRestructureDelegate,
-            resolveDynamicButtonsUseCase = resolveDynamicButtonsUseCase,
+            analyticsDelegate = mockk(relaxed = true),
+            smartIntegrationDelegate = mockk(relaxed = true),
+            suggestionsDelegate = mockk(relaxed = true),
+            ttsPreviewDelegate = mockk(relaxed = true),
+            pageSplitDelegate = mockk(relaxed = true),
+            layoutWizardDelegate = mockk(relaxed = true),
+            buttonTemplateDelegate = buttonTemplateDelegate,
+            pageResolutionDelegate = pageResolutionDelegate,
             updateSmartPredictionsUseCase = updateSmartPredictionsUseCase,
             actionExecutor = actionExecutor,
             scanCoordinator = scanCoordinator,
             geminiUseCase = mockk(relaxed = true),
-            buttonTemplateRepository = buttonTemplateRepository,
-            systemCallManager = systemCallManager,
             philipsHueManager = mockk(relaxed = true),
-            spotifyManager = mockk(relaxed = true),
-            buttonUsageRepository = buttonUsageRepository,
-            efficiencyAnalyzer = mockk(relaxed = true),
-            pathAnalyzer = mockk(relaxed = true),
-            userModeSessionRepository = userModeSessionRepository,
-            splitPageUseCase = mockk(relaxed = true),
             createPageUseCase = mockk(relaxed = true),
-            pageLayoutOptimizer = mockk(relaxed = true)
+            buttonUsageRepository = buttonUsageRepository,
+            splitPageUseCase = mockk(relaxed = true)
         )
         
         // Advance to allow launch in init to execute
