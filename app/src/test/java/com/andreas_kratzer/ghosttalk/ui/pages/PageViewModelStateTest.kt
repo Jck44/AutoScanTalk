@@ -5,11 +5,10 @@ import androidx.lifecycle.SavedStateHandle
 import com.andreas_kratzer.ghosttalk.core.actions.ActionExecutor
 import com.andreas_kratzer.ghosttalk.core.model.Page
 import com.andreas_kratzer.ghosttalk.core.scanning.ScanCoordinator
-import com.andreas_kratzer.ghosttalk.ui.pages.delegates.InteractionDelegate
-import com.andreas_kratzer.ghosttalk.ui.pages.delegates.PageManagementDelegate
-import com.andreas_kratzer.ghosttalk.ui.pages.delegates.LayoutWizardDelegate
-import com.andreas_kratzer.ghosttalk.ui.pages.delegates.NavigationDelegate
 import com.andreas_kratzer.ghosttalk.ui.pages.delegates.ButtonTemplateDelegate
+import com.andreas_kratzer.ghosttalk.ui.pages.delegates.InteractionDelegate
+import com.andreas_kratzer.ghosttalk.ui.pages.delegates.NavigationDelegate
+import com.andreas_kratzer.ghosttalk.ui.pages.delegates.PageManagementDelegate
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every

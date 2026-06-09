@@ -12,9 +12,9 @@ import com.andreas_kratzer.ghosttalk.core.model.BookHierarchyProposal
 import com.andreas_kratzer.ghosttalk.core.model.BookRestructureProposal
 import com.andreas_kratzer.ghosttalk.core.model.HierarchyPageNode
 import com.andreas_kratzer.ghosttalk.core.model.NavigateToPageButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.Page
 import com.andreas_kratzer.ghosttalk.core.model.PageButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.PageLayoutProposal
-import com.andreas_kratzer.ghosttalk.core.model.Page
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow

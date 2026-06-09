@@ -1,11 +1,11 @@
 package com.andreas_kratzer.ghosttalk.ui.pages.delegates
 
 import androidx.lifecycle.SavedStateHandle
-import com.andreas_kratzer.ghosttalk.core.model.Page
+import com.andreas_kratzer.ghosttalk.core.actions.ActionExecutor
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.core.model.Book
+import com.andreas_kratzer.ghosttalk.core.model.Page
 import com.andreas_kratzer.ghosttalk.core.scanning.ScanCoordinator
-import com.andreas_kratzer.ghosttalk.core.actions.ActionExecutor
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
