@@ -1230,23 +1230,6 @@ class SettingsRepositoryImpl @Inject constructor(
             // Update SharedPreferences keys corresponding to the profile
             val editor = prefs.edit()
 
-            // Clear scoped settings of the current active book so they fall back to the newly loaded profile settings
-            // Do NOT clear keys that are purely book-specific and have no profile counterpart
-            val activeBookIdPrefix = "${activeBookId}_"
-            val preserveSuffixes = setOf(
-                SettingsConstants.KEY_DEFAULT_START_PAGE_ID,
-                SettingsConstants.KEY_PAGE_SORT_ORDER,
-                SettingsConstants.KEY_TEMPLATE_SORT_ORDER
-            )
-            prefs.all.keys.forEach { key ->
-                if (key.startsWith(activeBookIdPrefix)) {
-                    val suffix = key.substring(activeBookIdPrefix.length)
-                    if (!preserveSuffixes.contains(suffix)) {
-                        editor.remove(key)
-                    }
-                }
-            }
-
             editor.putString(SettingsConstants.KEY_FAVORITE_BOOK_ID, config.favoriteBookId)
             editor.putString(SettingsConstants.KEY_STARTUP_BEHAVIOR, config.startupBehavior)
             editor.putString(SettingsConstants.KEY_USER_MODE_SCREEN_BEHAVIOR, config.userModeScreenBehavior)
