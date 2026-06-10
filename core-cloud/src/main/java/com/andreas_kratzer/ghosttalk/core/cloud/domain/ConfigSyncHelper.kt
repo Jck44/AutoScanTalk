@@ -40,14 +40,7 @@ class ConfigSyncHelper(
     }
 
     private fun calculateDeterministicMd5(profile: com.andreas_kratzer.ghosttalk.core.model.SettingsProfile): String {
-        val cleanConfig = profile.config.copy(
-            securityPinHash = null,
-            securityPinSalt = null,
-            hueUsername = "",
-            hueBridgeFingerprint = ""
-        )
         val cleanProfile = profile.copy(
-            config = cleanConfig,
             profileVersionSequence = 0L,
             updatedAt = 0L
         )
@@ -263,33 +256,7 @@ class ConfigSyncHelper(
         return if (!email.isNullOrBlank()) email else "ghosttalk_transit_fallback"
     }
 
-    private fun encryptProfileForTransit(
-        profile: com.andreas_kratzer.ghosttalk.core.model.SettingsProfile,
-        seed: String
-    ): com.andreas_kratzer.ghosttalk.core.model.SettingsProfile {
-        val encryptor = com.andreas_kratzer.ghosttalk.core.data.impl.settings.SecuritySettingsEncryptor
-        val encryptedConfig = profile.config.copy(
-            securityPinHash = profile.config.securityPinHash?.let { encryptor.encryptForTransit(it, seed) },
-            securityPinSalt = profile.config.securityPinSalt?.let { encryptor.encryptForTransit(it, seed) },
-            hueUsername = encryptor.encryptForTransit(profile.config.hueUsername, seed),
-            hueBridgeFingerprint = encryptor.encryptForTransit(profile.config.hueBridgeFingerprint, seed)
-        )
-        return profile.copy(config = encryptedConfig)
-    }
 
-    private fun decryptProfileFromTransit(
-        profile: com.andreas_kratzer.ghosttalk.core.model.SettingsProfile,
-        seed: String
-    ): com.andreas_kratzer.ghosttalk.core.model.SettingsProfile {
-        val encryptor = com.andreas_kratzer.ghosttalk.core.data.impl.settings.SecuritySettingsEncryptor
-        val decryptedConfig = profile.config.copy(
-            securityPinHash = profile.config.securityPinHash?.let { encryptor.decryptFromTransit(it, seed) },
-            securityPinSalt = profile.config.securityPinSalt?.let { encryptor.decryptFromTransit(it, seed) },
-            hueUsername = encryptor.decryptFromTransit(profile.config.hueUsername, seed),
-            hueBridgeFingerprint = encryptor.decryptFromTransit(profile.config.hueBridgeFingerprint, seed)
-        )
-        return profile.copy(config = decryptedConfig)
-    }
 
     suspend fun syncProfile(
         storageProvider: SyncStorageProvider,
@@ -300,11 +267,8 @@ class ConfigSyncHelper(
         val profileFileName = "profile_${activeProfile.id}.json"
         val remoteFile = remoteFiles.find { it.name == profileFileName }
 
-        val transitSeed = getTransitSeed(settingsRepository)
-        val encryptedActiveProfile = encryptProfileForTransit(activeProfile, transitSeed)
-
         val jsonSerializer = Json { ignoreUnknownKeys = true; prettyPrint = true; encodeDefaults = true }
-        val localJson = jsonSerializer.encodeToString(com.andreas_kratzer.ghosttalk.core.model.SettingsProfile.serializer(), encryptedActiveProfile)
+        val localJson = jsonSerializer.encodeToString(com.andreas_kratzer.ghosttalk.core.model.SettingsProfile.serializer(), activeProfile)
         val localMd5 = com.andreas_kratzer.ghosttalk.core.cloud.CloudSyncOptimizer().calculateMD5(localJson)
 
         val baseBackupFile = File(File(context.filesDir, "local_backups"), profileFileName)
@@ -358,11 +322,9 @@ class ConfigSyncHelper(
 
         if (remoteJson == null) return@withContext
 
-        // Decode remote profile config to check if the settings are actually different
         val remoteProfileConfig = try {
             val parsedProfile = jsonSerializer.decodeFromString(com.andreas_kratzer.ghosttalk.core.model.SettingsProfile.serializer(), remoteJson)
-            val decryptedRemoteProfile = decryptProfileFromTransit(parsedProfile, transitSeed)
-            decryptedRemoteProfile.config
+            parsedProfile.config
         } catch (_: Exception) {
             try {
                 jsonSerializer.decodeFromString(com.andreas_kratzer.ghosttalk.core.model.ProfileConfig.serializer(), remoteJson)
@@ -389,8 +351,7 @@ class ConfigSyncHelper(
         
         // Decode remote and base profiles (handling both SettingsProfile and legacy ProfileConfig format)
         val remoteProfile = try {
-            val parsedProfile = jsonSerializer.decodeFromString(com.andreas_kratzer.ghosttalk.core.model.SettingsProfile.serializer(), remoteJson)
-            decryptProfileFromTransit(parsedProfile, transitSeed)
+            jsonSerializer.decodeFromString(com.andreas_kratzer.ghosttalk.core.model.SettingsProfile.serializer(), remoteJson)
         } catch (_: Exception) {
             try {
                 val config = jsonSerializer.decodeFromString(com.andreas_kratzer.ghosttalk.core.model.ProfileConfig.serializer(), remoteJson)
@@ -409,8 +370,7 @@ class ConfigSyncHelper(
 
         val baseProfile = baseJson?.let {
             try {
-                val parsedProfile = jsonSerializer.decodeFromString(com.andreas_kratzer.ghosttalk.core.model.SettingsProfile.serializer(), it)
-                decryptProfileFromTransit(parsedProfile, transitSeed)
+                jsonSerializer.decodeFromString(com.andreas_kratzer.ghosttalk.core.model.SettingsProfile.serializer(), it)
             } catch (_: Exception) {
                 try {
                     val config = jsonSerializer.decodeFromString(com.andreas_kratzer.ghosttalk.core.model.ProfileConfig.serializer(), it)
@@ -449,8 +409,7 @@ class ConfigSyncHelper(
                 isDeleted = mergedIsDeleted
             )
 
-            val encryptedUpdatedProfile = encryptProfileForTransit(updatedProfile, transitSeed)
-            val updatedProfileJson = jsonSerializer.encodeToString(com.andreas_kratzer.ghosttalk.core.model.SettingsProfile.serializer(), encryptedUpdatedProfile)
+            val updatedProfileJson = jsonSerializer.encodeToString(com.andreas_kratzer.ghosttalk.core.model.SettingsProfile.serializer(), updatedProfile)
             tempFile.writeText(updatedProfileJson)
             saveToLocalBackupFolder(profileFileName, tempFile)
             

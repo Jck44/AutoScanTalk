@@ -17,6 +17,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -148,6 +150,45 @@ class SettingsRepositoryImpl @Inject constructor(
                         settingsProfileDao.updateProfile(updatedProfile.toEntity(jsonSerializer))
                     }
                 }
+
+                // One-time migration of secrets from existing DB profiles to profile-scoped SharedPreferences
+                val allProfiles = settingsProfileDao.getAllProfiles().map { it.toDomain(jsonSerializer) }
+                prefs.edit().apply {
+                    for (p in allProfiles) {
+                        val pId = p.id
+                        val rawEntity = settingsProfileDao.getProfileById(pId)
+                        if (rawEntity != null) {
+                            try {
+                                val jsonObj = kotlinx.serialization.json.Json.parseToJsonElement(rawEntity.configJson).jsonObject
+                                if (!prefs.contains("profile_${pId}_elevenlabs_api_key")) {
+                                    val value = jsonObj["elevenLabsApiKey"]?.let { if (it is kotlinx.serialization.json.JsonNull) null else it.jsonPrimitive.content }
+                                    putString("profile_${pId}_elevenlabs_api_key", value)
+                                }
+                                if (!prefs.contains("profile_${pId}_gemini_api_key")) {
+                                    val value = jsonObj["geminiApiKey"]?.let { if (it is kotlinx.serialization.json.JsonNull) null else it.jsonPrimitive.content }
+                                    putString("profile_${pId}_gemini_api_key", value)
+                                }
+                                if (!prefs.contains("profile_${pId}_security_pin_hash")) {
+                                    val value = jsonObj["securityPinHash"]?.let { if (it is kotlinx.serialization.json.JsonNull) null else it.jsonPrimitive.content }
+                                    putString("profile_${pId}_security_pin_hash", value)
+                                }
+                                if (!prefs.contains("profile_${pId}_security_pin_salt")) {
+                                    val value = jsonObj["securityPinSalt"]?.let { if (it is kotlinx.serialization.json.JsonNull) null else it.jsonPrimitive.content }
+                                    putString("profile_${pId}_security_pin_salt", value)
+                                }
+                                if (!prefs.contains("profile_${pId}_hue_username")) {
+                                    val value = jsonObj["hueUsername"]?.let { if (it is kotlinx.serialization.json.JsonNull) null else it.jsonPrimitive.content } ?: ""
+                                    putString("profile_${pId}_hue_username", value)
+                                }
+                                if (!prefs.contains("profile_${pId}_hue_bridge_fingerprint")) {
+                                    val value = jsonObj["hueBridgeFingerprint"]?.let { if (it is kotlinx.serialization.json.JsonNull) null else it.jsonPrimitive.content } ?: ""
+                                    putString("profile_${pId}_hue_bridge_fingerprint", value)
+                                }
+                            } catch (_: Exception) {}
+                        }
+                    }
+                    apply()
+                }
             } catch (_: Exception) {
                 // Non-fatal bootstrapper/migration error
             }
@@ -158,24 +199,28 @@ class SettingsRepositoryImpl @Inject constructor(
                 updateConfigLastModified(activeBookId)
             }
             if (!isApplyingProfile) {
+                val activeId = activeProfileId
+                when (key) {
+                    SettingsConstants.KEY_ELEVENLABS_API_KEY -> prefs.edit().putString("profile_${activeId}_elevenlabs_api_key", prefs.getString(key, null)).apply()
+                    SettingsConstants.KEY_GEMINI_API_KEY -> prefs.edit().putString("profile_${activeId}_gemini_api_key", prefs.getString(key, null)).apply()
+                    SettingsConstants.KEY_SECURITY_PIN_HASH -> prefs.edit().putString("profile_${activeId}_security_pin_hash", prefs.getString(key, null)).apply()
+                    SettingsConstants.KEY_SECURITY_PIN_SALT -> prefs.edit().putString("profile_${activeId}_security_pin_salt", prefs.getString(key, null)).apply()
+                    SettingsConstants.KEY_HUE_USERNAME -> prefs.edit().putString("profile_${activeId}_hue_username", prefs.getString(key, null)).apply()
+                    SettingsConstants.KEY_HUE_BRIDGE_FINGERPRINT -> prefs.edit().putString("profile_${activeId}_hue_bridge_fingerprint", prefs.getString(key, null)).apply()
+                }
                 // If a syncable profile preference changes, write it back to the database
                 scope.launch {
-                    val activeId = activeProfileId
                     val profile = getProfileById(activeId)
                     if (profile != null) {
                         val currentConfig = ProfileConfig(
                             favoriteBookId = favoriteBookId,
                             startupBehavior = startupBehavior,
                             userModeScreenBehavior = userModeScreenBehavior,
-                            securityPinHash = securityPinHash,
-                            securityPinSalt = securityPinSalt,
                             securityPinTimeoutMinutes = securityPinTimeoutMinutes,
                             isPinRequiredForDeletion = isPinRequiredForDeletion,
                             isSecurityRequiredForEdit = isSecurityRequiredForEdit,
                             isSecurityRequiredForSettings = isSecurityRequiredForSettings,
                             isSecurityRequiredForAnalytics = isSecurityRequiredForAnalytics,
-                            elevenLabsApiKey = elevenLabsApiKey,
-                            geminiApiKey = geminiApiKey,
                             useGeminiApiKey = useGeminiApiKey,
                             autoStartScanning = autoStartScanning,
                             scanDelayMillis = scanDelayMillis,
@@ -256,8 +301,6 @@ class SettingsRepositoryImpl @Inject constructor(
                             logStopActions = logStopActions,
                             bluetoothDelay = bluetoothDelay,
                             hueBridgeIp = hueBridgeIp,
-                            hueUsername = hueUsername,
-                            hueBridgeFingerprint = hueBridgeFingerprint,
                             hueCachedDevices = hueCachedDevices,
                             speakerVolume = speakerVolume,
                             headphoneVolume = headphoneVolume,
@@ -1214,6 +1257,15 @@ class SettingsRepositoryImpl @Inject constructor(
     override suspend fun deleteProfile(profile: SettingsProfile) {
         val entity = profile.toEntity(jsonSerializer)
         settingsProfileDao.deleteProfile(entity)
+        prefs.edit().apply {
+            remove("profile_${profile.id}_elevenlabs_api_key")
+            remove("profile_${profile.id}_gemini_api_key")
+            remove("profile_${profile.id}_security_pin_hash")
+            remove("profile_${profile.id}_security_pin_salt")
+            remove("profile_${profile.id}_hue_username")
+            remove("profile_${profile.id}_hue_bridge_fingerprint")
+            apply()
+        }
     }
 
     private var isApplyingProfile = false
@@ -1233,15 +1285,15 @@ class SettingsRepositoryImpl @Inject constructor(
             editor.putString(SettingsConstants.KEY_FAVORITE_BOOK_ID, config.favoriteBookId)
             editor.putString(SettingsConstants.KEY_STARTUP_BEHAVIOR, config.startupBehavior)
             editor.putString(SettingsConstants.KEY_USER_MODE_SCREEN_BEHAVIOR, config.userModeScreenBehavior)
-            editor.putString(SettingsConstants.KEY_SECURITY_PIN_HASH, config.securityPinHash)
-            editor.putString(SettingsConstants.KEY_SECURITY_PIN_SALT, config.securityPinSalt)
+            editor.putString(SettingsConstants.KEY_SECURITY_PIN_HASH, prefs.getString("profile_${profileId}_security_pin_hash", null))
+            editor.putString(SettingsConstants.KEY_SECURITY_PIN_SALT, prefs.getString("profile_${profileId}_security_pin_salt", null))
             editor.putLong(SettingsConstants.KEY_SECURITY_PIN_TIMEOUT_MINUTES, config.securityPinTimeoutMinutes)
             editor.putBoolean(SettingsConstants.KEY_IS_PIN_REQUIRED_FOR_DELETION, config.isPinRequiredForDeletion)
             editor.putBoolean(SettingsConstants.KEY_SECURITY_REQUIRED_FOR_EDIT, config.isSecurityRequiredForEdit)
             editor.putBoolean(SettingsConstants.KEY_SECURITY_REQUIRED_FOR_SETTINGS, config.isSecurityRequiredForSettings)
             editor.putBoolean(SettingsConstants.KEY_SECURITY_REQUIRED_FOR_ANALYTICS, config.isSecurityRequiredForAnalytics)
-            editor.putString(SettingsConstants.KEY_ELEVENLABS_API_KEY, config.elevenLabsApiKey)
-            editor.putString(SettingsConstants.KEY_GEMINI_API_KEY, config.geminiApiKey)
+            editor.putString(SettingsConstants.KEY_ELEVENLABS_API_KEY, prefs.getString("profile_${profileId}_elevenlabs_api_key", null))
+            editor.putString(SettingsConstants.KEY_GEMINI_API_KEY, prefs.getString("profile_${profileId}_gemini_api_key", null))
             editor.putBoolean(SettingsConstants.KEY_USE_GEMINI_API_KEY, config.useGeminiApiKey)
             editor.putBoolean(SettingsConstants.KEY_AUTO_START_SCANNING, config.autoStartScanning)
             editor.putLong(SettingsConstants.KEY_SCAN_DELAY_MILLIS, config.scanDelayMillis)
@@ -1321,8 +1373,8 @@ class SettingsRepositoryImpl @Inject constructor(
             editor.putBoolean(SettingsConstants.KEY_LOG_STOP_ACTIONS, config.logStopActions)
             editor.putLong(SettingsConstants.KEY_BLUETOOTH_DELAY, config.bluetoothDelay)
             editor.putString(SettingsConstants.KEY_HUE_BRIDGE_IP, config.hueBridgeIp)
-            editor.putString(SettingsConstants.KEY_HUE_USERNAME, config.hueUsername)
-            editor.putString(SettingsConstants.KEY_HUE_BRIDGE_FINGERPRINT, config.hueBridgeFingerprint)
+            editor.putString(SettingsConstants.KEY_HUE_USERNAME, prefs.getString("profile_${profileId}_hue_username", ""))
+            editor.putString(SettingsConstants.KEY_HUE_BRIDGE_FINGERPRINT, prefs.getString("profile_${profileId}_hue_bridge_fingerprint", ""))
             editor.putString(SettingsConstants.KEY_HUE_CACHED_DEVICES, config.hueCachedDevices)
             editor.putInt(SettingsConstants.KEY_SPEAKER_VOLUME, config.speakerVolume)
             editor.putInt(SettingsConstants.KEY_HEADPHONE_VOLUME, config.headphoneVolume)

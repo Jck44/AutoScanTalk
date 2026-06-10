@@ -10,8 +10,6 @@ data class ProfileConfig(
     val userModeScreenBehavior: String = "GRID",
 
     // Sicherheit & PIN
-    val securityPinHash: String? = null,
-    val securityPinSalt: String? = null,
     val securityPinTimeoutMinutes: Long = 30,
     val isPinRequiredForDeletion: Boolean = false,
     val isSecurityRequiredForEdit: Boolean = false,
@@ -19,8 +17,6 @@ data class ProfileConfig(
     val isSecurityRequiredForAnalytics: Boolean = false,
 
     // API-Schlüssel
-    val elevenLabsApiKey: String? = null,
-    val geminiApiKey: String? = null,
     val useGeminiApiKey: Boolean = false,
 
     // Scanning & Eingabe
@@ -120,8 +116,6 @@ data class ProfileConfig(
 
     // Smart Home & Hue
     val hueBridgeIp: String = "",
-    val hueUsername: String = "",
-    val hueBridgeFingerprint: String = "",
     val hueCachedDevices: String = "",
 
     // Audio & Volume

@@ -48,6 +48,8 @@ class ProfileSyncOrchestrator @Inject constructor(
                                 try {
                                     onProgress(0.1f + 0.4f * (index.toFloat() / localProfiles.size.coerceAtLeast(1).toFloat()), "Synchronisiere Profil: ${profile.name}")
                                     configSyncHelper.syncProfile(profilesProvider, remoteProfileFiles, profile, settingsRepository)
+                                } catch (e: kotlinx.coroutines.CancellationException) {
+                                    throw e
                                 } catch (e: Exception) {
                                     logger.e(TAG, "Failed to sync profile: ${profile.name}", e)
                                 }
@@ -99,6 +101,8 @@ class ProfileSyncOrchestrator @Inject constructor(
                                             syncLogProvider.addLogEntry("Remote-Profil ${importedProfile.name} importiert", importedProfile.id, importedProfile.name)
                                         }
                                     }
+                                } catch (ex: kotlinx.coroutines.CancellationException) {
+                                    throw ex
                                 } catch (ex: Exception) {
                                     logger.e(TAG, "syncProfiles: Failed to auto-import remote profile ${file.name}", ex)
                                 } finally {
@@ -109,6 +113,8 @@ class ProfileSyncOrchestrator @Inject constructor(
                     }
                     onProgress(1.0f, "Fertig")
                     true
+                } catch (e: kotlinx.coroutines.CancellationException) {
+                    throw e
                 } catch (e: Exception) {
                     logger.e(TAG, "syncProfiles: Profile-only sync failed", e)
                     false

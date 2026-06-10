@@ -86,4 +86,16 @@ class ProfileSyncOrchestratorTest {
 
         coVerify(exactly = 1) { mockSettingsRepository.getAllProfiles() }
     }
+
+    @Test
+    fun `syncProfiles propagates CancellationException`() = runTest {
+        coEvery { mockSettingsRepository.getAllProfiles() } throws kotlinx.coroutines.CancellationException("Job cancelled")
+
+        try {
+            orchestrator.syncProfiles(mockDrive)
+            org.junit.Assert.fail("Should have thrown CancellationException")
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            // Expected
+        }
+    }
 }

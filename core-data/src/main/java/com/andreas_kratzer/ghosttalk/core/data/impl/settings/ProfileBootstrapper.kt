@@ -45,15 +45,11 @@ class ProfileBootstrapper @Inject constructor(
                 favoriteBookId = prefs.getString(SettingsConstants.KEY_FAVORITE_BOOK_ID, null),
                 startupBehavior = prefs.getString(SettingsConstants.KEY_STARTUP_BEHAVIOR, "BOOK_SELECTION") ?: "BOOK_SELECTION",
                 userModeScreenBehavior = prefs.getString(SettingsConstants.KEY_USER_MODE_SCREEN_BEHAVIOR, "GRID") ?: "GRID",
-                securityPinHash = prefs.getString(SettingsConstants.KEY_SECURITY_PIN_HASH, null),
-                securityPinSalt = prefs.getString(SettingsConstants.KEY_SECURITY_PIN_SALT, null),
                 securityPinTimeoutMinutes = prefs.getLong(SettingsConstants.KEY_SECURITY_PIN_TIMEOUT_MINUTES, 30L),
                 isPinRequiredForDeletion = prefs.getBoolean(SettingsConstants.KEY_IS_PIN_REQUIRED_FOR_DELETION, false),
                 isSecurityRequiredForEdit = prefs.getBoolean(SettingsConstants.KEY_SECURITY_REQUIRED_FOR_EDIT, false),
                 isSecurityRequiredForSettings = prefs.getBoolean(SettingsConstants.KEY_SECURITY_REQUIRED_FOR_SETTINGS, false),
                 isSecurityRequiredForAnalytics = prefs.getBoolean(SettingsConstants.KEY_SECURITY_REQUIRED_FOR_ANALYTICS, false),
-                elevenLabsApiKey = prefs.getString(SettingsConstants.KEY_ELEVENLABS_API_KEY, null),
-                geminiApiKey = prefs.getString(SettingsConstants.KEY_GEMINI_API_KEY, null),
                 useGeminiApiKey = prefs.getBoolean(SettingsConstants.KEY_USE_GEMINI_API_KEY, false),
                 autoStartScanning = prefs.getBoolean(SettingsConstants.KEY_AUTO_START_SCANNING, true),
                 scanDelayMillis = prefs.getLong(SettingsConstants.KEY_SCAN_DELAY_MILLIS, 3000L),
@@ -130,8 +126,6 @@ class ProfileBootstrapper @Inject constructor(
                 logStopActions = prefs.getBoolean(SettingsConstants.KEY_LOG_STOP_ACTIONS, false),
                 bluetoothDelay = prefs.getLong(SettingsConstants.KEY_BLUETOOTH_DELAY, 100L),
                 hueBridgeIp = prefs.getString(SettingsConstants.KEY_HUE_BRIDGE_IP, "") ?: "",
-                hueUsername = prefs.getString(SettingsConstants.KEY_HUE_USERNAME, "") ?: "",
-                hueBridgeFingerprint = prefs.getString(SettingsConstants.KEY_HUE_BRIDGE_FINGERPRINT, "") ?: "",
                 hueCachedDevices = prefs.getString(SettingsConstants.KEY_HUE_CACHED_DEVICES, "") ?: "",
                 speakerVolume = prefs.getInt(SettingsConstants.KEY_SPEAKER_VOLUME, 100),
                 headphoneVolume = prefs.getInt(SettingsConstants.KEY_HEADPHONE_VOLUME, 100),
@@ -156,6 +150,13 @@ class ProfileBootstrapper @Inject constructor(
             prefs.edit {
                 putString("local_active_profile_id", newUuid)
                 putString("cached_active_profile_config", configJson)
+                // Bootstrap/migrate the sensitive keys for the new profile
+                putString("profile_${newUuid}_elevenlabs_api_key", prefs.getString(SettingsConstants.KEY_ELEVENLABS_API_KEY, null))
+                putString("profile_${newUuid}_gemini_api_key", prefs.getString(SettingsConstants.KEY_GEMINI_API_KEY, null))
+                putString("profile_${newUuid}_security_pin_hash", prefs.getString(SettingsConstants.KEY_SECURITY_PIN_HASH, null))
+                putString("profile_${newUuid}_security_pin_salt", prefs.getString(SettingsConstants.KEY_SECURITY_PIN_SALT, null))
+                putString("profile_${newUuid}_hue_username", prefs.getString(SettingsConstants.KEY_HUE_USERNAME, null))
+                putString("profile_${newUuid}_hue_bridge_fingerprint", prefs.getString(SettingsConstants.KEY_HUE_BRIDGE_FINGERPRINT, null))
             }
         }
     }

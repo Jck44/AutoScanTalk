@@ -53,6 +53,8 @@ class PerformProfilesSyncUseCase @Inject constructor(
         } catch (e: UserRecoverableAuthIOException) {
             Log.w(TAG, "UserRecoverableAuthIOException during profiles sync", e)
             Result.RecoverableAuth(e.intent)
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
         } catch (e: Exception) {
             Log.e(TAG, "Unexpected exception in PerformProfilesSyncUseCase: ${e.message}", e)
             Result.Error(e.message ?: "Unbekannter Fehler beim Profil-Sync")

@@ -296,6 +296,8 @@ class SettingsViewModel @Inject constructor(
 
     private var prefetchJob: kotlinx.coroutines.Job? = null
     private var debouncedSyncJob: kotlinx.coroutines.Job? = null
+    private var lastUploadedSequence: Long? = null
+    private var lastUploadedTimestamp: Long? = null
 
     init {
         ttsDelegate.initialize(viewModelScope)
@@ -310,9 +312,6 @@ class SettingsViewModel @Inject constructor(
 
     private fun setupDebouncedProfileUpload() {
         viewModelScope.launch {
-            var lastUploadedSequence: Long? = null
-            var lastUploadedTimestamp: Long? = null
-
             // Initial load of version/timestamp
             val activeId = settingsRepository.activeProfileId
             settingsRepository.getProfileById(activeId)?.let { initialProfile ->
@@ -346,10 +345,20 @@ class SettingsViewModel @Inject constructor(
         debouncedSyncJob = viewModelScope.launch {
             delay(5000)
             if (userEmail.value == null) return@launch
+            val activeId = settingsRepository.activeProfileId
             try {
+                _isProfileSyncing.value = true
                 performProfilesSyncUseCase.execute()
+                settingsRepository.getProfileById(activeId)?.let { currentProfile ->
+                    lastUploadedSequence = currentProfile.profileVersionSequence
+                    lastUploadedTimestamp = currentProfile.updatedAt
+                }
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
             } catch (e: Exception) {
                 android.util.Log.e("SettingsViewModel", "Debounced profiles sync failed", e)
+            } finally {
+                _isProfileSyncing.value = false
             }
         }
     }

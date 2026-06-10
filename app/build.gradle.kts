@@ -18,8 +18,8 @@ android {
         applicationId = "com.andreas_kratzer.ghosttalk"
         minSdk = 35
         targetSdk = 37
-        versionCode = 133
-        versionName = "2.7.0"
+        versionCode = 135
+        versionName = "2.7.2"
 
         testInstrumentationRunner = "com.andreas_kratzer.ghosttalk.HiltTestRunner"
         
