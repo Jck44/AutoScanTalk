@@ -9,7 +9,9 @@ import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import javax.inject.Singleton
 
+@Singleton
 class SuggestionsDelegate @Inject constructor(
     private val application: Application,
     private val settingsRepository: SettingsRepository,

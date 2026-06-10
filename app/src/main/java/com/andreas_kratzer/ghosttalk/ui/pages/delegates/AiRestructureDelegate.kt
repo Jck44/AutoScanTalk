@@ -23,7 +23,9 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
+import javax.inject.Singleton
 
+@Singleton
 class AiRestructureDelegate @Inject constructor(
     private val application: Application,
     private val buttonUsageRepository: ButtonUsageRepository,

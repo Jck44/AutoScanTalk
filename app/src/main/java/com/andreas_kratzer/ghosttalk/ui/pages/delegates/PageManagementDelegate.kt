@@ -34,7 +34,9 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import javax.inject.Singleton
 
+@Singleton
 class PageManagementDelegate @Inject constructor(
     val pageRepository: PageRepository,
     private val bookRepository: BookRepository,

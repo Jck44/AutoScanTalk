@@ -18,7 +18,9 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
+import javax.inject.Singleton
 
+@Singleton
 class LayoutWizardDelegate @Inject constructor(
     private val settingsRepository: SettingsRepository,
     private val bookRepository: BookRepository,

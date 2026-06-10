@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import javax.inject.Singleton
 
 data class UserModeScreenState(
     val keepScreenOn: Boolean = false,
@@ -16,6 +17,7 @@ data class UserModeScreenState(
     val isBlackOverlayVisible: Boolean = false
 )
 
+@Singleton
 class ScreenManagementDelegate @Inject constructor(
     private val settingsRepository: SettingsRepository,
     private val callActionProxy: CallActionProxy

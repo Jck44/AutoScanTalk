@@ -21,8 +21,10 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import javax.inject.Singleton
 
 @OptIn(ExperimentalCoroutinesApi::class)
+@Singleton
 class AnalyticsDelegate @Inject constructor(
     private val buttonUsageRepository: ButtonUsageRepository,
     private val userModeSessionRepository: UserModeSessionRepository,

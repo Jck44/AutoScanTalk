@@ -9,7 +9,9 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import javax.inject.Singleton
 
+@Singleton
 class ButtonTemplateDelegate @Inject constructor(
     private val buttonTemplateRepository: ButtonTemplateRepository
 ) {
@@ -20,7 +22,7 @@ class ButtonTemplateDelegate @Inject constructor(
     fun init(coroutineScope: CoroutineScope) {
         this.scope = coroutineScope
         buttonTemplates = buttonTemplateRepository.getTemplates()
-            .stateIn(scope, SharingStarted.WhileSubscribed(5000), emptyList())
+            .stateIn(scope, SharingStarted.Eagerly, emptyList())
         scope.launch {
             buttonTemplateRepository.ensureBuiltInTemplates()
         }

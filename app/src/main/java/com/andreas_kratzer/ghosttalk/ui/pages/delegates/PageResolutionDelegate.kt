@@ -1,5 +1,6 @@
 package com.andreas_kratzer.ghosttalk.ui.pages.delegates
 
+import android.util.Log
 import com.andreas_kratzer.ghosttalk.core.data.PageRepository
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.core.model.Page
@@ -16,7 +17,9 @@ import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import javax.inject.Singleton
 
+@Singleton
 class PageResolutionDelegate @Inject constructor(
     private val settingsRepository: SettingsRepository,
     private val pageRepository: PageRepository,
@@ -35,7 +38,7 @@ class PageResolutionDelegate @Inject constructor(
     ): StateFlow<Boolean> {
         return combine(isUserModeActive, isEditPreviewActive) { userMode, editPreview ->
             userMode || editPreview
-        }.stateIn(scope, SharingStarted.WhileSubscribed(5000), isUserModeActive.value || isEditPreviewActive.value)
+        }.stateIn(scope, SharingStarted.Eagerly, isUserModeActive.value || isEditPreviewActive.value)
     }
 
     fun getStaticRowPage(
@@ -81,7 +84,7 @@ class PageResolutionDelegate @Inject constructor(
         }
         .flowOn(Dispatchers.Default)
         .distinctUntilChanged()
-        .stateIn(scope, SharingStarted.WhileSubscribed(5000), null)
+        .stateIn(scope, SharingStarted.Eagerly, null)
     }
 
     fun getResolvedPage(
@@ -99,6 +102,7 @@ class PageResolutionDelegate @Inject constructor(
             activeBookId,
             unfilteredPages
         ) { page, isPreviewMode, predictions, bookId, listPages ->
+            Log.d("PageResolutionDelegate", "Combined: page=${page?.id}, isPreviewMode=$isPreviewMode, bookId=$bookId, listPages=${listPages.size}")
             if (page != null && isPreviewMode && bookId != null) {
                 resolveDynamicButtonsUseCase.execute(page, bookId, predictions, listPages)
             } else {
@@ -107,6 +111,6 @@ class PageResolutionDelegate @Inject constructor(
         }
         .flowOn(Dispatchers.Default)
         .distinctUntilChanged()
-        .stateIn(scope, SharingStarted.WhileSubscribed(5000), currentPage.value)
+        .stateIn(scope, SharingStarted.Eagerly, currentPage.value)
     }
 }

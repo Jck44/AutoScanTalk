@@ -21,7 +21,9 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import javax.inject.Singleton
 
+@Singleton
 class InteractionDelegate @Inject constructor(
     private val application: Application,
     val actionLogUseCase: ActionLogUseCase,

@@ -5,7 +5,9 @@ import com.andreas_kratzer.ghosttalk.core.tts.TextToSpeechHelper
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import javax.inject.Singleton
 
+@Singleton
 class TtsPreviewDelegate @Inject constructor(
     private val ttsHelper: TextToSpeechHelper,
     private val settingsRepository: SettingsRepository

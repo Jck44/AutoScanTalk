@@ -10,7 +10,9 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import javax.inject.Singleton
 
+@Singleton
 class NavigationDelegate @Inject constructor(
     private val pageManagementDelegate: PageManagementDelegate,
     private val actionExecutor: ActionExecutor,

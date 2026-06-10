@@ -26,7 +26,9 @@ import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
+import javax.inject.Singleton
 
+@Singleton
 class PageSplitDelegate @Inject constructor(
     private val application: Application,
     private val splitPageUseCase: SplitPageUseCase,
