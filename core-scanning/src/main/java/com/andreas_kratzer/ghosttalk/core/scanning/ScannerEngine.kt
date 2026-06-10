@@ -51,8 +51,16 @@ class ScannerEngine @Inject constructor(
         }
 
     sealed interface ScanStep {
-        data class Button(val index: Int, val config: ButtonConfig) : ScanStep
+        data class Button(val index: Int) : ScanStep
         data class Row(val rowIndex: Int, val name: String) : ScanStep
+    }
+
+    private fun getButtonConfigByIndex(index: Int): ButtonConfig? {
+        return if (index < 49) {
+            currentStaticRowPage?.buttonConfigs?.getOrNull(index)
+        } else {
+            currentButtonConfigs.getOrNull(index - 49)
+        }
     }
 
     fun startScanning(
@@ -68,8 +76,6 @@ class ScannerEngine @Inject constructor(
     ) {
         if (scanJob?.isActive == true &&
             currentPageId == pageId &&
-            currentButtonConfigs == buttonConfigs &&
-            (currentStartIndex == startIndex || focusedButtonIndex.value == startIndex || focusedRowIndex.value == startIndex) &&
             currentPattern == pattern &&
             currentRows == rows &&
             currentColumns == columns &&
@@ -77,6 +83,8 @@ class ScannerEngine @Inject constructor(
             currentStaticRowPage == staticRowPage &&
             currentStaticRowPattern == staticRowPattern
         ) {
+            // Update button configs in place without resetting the scan job
+            currentButtonConfigs = buttonConfigs
             return
         }
 
@@ -114,7 +122,7 @@ class ScannerEngine @Inject constructor(
                     steps.add(ScanStep.Row(rowIndex = 0, name = rowName))
                 } else { // "linear"
                     for ((index, config) in staticRowActiveButtons) {
-                        steps.add(ScanStep.Button(index = index, config = config))
+                        steps.add(ScanStep.Button(index = index))
                     }
                 }
             }
@@ -148,7 +156,7 @@ class ScannerEngine @Inject constructor(
             } else { // "linear"
                 val shiftOffset = if (staticRowPage != null) 49 else 0
                 for ((index, config) in mainPageActiveButtons) {
-                    steps.add(ScanStep.Button(index = shiftOffset + index, config = config))
+                    steps.add(ScanStep.Button(index = shiftOffset + index))
                 }
             }
         }
@@ -183,9 +191,9 @@ class ScannerEngine @Inject constructor(
                         val nextStepPos = if (i + 1 < steps.size) i + 1 else 0
                         val nextCueText = when (val nextStep = steps[nextStepPos]) {
                             is ScanStep.Button -> {
-                                val nextConfig = nextStep.config
-                                val nextCue = nextConfig.auditoryCue
-                                (nextCue as? com.andreas_kratzer.ghosttalk.core.model.AuditoryCue.TextToSpeechCue)?.text?.takeIf { it.isNotBlank() } ?: nextConfig.label
+                                val nextConfig = getButtonConfigByIndex(nextStep.index)
+                                val nextCue = nextConfig?.auditoryCue
+                                (nextCue as? com.andreas_kratzer.ghosttalk.core.model.AuditoryCue.TextToSpeechCue)?.text?.takeIf { it.isNotBlank() } ?: nextConfig?.label ?: ""
                             }
                             is ScanStep.Row -> {
                                 nextStep.name
@@ -200,8 +208,9 @@ class ScannerEngine @Inject constructor(
                             is ScanStep.Button -> {
                                 stateManager.setFocusedRowIndex(null)
                                 stateManager.setFocusedButtonIndex(step.index)
-                                val cue = step.config.auditoryCue
-                                val cueText = (cue as? com.andreas_kratzer.ghosttalk.core.model.AuditoryCue.TextToSpeechCue)?.text?.takeIf { it.isNotBlank() } ?: step.config.label
+                                val currentConfig = getButtonConfigByIndex(step.index)
+                                val cue = currentConfig?.auditoryCue
+                                val cueText = (cue as? com.andreas_kratzer.ghosttalk.core.model.AuditoryCue.TextToSpeechCue)?.text?.takeIf { it.isNotBlank() } ?: currentConfig?.label ?: ""
                                 handleSpeakCue(cueText)
                             }
                             is ScanStep.Row -> {
@@ -224,6 +233,7 @@ class ScannerEngine @Inject constructor(
         }
         scanJob = job
     }
+
 
     private suspend fun handleSpeakCue(text: String) {
         feedbackProvider.speakCue(text)
@@ -278,21 +288,23 @@ class ScannerEngine @Inject constructor(
                 
                 while (true) {
                     for (i in rowButtons.indices) {
-                        val (globalIndex, config) = rowButtons[i]
+                        val globalIndex = rowButtons[i].first
+                        val config = getButtonConfigByIndex(globalIndex)
                         stateManager.setFocusedButtonIndex(globalIndex)
 
                         // Prefetch next button cue
                         val nextIndex = if (i + 1 < rowButtons.size) i + 1 else 0
-                        val (_, nextConfig) = rowButtons[nextIndex]
-                        val nextCue = nextConfig.auditoryCue
-                        val nextCueText = (nextCue as? com.andreas_kratzer.ghosttalk.core.model.AuditoryCue.TextToSpeechCue)?.text?.takeIf { it.isNotBlank() } ?: nextConfig.label
+                        val nextGlobalIndex = rowButtons[nextIndex].first
+                        val nextConfig = getButtonConfigByIndex(nextGlobalIndex)
+                        val nextCue = nextConfig?.auditoryCue
+                        val nextCueText = (nextCue as? com.andreas_kratzer.ghosttalk.core.model.AuditoryCue.TextToSpeechCue)?.text?.takeIf { it.isNotBlank() } ?: nextConfig?.label ?: ""
                         scope.launch(Dispatchers.IO) {
                             handlePrefetchCue(nextCueText)
                         }
 
                         // Speak current button cue
-                        val cue = config.auditoryCue
-                        val cueText = (cue as? com.andreas_kratzer.ghosttalk.core.model.AuditoryCue.TextToSpeechCue)?.text?.takeIf { it.isNotBlank() } ?: config.label
+                        val cue = config?.auditoryCue
+                        val cueText = (cue as? com.andreas_kratzer.ghosttalk.core.model.AuditoryCue.TextToSpeechCue)?.text?.takeIf { it.isNotBlank() } ?: config?.label ?: ""
                         handleSpeakCue(cueText)
                         
                         scanTimer.delayTick()

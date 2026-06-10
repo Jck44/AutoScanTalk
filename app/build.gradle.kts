@@ -206,6 +206,7 @@ dependencies {
     ksp(libs.hilt.compiler)
     implementation(libs.hilt.navigation.compose)
     testImplementation(libs.hilt.android.testing)
+    testImplementation(libs.robolectric)
     kspTest(libs.hilt.compiler)
     androidTestImplementation(libs.hilt.android.testing)
     androidTestImplementation(libs.mockk.android)

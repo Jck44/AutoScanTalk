@@ -404,4 +404,29 @@ class ScanCoordinatorTest {
         assertEquals(false, scanCoordinator.isPausedManually.value)
         verify { scannerEngine.startScanning(any(), any(), any(), any(), any(), any(), eq("p1")) }
     }
+
+    @Test
+    fun `should timeout waiting for predictions after delay`() = runTest(testDispatcher) {
+        val rawPage = mockk<Page>(relaxed = true) {
+            every { id } returns "raw1"
+            every { name } returns "Raw Page"
+            every { buttonConfigs } returns listOf(ButtonConfig(label = "Gemini", auditoryCue = null, buttonAction = SmartPredictionButtonAction(1), isActive = true))
+        }
+
+        every { scanningSettings.scanDelayFlow } returns MutableStateFlow(100L)
+        
+        val scanCoordinator = createCoordinator(backgroundScope)
+        
+        currentPage.value = rawPage
+        resolvedPage.value = rawPage
+        smartPredictions.value = null
+        isSmartPredictionLoading.value = true
+
+        assertEquals(false, scanCoordinator.isPredictionTimedOut.value)
+        
+        kotlinx.coroutines.delay(150L)
+        
+        assertEquals(true, scanCoordinator.isPredictionTimedOut.value)
+    }
 }
+

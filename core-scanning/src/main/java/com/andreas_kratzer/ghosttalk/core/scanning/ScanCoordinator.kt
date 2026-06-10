@@ -30,6 +30,13 @@ class ScanCoordinator @Inject constructor(
     private var smartPredictions: StateFlow<List<String>?>? = null
     private var staticRowPage: StateFlow<Page?>? = null
     private var observeJob: kotlinx.coroutines.Job? = null
+    private var currentPageObserveJob: kotlinx.coroutines.Job? = null
+
+    private var lastPageIdForTimeout: String? = null
+
+    private var predictionTimeoutJob: kotlinx.coroutines.Job? = null
+    private val _isPredictionTimedOut = MutableStateFlow(false)
+    val isPredictionTimedOut: StateFlow<Boolean> = _isPredictionTimedOut.asStateFlow()
 
     private data class Data(
         val isExecuting: Boolean,
@@ -147,6 +154,22 @@ class ScanCoordinator @Inject constructor(
         this.smartPredictions = smartPredictions
         this.staticRowPage = staticRowPage
 
+        currentPageObserveJob?.cancel()
+        currentPageObserveJob = scope.launch {
+            currentPage.collect { page ->
+                if (page != null) {
+                    if (lastPageIdForTimeout != page.id) {
+                        lastPageIdForTimeout = page.id
+                        startPredictionTimeoutTimer(page)
+                    }
+                } else {
+                    lastPageIdForTimeout = null
+                    predictionTimeoutJob?.cancel()
+                    _isPredictionTimedOut.value = false
+                }
+            }
+        }
+
         observeJob?.cancel()
         observeJob = scope.launch {
             combine(
@@ -159,7 +182,8 @@ class ScanCoordinator @Inject constructor(
                 isPausedManually,
                 isPausedForNotification,
                 callActionProxy.isInCall,
-                this@ScanCoordinator.staticRowPage ?: MutableStateFlow(null)
+                this@ScanCoordinator.staticRowPage ?: MutableStateFlow(null),
+                _isPredictionTimedOut
             ) { array ->
                 Data(
                     isExecuting = array[1] as Boolean,
@@ -230,6 +254,24 @@ class ScanCoordinator @Inject constructor(
             }
         }
     }
+
+    private fun startPredictionTimeoutTimer(page: Page) {
+        predictionTimeoutJob?.cancel()
+        _isPredictionTimedOut.value = false
+        
+        val hasPredictions = page.buttonConfigs.any { 
+            it != null && it.isActive && it.buttonAction is com.andreas_kratzer.ghosttalk.core.model.SmartPredictionButtonAction 
+        }
+        if (!hasPredictions) return
+
+        predictionTimeoutJob = scope.launch {
+            val delayMs = scanningSettings.scanDelayFlow.value
+            kotlinx.coroutines.delay(delayMs)
+            debugLog("Predictions loading timed out after ${delayMs}ms. Forcing empty resolution.")
+            _isPredictionTimedOut.value = true
+        }
+    }
+
 
     private fun handleCycleCompleted() {
         if (!scanCycleLimitEnabled) return
@@ -310,8 +352,10 @@ class ScanCoordinator @Inject constructor(
     }
 
     private fun isWaitingForPredictions(isLoading: Boolean, predictions: List<String>?, pageId: String): Boolean {
+        if (_isPredictionTimedOut.value) return false
         return lastCuePageId != pageId || isLoading || predictions == null
     }
+
 
     fun setFocusedIndex(index: Int?) {
         scannerEngine.setFocusedIndex(index)
@@ -327,6 +371,10 @@ class ScanCoordinator @Inject constructor(
 
     fun clear() {
         observeJob?.cancel()
+        currentPageObserveJob?.cancel()
+        predictionTimeoutJob?.cancel()
+        _isPredictionTimedOut.value = false
+        lastPageIdForTimeout = null
         scannerEngine.clear()
         _currentCycleCount.value = 0
         _isStoppedDueToLimit.value = false
@@ -339,9 +387,13 @@ class ScanCoordinator @Inject constructor(
             _isStoppedDueToLimit.value = false
             _currentCycleCount.value = 0
             _isPausedManually.value = false
+            predictionTimeoutJob?.cancel()
+            _isPredictionTimedOut.value = false
+            lastPageIdForTimeout = null
             stopScanning()
         }
     }
+
 
     fun setCycleCount(count: Int) {
         _currentCycleCount.value = count

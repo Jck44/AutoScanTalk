@@ -171,8 +171,10 @@ class PageViewModel @Inject constructor(
         isPreviewOrUserMode = isPreviewOrUserMode,
         smartPredictions = smartPredictions,
         activeBookId = activeBookId,
-        unfilteredPages = unfilteredPages
+        unfilteredPages = unfilteredPages,
+        isPredictionTimedOut = scanCoordinator.isPredictionTimedOut
     )
+
 
     // --- Caregiver Visual Analytics Overlay States ---
     override val isAnalyticsOverlayEnabled = analyticsDelegate.isAnalyticsOverlayEnabled
@@ -435,7 +437,55 @@ class PageViewModel @Inject constructor(
                 }
             }
         }
+
+        // Observe resolvedPage and trigger rollback if it's completely empty in user mode
+        viewModelScope.launch {
+            combine(
+                resolvedPage,
+                isUserModeActive,
+                scanCoordinator.isPredictionTimedOut,
+                isSmartPredictionLoading,
+                smartPredictions,
+                staticRowPage
+            ) { array ->
+                val page = array[0] as? Page
+                val userMode = array[1] as Boolean
+                val timedOut = array[2] as Boolean
+                val isPredictionLoading = array[3] as Boolean
+                @Suppress("UNCHECKED_CAST")
+                val predictions = array[4] as? List<String>
+                val staticPage = array[5] as? Page
+
+                if (userMode && page != null) {
+                    val hasPredictions = page.buttonConfigs.any { it != null && it.isActive && it.buttonAction is com.andreas_kratzer.ghosttalk.core.model.SmartPredictionButtonAction }
+                    val isWaiting = if (hasPredictions) {
+                        !timedOut && (isPredictionLoading || predictions == null)
+                    } else {
+                        false
+                    }
+                    if (!isWaiting) {
+                        val hasMainButtons = page.buttonConfigs.any { config ->
+                            config != null && config.isActive
+                        }
+                        val hasStaticButtons = staticPage?.buttonConfigs?.any { config ->
+                            config != null && config.isActive
+                        } ?: false
+                        
+                        !hasMainButtons && !hasStaticButtons
+                    } else {
+                        false
+                    }
+                } else {
+                    false
+                }
+            }.collect { shouldRollback ->
+                if (shouldRollback) {
+                    triggerEmptyPageRollback()
+                }
+            }
+        }
     }
+
 
     fun updateSearchQuery(query: String) = pageManagementDelegate.updateSearchQuery(query)
     fun setActiveBookId(bookId: String?) {
@@ -781,5 +831,20 @@ class PageViewModel @Inject constructor(
 
     fun magicCleanup(pageId: String, onComplete: () -> Unit = {}) {
         layoutWizardDelegate.magicCleanup(pageId, onComplete)
+    }
+
+    private var isRollingBack = false
+
+    private fun triggerEmptyPageRollback() {
+        if (isRollingBack) return
+        isRollingBack = true
+        viewModelScope.launch {
+            Log.w("PageViewModel", "Empty page detected. Speaking TTS and navigating back.")
+            val msg = "Es ist ein Fehler bei der Berechnung der dynamischen Tasten aufgetreten. Es wird zur vorherigen Seite zurückgekehrt."
+            ttsHelper.speak(msg)
+            kotlinx.coroutines.delay(3000)
+            navigateBack()
+            isRollingBack = false
+        }
     }
 }
