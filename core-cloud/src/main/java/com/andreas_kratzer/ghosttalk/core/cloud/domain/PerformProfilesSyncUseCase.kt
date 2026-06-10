@@ -4,7 +4,6 @@ import android.content.Intent
 import android.util.Log
 import com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper
 import com.andreas_kratzer.ghosttalk.core.cloud.GoogleAuthManager
-import com.andreas_kratzer.ghosttalk.core.cloud.GoogleWebAuthManager
 import com.andreas_kratzer.ghosttalk.core.settings.CloudSettings
 import com.google.api.client.googleapis.extensions.android.gms.auth.UserRecoverableAuthIOException
 import kotlinx.coroutines.Dispatchers
@@ -13,7 +12,6 @@ import javax.inject.Inject
 
 class PerformProfilesSyncUseCase @Inject constructor(
     private val googleAuthManager: GoogleAuthManager,
-    private val googleWebAuthManager: GoogleWebAuthManager,
     private val cloudSyncUseCase: CloudSyncUseCase,
     private val settingsRepository: CloudSettings
 ) {
@@ -33,9 +31,7 @@ class PerformProfilesSyncUseCase @Inject constructor(
 
         val drive = try {
             val client = DriveServiceHelper.buildDriveClient(
-                authType = authType,
-                googleAuthManager = googleAuthManager,
-                googleWebAuthManager = googleWebAuthManager
+                googleAuthManager = googleAuthManager
             )
             if (client == null) {
                 Log.e(TAG, "buildDriveClient returned null! authType=$authType")

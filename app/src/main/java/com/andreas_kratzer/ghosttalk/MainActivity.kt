@@ -44,7 +44,7 @@ import androidx.navigation.compose.rememberNavController
 import com.andreas_kratzer.ghosttalk.core.KeyEventCoordinator
 import com.andreas_kratzer.ghosttalk.core.SecurityManager
 import com.andreas_kratzer.ghosttalk.core.UpdateManager
-import com.andreas_kratzer.ghosttalk.core.cloud.GoogleWebAuthManager
+import com.andreas_kratzer.ghosttalk.core.cloud.domain.RescheduleProfileSyncUseCase
 import com.andreas_kratzer.ghosttalk.core.cloud.SpotifyManager
 import com.andreas_kratzer.ghosttalk.core.data.PageRepository
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
@@ -79,7 +79,7 @@ class MainActivity : AppCompatActivity() {
     @Inject lateinit var securityManager: SecurityManager
     @Inject lateinit var userModeSessionTracker: UserModeSessionTracker
     @Inject lateinit var spotifyManager: SpotifyManager
-    @Inject lateinit var googleWebAuthManager: GoogleWebAuthManager
+    @Inject lateinit var rescheduleProfileSyncUseCase: RescheduleProfileSyncUseCase
     @Inject lateinit var backgroundScheduler: com.andreas_kratzer.ghosttalk.core.domain.BackgroundScheduler
     @Inject lateinit var importExportManager: PageImportExportProvider
 
@@ -228,6 +228,8 @@ class MainActivity : AppCompatActivity() {
                 pageViewModel.setActiveBookId(finalActiveBookId)
                 backgroundScheduler.scheduleLocationUpdate()
                 backgroundScheduler.scheduleWeatherUpdate()
+                rescheduleProfileSyncUseCase.reschedule()
+                rescheduleProfileSyncUseCase.runOnceImmediately()
                 withContext(Dispatchers.IO) {
                     pageRepository.purgeInstallUpdateButtons()
                 }
@@ -590,15 +592,6 @@ class MainActivity : AppCompatActivity() {
                     settingsViewModel.loadSpotifyPlaylists()
                 } else {
                     Log.e("MainActivity", "Spotify OAuth callback processing failed.")
-                }
-            }
-        } else if (data.scheme == "com.googleusercontent.apps.974414517482-2fo3sfu8ij49gotcduivt6dsu9e7cleu") {
-            lifecycleScope.launch {
-                val success = googleWebAuthManager.handleAuthRedirect(data)
-                if (success) {
-                    Log.i("MainActivity", "Google OAuth Web Flow success callback processed.")
-                } else {
-                    Log.e("MainActivity", "Google OAuth Web Flow callback processing failed.")
                 }
             }
         }

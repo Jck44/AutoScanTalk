@@ -491,9 +491,6 @@
     <string name="settings_no_results">Keine Einstellungen gefunden</string>
     <string name="settings_no_pages_found">Keine Seiten gefunden</string>
     <string name="settings_title">Einstellungen</string>
-    <string name="settings_google_auth_system">Systemweiter Google Account</string>
-    <string name="settings_google_auth_web">In-App Google Web-Login</string>
-    <string name="settings_google_auth_label">Google Anmeldeverfahren</string>
     <string name="settings_cloud_switch_account">Konto wechseln</string>
     <string name="settings_sync_manual_dialog_title">Freigabe-Link oder Ordner-ID eingeben</string>
     <string name="settings_sync_manual_dialog_desc">Füge den Google Drive Link zum geteilten Ordner oder die Ordner-ID hier ein. Der Ordner muss von der GhostTalk-App (z. B. auf dem Patientengerät) erstellt worden sein.</string>

@@ -39,7 +39,6 @@ class CloudSyncSettingsDelegateTest {
 
     private lateinit var application: Application
     private lateinit var googleAuthManager: GoogleAuthManager
-    private lateinit var googleWebAuthManager: com.andreas_kratzer.ghosttalk.core.cloud.GoogleWebAuthManager
     private lateinit var settingsRepository: com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
     private lateinit var setCloudSyncEnabledUseCase: SetCloudSyncEnabledUseCase
     private lateinit var performManualSyncUseCase: PerformManualSyncUseCase
@@ -49,6 +48,7 @@ class CloudSyncSettingsDelegateTest {
     private lateinit var signInUseCase: SignInUseCase
     private lateinit var signOutUseCase: SignOutUseCase
     private lateinit var syncLogProvider: SyncLogProvider
+    private lateinit var rescheduleProfileSyncUseCase: com.andreas_kratzer.ghosttalk.core.cloud.domain.RescheduleProfileSyncUseCase
     private lateinit var delegate: CloudSyncSettingsDelegate
 
     private val userEmailFlow = MutableStateFlow<String?>(null)
@@ -62,7 +62,6 @@ class CloudSyncSettingsDelegateTest {
 
         application = mockk(relaxed = true)
         googleAuthManager = mockk(relaxed = true)
-        googleWebAuthManager = mockk(relaxed = true)
         settingsRepository = mockk(relaxed = true)
         setCloudSyncEnabledUseCase = mockk(relaxed = true)
         performManualSyncUseCase = mockk(relaxed = true)
@@ -72,6 +71,7 @@ class CloudSyncSettingsDelegateTest {
         signInUseCase = mockk(relaxed = true)
         signOutUseCase = mockk(relaxed = true)
         syncLogProvider = mockk(relaxed = true)
+        rescheduleProfileSyncUseCase = mockk(relaxed = true)
         
         every { googleAuthManager.userEmail } returns userEmailFlow
         every { settingsRepository.googleAuthTypeFlow } returns MutableStateFlow(com.andreas_kratzer.ghosttalk.core.model.CloudAuthType.SYSTEM)
@@ -80,7 +80,6 @@ class CloudSyncSettingsDelegateTest {
         delegate = CloudSyncSettingsDelegate(
             application = application,
             authManager = googleAuthManager,
-            googleWebAuthManager = googleWebAuthManager,
             settingsRepository = settingsRepository,
             setCloudSyncEnabledUseCase = setCloudSyncEnabledUseCase,
             performManualSyncUseCase = performManualSyncUseCase,
@@ -89,7 +88,8 @@ class CloudSyncSettingsDelegateTest {
             getDriveFoldersUseCase = getDriveFoldersUseCase,
             signInUseCase = signInUseCase,
             signOutUseCase = signOutUseCase,
-            syncLogProvider = syncLogProvider
+            syncLogProvider = syncLogProvider,
+            rescheduleProfileSyncUseCase = rescheduleProfileSyncUseCase
         )
     }
 

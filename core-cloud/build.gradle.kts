@@ -30,10 +30,8 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            buildConfigField("String", "GOOGLE_CLIENT_ID", "\"974414517482-2fo3sfu8ij49gotcduivt6dsu9e7cleu.apps.googleusercontent.com\"")
         }
         debug {
-            buildConfigField("String", "GOOGLE_CLIENT_ID", "\"974414517482-2fo3sfu8ij49gotcduivt6dsu9e7cleu.apps.googleusercontent.com\"")
         }
     }
     compileOptions {
@@ -79,7 +77,6 @@ dependencies {
     implementation(libs.googleid)
     implementation(libs.gms.play.services.auth)
     implementation(libs.androidx.work.runtime.ktx)
-    implementation(libs.androidx.browser)
 
     implementation(libs.gson)
     implementation(libs.kotlinx.serialization.json)

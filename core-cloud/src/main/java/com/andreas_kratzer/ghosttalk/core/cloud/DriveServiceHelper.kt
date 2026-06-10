@@ -1,7 +1,7 @@
 package com.andreas_kratzer.ghosttalk.core.cloud
 
 import android.util.Log
-import com.andreas_kratzer.ghosttalk.core.model.CloudAuthType
+
 import com.google.api.client.googleapis.json.GoogleJsonResponseException
 import com.google.api.client.http.FileContent
 import com.google.api.services.drive.Drive
@@ -407,36 +407,17 @@ class DriveServiceHelper(private val driveService: Drive) {
     companion object {
 
         suspend fun buildDriveClient(
-            authType: CloudAuthType,
-            googleAuthManager: GoogleAuthManager,
-            googleWebAuthManager: GoogleWebAuthManager
+            googleAuthManager: GoogleAuthManager
         ): Drive? {
-            return when (authType) {
-                CloudAuthType.SYSTEM -> {
-                    val credential = googleAuthManager.getGoogleCredential() ?: return null
-                    Drive.Builder(
-                        com.google.api.client.http.javanet.NetHttpTransport(),
-                        com.google.api.client.json.gson.GsonFactory.getDefaultInstance()
-                    ) { request ->
-                        credential.initialize(request)
-                        request.connectTimeout = 3 * 60 * 1000 // 3 minutes
-                        request.readTimeout = 3 * 60 * 1000    // 3 minutes
-                    }.setApplicationName("GhosTTalk").build()
-                }
-                CloudAuthType.WEB_FLOW -> {
-                    val token = googleWebAuthManager.getOrRefreshToken() ?: return null
-                    val initializer = com.google.api.client.http.HttpRequestInitializer { req ->
-                        req.headers.authorization = "Bearer $token"
-                        req.connectTimeout = 3 * 60 * 1000 // 3 minutes
-                        req.readTimeout = 3 * 60 * 1000    // 3 minutes
-                    }
-                    Drive.Builder(
-                        com.google.api.client.http.javanet.NetHttpTransport(),
-                        com.google.api.client.json.gson.GsonFactory.getDefaultInstance(),
-                        initializer
-                    ).setApplicationName("GhosTTalk").build()
-                }
-            }
+            val credential = googleAuthManager.getGoogleCredential() ?: return null
+            return Drive.Builder(
+                com.google.api.client.http.javanet.NetHttpTransport(),
+                com.google.api.client.json.gson.GsonFactory.getDefaultInstance()
+            ) { request ->
+                credential.initialize(request)
+                request.connectTimeout = 3 * 60 * 1000 // 3 minutes
+                request.readTimeout = 3 * 60 * 1000    // 3 minutes
+            }.setApplicationName("GhosTTalk").build()
         }
     }
 }

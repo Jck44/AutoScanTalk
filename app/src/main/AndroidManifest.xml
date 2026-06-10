@@ -90,12 +90,7 @@
                 <data android:scheme="com.andreas_kratzer.ghosttalk" />
             </intent-filter>
 
-            <intent-filter>
-                <action android:name="android.intent.action.VIEW" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="com.googleusercontent.apps.974414517482-2fo3sfu8ij49gotcduivt6dsu9e7cleu" />
-            </intent-filter>
+
 
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />

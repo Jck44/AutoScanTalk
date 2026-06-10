@@ -20,7 +20,6 @@ class CloudSyncWorker @AssistedInject constructor(
     @Assisted context: Context,
     @Assisted workerParams: WorkerParameters,
     private val googleAuthManager: GoogleAuthManager,
-    private val googleWebAuthManager: GoogleWebAuthManager,
     private val settingsRepository: SettingsRepository,
     private val buttonUsageRepository: ButtonUsageRepository,
     private val cloudSyncUseCase: CloudSyncUseCase
@@ -53,9 +52,7 @@ class CloudSyncWorker @AssistedInject constructor(
             null
         } else {
             val client = DriveServiceHelper.buildDriveClient(
-                authType = settingsRepository.googleAuthType,
-                googleAuthManager = googleAuthManager,
-                googleWebAuthManager = googleWebAuthManager
+                googleAuthManager = googleAuthManager
             )
             if (client == null) {
                 Log.w("CloudSyncWorker", "No credential available or failed to build Drive client. Failing sync.")

@@ -8,19 +8,18 @@ import android.content.Intent
 import android.util.Log
 import android.widget.Toast
 import com.andreas_kratzer.ghosttalk.core.cloud.AuthManager
-import com.andreas_kratzer.ghosttalk.core.cloud.GoogleWebAuthManager
 import com.andreas_kratzer.ghosttalk.core.cloud.domain.GetAvailableBackupsUseCase
 import com.andreas_kratzer.ghosttalk.core.cloud.domain.GetDriveFoldersUseCase
 import com.andreas_kratzer.ghosttalk.core.cloud.domain.ImportCloudBackupUseCase
 import com.andreas_kratzer.ghosttalk.core.cloud.domain.PerformManualSyncUseCase
 import com.andreas_kratzer.ghosttalk.core.cloud.domain.RemoteBackupInfo
+import com.andreas_kratzer.ghosttalk.core.cloud.domain.RescheduleProfileSyncUseCase
 import com.andreas_kratzer.ghosttalk.core.cloud.domain.SetCloudSyncEnabledUseCase
 import com.andreas_kratzer.ghosttalk.core.cloud.domain.SignInUseCase
 import com.andreas_kratzer.ghosttalk.core.cloud.domain.SignOutUseCase
 import com.andreas_kratzer.ghosttalk.core.cloud.domain.SyncMode
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.core.data.SyncLogProvider
-import com.andreas_kratzer.ghosttalk.core.model.CloudAuthType
 import com.andreas_kratzer.ghosttalk.feature.settings.R
 import com.google.api.client.googleapis.extensions.android.gms.auth.UserRecoverableAuthIOException
 import com.google.api.services.drive.model.File
@@ -42,7 +41,6 @@ import javax.inject.Singleton
 class CloudSyncSettingsDelegate @Inject constructor(
     private val application: Application,
     private val authManager: AuthManager,
-    private val googleWebAuthManager: GoogleWebAuthManager,
     private val settingsRepository: SettingsRepository,
     private val setCloudSyncEnabledUseCase: SetCloudSyncEnabledUseCase,
     private val performManualSyncUseCase: PerformManualSyncUseCase,
@@ -51,7 +49,8 @@ class CloudSyncSettingsDelegate @Inject constructor(
     private val getDriveFoldersUseCase: GetDriveFoldersUseCase,
     private val signInUseCase: SignInUseCase,
     private val signOutUseCase: SignOutUseCase,
-    private val syncLogProvider: SyncLogProvider
+    private val syncLogProvider: SyncLogProvider,
+    private val rescheduleProfileSyncUseCase: RescheduleProfileSyncUseCase
 ) {
     private val delegateScope = CoroutineScope(Dispatchers.Main.immediate + kotlinx.coroutines.SupervisorJob())
 
@@ -95,59 +94,40 @@ class CloudSyncSettingsDelegate @Inject constructor(
         }
     }
 
-    val userEmail: StateFlow<String?> = kotlinx.coroutines.flow.combine(
-        settingsRepository.googleAuthTypeFlow,
-        authManager.userEmail,
-        settingsRepository.googleUserEmailFlow
-    ) { authType, systemEmail, webEmail ->
-        if (authType == CloudAuthType.SYSTEM) {
-            systemEmail
-        } else {
-            webEmail
-        }
-    }.stateIn(delegateScope, SharingStarted.Eagerly, null)
+    val userEmail: StateFlow<String?> = authManager.userEmail
 
     fun signIn(context: Context, scope: CoroutineScope) {
-        val authType = settingsRepository.googleAuthType
-        if (authType == CloudAuthType.WEB_FLOW) {
-            googleWebAuthManager.startWebAuthFlow(context)
-        } else {
-            val activity = findActivity(context) ?: return
-            scope.launch {
-                _signInErrorMessage.value = null
-                val result = signInUseCase.execute(activity)
-                if (!result) {
-                    _signInErrorMessage.value = "Anmeldung fehlgeschlagen. SHA-1 korrekt?"
-                }
+        val activity = findActivity(context) ?: return
+        scope.launch {
+            _signInErrorMessage.value = null
+            val result = signInUseCase.execute(activity)
+            if (!result) {
+                _signInErrorMessage.value = "Anmeldung fehlgeschlagen. SHA-1 korrekt?"
+            } else {
+                rescheduleProfileSyncUseCase.reschedule()
+                rescheduleProfileSyncUseCase.runOnceImmediately()
             }
         }
     }
 
     fun signOut(scope: CoroutineScope) {
         scope.launch {
-            val authType = settingsRepository.googleAuthType
-            if (authType == CloudAuthType.WEB_FLOW) {
-                googleWebAuthManager.disconnect()
-            } else {
-                signOutUseCase.execute()
-            }
+            signOutUseCase.execute()
+            rescheduleProfileSyncUseCase.reschedule()
         }
     }
 
     fun switchAccount(context: Context, scope: CoroutineScope) {
-        val authType = settingsRepository.googleAuthType
-        if (authType == CloudAuthType.WEB_FLOW) {
-            googleWebAuthManager.disconnect()
-            googleWebAuthManager.startWebAuthFlow(context)
-        } else {
-            val activity = findActivity(context) ?: return
-            scope.launch {
-                signOutUseCase.execute()
-                _signInErrorMessage.value = null
-                val result = signInUseCase.execute(activity)
-                if (!result) {
-                    _signInErrorMessage.value = "Konto wechseln fehlgeschlagen."
-                }
+        val activity = findActivity(context) ?: return
+        scope.launch {
+            signOutUseCase.execute()
+            _signInErrorMessage.value = null
+            val result = signInUseCase.execute(activity)
+            if (!result) {
+                _signInErrorMessage.value = "Konto wechseln fehlgeschlagen."
+            } else {
+                rescheduleProfileSyncUseCase.reschedule()
+                rescheduleProfileSyncUseCase.runOnceImmediately()
             }
         }
     }
@@ -416,12 +396,9 @@ class CloudSyncSettingsDelegate @Inject constructor(
     }
 
     private suspend fun buildDriveClient(): com.google.api.services.drive.Drive? {
-        val authType = settingsRepository.googleAuthType
         val gAuth = authManager as? com.andreas_kratzer.ghosttalk.core.cloud.GoogleAuthManager ?: return null
         return com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper.buildDriveClient(
-            authType = authType,
-            googleAuthManager = gAuth,
-            googleWebAuthManager = googleWebAuthManager
+            googleAuthManager = gAuth
         )
     }
 }

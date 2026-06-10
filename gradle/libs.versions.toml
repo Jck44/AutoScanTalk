@@ -43,7 +43,7 @@ browser = "1.10.0"
 googleServices = "4.4.4"
 firebaseBom = "34.14.1"
 firebaseCrashlyticsPlugin = "3.0.7"
-robolectric = "4.14"
+robolectric = "4.16.1"
 
 [libraries]
 

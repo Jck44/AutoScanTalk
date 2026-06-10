@@ -107,16 +107,16 @@ class CloudSyncUseCase @Inject constructor(
             }
 
             try {
-                val storageProvider = getStorageProvider(drive)
-
-                val remoteFiles = storageProvider.listFiles()
-
                 // --- STAGE 1: Profile Sync (Lifeline) ---
                 try {
                     profileSyncOrchestrator.syncProfiles(drive, runExclusive = false)
                 } catch (e: Exception) {
                     logger.e(TAG, "[SYNC-STAGE-1-ERROR] Stage 1 Profile sync failed (non-fatal): ${e.message}", e)
                 }
+
+                val storageProvider = getStorageProvider(drive)
+
+                val remoteFiles = storageProvider.listFiles()
 
                 // Check isDataCloudSyncEnabled. If disabled, skip Stage 2 book sync.
                 if (!settingsRepository.isDataCloudSyncEnabled) {

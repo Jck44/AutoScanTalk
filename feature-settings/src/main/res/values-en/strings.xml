@@ -490,9 +490,6 @@
     <string name="settings_no_results">No settings found</string>
     <string name="settings_no_pages_found">No pages found</string>
     <string name="settings_title">Settings</string>
-    <string name="settings_google_auth_system">System Google Account</string>
-    <string name="settings_google_auth_web">In-App Google Web Login</string>
-    <string name="settings_google_auth_label">Google Login Method</string>
     <string name="settings_cloud_switch_account">Switch account</string>
     <string name="settings_sync_manual_dialog_title">Enter shared link or folder ID</string>
     <string name="settings_sync_manual_dialog_desc">Paste the Google Drive link to the shared folder or the folder ID here. The folder must have been created by the GhosTTalk app (e.g., on the patient device).</string>

@@ -57,7 +57,6 @@ fun RestoreProfileDialog(
     val userEmail by viewModel.userEmail.collectAsState()
     val isSyncing by viewModel.isSyncing.collectAsState()
     val availableBackups by viewModel.availableBackups.collectAsState()
-    val googleAuthType by viewModel.googleAuthType.collectAsState()
 
     androidx.compose.runtime.LaunchedEffect(userEmail) {
         if (userEmail != null) {
@@ -97,7 +96,6 @@ fun RestoreProfileDialog(
                 if (userEmail == null) {
                     Button(
                         onClick = {
-                            viewModel.setGoogleAuthType(com.andreas_kratzer.ghosttalk.core.model.CloudAuthType.SYSTEM)
                             viewModel.signIn(context)
                         },
                         modifier = Modifier.fillMaxWidth(),
@@ -105,29 +103,9 @@ fun RestoreProfileDialog(
                     ) {
                         Icon(GhostTalkIcons.Cloud, contentDescription = null)
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("Bei Google anmelden (System-Konto)")
-                    }
-
-                    Spacer(modifier = Modifier.height(4.dp))
-
-                    Button(
-                        onClick = {
-                            viewModel.setGoogleAuthType(com.andreas_kratzer.ghosttalk.core.model.CloudAuthType.WEB_FLOW)
-                            viewModel.signIn(context)
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = MaterialTheme.shapes.medium,
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                            contentColor = MaterialTheme.colorScheme.onSecondaryContainer
-                        )
-                    ) {
-                        Icon(GhostTalkIcons.Cloud, contentDescription = null)
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Google Web-Login (In-App OAuth)")
+                        Text("Bei Google anmelden")
                     }
                 } else {
-                    val authTypeLabel = if (googleAuthType == com.andreas_kratzer.ghosttalk.core.model.CloudAuthType.SYSTEM) "System-Konto" else "In-App Web-Login"
                     Card(
                         colors = CardDefaults.cardColors(
                             containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
@@ -136,7 +114,7 @@ fun RestoreProfileDialog(
                     ) {
                         Column(modifier = Modifier.padding(12.dp)) {
                             Text(
-                                text = "Angemeldet als ($authTypeLabel):",
+                                text = "Angemeldet als:",
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )

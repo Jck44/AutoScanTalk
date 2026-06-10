@@ -4,7 +4,6 @@ import android.content.Intent
 import android.util.Log
 import com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper
 import com.andreas_kratzer.ghosttalk.core.cloud.GoogleAuthManager
-import com.andreas_kratzer.ghosttalk.core.cloud.GoogleWebAuthManager
 import com.andreas_kratzer.ghosttalk.core.settings.CloudSettings
 import com.google.api.client.googleapis.extensions.android.gms.auth.UserRecoverableAuthIOException
 import kotlinx.coroutines.Dispatchers
@@ -13,7 +12,6 @@ import javax.inject.Inject
 
 class PerformManualSyncUseCase @Inject constructor(
     private val googleAuthManager: GoogleAuthManager,
-    private val googleWebAuthManager: GoogleWebAuthManager,
     private val cloudSyncUseCase: CloudSyncUseCase,
     private val settingsRepository: CloudSettings
 ) {
@@ -49,11 +47,9 @@ class PerformManualSyncUseCase @Inject constructor(
             Log.d(TAG, "SAF mode detected. Setting drive=null.")
             null
         } else {
-            Log.d(TAG, "Drive API mode detected. Building drive client with authType=$authType...")
+            Log.d(TAG, "Drive API mode detected. Building drive client...")
             val client = DriveServiceHelper.buildDriveClient(
-                authType = authType,
-                googleAuthManager = googleAuthManager,
-                googleWebAuthManager = googleWebAuthManager
+                googleAuthManager = googleAuthManager
             )
             if (client == null) {
                 Log.e(TAG, "buildDriveClient returned null! authType=$authType")

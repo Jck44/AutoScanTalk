@@ -3,7 +3,6 @@ package com.andreas_kratzer.ghosttalk.core.cloud.domain
 import android.content.Intent
 import android.util.Log
 import com.andreas_kratzer.ghosttalk.core.cloud.GoogleAuthManager
-import com.andreas_kratzer.ghosttalk.core.cloud.GoogleWebAuthManager
 import com.andreas_kratzer.ghosttalk.core.settings.CloudSettings
 import com.google.api.client.googleapis.extensions.android.gms.auth.UserRecoverableAuthIOException
 import com.google.api.services.drive.Drive
@@ -27,7 +26,6 @@ class PerformProfilesSyncUseCaseTest {
 
     private lateinit var useCase: PerformProfilesSyncUseCase
     private lateinit var mockGoogleAuthManager: GoogleAuthManager
-    private lateinit var mockGoogleWebAuthManager: GoogleWebAuthManager
     private lateinit var mockCloudSyncUseCase: CloudSyncUseCase
     private lateinit var mockSettingsRepository: CloudSettings
     private lateinit var mockDrive: Drive
@@ -35,7 +33,6 @@ class PerformProfilesSyncUseCaseTest {
     @Before
     fun setup() {
         mockGoogleAuthManager = mockk(relaxed = true)
-        mockGoogleWebAuthManager = mockk(relaxed = true)
         mockCloudSyncUseCase = mockk(relaxed = true)
         mockSettingsRepository = mockk(relaxed = true)
         mockDrive = mockk(relaxed = true)
@@ -50,7 +47,6 @@ class PerformProfilesSyncUseCaseTest {
 
         useCase = PerformProfilesSyncUseCase(
             googleAuthManager = mockGoogleAuthManager,
-            googleWebAuthManager = mockGoogleWebAuthManager,
             cloudSyncUseCase = mockCloudSyncUseCase,
             settingsRepository = mockSettingsRepository
         )
@@ -64,7 +60,7 @@ class PerformProfilesSyncUseCaseTest {
     @Test
     fun `execute returns Error if drive client building fails`() = runTest {
         every { mockSettingsRepository.googleAuthType } returns com.andreas_kratzer.ghosttalk.core.model.CloudAuthType.SYSTEM
-        coEvery { com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper.buildDriveClient(any(), any(), any()) } returns null
+        coEvery { com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper.buildDriveClient(any()) } returns null
 
         val result = useCase.execute { _, _ -> }
 
@@ -76,7 +72,7 @@ class PerformProfilesSyncUseCaseTest {
     @Test
     fun `execute returns Success when syncProfilesOnly completes successfully`() = runTest {
         every { mockSettingsRepository.googleAuthType } returns com.andreas_kratzer.ghosttalk.core.model.CloudAuthType.SYSTEM
-        coEvery { com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper.buildDriveClient(any(), any(), any()) } returns mockDrive
+        coEvery { com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper.buildDriveClient(any()) } returns mockDrive
         coEvery { mockCloudSyncUseCase.syncProfilesOnly(mockDrive, any()) } returns true
 
         val result = useCase.execute { _, _ -> }
@@ -88,7 +84,7 @@ class PerformProfilesSyncUseCaseTest {
     @Test
     fun `execute returns RecoverableAuth on UserRecoverableAuthIOException`() = runTest {
         every { mockSettingsRepository.googleAuthType } returns com.andreas_kratzer.ghosttalk.core.model.CloudAuthType.SYSTEM
-        coEvery { com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper.buildDriveClient(any(), any(), any()) } returns mockDrive
+        coEvery { com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper.buildDriveClient(any()) } returns mockDrive
         val mockIntent = mockk<Intent>()
         val exception = mockk<UserRecoverableAuthIOException>()
         every { exception.intent } returns mockIntent

@@ -3,7 +3,6 @@ package com.andreas_kratzer.ghosttalk.core.cloud.domain
 import android.content.Intent
 import android.util.Log
 import com.andreas_kratzer.ghosttalk.core.cloud.GoogleAuthManager
-import com.andreas_kratzer.ghosttalk.core.cloud.GoogleWebAuthManager
 import com.andreas_kratzer.ghosttalk.core.settings.CloudSettings
 import com.google.android.gms.auth.UserRecoverableAuthException
 import com.google.api.client.googleapis.extensions.android.gms.auth.UserRecoverableAuthIOException
@@ -27,7 +26,6 @@ import org.junit.Test
 class PerformManualSyncUseCaseTest {
 
     private lateinit var googleAuthManager: GoogleAuthManager
-    private lateinit var googleWebAuthManager: GoogleWebAuthManager
     private lateinit var cloudSyncUseCase: CloudSyncUseCase
     private lateinit var settingsRepository: CloudSettings
     private lateinit var useCase: PerformManualSyncUseCase
@@ -40,12 +38,10 @@ class PerformManualSyncUseCaseTest {
         every { Log.e(any(), any()) } returns 0
         
         googleAuthManager = mockk(relaxed = true)
-        googleWebAuthManager = mockk(relaxed = true)
         cloudSyncUseCase = mockk(relaxed = true)
         settingsRepository = mockk(relaxed = true)
         useCase = PerformManualSyncUseCase(
             googleAuthManager = googleAuthManager,
-            googleWebAuthManager = googleWebAuthManager,
             cloudSyncUseCase = cloudSyncUseCase,
             settingsRepository = settingsRepository
         )

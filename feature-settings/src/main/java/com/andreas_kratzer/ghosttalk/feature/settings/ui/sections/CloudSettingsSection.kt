@@ -100,22 +100,6 @@ fun CloudSettingsSection(
 
         if (!showSyncSettings) {
             PreferenceCategory(stringResource(R.string.settings_category_cloud_account)) {
-                val authTypeLabel = if (googleAuthType == com.andreas_kratzer.ghosttalk.core.model.CloudAuthType.SYSTEM) {
-                    stringResource(R.string.settings_google_auth_system)
-                } else {
-                    stringResource(R.string.settings_google_auth_web)
-                }
-
-                SettingsDropdownItem(
-                    label = stringResource(R.string.settings_google_auth_label),
-                    selectedOption = authTypeLabel,
-                    options = listOf(
-                        stringResource(R.string.settings_google_auth_system) to { viewModel.setGoogleAuthType(com.andreas_kratzer.ghosttalk.core.model.CloudAuthType.SYSTEM) },
-                        stringResource(R.string.settings_google_auth_web) to { viewModel.setGoogleAuthType(com.andreas_kratzer.ghosttalk.core.model.CloudAuthType.WEB_FLOW) }
-                    )
-                )
-
-                Spacer(modifier = Modifier.height(12.dp))
 
                 if (userEmail != null) {
                     Text(
