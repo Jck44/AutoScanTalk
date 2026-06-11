@@ -25,19 +25,20 @@ fun GhostTalkScaffold(
     actions: @Composable RowScope.() -> Unit = {},
     floatingActionButton: @Composable () -> Unit = {},
     snackbarHost: @Composable () -> Unit = {},
+    titleContent: @Composable () -> Unit = {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleLarge,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
+    },
     content: @Composable (PaddingValues) -> Unit
 ) {
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
-                title = {
-                    Text(
-                        text = title,
-                        style = MaterialTheme.typography.titleLarge,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                },
+                title = titleContent,
                 navigationIcon = {
                     if (onNavigateBack != null) {
                         IconButton(onClick = onNavigateBack) {

@@ -3,6 +3,7 @@ package com.andreas_kratzer.ghosttalk.ui.pages
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
@@ -90,6 +91,11 @@ fun PageEditorScreen(
     val snackbarHostState = remember { androidx.compose.material3.SnackbarHostState() }
     val coroutineScope = androidx.compose.runtime.rememberCoroutineScope()
 
+    val resolvedPage by pageViewModel.resolvedPage.collectAsState()
+    LaunchedEffect(resolvedPage) {
+        gridEditorViewModel.setResolvedPage(resolvedPage)
+    }
+
     LaunchedEffect(localName) {
         if (localName != page.name && localName.isNotBlank()) {
             delay(500)
@@ -104,9 +110,7 @@ fun PageEditorScreen(
         title = "",
         onNavigateBack = handleNavigateBack,
         snackbarHost = { androidx.compose.material3.SnackbarHost(snackbarHostState) },
-        actions = {
-            val isEditPreviewActive by pageViewModel.isEditPreviewActive.collectAsState()
-            
+        titleContent = {
             ValidatedTextField(
                 value = localName,
                 onValueChange = { localName = it },
@@ -122,12 +126,14 @@ fun PageEditorScreen(
                 },
                 placeholder = { Text(stringResource(R.string.page_name_label)) },
                 modifier = Modifier
-                    .weight(1f)
-                    .padding(end = dimensions.screenPaddingHorizontal)
+                    .fillMaxWidth()
                     .padding(vertical = 4.dp) // Reduce vertical impact
                     .testTag("page_editor_name_field")
             )
-
+        },
+        actions = {
+            val isEditPreviewActive by pageViewModel.isEditPreviewActive.collectAsState()
+            
             IconButton(
                 onClick = { pageViewModel.toggleEditPreviewActive() },
                 modifier = Modifier.testTag("page_editor_preview_toggle")

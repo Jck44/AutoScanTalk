@@ -66,7 +66,7 @@ fun TemplateEditorScreen(
     GhostTalkScaffold(
         title = "",
         onNavigateBack = onNavigateBack,
-        actions = {
+        titleContent = {
             OutlinedTextField(
                 value = localName,
                 onValueChange = { localName = it },
@@ -75,7 +75,6 @@ fun TemplateEditorScreen(
                 shape = MaterialTheme.shapes.large,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(end = dimensions.screenPaddingHorizontal)
             )
         }
     ) { paddingValues ->

@@ -25,8 +25,26 @@ class GridEditorViewModel @Inject constructor(
     private val ttsPreviewDelegate: TtsPreviewDelegate,
     private val actionExecutor: ActionExecutor,
     override val settingsRepository: SettingsRepository,
-    private val geminiUseCase: GeminiUseCase
+    private val geminiUseCase: GeminiUseCase,
+    private val analyticsDelegate: com.andreas_kratzer.ghosttalk.ui.pages.delegates.AnalyticsDelegate,
+    private val pageResolutionDelegate: com.andreas_kratzer.ghosttalk.ui.pages.delegates.PageResolutionDelegate
 ) : ViewModel(), GridEditorActions {
+
+    override val isAnalyticsOverlayEnabled: StateFlow<Boolean>
+        get() = analyticsDelegate.isAnalyticsOverlayEnabled
+
+    override val pageMetrics: StateFlow<Map<String, com.andreas_kratzer.ghosttalk.core.model.ButtonEffortMetrics>>
+        get() = analyticsDelegate.pageMetrics
+
+    override val isEditPreviewActive: StateFlow<Boolean>
+        get() = pageResolutionDelegate.isEditPreviewActive
+
+    private val _resolvedPage = kotlinx.coroutines.flow.MutableStateFlow<com.andreas_kratzer.ghosttalk.core.model.Page?>(null)
+    override val resolvedPage: StateFlow<com.andreas_kratzer.ghosttalk.core.model.Page?> = _resolvedPage
+
+    fun setResolvedPage(page: com.andreas_kratzer.ghosttalk.core.model.Page?) {
+        _resolvedPage.value = page
+    }
 
     init {
         buttonTemplateDelegate.init(viewModelScope)
