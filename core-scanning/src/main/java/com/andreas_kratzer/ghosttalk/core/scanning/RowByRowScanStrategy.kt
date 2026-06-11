@@ -60,11 +60,16 @@ class RowByRowScanStrategy @Inject constructor() : ScanStrategy {
                 }
             }
         } else {
-            // Main page is linear/button-by-button
-            for (index in 0 until (context.mainRows * context.mainColumns)) {
-                val globalIdx = shiftOffset + index
+            // Main page is linear/button-by-button.
+            // Buttons liegen sparse im 7x7-Raster (lokaler Index = r*7+c), daher ueber die
+            // volle Hauptseiten-Liste iterieren und mit dem Hauptseiten-Raster filtern –
+            // nicht 0 until (rows*cols), das wuerde Zeilen ab der 3. verfehlen.
+            for (localIndex in 0 until 49) {
+                val globalIdx = shiftOffset + localIndex
                 val config = context.buttonConfigs.getOrNull(globalIdx)
-                if (config != null && config.isActive && context.featureGuard.isButtonVisible(config)) {
+                if (config != null && config.isActive &&
+                    com.andreas_kratzer.ghosttalk.core.util.GridUtils.isVisibleInGrid(localIndex, context.mainRows, context.mainColumns) &&
+                    context.featureGuard.isButtonVisible(config)) {
                     steps.add(ScanStep.Button(globalIdx))
                 }
             }

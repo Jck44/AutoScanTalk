@@ -14,16 +14,44 @@ import javax.inject.Inject
 class LinearScanStrategy @Inject constructor() : ScanStrategy {
     override suspend fun executeScan(context: ScanContext) {
         context.focusedRowIndex.value = null
-        
-        val activeButtonsWithGlobalIndices = context.buttonConfigs
-            .mapIndexedNotNull { index, buttonConfig ->
-                if (buttonConfig != null && 
-                    buttonConfig.isActive && 
-                    GridUtils.isVisibleInGrid(index, rows = context.rows, columns = context.columns) &&
+
+        val activeButtonsWithGlobalIndices = if (context.hasStaticRow) {
+            // Die kombinierte Liste besteht aus zwei 7x7-Bloecken: statische Zeile (Slots 0..48)
+            // und Hauptseite (Slots 49..97). Beide Bloecke muessen mit IHREN eigenen
+            // Rasterdimensionen auf Sichtbarkeit geprueft werden – ein gemeinsamer
+            // isVisibleInGrid ueber den kombinierten Index wirft die Hauptseite faelschlich raus.
+            val result = mutableListOf<Pair<Int, ButtonConfig>>()
+            // 1. Statische Zeile (nur Zeile 0 belegt) – active + featureGuard genuegt.
+            context.buttonConfigs.take(49).forEachIndexed { index, buttonConfig ->
+                if (buttonConfig != null &&
+                    buttonConfig.isActive &&
                     context.featureGuard.isButtonVisible(buttonConfig)) {
-                    Pair(index, buttonConfig)
-                } else null
+                    result.add(index to buttonConfig)
+                }
             }
+            // 2. Hauptseite: lokaler Index relativ zu Slot 49, gefiltert mit Hauptseiten-Raster.
+            for (localIndex in 0 until 49) {
+                val globalIndex = 49 + localIndex
+                val buttonConfig = context.buttonConfigs.getOrNull(globalIndex)
+                if (buttonConfig != null &&
+                    buttonConfig.isActive &&
+                    GridUtils.isVisibleInGrid(localIndex, rows = context.mainRows, columns = context.mainColumns) &&
+                    context.featureGuard.isButtonVisible(buttonConfig)) {
+                    result.add(globalIndex to buttonConfig)
+                }
+            }
+            result
+        } else {
+            context.buttonConfigs
+                .mapIndexedNotNull { index, buttonConfig ->
+                    if (buttonConfig != null &&
+                        buttonConfig.isActive &&
+                        GridUtils.isVisibleInGrid(index, rows = context.rows, columns = context.columns) &&
+                        context.featureGuard.isButtonVisible(buttonConfig)) {
+                        Pair(index, buttonConfig)
+                    } else null
+                }
+        }
 
         if (activeButtonsWithGlobalIndices.isEmpty()) {
             context.focusedButtonIndex.value = null

@@ -12,6 +12,7 @@ import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 
@@ -105,6 +106,56 @@ class LinearScanStrategyTest {
         assertEquals(2, cues.size)
         
         job.cancel()
+    }
+
+    @Test
+    fun `executeScan with static row still scans main page buttons (regression)`() = runTest {
+        // Regression fuer den Fall: statische Zeile aktiv + lineares Scanning.
+        // Kombinierte Liste: Slots 0..48 = statische Zeile, ab Slot 49 = Hauptseite.
+        every { featureGuard.isButtonVisible(any()) } returns true
+
+        val combined = MutableList<ButtonConfig?>(49) { null }
+        combined[0] = ButtonConfig(id = "s0", label = "Static0", isActive = true, buttonAction = SpeakTextButtonAction())
+        val main = MutableList<ButtonConfig?>(49) { null }
+        main[0] = ButtonConfig(id = "m0", label = "Main0", isActive = true, buttonAction = SpeakTextButtonAction()) // -> 49
+        main[1] = ButtonConfig(id = "m1", label = "Main1", isActive = true, buttonAction = SpeakTextButtonAction()) // -> 50
+        combined.addAll(main)
+
+        val focused = mutableListOf<Int>()
+        val collector = launch { focusedButtonIndex.collect { it?.let(focused::add) } }
+
+        val job = launch {
+            strategy.executeScan(
+                ScanContext(
+                    scope = this,
+                    buttonConfigs = combined,
+                    rows = 1 + 4,           // totalRows
+                    columns = 4,            // totalCols
+                    rowNames = emptyList(),
+                    startIndex = 0,
+                    focusedButtonIndex = focusedButtonIndex,
+                    focusedRowIndex = focusedRowIndex,
+                    onSpeakCue = {},
+                    onPrefetchCue = {},
+                    onCycleCompleted = {},
+                    delayMillis = 1000L,
+                    featureGuard = featureGuard,
+                    hasStaticRow = true,
+                    staticRowPattern = "linear",
+                    pagePattern = "linear",
+                    mainRows = 4,
+                    mainColumns = 4
+                )
+            )
+        }
+
+        advanceTimeBy(4000)
+        job.cancel()
+        collector.cancel()
+
+        assertTrue("Statische Zeile (Index 0) muss gescannt werden: $focused", focused.contains(0))
+        assertTrue("Hauptseiten-Button (Index 49) muss gescannt werden: $focused", focused.contains(49))
+        assertTrue("Hauptseiten-Button (Index 50) muss gescannt werden: $focused", focused.contains(50))
     }
 
     @Test
