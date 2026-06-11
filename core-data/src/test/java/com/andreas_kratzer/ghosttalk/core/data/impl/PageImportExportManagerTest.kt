@@ -1277,6 +1277,72 @@ class PageImportExportManagerTest {
     }
 
     @Test
+    fun `exportBookToJson prunes old tombstones only after successful serialization`() = runTest {
+        val bookId = "book-tombstone"
+        val deletedDao: com.andreas_kratzer.ghosttalk.core.database.DeletedEntityDao = mockk(relaxed = true)
+        val managerWithDao = PageImportExportManager(
+            context = context,
+            pageRepository = pageRepository,
+            bookRepository = bookRepository,
+            settingsRepository = settingsRepository,
+            settingsMapper = settingsMapper,
+            actionMapper = actionMapper,
+            buttonTemplateRepository = buttonTemplateRepository,
+            buttonUsageDao = mockk(relaxed = true),
+            userModeSessionRepository = userModeSessionRepository,
+            vocalProfileRepository = vocalProfileRepository,
+            deletedEntityDao = deletedDao,
+            zipArchiver = ZipArchiver(),
+            logger = mockk(relaxed = true)
+        )
+
+        coEvery { bookRepository.getBookById(bookId) } returns
+            com.andreas_kratzer.ghosttalk.core.model.Book(id = bookId, name = "Tombstone Book")
+        coEvery { pageRepository.getPagesForBook(bookId) } returns emptyList()
+
+        managerWithDao.exportBookToJson(bookId)
+
+        // Export ist rein lesend über die gefilterte Query; Pruning erfolgt erst danach.
+        coVerify { deletedDao.getDeletedEntitiesForBookSince(bookId, any()) }
+        coVerify(exactly = 1) { deletedDao.pruneTombstones(any()) }
+    }
+
+    @Test
+    fun `exportBookToJson does not prune tombstones when export fails`() = runTest {
+        val bookId = "book-fail"
+        val deletedDao: com.andreas_kratzer.ghosttalk.core.database.DeletedEntityDao = mockk(relaxed = true)
+        val managerWithDao = PageImportExportManager(
+            context = context,
+            pageRepository = pageRepository,
+            bookRepository = bookRepository,
+            settingsRepository = settingsRepository,
+            settingsMapper = settingsMapper,
+            actionMapper = actionMapper,
+            buttonTemplateRepository = buttonTemplateRepository,
+            buttonUsageDao = mockk(relaxed = true),
+            userModeSessionRepository = userModeSessionRepository,
+            vocalProfileRepository = vocalProfileRepository,
+            deletedEntityDao = deletedDao,
+            zipArchiver = ZipArchiver(),
+            logger = mockk(relaxed = true)
+        )
+
+        // getBookById liefert null -> exportBookToJson wirft "Book not found", bevor irgendetwas geschrieben wird.
+        coEvery { bookRepository.getBookById(bookId) } returns null
+
+        var threw = false
+        try {
+            managerWithDao.exportBookToJson(bookId)
+        } catch (_: Exception) {
+            threw = true
+        }
+
+        assertTrue("Export sollte bei fehlendem Buch fehlschlagen", threw)
+        // Entscheidend: Kein destruktives Pruning, wenn der Export nicht durchläuft.
+        coVerify(exactly = 0) { deletedDao.pruneTombstones(any()) }
+    }
+
+    @Test
     fun `importFromJson maps navigation to start page to NavigateToStartPageButtonAction`() = runTest {
         val bookId = "book1"
         val startPageId = "page-start"

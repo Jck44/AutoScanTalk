@@ -13,6 +13,9 @@ interface DeletedEntityDao {
     @Query("SELECT * FROM deleted_entities WHERE bookId = :bookId")
     suspend fun getDeletedEntitiesForBook(bookId: String): List<DeletedEntity>
 
+    @Query("SELECT * FROM deleted_entities WHERE bookId = :bookId AND deletedAt >= :since")
+    suspend fun getDeletedEntitiesForBookSince(bookId: String, since: Long): List<DeletedEntity>
+
     @Query("DELETE FROM deleted_entities WHERE bookId = :bookId")
     suspend fun deleteTombstonesForBook(bookId: String)
 

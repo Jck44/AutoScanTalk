@@ -130,11 +130,12 @@ class PageImportExportManager @Inject constructor(
             )
         }
         
-        // Prune database tombstones older than 90 days
+        // Tombstones jünger als 90 Tage in den Export aufnehmen. Dies ist bewusst ein
+        // rein lesender Zugriff (gefilterte Query statt destruktivem Prune), damit bei einem
+        // Fehler weiter unten KEINE Tombstones verloren gehen. Das eigentliche Aufräumen alter
+        // Tombstones erfolgt erst nach erfolgreicher Serialisierung (siehe unten).
         val cutoff = System.currentTimeMillis() - 90L * 24 * 60 * 60 * 1000
-        deletedEntityDao.pruneTombstones(cutoff)
-
-        val tombstones = deletedEntityDao.getDeletedEntitiesForBook(bookId).map {
+        val tombstones = deletedEntityDao.getDeletedEntitiesForBookSince(bookId, cutoff).map {
             ExportedTombstone(
                 entityId = it.entityId,
                 entityType = it.entityType,
@@ -194,7 +195,18 @@ class PageImportExportManager @Inject constructor(
         }
 
         logger.d(TAG, "Exported book $bookId: defaultStartPageId='${exportData.defaultStartPageId}', scanDelay='${exportData.scanDelayMillis}'")
-        json.encodeToString(exportData)
+        val serialized = json.encodeToString(exportData)
+
+        // Erst NACH erfolgreicher Serialisierung alte Tombstones (>90 Tage) aufräumen.
+        // Schlägt der Export oben fehl, bleiben alle Tombstones erhalten und gelöschte
+        // Entitäten können beim nächsten Merge nicht "wiederauferstehen".
+        try {
+            deletedEntityDao.pruneTombstones(cutoff)
+        } catch (e: Exception) {
+            logger.e(TAG, "Pruning alter Tombstones nach Export fehlgeschlagen (nicht fatal)", e)
+        }
+
+        serialized
     }
 
     override suspend fun importFromJson(
