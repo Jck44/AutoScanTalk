@@ -12,7 +12,9 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.util.Locale
@@ -48,6 +50,19 @@ open class TextToSpeechHelper @Inject constructor(
         get() = synchronized(lock) {
             currentProvider.isReady || androidTtsProvider.get().isReady
         }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val isReadyFlow: StateFlow<Boolean> = currentProviderFlow
+        .flatMapLatest { provider ->
+            flow {
+                while (true) {
+                    emit(synchronized(lock) { provider.isReady || androidTtsProvider.get().isReady })
+                    kotlinx.coroutines.delay(100)
+                }
+            }
+        }
+        .distinctUntilChanged()
+        .stateIn(scope, SharingStarted.Eagerly, false)
 
     // Support for interrupting ONLY notifications
     var isReadingNotification: Boolean = false
@@ -189,12 +204,12 @@ open class TextToSpeechHelper @Inject constructor(
 
     suspend fun prefetch(text: String) {
         val provider = synchronized(lock) { currentProvider }
-        provider.prefetch(text)
+        (provider as? CacheableTtsProvider)?.prefetch(text)
     }
 
     fun isCached(text: String): Boolean {
         return synchronized(lock) {
-            currentProvider.isCached(text)
+            (currentProvider as? CacheableTtsProvider)?.isCached(text) == true
         }
     }
 

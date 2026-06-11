@@ -355,10 +355,6 @@ open class AndroidTtsProvider @Inject constructor(
         }
     }
 
-    override suspend fun prefetch(text: String) {
-        // Android TTS does not need prefetching
-    }
-
     override fun stopAll() {
         tts?.stop()
         routedAudioPlayer.stopAll()
@@ -377,8 +373,6 @@ open class AndroidTtsProvider @Inject constructor(
         tts?.shutdown()
         initialized = false
     }
-
-    override fun isCached(text: String): Boolean = true
 
     override fun isSpeaking(): Boolean {
         return (tts?.isSpeaking ?: false) || playRequests.isNotEmpty() || directCallbacks.isNotEmpty()

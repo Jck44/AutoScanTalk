@@ -36,7 +36,7 @@ open class ElevenLabsTtsProvider @Inject constructor(
     private val ttsSettings: TtsSettings,
     private val routedAudioPlayer: RoutedAudioPlayer,
     @param:ApplicationScope private val scope: CoroutineScope
-) : TtsProvider {
+) : CacheableTtsProvider {
 
     private val httpClient = OkHttpClient.Builder()
         .readTimeout(60, java.util.concurrent.TimeUnit.SECONDS)

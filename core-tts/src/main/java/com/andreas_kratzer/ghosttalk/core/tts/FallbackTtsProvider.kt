@@ -8,7 +8,7 @@ class FallbackTtsProvider(
     private val primary: TtsProvider,
     private val fallback: TtsProvider,
     private val onFallbackTriggered: (String) -> Unit
-) : TtsProvider {
+) : CacheableTtsProvider {
 
     override val isReady: Boolean
         get() = primary.isReady || fallback.isReady
@@ -52,7 +52,7 @@ class FallbackTtsProvider(
     }
 
     override suspend fun prefetch(text: String) {
-        primary.prefetch(text)
+        (primary as? CacheableTtsProvider)?.prefetch(text)
     }
 
     override fun stopAll() {
@@ -86,6 +86,7 @@ class FallbackTtsProvider(
     }
 
     override fun isCached(text: String): Boolean {
-        return primary.isCached(text) || fallback.isCached(text)
+        return (primary as? CacheableTtsProvider)?.isCached(text) == true ||
+               (fallback as? CacheableTtsProvider)?.isCached(text) == true
     }
 }
