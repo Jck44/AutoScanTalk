@@ -1,5 +1,6 @@
 package com.andreas_kratzer.ghosttalk.core.ai.domain
 
+import android.util.Log
 import com.andreas_kratzer.ghosttalk.core.model.BookRestructureProposal
 import com.andreas_kratzer.ghosttalk.core.model.CategoryInfo
 import com.andreas_kratzer.ghosttalk.core.model.RestructureAction
@@ -136,32 +137,71 @@ class BookRestructureProposalUseCase @Inject constructor(
         val actionsArray = root.getJSONArray("actions")
         val actions = mutableListOf<RestructureAction>()
 
+        val validTypes = setOf("MOVE_BUTTON", "DEACTIVATE_BUTTON", "SPLIT_PAGE")
         for (i in 0 until actionsArray.length()) {
             val actObj = actionsArray.getJSONObject(i)
-            val type = actObj.getString("type")
-            val rationale = actObj.getString("rationale")
-            val buttonLabel = actObj.optString("buttonLabel", "").takeIf { it.isNotEmpty() }
-            val sourcePageName = actObj.optString("sourcePageName", "").takeIf { it.isNotEmpty() }
-            val targetPageName = actObj.optString("targetPageName", "").takeIf { it.isNotEmpty() }
-            val displaceButtonLabel = actObj.optString("displaceButtonLabel", "").takeIf { it.isNotEmpty() }
-            val displaceTargetPageName = actObj.optString("displaceTargetPageName", "").takeIf { it.isNotEmpty() }
-            val targetPlacementDescription = actObj.optString("targetPlacementDescription", "").takeIf { it.isNotEmpty() }
+            val type = actObj.optString("type", "").trim()
+            if (type !in validTypes) {
+                Log.w("BookRestructureProposalUseCase", "Skipping proposal action with invalid type: '$type'")
+                continue
+            }
+            val rationale = actObj.optString("rationale", "").trim()
+            if (rationale.isEmpty()) {
+                Log.w("BookRestructureProposalUseCase", "Skipping proposal action with empty rationale")
+                continue
+            }
+            val buttonLabel = actObj.optString("buttonLabel", "").trim().takeIf { it.isNotEmpty() }
+            val sourcePageName = actObj.optString("sourcePageName", "").trim().takeIf { it.isNotEmpty() }
+            val targetPageName = actObj.optString("targetPageName", "").trim().takeIf { it.isNotEmpty() }
+            val displaceButtonLabel = actObj.optString("displaceButtonLabel", "").trim().takeIf { it.isNotEmpty() }
+            val displaceTargetPageName = actObj.optString("displaceTargetPageName", "").trim().takeIf { it.isNotEmpty() }
+            val targetPlacementDescription = actObj.optString("targetPlacementDescription", "").trim().takeIf { it.isNotEmpty() }
+
+            if (type == "MOVE_BUTTON") {
+                if (buttonLabel == null || sourcePageName == null || targetPageName == null) {
+                    Log.w("BookRestructureProposalUseCase", "Skipping MOVE_BUTTON action due to missing buttonLabel ($buttonLabel), sourcePageName ($sourcePageName) or targetPageName ($targetPageName)")
+                    continue
+                }
+            } else if (type == "DEACTIVATE_BUTTON") {
+                if (buttonLabel == null || sourcePageName == null) {
+                    Log.w("BookRestructureProposalUseCase", "Skipping DEACTIVATE_BUTTON action due to missing buttonLabel ($buttonLabel) or sourcePageName ($sourcePageName)")
+                    continue
+                }
+            } else if (type == "SPLIT_PAGE") {
+                if (sourcePageName == null) {
+                    Log.w("BookRestructureProposalUseCase", "Skipping SPLIT_PAGE action due to missing sourcePageName")
+                    continue
+                }
+            }
 
             val newCategoriesArray = actObj.optJSONArray("newCategories")
             val newCategories = if (newCategoriesArray != null) {
                 val cats = mutableListOf<CategoryInfo>()
                 for (j in 0 until newCategoriesArray.length()) {
                     val catObj = newCategoriesArray.getJSONObject(j)
-                    val catName = catObj.getString("name")
-                    val labelsArray = catObj.getJSONArray("buttonLabels")
+                    val catName = catObj.optString("name", "").trim()
+                    if (catName.isEmpty()) continue
+                    val labelsArray = catObj.optJSONArray("buttonLabels")
                     val labels = mutableListOf<String>()
-                    for (k in 0 until labelsArray.length()) {
-                        labels.add(labelsArray.getString(k))
+                    if (labelsArray != null) {
+                        for (k in 0 until labelsArray.length()) {
+                            val lbl = labelsArray.optString(k, "").trim()
+                            if (lbl.isNotEmpty()) {
+                                labels.add(lbl)
+                            }
+                        }
                     }
-                    cats.add(CategoryInfo(catName, labels))
+                    if (labels.isNotEmpty()) {
+                        cats.add(CategoryInfo(catName, labels))
+                    }
                 }
-                cats
+                cats.takeIf { it.isNotEmpty() }
             } else null
+
+            if (type == "SPLIT_PAGE" && newCategories.isNullOrEmpty()) {
+                Log.w("BookRestructureProposalUseCase", "Skipping SPLIT_PAGE action because newCategories list is empty or invalid")
+                continue
+            }
 
             actions.add(
                 RestructureAction(

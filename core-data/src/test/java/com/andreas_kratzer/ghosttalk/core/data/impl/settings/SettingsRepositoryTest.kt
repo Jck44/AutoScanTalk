@@ -123,7 +123,9 @@ class SettingsRepositoryTest {
 
         // Mock all
         every { mockPrefs.all } answers {
-            mockedPrefsStore.toMap()
+            synchronized(mockedPrefsStore) {
+                mockedPrefsStore.toMap()
+            }
         }
 
         every { mockEditor.apply() } returns Unit

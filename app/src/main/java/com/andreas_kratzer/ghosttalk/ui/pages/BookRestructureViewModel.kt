@@ -29,7 +29,7 @@ class BookRestructureViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
-            activeBookId.collect { bookId ->
+            pageManagementDelegate.activeBookId.collect { bookId ->
                 if (bookId != null) {
                     aiRestructureDelegate.setAiRestructureProposal(loadProposalFromCache(bookId))
                 } else {

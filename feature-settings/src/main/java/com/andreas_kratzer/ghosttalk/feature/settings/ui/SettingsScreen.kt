@@ -27,6 +27,7 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -38,6 +39,8 @@ import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -47,17 +50,21 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -267,6 +274,11 @@ fun SettingsScreen(
     var selectedSection by rememberSaveable { mutableStateOf<SettingsSection?>(null) }
     var searchQuery by rememberSaveable { mutableStateOf("") }
 
+    val editingProfileId by viewModel.editingProfileId.collectAsState()
+    val editingProfileName by viewModel.editingProfileName.collectAsState()
+    val hasUnsavedChanges by viewModel.hasUnsavedChanges.collectAsState()
+    var showDiscardChangesDialog by remember { mutableStateOf(false) }
+
     val authIntent by viewModel.authIntentFlow.collectAsState(null)
     val signInError by viewModel.signInErrorMessage.collectAsState()
 
@@ -330,8 +342,37 @@ fun SettingsScreen(
         }
     }
 
+    // Track previous editingProfileId to detect transitions synchronously (same frame)
+    // LaunchedEffect runs *after* the frame, causing a 1-frame flash of stale content.
+    var previousEditingId by remember { mutableStateOf(editingProfileId) }
+    if (previousEditingId != editingProfileId) {
+        val wasEditing = previousEditingId != null
+        previousEditingId = editingProfileId
+
+        if (editingProfileId != null) {
+            // Entering edit mode
+            selectedSection = if (isLargeScreen) SettingsSection.GENERAL else null
+        } else if (wasEditing) {
+            // Leaving edit mode → navigate back to profile list
+            selectedSection = SettingsSection.PROFILE
+        }
+        searchQuery = ""
+    }
+
     val handleBack = {
-        if (isLargeScreen || selectedSection == null) {
+        if (editingProfileId != null) {
+            if (!isLargeScreen && selectedSection != null) {
+                // On mobile edit mode, go back to the edit categories menu
+                selectedSection = null
+            } else {
+                // On tablet or mobile root edit menu, prompt/cancel edit session
+                if (hasUnsavedChanges) {
+                    showDiscardChangesDialog = true
+                } else {
+                    viewModel.cancelEditingProfile()
+                }
+            }
+        } else if (isLargeScreen || selectedSection == null) {
             onNavigateBack()
         } else {
             selectedSection = null
@@ -342,14 +383,48 @@ fun SettingsScreen(
         handleBack()
     }
 
+    val isProfileSyncing by viewModel.isProfileSyncing.collectAsState()
+
     Scaffold(
         topBar = {
             SettingsTopBar(
                 selectedSection = selectedSection,
                 isLargeScreen = isLargeScreen,
+                isEditing = editingProfileId != null,
+                editingProfileName = editingProfileName,
+                isSyncing = isProfileSyncing,
                 onBack = handleBack
             )
-        }    ) { paddingValues ->
+        },
+        bottomBar = {
+            if (editingProfileId != null) {
+                Surface(
+                    tonalElevation = 8.dp,
+                    shadowElevation = 8.dp,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(dimensions.paddingMedium),
+                        horizontalArrangement = Arrangement.End
+                    ) {
+                        OutlinedButton(
+                            onClick = { viewModel.cancelEditingProfile() },
+                            modifier = Modifier.padding(end = dimensions.paddingSmall)
+                        ) {
+                            Text("Abbrechen")
+                        }
+                        Button(
+                            onClick = { viewModel.saveEditingProfile() }
+                        ) {
+                            Text("Speichern")
+                        }
+                    }
+                }
+            }
+        }
+    ) { paddingValues ->
         Box(modifier = Modifier.fillMaxSize()) {
             if (isLargeScreen) {
                 Row(
@@ -364,6 +439,14 @@ fun SettingsScreen(
                             .fillMaxHeight()
                             .padding(horizontal = dimensions.paddingMedium, vertical = dimensions.paddingSmall)
                     ) {
+                        if (editingProfileId != null) {
+                            ProfileNameEditCard(
+                                name = editingProfileName ?: "",
+                                onNameChange = { viewModel.updateEditingProfileName(it) }
+                            )
+                            Spacer(modifier = Modifier.height(dimensions.paddingMedium))
+                        }
+
                         SettingsSearchBar(
                             query = searchQuery,
                             onQueryChange = { searchQuery = it }
@@ -371,9 +454,16 @@ fun SettingsScreen(
                         
                         Spacer(modifier = Modifier.height(dimensions.paddingMedium))
                         
+                        val visibleSections = if (editingProfileId != null) ProfileEditSections else SettingsSection.entries
+
                         if (searchQuery.isNotBlank()) {
                             val searchItems = getSearchableItems()
-                            val results = searchItems.filter {
+                            val visibleSearchItems = if (editingProfileId != null) {
+                                searchItems.filter { it.section in ProfileEditSections }
+                            } else {
+                                searchItems
+                            }
+                            val results = visibleSearchItems.filter {
                                 it.title.contains(searchQuery, ignoreCase = true) ||
                                 it.description.contains(searchQuery, ignoreCase = true)
                             }
@@ -406,7 +496,7 @@ fun SettingsScreen(
                                 modifier = Modifier.weight(1f),
                                 verticalArrangement = Arrangement.spacedBy(dimensions.paddingSmall)
                             ) {
-                                items(SettingsSection.entries) { section ->
+                                items(visibleSections) { section ->
                                     val isSelected = selectedSection == section
                                     Surface(
                                         onClick = { selectedSection = section },
@@ -445,28 +535,38 @@ fun SettingsScreen(
                     VerticalDivider()
 
                     // Details Pane
-                    Box(
+                    Column(
                         modifier = Modifier
                             .weight(1f)
                             .fillMaxHeight()
                     ) {
-                        selectedSection?.let { section ->
-                            SettingsSubMenu(
-                                section = section,
-                                padding = PaddingValues(0.dp),
-                                dimensions = dimensions,
-                                viewModel = viewModel,
-                                onNavigateBack = onNavigateBack,
-                                onBookDeleted = onBookDeleted,
-                                onLockClicked = {
-                                    viewModel.lock()
-                                    onNavigateToStart()
-                                },
-                                onLocalExport = { localExportLauncher.launch("GhostTalk_Backup.zip") },
-                                onLocalImport = { localImportLauncher.launch("*/*") },
-                                onSelectSafFolderForImport = { safImportFolderLauncher.launch(null) },
-                                onNavigateToVocalTraining = onNavigateToVocalTraining
+                        if (editingProfileId != null) {
+                            ProfileEditBanner(
+                                profileName = editingProfileName ?: "Entwurf",
+                                modifier = Modifier.padding(horizontal = dimensions.paddingLarge, vertical = dimensions.paddingMedium)
                             )
+                        }
+                        Box(
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            selectedSection?.let { section ->
+                                SettingsSubMenu(
+                                    section = section,
+                                    padding = PaddingValues(0.dp),
+                                    dimensions = dimensions,
+                                    viewModel = viewModel,
+                                    onNavigateBack = onNavigateBack,
+                                    onBookDeleted = onBookDeleted,
+                                    onLockClicked = {
+                                        viewModel.lock()
+                                        onNavigateToStart()
+                                    },
+                                    onLocalExport = { localExportLauncher.launch("GhostTalk_Backup.zip") },
+                                    onLocalImport = { localImportLauncher.launch("*/*") },
+                                    onSelectSafFolderForImport = { safImportFolderLauncher.launch(null) },
+                                    onNavigateToVocalTraining = onNavigateToVocalTraining
+                                )
+                            }
                         }
                     }
                 }
@@ -479,6 +579,18 @@ fun SettingsScreen(
                             .padding(paddingValues)
                             .padding(horizontal = dimensions.paddingLarge, vertical = dimensions.paddingMedium)
                     ) {
+                        if (editingProfileId != null) {
+                            ProfileEditBanner(
+                                profileName = editingProfileName ?: "Entwurf"
+                            )
+                            Spacer(modifier = Modifier.height(dimensions.paddingMedium))
+                            ProfileNameEditCard(
+                                name = editingProfileName ?: "",
+                                onNameChange = { viewModel.updateEditingProfileName(it) }
+                            )
+                            Spacer(modifier = Modifier.height(dimensions.paddingMedium))
+                        }
+
                         SettingsSearchBar(
                             query = searchQuery,
                             onQueryChange = { searchQuery = it }
@@ -488,7 +600,12 @@ fun SettingsScreen(
 
                         if (searchQuery.isNotBlank()) {
                             val searchItems = getSearchableItems()
-                            val results = searchItems.filter {
+                            val visibleSearchItems = if (editingProfileId != null) {
+                                searchItems.filter { it.section in ProfileEditSections }
+                            } else {
+                                searchItems
+                            }
+                            val results = visibleSearchItems.filter {
                                 it.title.contains(searchQuery, ignoreCase = true) ||
                                 it.description.contains(searchQuery, ignoreCase = true)
                             }
@@ -517,65 +634,78 @@ fun SettingsScreen(
                                 }
                             }
                         } else {
+                            val visibleSections = if (editingProfileId != null) ProfileEditSections else SettingsSection.entries
                             SettingsMainMenu(
                                 padding = PaddingValues(0.dp),
                                 dimensions = dimensions,
+                                sections = visibleSections,
                                 onSectionSelected = { selectedSection = it }
                             )
                         }
                     }
                 } else {
-                    SettingsSubMenu(
-                        section = selectedSection!!,
-                        padding = paddingValues,
-                        dimensions = dimensions,
-                        viewModel = viewModel,
-                        onNavigateBack = onNavigateBack,
-                        onBookDeleted = onBookDeleted,
-                        onLockClicked = {
-                            viewModel.lock()
-                            onNavigateToStart()
-                        },
-                        onLocalExport = { localExportLauncher.launch("GhostTalk_Backup.zip") },
-                        onLocalImport = { localImportLauncher.launch("*/*") },
-                        onSelectSafFolderForImport = { safImportFolderLauncher.launch(null) },
-                        onNavigateToVocalTraining = onNavigateToVocalTraining
-                    )
-                }
-            }
-
-            val isProfileSyncing by viewModel.isProfileSyncing.collectAsState()
-            if (isProfileSyncing) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(Color.Black.copy(alpha = 0.4f))
-                        .clickable(enabled = true, onClick = {}) // Konsumiert Klicks
-                ) {
-                    Card(
-                        modifier = Modifier.align(androidx.compose.ui.Alignment.Center),
-                        shape = MaterialTheme.shapes.medium,
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(paddingValues)
                     ) {
-                        Column(
-                            modifier = Modifier.padding(24.dp),
-                            horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally
-                        ) {
-                            androidx.compose.material3.CircularProgressIndicator()
-                            Spacer(modifier = Modifier.height(16.dp))
-                            Text(
-                                text = "Profile werden synchronisiert...",
-                                style = MaterialTheme.typography.bodyMedium
+                        if (editingProfileId != null) {
+                            ProfileEditBanner(
+                                profileName = editingProfileName ?: "Entwurf",
+                                modifier = Modifier.padding(horizontal = dimensions.paddingLarge, vertical = dimensions.paddingMedium)
                             )
                         }
+                        SettingsSubMenu(
+                            section = selectedSection!!,
+                            padding = PaddingValues(0.dp),
+                            dimensions = dimensions,
+                            viewModel = viewModel,
+                            onNavigateBack = onNavigateBack,
+                            onBookDeleted = onBookDeleted,
+                            onLockClicked = {
+                                viewModel.lock()
+                                onNavigateToStart()
+                            },
+                            onLocalExport = { localExportLauncher.launch("GhostTalk_Backup.zip") },
+                            onLocalImport = { localImportLauncher.launch("*/*") },
+                            onSelectSafFolderForImport = { safImportFolderLauncher.launch(null) },
+                            onNavigateToVocalTraining = onNavigateToVocalTraining
+                        )
                     }
                 }
             }
+
+
         }
     }
 
     val showActionHistory by viewModel.showActionHistoryDialog.collectAsState()
     val showUsageStats by viewModel.showUsageStatsDialog.collectAsState()
+
+    if (showDiscardChangesDialog) {
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { showDiscardChangesDialog = false },
+            title = { Text("Änderungen verwerfen?") },
+            text = { Text("Sie haben ungespeicherte Änderungen. Möchten Sie diese wirklich verwerfen?") },
+            confirmButton = {
+                androidx.compose.material3.TextButton(
+                    onClick = {
+                        showDiscardChangesDialog = false
+                        viewModel.cancelEditingProfile()
+                    }
+                ) {
+                    Text("Verwerfen")
+                }
+            },
+            dismissButton = {
+                androidx.compose.material3.TextButton(
+                    onClick = { showDiscardChangesDialog = false }
+                ) {
+                    Text("Abbrechen")
+                }
+            }
+        )
+    }
 
     if (showActionHistory) {
         ActionHistoryDialog(
@@ -611,32 +741,150 @@ fun SettingsScreen(
     }
 }
 
+private val ProfileEditSections = listOf(
+    SettingsSection.GENERAL,
+    SettingsSection.VOICE,
+    SettingsSection.AUDIO_HARDWARE,
+    SettingsSection.SCANNING,
+    SettingsSection.VOCAL_SWITCH,
+    SettingsSection.PERMISSIONS,
+    SettingsSection.SECURITY,
+    SettingsSection.AI,
+    SettingsSection.CALLS,
+    SettingsSection.SMART_INTEGRATION,
+    SettingsSection.CLOUD_SYNC
+)
+
+@Composable
+private fun ProfileEditBanner(
+    profileName: String,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        color = MaterialTheme.colorScheme.secondaryContainer,
+        shape = MaterialTheme.shapes.medium,
+        modifier = modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier.padding(12.dp),
+            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = Icons.Default.Warning,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                modifier = Modifier.size(24.dp)
+            )
+            Spacer(modifier = Modifier.width(12.dp))
+            Column {
+                Text(
+                    text = "Profil bearbeiten (Entwurf)",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSecondaryContainer
+                )
+                Text(
+                    text = "Sie bearbeiten Einstellungen für das Profil '$profileName'. Diese werden erst beim Speichern angewendet und in die Cloud synchronisiert.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.8f)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ProfileNameEditCard(
+    name: String,
+    onNameChange: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.medium,
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainerLow
+        )
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp)
+        ) {
+            Text(
+                text = "Profilname",
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            OutlinedTextField(
+                value = name,
+                onValueChange = onNameChange,
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+                placeholder = { Text("Name eingeben") }
+            )
+        }
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun SettingsTopBar(
     selectedSection: SettingsSection?,
     isLargeScreen: Boolean,
+    isEditing: Boolean,
+    editingProfileName: String?,
+    isSyncing: Boolean,
     onBack: () -> Unit
 ) {
-    TopAppBar(
-        title = {
-            Text(
-                text = if (isLargeScreen || selectedSection == null)
-                    stringResource(R.string.settings_title)
-                else
-                    stringResource(selectedSection.getTitleRes()),
-                style = MaterialTheme.typography.titleLarge
+    val topAppBarColors = if (isEditing) {
+        TopAppBarDefaults.topAppBarColors(
+            containerColor = MaterialTheme.colorScheme.secondaryContainer,
+            titleContentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+            navigationIconContentColor = MaterialTheme.colorScheme.onSecondaryContainer
+        )
+    } else {
+        TopAppBarDefaults.topAppBarColors()
+    }
+
+    Column {
+        TopAppBar(
+            title = {
+                Text(
+                    text = if (isEditing) {
+                        if (isLargeScreen || selectedSection == null) {
+                            "Profil bearbeiten: ${editingProfileName ?: "Entwurf"}"
+                        } else {
+                            stringResource(selectedSection.getTitleRes())
+                        }
+                    } else {
+                        if (isLargeScreen || selectedSection == null) {
+                            stringResource(R.string.settings_title)
+                        } else {
+                            stringResource(selectedSection.getTitleRes())
+                        }
+                    },
+                    style = MaterialTheme.typography.titleLarge
+                )
+            },
+            navigationIcon = {
+                IconButton(
+                    onClick = onBack,
+                    modifier = Modifier.testTag("settings_back_button")
+                ) {
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                }
+            },
+            colors = topAppBarColors
+        )
+        if (isSyncing) {
+            LinearProgressIndicator(
+                modifier = Modifier.fillMaxWidth(),
+                color = MaterialTheme.colorScheme.primary,
+                trackColor = MaterialTheme.colorScheme.surfaceVariant
             )
-        },
-        navigationIcon = {
-            IconButton(
-                onClick = onBack,
-                modifier = Modifier.testTag("settings_back_button")
-            ) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-            }
         }
-    )
+    }
 }
 
 @Composable
@@ -713,6 +961,7 @@ private fun SearchResultItem(
 private fun SettingsMainMenu(
     padding: PaddingValues,
     dimensions: com.andreas_kratzer.ghosttalk.core.ui.theme.Dimensions,
+    sections: List<SettingsSection> = SettingsSection.entries,
     onSectionSelected: (SettingsSection) -> Unit
 ) {
     LazyVerticalGrid(
@@ -725,7 +974,7 @@ private fun SettingsMainMenu(
         horizontalArrangement = Arrangement.spacedBy(dimensions.paddingMedium),
         contentPadding = PaddingValues(bottom = dimensions.paddingDoubleExtraLarge)
     ) {
-        items(SettingsSection.entries) { section ->
+        items(sections) { section ->
             Surface(
                 onClick = { onSectionSelected(section) },
                 shape = MaterialTheme.shapes.large,

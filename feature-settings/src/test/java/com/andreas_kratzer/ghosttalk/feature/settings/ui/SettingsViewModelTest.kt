@@ -84,11 +84,110 @@ class SettingsViewModelTest {
 
         application = mockk(relaxed = true)
         settingsRepository = mockk(relaxed = true)
+        getPagesUseCase = mockk(relaxed = true)
+        // Mock all Flow fields explicitly to prevent combine/flatMapLatest from receiving nulls and crashing
+            every { settingsRepository.activeBookIdFlow } returns MutableStateFlow("test-book")
+            every { settingsRepository.activeProfileIdFlow } returns MutableStateFlow("profile-default")
+            every { settingsRepository.getAllProfilesFlow() } returns flowOf(emptyList())
+            every { getPagesUseCase.execute(any()) } returns flowOf(emptyList())
+            every { settingsRepository.ttsLanguageFlow } returns MutableStateFlow("de")
+            every { settingsRepository.ttsVoiceNameFlow } returns MutableStateFlow(null)
+            every { settingsRepository.autoStartScanningFlow } returns MutableStateFlow(true)
+            every { settingsRepository.scanDelayFlow } returns MutableStateFlow(2000L)
+            every { settingsRepository.resumeScanningFromStartFlow } returns MutableStateFlow(true)
+            every { settingsRepository.defaultScanPatternFlow } returns MutableStateFlow("linear")
+            every { settingsRepository.holdingTimeMillisFlow } returns MutableStateFlow(250L)
+            every { settingsRepository.bluetoothDelayFlow } returns MutableStateFlow(100L)
+            every { settingsRepository.lateClickThresholdFlow } returns MutableStateFlow(250L)
+            every { settingsRepository.isVocalSwitchEnabledFlow } returns MutableStateFlow(false)
+            every { settingsRepository.staticRowEnabledFlow } returns MutableStateFlow(false)
+            every { settingsRepository.defaultStartPageIdFlow } returns MutableStateFlow(null)
+            every { settingsRepository.ttsAudioDeviceAddressFlow } returns MutableStateFlow(null)
+            every { settingsRepository.cuesAudioDeviceAddressFlow } returns MutableStateFlow(null)
+            every { settingsRepository.recordingAudioSourceFlow } returns MutableStateFlow(0)
+            every { settingsRepository.persistActionLogsFlow } returns MutableStateFlow(true)
+            every { settingsRepository.switchActivationKeyFlow } returns MutableStateFlow("~3")
+            every { settingsRepository.volumeKeysActivateFlow } returns MutableStateFlow(false)
+            every { settingsRepository.showTestButtonsFlow } returns MutableStateFlow(false)
+            every { settingsRepository.showPageIdInLogFlow } returns MutableStateFlow(false)
+            every { settingsRepository.isDataCloudSyncEnabledFlow } returns MutableStateFlow(false)
+            every { settingsRepository.syncModeBookFlow } returns MutableStateFlow("TWO_WAY")
+            every { settingsRepository.syncModeTtsFlow } returns MutableStateFlow("TWO_WAY")
+            every { settingsRepository.syncModeStatsFlow } returns MutableStateFlow("RESTORE_ONLY")
+            every { settingsRepository.syncModeSettingsFlow } returns MutableStateFlow("TWO_WAY")
+            every { settingsRepository.lastSuccessfulSyncTimeFlow } returns MutableStateFlow(0L)
+            every { settingsRepository.syncIntervalMinutesFlow } returns MutableStateFlow(60L)
+            every { settingsRepository.foregroundSyncIntervalMinutesFlow } returns MutableStateFlow(5L)
+            every { settingsRepository.googleDriveFolderIdFlow } returns MutableStateFlow(null)
+            every { settingsRepository.googleDriveFolderNameFlow } returns MutableStateFlow(null)
+            every { settingsRepository.syncTargetTypeFlow } returns MutableStateFlow("google_drive")
+            every { settingsRepository.googleAuthTypeFlow } returns MutableStateFlow(com.andreas_kratzer.ghosttalk.core.model.CloudAuthType.SYSTEM)
+            every { settingsRepository.localFolderSafUriFlow } returns MutableStateFlow(null)
+            every { settingsRepository.localFolderSafNameFlow } returns MutableStateFlow(null)
+            every { settingsRepository.hueBridgeIpFlow } returns MutableStateFlow("")
+            every { settingsRepository.hueUsernameFlow } returns MutableStateFlow("")
+            every { settingsRepository.hueCachedDevicesFlow } returns MutableStateFlow("")
+            every { settingsRepository.isGeminiEnabledFlow } returns MutableStateFlow(false)
+            every { settingsRepository.geminiApiKeyFlow } returns MutableStateFlow(null)
+            every { settingsRepository.useGeminiApiKeyFlow } returns MutableStateFlow(false)
+            every { settingsRepository.isGeminiVerifiedFlow } returns MutableStateFlow(false)
+            every { settingsRepository.spotifyUserDisplayNameFlow } returns MutableStateFlow(null)
+            every { settingsRepository.isSmartPredictionEnabledFlow } returns MutableStateFlow(false)
+            every { settingsRepository.isNotificationReadingEnabledFlow } returns MutableStateFlow(false)
+            every { settingsRepository.monitoredNotificationAppsFlow } returns MutableStateFlow(emptySet())
+            every { settingsRepository.autoReadModeFlow } returns MutableStateFlow(com.andreas_kratzer.ghosttalk.core.settings.AutoReadMode.OFF)
+            every { settingsRepository.autoReadOnlyInUserModeFlow } returns MutableStateFlow(true)
+            every { settingsRepository.autoReadInStandbyFlow } returns MutableStateFlow(false)
+            every { settingsRepository.appLanguageFlow } returns MutableStateFlow("en")
+            every { settingsRepository.themeModeFlow } returns MutableStateFlow("LIGHT")
+            every { settingsRepository.keepScreenOnUserModeFlow } returns MutableStateFlow(true)
+            every { settingsRepository.userModeScreenBehaviorFlow } returns MutableStateFlow("GRID")
+            every { settingsRepository.statsRetentionDaysFlow } returns MutableStateFlow(30)
+            every { settingsRepository.statsAggregationHoursFlow } returns MutableStateFlow(24)
+            every { settingsRepository.onlyRecordHardwareStatsFlow } returns MutableStateFlow(false)
+            every { settingsRepository.firebaseAnalyticsEnabledFlow } returns MutableStateFlow(true)
+            every { settingsRepository.geminiTimeoutFlow } returns MutableStateFlow(10000L)
+            every { settingsRepository.geminiRedoPredictionFlow } returns MutableStateFlow(false)
+            every { settingsRepository.blockVolumeKeysFlow } returns MutableStateFlow(false)
+            every { settingsRepository.speakerVolumeFlow } returns MutableStateFlow(100)
+            every { settingsRepository.headphoneVolumeFlow } returns MutableStateFlow(100)
+            every { settingsRepository.securityPinFlow } returns MutableStateFlow("")
+            every { settingsRepository.securityPinTimeoutMinutesFlow } returns MutableStateFlow(30L)
+            every { settingsRepository.isPinRequiredForDeletionFlow } returns MutableStateFlow(false)
+            every { settingsRepository.isBiometricEnabledFlow } returns MutableStateFlow(false)
+            every { settingsRepository.isSecurityRequiredForEditFlow } returns MutableStateFlow(false)
+            every { settingsRepository.isSecurityRequiredForSettingsFlow } returns MutableStateFlow(false)
+            every { settingsRepository.isSecurityRequiredForAnalyticsFlow } returns MutableStateFlow(false)
+            every { settingsRepository.startupBehaviorFlow } returns MutableStateFlow("BOOK_SELECTION")
+            every { settingsRepository.logIgnoredActionsFlow } returns MutableStateFlow(false)
+            every { settingsRepository.logStopActionsFlow } returns MutableStateFlow(false)
+            every { settingsRepository.limitScanCyclesFlow } returns MutableStateFlow(false)
+            every { settingsRepository.scanCycleLimitFlow } returns MutableStateFlow(2)
+            every { settingsRepository.actionLogLimitFlow } returns MutableStateFlow(100)
+            every { settingsRepository.forceSoftKeyboardFlow } returns MutableStateFlow(true)
+            every { settingsRepository.ttsEngineFlow } returns MutableStateFlow(null)
+            every { settingsRepository.elevenLabsApiKeyFlow } returns MutableStateFlow(null)
+            every { settingsRepository.elevenLabsModelFlow } returns MutableStateFlow("eleven_multilingual_v2")
+            every { settingsRepository.elevenLabsStabilityFlow } returns MutableStateFlow(0.5f)
+            every { settingsRepository.elevenLabsSimilarityBoostFlow } returns MutableStateFlow(0.75f)
+            every { settingsRepository.ttsPlaybackSpeedFlow } returns MutableStateFlow(1.0f)
+            every { settingsRepository.maxCallDurationSecondsFlow } returns MutableStateFlow(300)
+            every { settingsRepository.callDurationFeedbackIntervalSecondsFlow } returns MutableStateFlow(60)
+            every { settingsRepository.outgoingCallIntroFlow } returns MutableStateFlow("")
+            every { settingsRepository.incomingCallIntroFlow } returns MutableStateFlow("")
+            every { settingsRepository.incomingCallScanLimitUserModeActiveFlow } returns MutableStateFlow(2)
+            every { settingsRepository.incomingCallAutoActionUserModeActiveFlow } returns MutableStateFlow("NONE")
+            every { settingsRepository.incomingCallDelayUserModeInactiveFlow } returns MutableStateFlow(10)
+            every { settingsRepository.incomingCallAutoActionUserModeInactiveFlow } returns MutableStateFlow("NONE")
+            every { settingsRepository.callAnnouncementAsCueFlow } returns MutableStateFlow(false)
+            every { settingsRepository.autoEnableSpeakerphoneFlow } returns MutableStateFlow(true)
+            every { settingsRepository.simulateCallsEnabledFlow } returns MutableStateFlow(false)
+            every { settingsRepository.hangUpPressesRequiredFlow } returns MutableStateFlow(1)
+            every { settingsRepository.filterCallsNotInContactsFlow } returns MutableStateFlow(false)
         bookRepository = mockk(relaxed = true)
         buttonUsageRepository = mockk(relaxed = true)
         userModeSessionRepository = mockk(relaxed = true)
         securityManager = mockk(relaxed = true)
-        getPagesUseCase = mockk(relaxed = true)
         backgroundScheduler = mockk(relaxed = true)
         
         importExportManager = mockk(relaxed = true)
@@ -100,23 +199,41 @@ class SettingsViewModelTest {
         ttsHelper = mockk(relaxed = true)
         audioCacheRepository = mockk(relaxed = true)
 
-        ttsDelegate = mockk(relaxed = true)
+        ttsDelegate = mockk(relaxed = true) {
+            every { availableLanguages } returns MutableStateFlow(emptyList())
+            every { availableVoices } returns MutableStateFlow(emptyList())
+            every { availableAudioDevices } returns MutableStateFlow(emptyList())
+            every { cachedAudioDevices } returns MutableStateFlow<Map<String, String>>(emptyMap())
+        }
         scanningDelegate = mockk(relaxed = true)
-        cloudSyncDelegate = mockk(relaxed = true)
-        genAiDelegate = mockk(relaxed = true)
+        cloudSyncDelegate = mockk(relaxed = true) {
+            every { isSyncing } returns MutableStateFlow(false)
+            every { userEmail } returns MutableStateFlow(null)
+            every { availableBackups } returns MutableStateFlow(emptyList())
+            every { showBackupSelectionDialog } returns MutableStateFlow(false)
+            every { syncLogs } returns MutableStateFlow(emptyList())
+            every { driveFolders } returns MutableStateFlow(emptyList())
+            every { isBrowsingFolders } returns MutableStateFlow(false)
+        }
+        genAiDelegate = mockk(relaxed = true) {
+            every { geminiToolStatus } returns MutableStateFlow<Map<String, com.andreas_kratzer.ghosttalk.core.ai.domain.GeminiUseCase.ToolStatus>>(emptyMap())
+        }
         experimentalDelegate = mockk(relaxed = true)
         hueDelegate = HueSettingsDelegate(
             context = application,
             settingsRepository = settingsRepository,
             hueManager = hueManager
         )
+        hueDelegate.initialize(kotlinx.coroutines.CoroutineScope(testDispatcher))
         spotifyDelegate = SpotifySettingsDelegate(
             settingsRepository = settingsRepository,
             spotifyManager = spotifyManager
         )
+        spotifyDelegate.initialize(kotlinx.coroutines.CoroutineScope(testDispatcher))
         prefetchDelegate = TtsPrefetchSettingsDelegate(
             ttsHelper = ttsHelper
         )
+        prefetchDelegate.initialize(kotlinx.coroutines.CoroutineScope(testDispatcher))
         backupDelegate = BackupSettingsDelegate(
             context = application,
             settingsRepository = settingsRepository,
@@ -124,15 +241,104 @@ class SettingsViewModelTest {
             importExportManager = importExportManager,
             syncLogProvider = mockk(relaxed = true)
         )
+        backupDelegate.initialize(kotlinx.coroutines.CoroutineScope(testDispatcher))
 
         // Mock common flows
         every { settingsRepository.activeBookId } returns "test-book"
-        every { getPagesUseCase.execute(any()) } returns flowOf(emptyList())
-        every { settingsRepository.ttsLanguageFlow } returns MutableStateFlow("de")
-        every { settingsRepository.ttsVoiceNameFlow } returns MutableStateFlow(null)
-        every { settingsRepository.autoStartScanningFlow } returns MutableStateFlow(true)
-        every { settingsRepository.scanDelayFlow } returns MutableStateFlow(2000L)
-        every { settingsRepository.appLanguageFlow } returns MutableStateFlow("en")
+        every { settingsRepository.activeProfileId } returns "profile-default"
+        every { settingsRepository.resumeScanningFromStartFlow } returns MutableStateFlow(true)
+        every { settingsRepository.defaultScanPatternFlow } returns MutableStateFlow("linear")
+        every { settingsRepository.holdingTimeMillisFlow } returns MutableStateFlow(250L)
+        every { settingsRepository.bluetoothDelayFlow } returns MutableStateFlow(100L)
+        every { settingsRepository.lateClickThresholdFlow } returns MutableStateFlow(250L)
+        every { settingsRepository.isVocalSwitchEnabledFlow } returns MutableStateFlow(false)
+        every { settingsRepository.staticRowEnabledFlow } returns MutableStateFlow(false)
+        every { settingsRepository.defaultStartPageIdFlow } returns MutableStateFlow(null)
+        every { settingsRepository.ttsAudioDeviceAddressFlow } returns MutableStateFlow(null)
+        every { settingsRepository.cuesAudioDeviceAddressFlow } returns MutableStateFlow(null)
+        every { settingsRepository.recordingAudioSourceFlow } returns MutableStateFlow(0)
+        every { settingsRepository.persistActionLogsFlow } returns MutableStateFlow(true)
+        every { settingsRepository.switchActivationKeyFlow } returns MutableStateFlow("~3")
+        every { settingsRepository.volumeKeysActivateFlow } returns MutableStateFlow(false)
+        every { settingsRepository.showTestButtonsFlow } returns MutableStateFlow(false)
+        every { settingsRepository.showPageIdInLogFlow } returns MutableStateFlow(false)
+        every { settingsRepository.isDataCloudSyncEnabledFlow } returns MutableStateFlow(false)
+        every { settingsRepository.syncModeBookFlow } returns MutableStateFlow("TWO_WAY")
+        every { settingsRepository.syncModeTtsFlow } returns MutableStateFlow("TWO_WAY")
+        every { settingsRepository.syncModeStatsFlow } returns MutableStateFlow("RESTORE_ONLY")
+        every { settingsRepository.syncModeSettingsFlow } returns MutableStateFlow("TWO_WAY")
+        every { settingsRepository.lastSuccessfulSyncTimeFlow } returns MutableStateFlow(0L)
+        every { settingsRepository.syncIntervalMinutesFlow } returns MutableStateFlow(60L)
+        every { settingsRepository.foregroundSyncIntervalMinutesFlow } returns MutableStateFlow(5L)
+        every { settingsRepository.googleDriveFolderIdFlow } returns MutableStateFlow(null)
+        every { settingsRepository.googleDriveFolderNameFlow } returns MutableStateFlow(null)
+        every { settingsRepository.syncTargetTypeFlow } returns MutableStateFlow("google_drive")
+        every { settingsRepository.googleAuthTypeFlow } returns MutableStateFlow(com.andreas_kratzer.ghosttalk.core.model.CloudAuthType.SYSTEM)
+        every { settingsRepository.isCaregiverDeviceFlow } returns MutableStateFlow(false)
+        every { settingsRepository.localFolderSafUriFlow } returns MutableStateFlow(null)
+        every { settingsRepository.localFolderSafNameFlow } returns MutableStateFlow(null)
+        every { settingsRepository.hueBridgeIpFlow } returns MutableStateFlow("")
+        every { settingsRepository.hueUsernameFlow } returns MutableStateFlow("")
+        every { settingsRepository.hueCachedDevicesFlow } returns MutableStateFlow("")
+        every { settingsRepository.isGeminiEnabledFlow } returns MutableStateFlow(false)
+        every { settingsRepository.geminiApiKeyFlow } returns MutableStateFlow(null)
+        every { settingsRepository.useGeminiApiKeyFlow } returns MutableStateFlow(false)
+        every { settingsRepository.isGeminiVerifiedFlow } returns MutableStateFlow(false)
+        every { settingsRepository.spotifyUserDisplayNameFlow } returns MutableStateFlow(null)
+        every { settingsRepository.isSmartPredictionEnabledFlow } returns MutableStateFlow(false)
+        every { settingsRepository.isNotificationReadingEnabledFlow } returns MutableStateFlow(false)
+        every { settingsRepository.monitoredNotificationAppsFlow } returns MutableStateFlow(emptySet())
+        every { settingsRepository.autoReadModeFlow } returns MutableStateFlow(com.andreas_kratzer.ghosttalk.core.settings.AutoReadMode.OFF)
+        every { settingsRepository.autoReadOnlyInUserModeFlow } returns MutableStateFlow(true)
+        every { settingsRepository.autoReadInStandbyFlow } returns MutableStateFlow(false)
+        every { settingsRepository.themeModeFlow } returns MutableStateFlow("LIGHT")
+        every { settingsRepository.keepScreenOnUserModeFlow } returns MutableStateFlow(true)
+        every { settingsRepository.userModeScreenBehaviorFlow } returns MutableStateFlow("GRID")
+        every { settingsRepository.statsRetentionDaysFlow } returns MutableStateFlow(30)
+        every { settingsRepository.statsAggregationHoursFlow } returns MutableStateFlow(24)
+        every { settingsRepository.onlyRecordHardwareStatsFlow } returns MutableStateFlow(false)
+        every { settingsRepository.firebaseAnalyticsEnabledFlow } returns MutableStateFlow(true)
+        every { settingsRepository.geminiTimeoutFlow } returns MutableStateFlow(10000L)
+        every { settingsRepository.geminiRedoPredictionFlow } returns MutableStateFlow(false)
+        every { settingsRepository.blockVolumeKeysFlow } returns MutableStateFlow(false)
+        every { settingsRepository.speakerVolumeFlow } returns MutableStateFlow(100)
+        every { settingsRepository.headphoneVolumeFlow } returns MutableStateFlow(100)
+        every { settingsRepository.securityPinFlow } returns MutableStateFlow("")
+        every { settingsRepository.securityPinTimeoutMinutesFlow } returns MutableStateFlow(30L)
+        every { settingsRepository.isPinRequiredForDeletionFlow } returns MutableStateFlow(false)
+        every { settingsRepository.isBiometricEnabledFlow } returns MutableStateFlow(false)
+        every { settingsRepository.isSecurityRequiredForEditFlow } returns MutableStateFlow(false)
+        every { settingsRepository.isSecurityRequiredForSettingsFlow } returns MutableStateFlow(false)
+        every { settingsRepository.isSecurityRequiredForAnalyticsFlow } returns MutableStateFlow(false)
+        every { settingsRepository.startupBehaviorFlow } returns MutableStateFlow("BOOK_SELECTION")
+        every { settingsRepository.logIgnoredActionsFlow } returns MutableStateFlow(false)
+        every { settingsRepository.logStopActionsFlow } returns MutableStateFlow(false)
+        every { settingsRepository.limitScanCyclesFlow } returns MutableStateFlow(false)
+        every { settingsRepository.scanCycleLimitFlow } returns MutableStateFlow(2)
+        every { settingsRepository.actionLogLimitFlow } returns MutableStateFlow(100)
+        every { settingsRepository.forceSoftKeyboardFlow } returns MutableStateFlow(true)
+        every { settingsRepository.ttsEngineFlow } returns MutableStateFlow(null)
+        every { settingsRepository.elevenLabsApiKeyFlow } returns MutableStateFlow(null)
+        every { settingsRepository.elevenLabsModelFlow } returns MutableStateFlow("eleven_multilingual_v2")
+        every { settingsRepository.elevenLabsStabilityFlow } returns MutableStateFlow(0.5f)
+        every { settingsRepository.elevenLabsSimilarityBoostFlow } returns MutableStateFlow(0.75f)
+        every { settingsRepository.ttsPlaybackSpeedFlow } returns MutableStateFlow(1.0f)
+        every { settingsRepository.maxCallDurationSecondsFlow } returns MutableStateFlow(300)
+        every { settingsRepository.callDurationFeedbackIntervalSecondsFlow } returns MutableStateFlow(60)
+        every { settingsRepository.outgoingCallIntroFlow } returns MutableStateFlow("")
+        every { settingsRepository.incomingCallIntroFlow } returns MutableStateFlow("")
+        every { settingsRepository.incomingCallScanLimitUserModeActiveFlow } returns MutableStateFlow(2)
+        every { settingsRepository.incomingCallAutoActionUserModeActiveFlow } returns MutableStateFlow("NONE")
+        every { settingsRepository.incomingCallDelayUserModeInactiveFlow } returns MutableStateFlow(10)
+        every { settingsRepository.incomingCallAutoActionUserModeInactiveFlow } returns MutableStateFlow("NONE")
+        every { settingsRepository.callAnnouncementAsCueFlow } returns MutableStateFlow(false)
+        every { settingsRepository.autoEnableSpeakerphoneFlow } returns MutableStateFlow(true)
+        every { settingsRepository.simulateCallsEnabledFlow } returns MutableStateFlow(false)
+        every { settingsRepository.hangUpPressesRequiredFlow } returns MutableStateFlow(1)
+        every { settingsRepository.filterCallsNotInContactsFlow } returns MutableStateFlow(false)
+        every { settingsRepository.syncModeLogsFlow } returns MutableStateFlow("RESTORE_ONLY")
+        every { settingsRepository.syncLogsIntervalHoursFlow } returns MutableStateFlow(24)
+        every { settingsRepository.lastLogsSyncTimeFlow } returns MutableStateFlow(0L)
         every { cloudSyncDelegate.isSyncing } returns MutableStateFlow(false)
         every { cloudSyncDelegate.userEmail } returns MutableStateFlow(null)
 
@@ -296,5 +502,70 @@ class SettingsViewModelTest {
 
         verify(exactly = 0) { settingsRepository.hueCachedDevices = any() }
         assertEquals(false, success)
+    }
+
+    @Test
+    fun `editing a profile updates draft instead of writing to repository`() = runTest {
+        val testProfile = com.andreas_kratzer.ghosttalk.core.model.SettingsProfile(
+            id = "test-prof-id",
+            name = "AAC User",
+            config = com.andreas_kratzer.ghosttalk.core.model.ProfileConfig(autoStartScanning = true),
+            profileVersionSequence = 1L,
+            updatedAt = System.currentTimeMillis()
+        )
+        coEvery { settingsRepository.getProfileById("test-prof-id") } returns testProfile
+
+        viewModel.startEditingProfile("test-prof-id")
+        assertEquals("test-prof-id", viewModel.editingProfileId.value)
+        assertEquals("AAC User", viewModel.editingProfileName.value)
+        assertEquals(false, viewModel.hasUnsavedChanges.value)
+
+        // Modify autoStartScanning setting
+        viewModel.setAutoStartScanning(false)
+        
+        // Ensure repository setter was NOT called
+        verify(exactly = 0) { settingsRepository.autoStartScanning = any() }
+        verify(exactly = 0) { scanningDelegate.setAutoStartScanning(any()) }
+        assertEquals(false, viewModel.autoStartScanning.value)
+        assertEquals(true, viewModel.hasUnsavedChanges.value)
+    }
+
+    @Test
+    fun `saving a profile updates repository and triggers sync`() = runTest {
+        val testProfile = com.andreas_kratzer.ghosttalk.core.model.SettingsProfile(
+            id = "test-prof-id",
+            name = "AAC User",
+            config = com.andreas_kratzer.ghosttalk.core.model.ProfileConfig(autoStartScanning = true),
+            profileVersionSequence = 1L,
+            updatedAt = System.currentTimeMillis()
+        )
+        coEvery { settingsRepository.getProfileById("test-prof-id") } returns testProfile
+
+        viewModel.startEditingProfile("test-prof-id")
+        viewModel.setAutoStartScanning(false)
+        viewModel.saveEditingProfile()
+
+        // Should write update to settingsRepository
+        coVerify { settingsRepository.updateProfile(any()) }
+        assertEquals(null, viewModel.editingProfileId.value)
+    }
+
+    @Test
+    fun `canceling profile edit discards draft changes`() = runTest {
+        val testProfile = com.andreas_kratzer.ghosttalk.core.model.SettingsProfile(
+            id = "test-prof-id",
+            name = "AAC User",
+            config = com.andreas_kratzer.ghosttalk.core.model.ProfileConfig(autoStartScanning = true),
+            profileVersionSequence = 1L,
+            updatedAt = System.currentTimeMillis()
+        )
+        coEvery { settingsRepository.getProfileById("test-prof-id") } returns testProfile
+
+        viewModel.startEditingProfile("test-prof-id")
+        viewModel.setAutoStartScanning(false)
+        viewModel.cancelEditingProfile()
+
+        assertEquals(null, viewModel.editingProfileId.value)
+        coVerify(exactly = 0) { settingsRepository.updateProfile(any()) }
     }
 }

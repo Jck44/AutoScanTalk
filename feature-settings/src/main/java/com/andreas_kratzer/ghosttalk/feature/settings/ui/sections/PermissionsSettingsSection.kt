@@ -209,6 +209,7 @@ fun PermissionsSettingsSection(viewModel: SettingsViewModel) {
                                     com.andreas_kratzer.ghosttalk.core.settings.AutoReadMode.EVERY_10_MIN -> "Alle 10 Minuten"
                                     com.andreas_kratzer.ghosttalk.core.settings.AutoReadMode.EVERY_15_MIN -> "Alle 15 Minuten"
                                     com.andreas_kratzer.ghosttalk.core.settings.AutoReadMode.EVERY_30_MIN -> "Alle 30 Minuten"
+                                    else -> "Aus"
                                 },
                                 onValueChange = { },
                                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = modeExpanded) },

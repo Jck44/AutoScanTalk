@@ -80,14 +80,14 @@ class GoogleAuthManager @javax.inject.Inject constructor(
         if (credential is GoogleIdTokenCredential) {
             Log.d(TAG, "Credential is GoogleIdTokenCredential")
             email = credential.id
-            Log.d(TAG, "Email from ID: $email")
+            Log.d(TAG, "Email from ID: ${maskEmail(email)}")
         } else if (credential is androidx.credentials.CustomCredential && 
                    credential.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL) {
             Log.d(TAG, "Credential is CustomCredential of type TYPE_GOOGLE_ID_TOKEN_CREDENTIAL")
             try {
                 val googleIdTokenCredential = GoogleIdTokenCredential.createFrom(credential.data)
                 email = googleIdTokenCredential.id
-                Log.d(TAG, "Email from Custom ID: $email")
+                Log.d(TAG, "Email from Custom ID: ${maskEmail(email)}")
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to create GoogleIdTokenCredential from data", e)
             }
@@ -100,9 +100,23 @@ class GoogleAuthManager @javax.inject.Inject constructor(
 
         _userEmail.value = email
         prefs.edit { putString(KEY_USER_EMAIL, email) }
-        Log.i(TAG, "Sign-in verified. User email stored: $email")
+        Log.i(TAG, "Sign-in verified. User email stored: ${maskEmail(email)}")
         
         return true
+    }
+
+    private fun maskEmail(email: String?): String {
+        if (email == null) return "null"
+        val parts = email.split("@")
+        if (parts.size != 2) return "***"
+        val username = parts[0]
+        val domain = parts[1]
+        val maskedUsername = if (username.length <= 2) {
+            "*"
+        } else {
+            username.first() + "***" + username.last()
+        }
+        return "$maskedUsername@$domain"
     }
 
     override suspend fun signOut() {
@@ -115,7 +129,7 @@ class GoogleAuthManager @javax.inject.Inject constructor(
     override suspend fun saveApiKeyToPasswordManager(activity: android.app.Activity, apiKey: String, serviceName: String): Result<Unit> {
         val email = _userEmail.value ?: return Result.failure(IllegalStateException("User not signed in"))
         val targetId = if (serviceName == "elevenlabs") email else "$email ($serviceName)"
-        Log.d(TAG, "Saving API Key to Password Manager for $targetId")
+        Log.d(TAG, "Saving API Key to Password Manager for ${maskEmail(targetId)}")
 
         return try {
             val createPasswordRequest = CreatePasswordRequest(
@@ -180,7 +194,7 @@ class GoogleAuthManager @javax.inject.Inject constructor(
 
     override fun getGoogleCredential(scopes: List<String>?): GoogleAccountCredential? {
         val email = _userEmail.value
-        Log.d(TAG, "getGoogleCredential: stored email is '$email'")
+        Log.d(TAG, "getGoogleCredential: stored email is '${maskEmail(email)}'")
         
         if (email.isNullOrEmpty()) {
             Log.e(TAG, "getGoogleCredential: email is null or empty, returning null")
@@ -201,9 +215,9 @@ class GoogleAuthManager @javax.inject.Inject constructor(
         try {
             val account = android.accounts.Account(email, "com.google")
             credential.selectedAccount = account
-            Log.i(TAG, "Created fresh GoogleAccountCredential with Account object for ${account.name}")
+            Log.i(TAG, "Created fresh GoogleAccountCredential with Account object for ${maskEmail(account.name)}")
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to create Account object for $email", e)
+            Log.e(TAG, "Failed to create Account object for ${maskEmail(email)}", e)
             credential.selectedAccountName = email
         }
         

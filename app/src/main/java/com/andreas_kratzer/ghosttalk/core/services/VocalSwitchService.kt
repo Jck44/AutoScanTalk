@@ -121,11 +121,18 @@ class VocalSwitchService : Service() {
         }
     }
 
+    private val adaptiveThresholdCache = java.util.concurrent.ConcurrentHashMap<String, Float>()
+
     private fun observeVocalProfiles() {
         serviceScope.launch {
             vocalProfileRepository.getActiveProfilesFlow().collectLatest { profiles ->
                 activeProfiles = profiles
-                Log.d(TAG, "Updated active profiles list: ${profiles.size} profiles loaded")
+                adaptiveThresholdCache.clear()
+                profiles.forEach { profile ->
+                    val threshold = vocalPatternMatcher.calculateAdaptiveThresholdFromList(profile.positiveTemplates)
+                    adaptiveThresholdCache[profile.id] = threshold
+                }
+                Log.d(TAG, "Updated active profiles list: ${profiles.size} profiles loaded. Cached thresholds.")
             }
         }
     }
@@ -216,7 +223,7 @@ class VocalSwitchService : Service() {
         var bestAdaptiveThreshold = 0.82f
 
         for (profile in activeProfiles) {
-            val adaptiveThreshold = vocalPatternMatcher.calculateAdaptiveThresholdFromList(profile.positiveTemplates)
+            val adaptiveThreshold = adaptiveThresholdCache[profile.id] ?: 0.82f
             val evaluationThreshold = if (profile.buttonAction == null) 0.70f else adaptiveThreshold
             
             val result = vocalPatternMatcher.evaluate(

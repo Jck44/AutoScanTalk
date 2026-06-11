@@ -69,10 +69,11 @@ class UserModeSessionTracker @Inject constructor(
             activeSessionId = id
 
             updateLoopJob = scope.launch {
-                while (true) {
+                val currentId = id
+                while (activeSessionId == currentId) {
                     delay(10000) // Update database row every 10 seconds
-                    activeSessionId?.let { sessionId ->
-                        sessionRepository.updateActiveSession(sessionId, System.currentTimeMillis())
+                    if (activeSessionId == currentId) {
+                        sessionRepository.updateActiveSession(currentId, System.currentTimeMillis())
                     }
                 }
             }
@@ -108,10 +109,11 @@ class UserModeSessionTracker @Inject constructor(
             sessionRepository.updateActiveSession(sessionId, System.currentTimeMillis())
 
             updateLoopJob = scope.launch {
-                while (true) {
+                val currentId = sessionId
+                while (activeSessionId == currentId) {
                     delay(10000) // Update database row every 10 seconds
-                    activeSessionId?.let { sId ->
-                        sessionRepository.updateActiveSession(sId, System.currentTimeMillis())
+                    if (activeSessionId == currentId) {
+                        sessionRepository.updateActiveSession(currentId, System.currentTimeMillis())
                     }
                 }
             }

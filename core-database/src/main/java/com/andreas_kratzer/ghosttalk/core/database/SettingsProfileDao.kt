@@ -10,10 +10,10 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface SettingsProfileDao {
-    @Query("SELECT * FROM settings_profiles WHERE isDeleted = 0 ORDER BY updatedAt DESC")
+    @Query("SELECT * FROM settings_profiles WHERE isDeleted = 0 ORDER BY CASE WHEN id = 'profile-default' THEN 0 ELSE 1 END ASC, name ASC")
     fun getAllProfilesFlow(): Flow<List<SettingsProfileEntity>>
 
-    @Query("SELECT * FROM settings_profiles WHERE isDeleted = 0 ORDER BY updatedAt DESC")
+    @Query("SELECT * FROM settings_profiles WHERE isDeleted = 0 ORDER BY CASE WHEN id = 'profile-default' THEN 0 ELSE 1 END ASC, name ASC")
     suspend fun getAllProfiles(): List<SettingsProfileEntity>
 
     @Query("SELECT * FROM settings_profiles WHERE id = :id AND isDeleted = 0")

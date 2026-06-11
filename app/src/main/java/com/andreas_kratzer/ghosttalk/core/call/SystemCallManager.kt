@@ -499,86 +499,85 @@ class SystemCallManager @Inject constructor(
         }
     }
 
-    private fun startDurationTimer() {
-        stopDurationTimer()
-        _callDurationSeconds.value = 0
-        durationTimer = Timer().apply {
-            scheduleAtFixedRate(object : TimerTask() {
-                override fun run() {
-                    handler.post {
-                        val newDuration = _callDurationSeconds.value + 1
-                        _callDurationSeconds.value = newDuration
-                        
-                        val interval = settingsRepository.callDurationFeedbackIntervalSeconds
-                        if (interval > 0 && newDuration > 0 && newDuration % interval == 0) {
-                            val locale = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                                context.resources.configuration.locales[0]
-                            } else {
-                                @Suppress("DEPRECATION")
-                                context.resources.configuration.locale
-                            }
-                            val isEn = locale?.language?.equals("en", ignoreCase = true) == true
+    private val durationRunnable = object : Runnable {
+        override fun run() {
+            val newDuration = _callDurationSeconds.value + 1
+            _callDurationSeconds.value = newDuration
+            
+            val interval = settingsRepository.callDurationFeedbackIntervalSeconds
+            if (interval > 0 && newDuration > 0 && newDuration % interval == 0) {
+                val locale = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                    context.resources.configuration.locales[0]
+                } else {
+                    @Suppress("DEPRECATION")
+                    context.resources.configuration.locale
+                }
+                val isEn = locale?.language?.equals("en", ignoreCase = true) == true
 
-                            val text = if (isEn) {
-                                if (newDuration < 60) {
-                                    "Call duration is $newDuration seconds."
-                                } else {
-                                    val minutes = newDuration / 60
-                                    val seconds = newDuration % 60
-                                    val minStr = if (minutes == 1) "minute" else "minutes"
-                                    if (seconds == 0) {
-                                        "Call has been active for $minutes $minStr."
-                                    } else {
-                                        "Call has been active for $minutes $minStr and $seconds seconds."
-                                    }
-                                }
-                            } else {
-                                if (newDuration < 60) {
-                                    "Telefonat dauert seit $newDuration Sekunden."
-                                } else {
-                                    val minutes = newDuration / 60
-                                    val seconds = newDuration % 60
-                                    val minStr = if (minutes == 1) "Minute" else "Minuten"
-                                    if (seconds == 0) {
-                                        "Telefonat dauert seit $minutes $minStr."
-                                    } else {
-                                        "Telefonat dauert seit $minutes $minStr und $seconds Sekunden."
-                                    }
-                                }
-                            }
-                            ttsHelper.speak(text)
+                val text = if (isEn) {
+                    if (newDuration < 60) {
+                        "Call duration is $newDuration seconds."
+                    } else {
+                        val minutes = newDuration / 60
+                        val seconds = newDuration % 60
+                        val minStr = if (minutes == 1) "minute" else "minutes"
+                        if (seconds == 0) {
+                            "Call has been active for $minutes $minStr."
+                        } else {
+                            "Call has been active for $minutes $minStr and $seconds seconds."
                         }
-                        
-                        val maxSec = settingsRepository.maxCallDurationSeconds
-                        if (maxSec in 1..newDuration) {
-                            stopDurationTimer()
-                            val locale = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                                context.resources.configuration.locales[0]
-                            } else {
-                                @Suppress("DEPRECATION")
-                                context.resources.configuration.locale
-                            }
-                            val isEn = locale?.language?.equals("en", ignoreCase = true) == true
-                            val maxReachedText = if (isEn) {
-                                "Maximum call duration reached. Ending the call."
-                            } else {
-                                "Maximale Anrufdauer erreicht. Der Anruf wird beendet."
-                            }
-                            ttsHelper.speak(maxReachedText, onDone = {
-                                hangUp()
-                            }, onError = {
-                                hangUp()
-                            })
+                    }
+                } else {
+                    if (newDuration < 60) {
+                        "Telefonat dauert seit $newDuration Sekunden."
+                    } else {
+                        val minutes = newDuration / 60
+                        val seconds = newDuration % 60
+                        val minStr = if (minutes == 1) "Minute" else "Minuten"
+                        if (seconds == 0) {
+                            "Telefonat dauert seit $minutes $minStr."
+                        } else {
+                            "Telefonat dauert seit $minutes $minStr und $seconds Sekunden."
                         }
                     }
                 }
-            }, 1000L, 1000L)
+                ttsHelper.speak(text)
+            }
+            
+            val maxSec = settingsRepository.maxCallDurationSeconds
+            if (maxSec in 1..newDuration) {
+                stopDurationTimer()
+                val locale = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                    context.resources.configuration.locales[0]
+                } else {
+                    @Suppress("DEPRECATION")
+                    context.resources.configuration.locale
+                }
+                val isEn = locale?.language?.equals("en", ignoreCase = true) == true
+                val maxReachedText = if (isEn) {
+                    "Maximum call duration reached. Ending the call."
+                } else {
+                    "Maximale Anrufdauer erreicht. Der Anruf wird beendet."
+                }
+                ttsHelper.speak(maxReachedText, onDone = {
+                    hangUp()
+                }, onError = {
+                    hangUp()
+                })
+            } else {
+                handler.postDelayed(this, 1000L)
+            }
         }
     }
 
+    private fun startDurationTimer() {
+        stopDurationTimer()
+        _callDurationSeconds.value = 0
+        handler.postDelayed(durationRunnable, 1000L)
+    }
+
     private fun stopDurationTimer() {
-        durationTimer?.cancel()
-        durationTimer = null
+        handler.removeCallbacks(durationRunnable)
     }
 
     private fun getContactName(context: Context, phoneNumber: String): String? {
