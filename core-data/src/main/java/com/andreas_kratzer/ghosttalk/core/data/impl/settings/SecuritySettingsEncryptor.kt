@@ -1,8 +1,8 @@
 package com.andreas_kratzer.ghosttalk.core.data.impl.settings
  
-import android.util.Base64
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
+import android.util.Base64
 import java.security.KeyStore
 import java.security.MessageDigest
 import java.security.SecureRandom

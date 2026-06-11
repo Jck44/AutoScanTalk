@@ -10,8 +10,8 @@ import com.andreas_kratzer.ghosttalk.core.model.ButtonTemplate
 import com.andreas_kratzer.ghosttalk.core.model.GridSettingsUpdate
 import com.andreas_kratzer.ghosttalk.ui.pages.delegates.ButtonTemplateDelegate
 import com.andreas_kratzer.ghosttalk.ui.pages.delegates.PageManagementDelegate
-import com.andreas_kratzer.ghosttalk.ui.pages.delegates.TtsPreviewDelegate
 import com.andreas_kratzer.ghosttalk.ui.pages.delegates.SuggestionsDelegate
+import com.andreas_kratzer.ghosttalk.ui.pages.delegates.TtsPreviewDelegate
 import com.andreas_kratzer.ghosttalk.ui.util.GridEditorActions
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.StateFlow

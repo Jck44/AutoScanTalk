@@ -2,7 +2,6 @@ package com.andreas_kratzer.ghosttalk.core.scanning
 
 import com.andreas_kratzer.ghosttalk.core.settings.ScanningSettings
 import com.andreas_kratzer.ghosttalk.core.tts.TextToSpeechHelper
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withTimeout
 import javax.inject.Inject

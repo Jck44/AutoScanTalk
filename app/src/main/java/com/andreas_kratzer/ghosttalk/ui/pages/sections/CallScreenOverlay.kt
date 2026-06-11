@@ -47,11 +47,11 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.andreas_kratzer.ghosttalk.R
-import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
-import com.andreas_kratzer.ghosttalk.core.ui.theme.CallAcceptLight
-import com.andreas_kratzer.ghosttalk.core.ui.theme.CallAcceptDark
-import com.andreas_kratzer.ghosttalk.core.ui.theme.CallAcceptContainerLight
 import com.andreas_kratzer.ghosttalk.core.ui.theme.CallAcceptContainerDark
+import com.andreas_kratzer.ghosttalk.core.ui.theme.CallAcceptContainerLight
+import com.andreas_kratzer.ghosttalk.core.ui.theme.CallAcceptDark
+import com.andreas_kratzer.ghosttalk.core.ui.theme.CallAcceptLight
+import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
 import java.util.Locale
 
 // Colors for call buttons

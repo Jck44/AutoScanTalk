@@ -11,8 +11,6 @@ import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.K
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_SYNC_LOGS_STORAGE
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_TEMPLATE_SORT_ORDER
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_THEME_MODE
-import kotlinx.coroutines.flow.StateFlow
-
 import javax.inject.Inject
 
 class GeneralSettingsRepository @Inject constructor(

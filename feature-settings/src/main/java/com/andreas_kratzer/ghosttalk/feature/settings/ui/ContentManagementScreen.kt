@@ -6,27 +6,17 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import com.andreas_kratzer.ghosttalk.core.ui.components.SectionHeader
 import com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkCard
+import com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkScaffold
 import com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
 import com.andreas_kratzer.ghosttalk.core.ui.R as CoreR
-
-import com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkScaffold
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -60,8 +50,6 @@ fun ContentManagementScreen(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(dimensions.listItemSpacing)
             ) {
-                SectionHeader(title = stringResource(CoreR.string.start_manage_content))
-
                 GhostTalkCard(
                     title = stringResource(CoreR.string.page_list_title),
                 icon = GhostTalkIcons.Description,

@@ -10,8 +10,6 @@ import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.K
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_SECURITY_REQUIRED_FOR_ANALYTICS
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_SECURITY_REQUIRED_FOR_EDIT
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_SECURITY_REQUIRED_FOR_SETTINGS
-import kotlinx.coroutines.flow.StateFlow
-
 import javax.inject.Inject
 
 class SecuritySettingsRepository @Inject constructor(

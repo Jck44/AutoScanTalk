@@ -1,14 +1,16 @@
 package com.andreas_kratzer.ghosttalk.ui.pages
 
+import com.andreas_kratzer.ghosttalk.core.actions.ActionExecutor
 import com.andreas_kratzer.ghosttalk.core.ai.domain.GeminiUseCase
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.ui.pages.delegates.ButtonTemplateDelegate
 import com.andreas_kratzer.ghosttalk.ui.pages.delegates.PageManagementDelegate
-import com.andreas_kratzer.ghosttalk.ui.pages.delegates.TtsPreviewDelegate
 import com.andreas_kratzer.ghosttalk.ui.pages.delegates.SuggestionsDelegate
-import com.andreas_kratzer.ghosttalk.core.actions.ActionExecutor
-import io.mockk.*
+import com.andreas_kratzer.ghosttalk.ui.pages.delegates.TtsPreviewDelegate
+import io.mockk.mockk
+import io.mockk.unmockkAll
+import io.mockk.verify
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher

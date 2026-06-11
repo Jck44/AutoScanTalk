@@ -9,8 +9,6 @@ import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.K
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_HAS_ACCEPTED_PAGE_SPLIT_OPT_IN
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_USE_GEMINI_API_KEY
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_USE_LOCAL_GENERATIVE_AI
-import kotlinx.coroutines.flow.StateFlow
-
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 

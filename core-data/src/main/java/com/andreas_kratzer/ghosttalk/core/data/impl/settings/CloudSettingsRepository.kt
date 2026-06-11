@@ -13,9 +13,8 @@ import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.K
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_SYNC_MODE
 import com.andreas_kratzer.ghosttalk.core.model.CloudAuthType
 import com.andreas_kratzer.ghosttalk.core.settings.CloudSettings
-import kotlinx.coroutines.flow.StateFlow
-
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.flow.StateFlow
 import javax.inject.Inject
 
 class CloudSettingsRepository @Inject constructor(

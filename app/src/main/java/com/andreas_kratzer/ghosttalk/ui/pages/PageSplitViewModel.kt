@@ -1,19 +1,17 @@
 package com.andreas_kratzer.ghosttalk.ui.pages
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.andreas_kratzer.ghosttalk.core.ai.domain.SplitPageUseCase
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
+import com.andreas_kratzer.ghosttalk.ui.pages.delegates.AnalyticsDelegate
+import com.andreas_kratzer.ghosttalk.ui.pages.delegates.LayoutWizardDelegate
 import com.andreas_kratzer.ghosttalk.ui.pages.delegates.PageManagementDelegate
 import com.andreas_kratzer.ghosttalk.ui.pages.delegates.PageSplitDelegate
-import com.andreas_kratzer.ghosttalk.ui.pages.delegates.LayoutWizardDelegate
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.StateFlow
 import javax.inject.Inject
-
-import androidx.lifecycle.viewModelScope
-import kotlinx.coroutines.launch
-import com.andreas_kratzer.ghosttalk.ui.pages.delegates.AnalyticsDelegate
 
 @HiltViewModel
 class PageSplitViewModel @Inject constructor(

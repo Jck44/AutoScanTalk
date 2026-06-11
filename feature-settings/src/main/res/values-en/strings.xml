@@ -537,7 +537,7 @@
     <string name="settings_vocal_test_profile_match">Profile: %1$s</string>
     <string name="settings_vocal_test_confidence">Target Confidence: %1$d%% | Noise Confidence: %2$d%%</string>
     <string name="settings_vocal_false_positive_question">Was that a false alarm?</string>
-    <string name="settings_vocal_register_fp_btn">Register false alarm...</string>
+    <string name="settings_vocal_register_fp_btn">Register false alarm…</string>
     <string name="settings_vocal_register_fp_desc">Register this noise as a false alarm for a profile to block it in the future.</string>
     <string name="settings_vocal_test_recognized">Recognized!</string>
     <string name="settings_vocal_test_not_recognized">Not recognized / Blocked</string>

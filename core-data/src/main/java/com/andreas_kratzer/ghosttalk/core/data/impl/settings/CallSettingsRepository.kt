@@ -14,8 +14,6 @@ import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.K
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_MAX_CALL_DURATION_SECONDS
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_OUTGOING_CALL_INTRO
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_SIMULATE_CALLS_ENABLED
-import kotlinx.coroutines.flow.StateFlow
-
 import javax.inject.Inject
 
 class CallSettingsRepository @Inject constructor(

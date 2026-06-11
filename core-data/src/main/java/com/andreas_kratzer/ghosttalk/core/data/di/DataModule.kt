@@ -36,7 +36,6 @@ import com.andreas_kratzer.ghosttalk.core.database.ButtonDao
 import com.andreas_kratzer.ghosttalk.core.database.ButtonTemplateDao
 import com.andreas_kratzer.ghosttalk.core.database.PageDao
 import com.andreas_kratzer.ghosttalk.core.database.TemplateDao
-import com.andreas_kratzer.ghosttalk.core.di.ApplicationScope
 import com.andreas_kratzer.ghosttalk.core.settings.CloudSettings
 import com.andreas_kratzer.ghosttalk.core.settings.DatabaseSettings
 import com.andreas_kratzer.ghosttalk.core.settings.FeatureSettings
@@ -51,7 +50,6 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
-import kotlinx.coroutines.CoroutineScope
 import javax.inject.Singleton
 
 @Suppress("unused")

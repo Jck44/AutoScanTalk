@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -27,7 +28,6 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -47,13 +47,13 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -78,6 +78,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkScaffold
 import com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
 import com.andreas_kratzer.ghosttalk.feature.settings.R
@@ -105,7 +106,6 @@ import kotlinx.coroutines.withContext
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import com.andreas_kratzer.ghosttalk.core.ui.R as CoreR
-import com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkScaffold
 
 enum class SettingsSection(private val titleRes: Int, val icon: ImageVector) {
     GENERAL(R.string.settings_category_general, Icons.Default.Settings),
@@ -410,6 +410,7 @@ fun SettingsScreen(
         onNavigateBack = handleBack
     ) { paddingValues ->
         Scaffold(
+            contentWindowInsets = WindowInsets(0.dp),
             bottomBar = {
                 if (editingProfileId != null) {
                     Surface(
@@ -449,7 +450,6 @@ fun SettingsScreen(
                 Row(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(paddingValues)
                 ) {
                     // Sidebar
                     Column(
@@ -595,7 +595,6 @@ fun SettingsScreen(
                     Column(
                         modifier = Modifier
                             .fillMaxSize()
-                            .padding(paddingValues)
                             .padding(horizontal = dimensions.screenPaddingHorizontal, vertical = dimensions.screenPaddingVertical)
                     ) {
                         if (editingProfileId != null) {
@@ -666,7 +665,6 @@ fun SettingsScreen(
                     Column(
                         modifier = Modifier
                             .fillMaxSize()
-                            .padding(paddingValues)
                     ) {
                         if (editingProfileId != null) {
                             ProfileEditBanner(

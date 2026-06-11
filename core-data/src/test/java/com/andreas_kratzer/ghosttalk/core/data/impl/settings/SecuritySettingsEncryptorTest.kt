@@ -13,7 +13,6 @@ import org.junit.Before
 import org.junit.Test
 import java.security.KeyStore
 import javax.crypto.KeyGenerator
-import javax.crypto.SecretKey
 
 class SecuritySettingsEncryptorTest {
 

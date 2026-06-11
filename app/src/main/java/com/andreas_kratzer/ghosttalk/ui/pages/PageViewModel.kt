@@ -8,7 +8,6 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import com.andreas_kratzer.ghosttalk.core.actions.ActionExecutor
 import com.andreas_kratzer.ghosttalk.core.ai.domain.GeminiUseCase
-import com.andreas_kratzer.ghosttalk.core.ai.domain.SplitPageUseCase
 import com.andreas_kratzer.ghosttalk.core.ai.domain.UpdateSmartPredictionsUseCase
 import com.andreas_kratzer.ghosttalk.core.call.CallState
 import com.andreas_kratzer.ghosttalk.core.cloud.PhilipsHueManager
@@ -16,10 +15,7 @@ import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.core.domain.pages.CreatePageUseCase
 import com.andreas_kratzer.ghosttalk.core.domain.pages.UsageLocation
 import com.andreas_kratzer.ghosttalk.core.model.Book
-import com.andreas_kratzer.ghosttalk.core.model.BookRestructureProposal
 import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
-import com.andreas_kratzer.ghosttalk.core.model.ButtonTemplate
-import com.andreas_kratzer.ghosttalk.core.model.GridSettingsUpdate
 import com.andreas_kratzer.ghosttalk.core.model.Page
 import com.andreas_kratzer.ghosttalk.core.scanning.ScanCoordinator
 import com.andreas_kratzer.ghosttalk.core.tts.TextToSpeechHelper
@@ -29,7 +25,6 @@ import com.andreas_kratzer.ghosttalk.ui.pages.delegates.PageManagementDelegate
 import com.andreas_kratzer.ghosttalk.ui.pages.delegates.ScreenManagementDelegate
 import com.andreas_kratzer.ghosttalk.ui.pages.delegates.SmartPredictionDelegate
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -41,7 +36,6 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 @OptIn(ExperimentalCoroutinesApi::class)

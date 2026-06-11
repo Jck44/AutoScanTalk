@@ -14,8 +14,6 @@ import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.K
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_SMART_PREDICTION_ENABLED
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_WEATHER_CACHE_TIMEOUT
 import com.andreas_kratzer.ghosttalk.core.settings.AdvancedSettings
-import kotlinx.coroutines.flow.StateFlow
-
 import javax.inject.Inject
 
 class AdvancedSettingsRepository @Inject constructor(

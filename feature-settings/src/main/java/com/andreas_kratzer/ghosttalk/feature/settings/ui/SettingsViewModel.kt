@@ -55,14 +55,11 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
-import com.andreas_kratzer.ghosttalk.core.model.ProfileConfig
-import com.andreas_kratzer.ghosttalk.core.model.SettingsProfile
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.map
 
 @Suppress("unused")
 @OptIn(ExperimentalCoroutinesApi::class)

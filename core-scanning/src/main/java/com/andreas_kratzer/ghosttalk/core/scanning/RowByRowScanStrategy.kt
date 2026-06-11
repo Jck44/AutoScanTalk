@@ -1,12 +1,9 @@
 package com.andreas_kratzer.ghosttalk.core.scanning
 
 import com.andreas_kratzer.ghosttalk.core.model.AuditoryCue
-import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-
 import javax.inject.Inject
 
 class RowByRowScanStrategy @Inject constructor() : ScanStrategy {

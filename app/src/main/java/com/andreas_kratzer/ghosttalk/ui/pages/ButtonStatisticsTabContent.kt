@@ -30,7 +30,6 @@ import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
@@ -38,12 +37,12 @@ import androidx.compose.ui.unit.dp
 import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.core.data.ButtonUsageRepository.ButtonUsageEvent
 import com.andreas_kratzer.ghosttalk.core.model.ButtonEffortMetrics
-import com.andreas_kratzer.ghosttalk.core.ui.theme.FrustrationLowLight
-import com.andreas_kratzer.ghosttalk.core.ui.theme.FrustrationLowDark
-import com.andreas_kratzer.ghosttalk.core.ui.theme.FrustrationMediumLight
-import com.andreas_kratzer.ghosttalk.core.ui.theme.FrustrationMediumDark
-import com.andreas_kratzer.ghosttalk.core.ui.theme.FrustrationHighLight
 import com.andreas_kratzer.ghosttalk.core.ui.theme.FrustrationHighDark
+import com.andreas_kratzer.ghosttalk.core.ui.theme.FrustrationHighLight
+import com.andreas_kratzer.ghosttalk.core.ui.theme.FrustrationLowDark
+import com.andreas_kratzer.ghosttalk.core.ui.theme.FrustrationLowLight
+import com.andreas_kratzer.ghosttalk.core.ui.theme.FrustrationMediumDark
+import com.andreas_kratzer.ghosttalk.core.ui.theme.FrustrationMediumLight
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale

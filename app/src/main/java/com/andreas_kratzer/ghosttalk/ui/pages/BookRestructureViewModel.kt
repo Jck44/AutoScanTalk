@@ -2,6 +2,7 @@ package com.andreas_kratzer.ghosttalk.ui.pages
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.core.model.BookHierarchyProposal
 import com.andreas_kratzer.ghosttalk.core.model.BookRestructureProposal
 import com.andreas_kratzer.ghosttalk.core.model.PageLayoutProposal
@@ -11,13 +12,10 @@ import com.andreas_kratzer.ghosttalk.ui.pages.delegates.PageManagementDelegate
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
-
-import kotlinx.coroutines.flow.combine
-
-import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
 
 @HiltViewModel
 class BookRestructureViewModel @Inject constructor(

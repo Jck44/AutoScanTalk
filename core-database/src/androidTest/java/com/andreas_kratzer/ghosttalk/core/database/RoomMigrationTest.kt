@@ -2,8 +2,8 @@ package com.andreas_kratzer.ghosttalk.core.database
 
 import android.content.Context
 import androidx.sqlite.db.SupportSQLiteDatabase
-import androidx.sqlite.db.framework.FrameworkSQLiteOpenHelperFactory
 import androidx.sqlite.db.SupportSQLiteOpenHelper
+import androidx.sqlite.db.framework.FrameworkSQLiteOpenHelperFactory
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import org.junit.Assert.assertEquals

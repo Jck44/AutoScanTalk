@@ -12,31 +12,25 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkCard
+import com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkScaffold
 import com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
 import com.andreas_kratzer.ghosttalk.core.ui.R as CoreR
-
-import com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkScaffold
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

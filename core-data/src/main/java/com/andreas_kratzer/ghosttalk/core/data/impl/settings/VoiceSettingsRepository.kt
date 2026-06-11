@@ -7,8 +7,6 @@ import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.K
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_TTS_AUDIO_DEVICE
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_TTS_LANGUAGE
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_TTS_VOICE_NAME
-import kotlinx.coroutines.flow.StateFlow
-
 import javax.inject.Inject
 
 class VoiceSettingsRepository @Inject constructor(

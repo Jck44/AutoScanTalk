@@ -3,8 +3,6 @@ package com.andreas_kratzer.ghosttalk.core.data.impl.settings
 import android.content.SharedPreferences
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_KEEP_SCREEN_ON_USER_MODE
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_USER_MODE_SCREEN_BEHAVIOR
-import kotlinx.coroutines.flow.StateFlow
-
 import javax.inject.Inject
 
 class UserSettingsRepository @Inject constructor(

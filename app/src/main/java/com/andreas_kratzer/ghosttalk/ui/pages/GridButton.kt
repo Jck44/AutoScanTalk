@@ -68,6 +68,12 @@ import com.andreas_kratzer.ghosttalk.core.ui.theme.FrequentActionBadgeBgDark
 import com.andreas_kratzer.ghosttalk.core.ui.theme.FrequentActionBadgeBgLight
 import com.andreas_kratzer.ghosttalk.core.ui.theme.FrequentActionBadgeTextDark
 import com.andreas_kratzer.ghosttalk.core.ui.theme.FrequentActionBadgeTextLight
+import com.andreas_kratzer.ghosttalk.core.ui.theme.FrustrationHighDark
+import com.andreas_kratzer.ghosttalk.core.ui.theme.FrustrationHighLight
+import com.andreas_kratzer.ghosttalk.core.ui.theme.FrustrationNeutralDark
+import com.andreas_kratzer.ghosttalk.core.ui.theme.FrustrationNeutralLight
+import com.andreas_kratzer.ghosttalk.core.ui.theme.FrustrationWarningDark
+import com.andreas_kratzer.ghosttalk.core.ui.theme.FrustrationWarningLight
 import com.andreas_kratzer.ghosttalk.core.ui.theme.GeminiBadgeBgDark
 import com.andreas_kratzer.ghosttalk.core.ui.theme.GeminiBadgeBgLight
 import com.andreas_kratzer.ghosttalk.core.ui.theme.GeminiBadgeTextDark
@@ -95,12 +101,6 @@ import com.andreas_kratzer.ghosttalk.core.ui.theme.WeatherBadgeBgDark
 import com.andreas_kratzer.ghosttalk.core.ui.theme.WeatherBadgeBgLight
 import com.andreas_kratzer.ghosttalk.core.ui.theme.WeatherBadgeTextDark
 import com.andreas_kratzer.ghosttalk.core.ui.theme.WeatherBadgeTextLight
-import com.andreas_kratzer.ghosttalk.core.ui.theme.FrustrationNeutralLight
-import com.andreas_kratzer.ghosttalk.core.ui.theme.FrustrationNeutralDark
-import com.andreas_kratzer.ghosttalk.core.ui.theme.FrustrationWarningLight
-import com.andreas_kratzer.ghosttalk.core.ui.theme.FrustrationWarningDark
-import com.andreas_kratzer.ghosttalk.core.ui.theme.FrustrationHighLight
-import com.andreas_kratzer.ghosttalk.core.ui.theme.FrustrationHighDark
 
 
 object GridButtonColors {

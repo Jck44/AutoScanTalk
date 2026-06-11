@@ -13,12 +13,8 @@ import com.andreas_kratzer.ghosttalk.core.model.ProfileConfig
 import com.andreas_kratzer.ghosttalk.core.model.SettingsProfile
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
-import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 

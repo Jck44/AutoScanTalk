@@ -538,7 +538,7 @@
     <string name="settings_vocal_test_profile_match">Profil: %1$s</string>
     <string name="settings_vocal_test_confidence">Ziel-Konfidenz: %1$d%% | Noise-Konfidenz: %2$d%%</string>
     <string name="settings_vocal_false_positive_question">War das ein Fehlalarm?</string>
-    <string name="settings_vocal_register_fp_btn">Fehlalarm registrieren...</string>
+    <string name="settings_vocal_register_fp_btn">Fehlalarm registrieren…</string>
     <string name="settings_vocal_register_fp_desc">Registriere dieses Geräusch als Fehlalarm für ein Profil, damit es künftig blockiert wird.</string>
     <string name="settings_vocal_test_recognized">Erkannt!</string>
     <string name="settings_vocal_test_not_recognized">Nicht erkannt / Blockiert</string>

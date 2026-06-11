@@ -3,8 +3,6 @@ package com.andreas_kratzer.ghosttalk.core.data.impl.settings
 import android.content.Context
 import android.content.SharedPreferences
 import com.andreas_kratzer.ghosttalk.core.settings.SmartHomeSettings
-import kotlinx.coroutines.flow.StateFlow
-
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 

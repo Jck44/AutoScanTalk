@@ -44,8 +44,8 @@ import androidx.navigation.compose.rememberNavController
 import com.andreas_kratzer.ghosttalk.core.KeyEventCoordinator
 import com.andreas_kratzer.ghosttalk.core.SecurityManager
 import com.andreas_kratzer.ghosttalk.core.UpdateManager
-import com.andreas_kratzer.ghosttalk.core.cloud.domain.RescheduleProfileSyncUseCase
 import com.andreas_kratzer.ghosttalk.core.cloud.SpotifyManager
+import com.andreas_kratzer.ghosttalk.core.cloud.domain.RescheduleProfileSyncUseCase
 import com.andreas_kratzer.ghosttalk.core.data.PageRepository
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.core.data.export.PageImportExportProvider
@@ -58,8 +58,8 @@ import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalIsUserModeActive
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.SettingsViewModel
 import com.andreas_kratzer.ghosttalk.ui.books.BookViewModel
 import com.andreas_kratzer.ghosttalk.ui.main.GhostTalkNavHost
-import com.andreas_kratzer.ghosttalk.ui.pages.PageViewModel
 import com.andreas_kratzer.ghosttalk.ui.pages.CallViewModel
+import com.andreas_kratzer.ghosttalk.ui.pages.PageViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay

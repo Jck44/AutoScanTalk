@@ -22,15 +22,12 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -50,8 +47,8 @@ import androidx.compose.ui.unit.dp
 import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.core.SecurityManager
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
-import com.andreas_kratzer.ghosttalk.core.ui.components.AppBrandHeader
 import com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkCard
+import com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkScaffold
 import com.andreas_kratzer.ghosttalk.core.ui.components.SecurityEntryDialog
 import com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
@@ -59,8 +56,6 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import com.andreas_kratzer.ghosttalk.core.ui.R as CoreR
 import com.andreas_kratzer.ghosttalk.feature.settings.R as SettingsR
-
-import com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkScaffold
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
