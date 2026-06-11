@@ -66,10 +66,17 @@ class CloudSyncWorker @AssistedInject constructor(
             Log.d("CloudSyncWorker",
                 "Starting background sync for book: $bookId (SAF: $isSaf)"
             )
-            cloudSyncUseCase.syncBook(drive, bookId, SyncMode.TWO_WAY)
-            Log.d("CloudSyncWorker", "Background sync completed successfully")
-            settingsRepository.lastSuccessfulSyncTime = System.currentTimeMillis()
-            Result.success()
+            val syncCompleted = cloudSyncUseCase.syncBook(drive, bookId, SyncMode.TWO_WAY)
+            if (syncCompleted) {
+                Log.d("CloudSyncWorker", "Background sync completed successfully")
+                settingsRepository.lastSuccessfulSyncTime = System.currentTimeMillis()
+                Result.success()
+            } else {
+                // z. B. Merge lokal committed, aber Cloud-Upload abgewiesen -> Retry,
+                // damit die Cloud nicht still divergiert. Kein lastSuccessfulSyncTime-Update.
+                Log.w("CloudSyncWorker", "Background sync not completed (e.g. upload pending). Scheduling retry.")
+                Result.retry()
+            }
         } catch (_: UserRecoverableAuthIOException) {
             Log.w("CloudSyncWorker", "UserRecoverableAuthIOException in background sync. Setup required.")
             Result.failure()

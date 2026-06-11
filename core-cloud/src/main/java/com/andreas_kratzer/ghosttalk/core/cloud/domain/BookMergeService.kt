@@ -17,10 +17,28 @@ import java.io.FileOutputStream
 import java.util.zip.ZipInputStream
 import javax.inject.Inject
 
+enum class MergeStatus {
+    /** Merge lokal UND in der Cloud vollständig abgeschlossen. */
+    SUCCESS,
+
+    /**
+     * Der lokale Merge wurde committed (keine Daten verloren), aber der Cloud-Upload
+     * wurde abgewiesen (Optimistic Lock / Netzwerk). Der Sync-Lauf ist damit NICHT
+     * abgeschlossen — Aufrufer müssen einen Retry einplanen, sonst divergiert die Cloud still.
+     */
+    MERGED_LOCALLY_UPLOAD_PENDING,
+
+    /** Merge fehlgeschlagen — der lokale Import konnte nicht durchgeführt werden. */
+    FAILED
+}
+
 data class MergeResult(
-    val success: Boolean,
+    val status: MergeStatus,
     val audioSynced: Boolean
-)
+) {
+    /** Lokale Daten sind konsistent (auch bei ausstehendem Upload). */
+    val success: Boolean get() = status != MergeStatus.FAILED
+}
 
 class BookMergeService @Inject constructor(
     @param:ApplicationContext private val context: Context,
@@ -68,30 +86,7 @@ class BookMergeService @Inject constructor(
                     // Extract audio files from ZIP
                     if (remoteFile.name.endsWith(".zip")) {
                         try {
-                            downloadFile.inputStream().use { inputStream ->
-                                ZipInputStream(inputStream).use { zipIn ->
-                                    val audioDir = File(context.filesDir, "audio_recordings")
-                                    if (!audioDir.exists()) audioDir.mkdirs()
-                                    var entry = zipIn.nextEntry
-                                    while (entry != null) {
-                                        if (entry.name.startsWith("audio_recordings/")) {
-                                            val fileName = entry.name.substringAfter("audio_recordings/")
-                                            if (fileName.isNotEmpty()) {
-                                                val targetFile = File(audioDir, fileName)
-                                                val shouldExtract = !targetFile.exists() || (entry.time > targetFile.lastModified())
-                                                if (shouldExtract) {
-                                                    FileOutputStream(targetFile).use { out -> zipIn.copyTo(out) }
-                                                    if (entry.time != -1L) {
-                                                        targetFile.setLastModified(entry.time)
-                                                    }
-                                                }
-                                            }
-                                        }
-                                        zipIn.closeEntry()
-                                        entry = zipIn.nextEntry
-                                    }
-                                }
-                            }
+                            extractAudioRecordingsFromZip(downloadFile)
                         } catch (e: Exception) {
                             logger.e(TAG, "Failed to extract audio recordings from ${remoteFile.name}", e)
                         }
@@ -142,10 +137,10 @@ class BookMergeService @Inject constructor(
                         logger.e(TAG, "Failed to delete conflict file ${conflictFile.name}", ex)
                     }
                 }
-                return MergeResult(success = true, audioSynced = false)
+                return MergeResult(status = MergeStatus.SUCCESS, audioSynced = false)
             } else {
                 logger.e(TAG, "Failed to import trivial merge locally: ${importResult.exceptionOrNull()?.message}")
-                return MergeResult(success = false, audioSynced = false)
+                return MergeResult(status = MergeStatus.FAILED, audioSynced = false)
             }
         } else {
             val newSeq = maxOf(localSeq, maxRemoteSeq) + 1
@@ -255,17 +250,78 @@ class BookMergeService @Inject constructor(
                              val folderId = storageResolver.folderCache.resolveParentFolderId(drive)
                              DriveServiceHelper(drive).cleanOldConflictFiles(folderId)
                         }
-                        return MergeResult(success = true, audioSynced = audioSynced)
+                        return MergeResult(status = MergeStatus.SUCCESS, audioSynced = audioSynced)
                     } else {
-                        Log.w(TAG, "[COMMIT-SEQ] Cloud-Upload ABGEWIESEN (Lock/Netzwerkfehler). Lokaler Import bleibt erhalten (Self-Healing bei nächstem Sync).")
-                        return MergeResult(success = true, audioSynced = false)
+                        // Lokaler Import ist committed (kein Datenverlust), aber die Cloud hat den
+                        // Merge NICHT erhalten. Das darf nicht als voller Erfolg gemeldet werden,
+                        // sonst plant der Worker keinen Retry und die Cloud divergiert still.
+                        Log.w(TAG, "[COMMIT-SEQ] Cloud-Upload ABGEWIESEN (Lock/Netzwerkfehler). Lokaler Import bleibt erhalten, Upload ausstehend.")
+                        syncLogProvider.addLogEntry(
+                            "Merge lokal gespeichert, Cloud-Upload ausstehend (wird wiederholt)",
+                            bookId,
+                            book.name,
+                            isError = true
+                        )
+                        return MergeResult(status = MergeStatus.MERGED_LOCALLY_UPLOAD_PENDING, audioSynced = false)
                     }
                 } finally {
                     mergedTempFile.delete()
                 }
             } else {
                 Log.e(TAG, "[COMMIT-SEQ] Lokaler Import des Merges FEHLGESCHLAGEN: ${importResult.exceptionOrNull()?.message}")
-                return MergeResult(success = false, audioSynced = false)
+                return MergeResult(status = MergeStatus.FAILED, audioSynced = false)
+            }
+        }
+    }
+
+    /**
+     * Extrahiert Audio-Aufnahmen aus einem Sync-ZIP nach filesDir/audio_recordings.
+     *
+     * Atomar pro Datei: Es wird zuerst in eine .part-Tempdatei geschrieben und erst nach
+     * vollständigem Schreiben per rename auf den Zielnamen verschoben. Bricht der Vorgang
+     * mittendrin ab, bleibt höchstens eine .part-Leiche zurück — niemals eine halb
+     * geschriebene Audio-Datei, die ein Button später "anspielen" würde.
+     * Zusätzlich werden Einträge verworfen, deren Pfad das Zielverzeichnis verlässt (Zip Slip).
+     */
+    internal fun extractAudioRecordingsFromZip(zipFile: File) {
+        zipFile.inputStream().use { inputStream ->
+            ZipInputStream(inputStream).use { zipIn ->
+                val audioDir = File(context.filesDir, "audio_recordings")
+                if (!audioDir.exists()) audioDir.mkdirs()
+                val canonicalAudioDir = audioDir.canonicalPath
+                var entry = zipIn.nextEntry
+                while (entry != null) {
+                    if (entry.name.startsWith("audio_recordings/")) {
+                        val fileName = entry.name.substringAfter("audio_recordings/")
+                        if (fileName.isNotEmpty()) {
+                            val targetFile = File(audioDir, fileName)
+                            if (!targetFile.canonicalPath.startsWith(canonicalAudioDir + File.separator)) {
+                                logger.w(TAG, "Zip-Eintrag verlässt Zielverzeichnis, übersprungen: ${entry.name}")
+                            } else {
+                                val shouldExtract = !targetFile.exists() || (entry.time > targetFile.lastModified())
+                                if (shouldExtract) {
+                                    val tempFile = File(audioDir, "$fileName.part")
+                                    try {
+                                        FileOutputStream(tempFile).use { out -> zipIn.copyTo(out) }
+                                        if (entry.time != -1L) {
+                                            tempFile.setLastModified(entry.time)
+                                        }
+                                        if (targetFile.exists()) targetFile.delete()
+                                        if (!tempFile.renameTo(targetFile)) {
+                                            logger.w(TAG, "Konnte Tempdatei nicht umbenennen: ${tempFile.name}")
+                                            tempFile.delete()
+                                        }
+                                    } catch (e: Exception) {
+                                        tempFile.delete()
+                                        throw e
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    zipIn.closeEntry()
+                    entry = zipIn.nextEntry
+                }
             }
         }
     }

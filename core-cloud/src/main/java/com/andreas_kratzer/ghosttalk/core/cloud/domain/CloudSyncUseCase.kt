@@ -391,7 +391,10 @@ class CloudSyncUseCase @Inject constructor(
                                     audioSyncMode = audioSyncMode,
                                     masterFileName = masterFileName
                                 )
-                                success = mergeResult.success
+                                // Nur ein voll abgeschlossener Merge (inkl. Cloud-Upload) zählt als
+                                // Erfolg. MERGED_LOCALLY_UPLOAD_PENDING -> Sync-Lauf gilt als nicht
+                                // abgeschlossen, der Worker plant einen Retry (lokale Daten sind sicher).
+                                success = mergeResult.status == MergeStatus.SUCCESS
                                 audioSynced = mergeResult.audioSynced
                             }
                         }

@@ -17,6 +17,7 @@ import io.mockk.mockkStatic
 import io.mockk.unmockkAll
 import kotlinx.coroutines.test.runTest
 import org.junit.After
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -111,5 +112,86 @@ class BookMergeServiceTest {
         assertTrue(result.success)
         coVerify(exactly = 1) { mockImportExportManager.importFromJson(any(), eq(bookId), any()) }
         coVerify(exactly = 0) { mockStorageProvider.uploadFile(any(), any(), any(), any(), any()) }
+    }
+
+    @Test
+    fun `performMergeConflict reports UPLOAD_PENDING when cloud upload is rejected`() = runTest {
+        val bookId = "test-book"
+        val book = Book(id = bookId, name = "Test Book", updatedAt = System.currentTimeMillis())
+
+        val localJson = "{\"bookUpdatedAt\":1000,\"versionSequence\":2,\"pages\":[]}"
+        coEvery { mockImportExportManager.exportBookToJson(bookId) } returns localJson
+        coEvery { mockImportExportManager.importFromJson(any(), any(), any()) } returns Result.success(ImportResult(1))
+
+        // structure_md5 absichtlich anders als der Merge -> NICHT-trivialer Merge -> Upload-Pfad
+        val remoteMasterFile = RemoteSyncFile(
+            id = "master_1",
+            name = "book_$bookId.json",
+            description = "Master JSON",
+            modifiedTime = System.currentTimeMillis(),
+            mimeType = "application/json",
+            properties = mapOf("version_sequence" to "3", "structure_md5" to "definitely-different-md5")
+        )
+        val conflictFile = remoteMasterFile.copy(id = "conflict_1", name = "book_${bookId}_conflict.json")
+
+        coEvery { mockStorageProvider.downloadFile(any(), any()) } answers {
+            val file = secondArg<File>()
+            file.writeText("{\"bookUpdatedAt\":2000,\"versionSequence\":3,\"pages\":[]}")
+            true
+        }
+        // Upload wird abgewiesen (Optimistic Lock / Netzwerk)
+        coEvery { mockStorageProvider.updateFile(any(), any(), any(), any(), any(), any()) } returns false
+
+        val result = service.performMergeConflict(
+            drive = null,
+            storageProvider = mockStorageProvider,
+            bookId = bookId,
+            book = book,
+            remoteMasterFile = remoteMasterFile,
+            effectiveMasterFile = remoteMasterFile,
+            remoteConflictFiles = listOf(conflictFile),
+            legacyZipFile = null,
+            localSeq = 2L,
+            remoteFiles = listOf(remoteMasterFile, conflictFile),
+            audioSyncMode = SyncMode.TWO_WAY,
+            masterFileName = "book_$bookId.json"
+        )
+
+        // Lokale Daten konsistent, aber Lauf NICHT abgeschlossen -> Retry-Signal
+        assertEquals(MergeStatus.MERGED_LOCALLY_UPLOAD_PENDING, result.status)
+        assertTrue(result.success)
+        // Konfliktdateien duerfen bei ausstehendem Upload NICHT geloescht werden
+        coVerify(exactly = 0) { mockStorageProvider.deleteFile(any()) }
+    }
+
+    @Test
+    fun `extractAudioRecordingsFromZip extracts atomically and blocks zip slip`() {
+        val workDir = java.nio.file.Files.createTempDirectory("merge_audio_test").toFile()
+        every { mockContext.filesDir } returns workDir
+
+        // ZIP mit gutem Eintrag + Zip-Slip-Versuch bauen
+        val zipFile = File(workDir, "sync.zip")
+        java.util.zip.ZipOutputStream(zipFile.outputStream()).use { zos ->
+            zos.putNextEntry(java.util.zip.ZipEntry("audio_recordings/good.mp3"))
+            zos.write("AUDIO".toByteArray())
+            zos.closeEntry()
+            zos.putNextEntry(java.util.zip.ZipEntry("audio_recordings/../evil.mp3"))
+            zos.write("EVIL".toByteArray())
+            zos.closeEntry()
+        }
+
+        service.extractAudioRecordingsFromZip(zipFile)
+
+        val audioDir = File(workDir, "audio_recordings")
+        val good = File(audioDir, "good.mp3")
+        assertTrue("Gueltige Audio-Datei muss extrahiert sein", good.exists())
+        assertEquals("AUDIO", good.readText())
+        // Zip-Slip-Eintrag darf NICHT ausserhalb des Zielverzeichnisses landen
+        assertTrue("Zip-Slip-Datei darf nicht geschrieben werden", !File(workDir, "evil.mp3").exists())
+        // Keine .part-Leichen nach erfolgreichem Lauf
+        val leftovers = audioDir.listFiles()?.filter { it.name.endsWith(".part") } ?: emptyList()
+        assertTrue("Keine .part-Tempdateien erwartet", leftovers.isEmpty())
+
+        workDir.deleteRecursively()
     }
 }
