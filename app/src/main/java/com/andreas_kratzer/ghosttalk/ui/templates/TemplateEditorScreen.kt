@@ -100,7 +100,7 @@ fun TemplateEditorScreen(
             paddingValues = paddingValues,
             onEditPage = { pageId: String, _ ->
                 scope.launch {
-                    val target = pageViewModel.pageManagementDelegate.getPageById(pageId)
+                    val target = pageViewModel.getPageById(pageId)
                     if (target != null) {
                         onNavigateBack() // Close Template Editor
                         pageViewModel.loadPage(target)

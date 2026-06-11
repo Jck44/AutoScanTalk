@@ -80,6 +80,8 @@ class ScanCoordinator @Inject constructor(
     private var scanCycleLimit = 2
 
     private var lastCuePageId: String? = null
+    private var lastScannedPageId: String? = null
+    private var lastHasStaticRow: Boolean = false
 
     private fun debugLog(message: String) {
         android.util.Log.d("ScanCoordinator", message)
@@ -328,11 +330,16 @@ class ScanCoordinator @Inject constructor(
             if (isWaitingData || isWaitingResolution) return
         }
 
-        val startIndex = if (scanningSettings.resumeScanningFromStart) {
+        val isNewPageOrLayout = page.id != lastScannedPageId || (staticRowPage?.value != null) != lastHasStaticRow
+        
+        val startIndex = if (isNewPageOrLayout || scanningSettings.resumeScanningFromStart) {
             0
         } else {
             scannerEngine.focusedButtonIndex.value ?: scannerEngine.focusedRowIndex.value ?: 0
         }
+        
+        lastScannedPageId = page.id
+        lastHasStaticRow = staticRowPage?.value != null
 
         val pattern = page.scanPattern?.takeIf { it != "default" } ?: scanningSettings.defaultScanPattern
         val normalizedPattern = if (pattern == "row_column") "row_by_row" else pattern

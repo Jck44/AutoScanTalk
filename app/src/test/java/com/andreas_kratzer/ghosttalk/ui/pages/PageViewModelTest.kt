@@ -118,6 +118,7 @@ class PageViewModelTest {
     private lateinit var identifyActivePageLinksUseCase: com.andreas_kratzer.ghosttalk.core.domain.pages.IdentifyActivePageLinksUseCase
 
     private lateinit var viewModel: PageViewModel
+    private lateinit var pageSplitViewModel: PageSplitViewModel
     private lateinit var systemCallManager: com.andreas_kratzer.ghosttalk.core.call.SystemCallManager
     private val mockCallStateFlow = MutableStateFlow(com.andreas_kratzer.ghosttalk.core.call.CallState.NONE)
 
@@ -375,6 +376,13 @@ class PageViewModelTest {
             pageRepository = pageRepository,
             resolveDynamicButtonsUseCase = resolveDynamicButtonsUseCase
         )
+        pageSplitViewModel = PageSplitViewModel(
+            pageSplitDelegate = pageSplitDelegate,
+            layoutWizardDelegate = layoutWizardDelegate,
+            pageManagementDelegate = pageManagementDelegate,
+            settingsRepository = settingsRepository,
+            analyticsDelegate = analyticsDelegate
+        )
         return PageViewModel(
             application = application,
             savedStateHandle = SavedStateHandle(),
@@ -388,13 +396,10 @@ class PageViewModelTest {
             smartPredictionDelegate = smartPredictionDelegate,
             callManagementDelegate = callManagementDelegate,
             navigationDelegate = navigationDelegate,
-            aiRestructureDelegate = aiRestructureDelegate,
             analyticsDelegate = analyticsDelegate,
             smartIntegrationDelegate = smartIntegrationDelegate,
             suggestionsDelegate = suggestionsDelegate,
             ttsPreviewDelegate = ttsPreviewDelegate,
-            pageSplitDelegate = pageSplitDelegate,
-            layoutWizardDelegate = layoutWizardDelegate,
             buttonTemplateDelegate = buttonTemplateDelegate,
             pageResolutionDelegate = pageResolutionDelegate,
             updateSmartPredictionsUseCase = updateSmartPredictionsUseCase,
@@ -403,8 +408,7 @@ class PageViewModelTest {
             geminiUseCase = geminiUseCase,
             philipsHueManager = philipsHueManager,
             createPageUseCase = createPageUseCase,
-            buttonUsageRepository = buttonUsageRepository,
-            splitPageUseCase = mockk(relaxed = true)
+            buttonUsageRepository = buttonUsageRepository
         )
     }
 
@@ -442,313 +446,9 @@ class PageViewModelTest {
         assertEquals(p2.name, viewModel.currentPage.value?.name)
     }
 
-    @Test
-    fun `when callState becomes RINGING call scanning starts and answer is announced`() = runTest {
-        every { application.getString(com.andreas_kratzer.ghosttalk.R.string.call_answer) } returns "Answer"
 
-        viewModel = createViewModel()
-        testScheduler.runCurrent()
 
-        mockCallStateFlow.value = com.andreas_kratzer.ghosttalk.core.call.CallState.RINGING
-        testScheduler.runCurrent()
 
-        assertEquals("ANNEHMEN", viewModel.focusedCallScreenButton.value)
-
-        io.mockk.verify {
-            ttsHelper.speakRouted(
-                text = "Answer",
-                deviceAddress = any(),
-                queueMode = android.speech.tts.TextToSpeech.QUEUE_ADD,
-                isForCues = true
-            )
-        }
-
-        // Clean up call state to stop scanning loop coroutine
-        mockCallStateFlow.value = com.andreas_kratzer.ghosttalk.core.call.CallState.NONE
-        testScheduler.runCurrent()
-    }
-
-    @Test
-    fun `activateFocusedButton answers call when ringing and focused on ANNEHMEN`() = runTest {
-        viewModel = createViewModel()
-        mockCallStateFlow.value = com.andreas_kratzer.ghosttalk.core.call.CallState.RINGING
-        viewModel.focusedCallScreenButton.value = "ANNEHMEN"
-        testScheduler.runCurrent()
-
-        viewModel.activateFocusedButton()
-
-        io.mockk.verify { systemCallManager.answerCall() }
-
-        // Clean up
-        mockCallStateFlow.value = com.andreas_kratzer.ghosttalk.core.call.CallState.NONE
-        testScheduler.runCurrent()
-    }
-
-    @Test
-    fun `activateFocusedButton rejects call when ringing and focused on ABLEHNEN`() = runTest {
-        viewModel = createViewModel()
-        mockCallStateFlow.value = com.andreas_kratzer.ghosttalk.core.call.CallState.RINGING
-        viewModel.focusedCallScreenButton.value = "ABLEHNEN"
-        testScheduler.runCurrent()
-
-        viewModel.activateFocusedButton()
-
-        io.mockk.verify { systemCallManager.hangUp() }
-
-        // Clean up
-        mockCallStateFlow.value = com.andreas_kratzer.ghosttalk.core.call.CallState.NONE
-        testScheduler.runCurrent()
-    }
-
-    @Test
-    fun `activateFocusedButton focuses hang up on first press and hangs up on second press`() = runTest {
-        every { settingsRepository.hangUpPressesRequired } returns 2
-        every { application.getString(com.andreas_kratzer.ghosttalk.R.string.call_hang_up) } returns "Hang Up"
-        viewModel = createViewModel()
-        mockCallStateFlow.value = com.andreas_kratzer.ghosttalk.core.call.CallState.ACTIVE
-        testScheduler.runCurrent()
-
-        viewModel.activateFocusedButton()
-        assertEquals(true, viewModel.isHangUpButtonFocused.value)
-        io.mockk.verify {
-            ttsHelper.speakRouted("Hang Up", any(), any(), isForCues = true)
-        }
-
-        viewModel.activateFocusedButton()
-        io.mockk.verify { systemCallManager.hangUp() }
-
-        // Clean up
-        mockCallStateFlow.value = com.andreas_kratzer.ghosttalk.core.call.CallState.NONE
-        testScheduler.runCurrent()
-    }
-
-    @Test
-    fun `activateFocusedButton hangs up on first press when hangUpPressesRequired is 1`() = runTest {
-        every { settingsRepository.hangUpPressesRequired } returns 1
-        viewModel = createViewModel()
-        mockCallStateFlow.value = com.andreas_kratzer.ghosttalk.core.call.CallState.ACTIVE
-        testScheduler.runCurrent()
-
-        viewModel.activateFocusedButton()
-        io.mockk.verify { systemCallManager.hangUp() }
-
-        // Clean up
-        mockCallStateFlow.value = com.andreas_kratzer.ghosttalk.core.call.CallState.NONE
-        testScheduler.runCurrent()
-    }
-
-    @Test
-    fun `activateFocusedButton hangs up on third press when hangUpPressesRequired is 3`() = runTest {
-        every { settingsRepository.hangUpPressesRequired } returns 3
-        every { settingsRepository.holdingTimeMillis } returns 0L // No debounce in this test
-        every { application.getString(com.andreas_kratzer.ghosttalk.R.string.call_hang_up) } returns "Hang Up"
-        viewModel = createViewModel()
-        mockCallStateFlow.value = com.andreas_kratzer.ghosttalk.core.call.CallState.ACTIVE
-        testScheduler.runCurrent()
-
-        viewModel.activateFocusedButton() // Press 1
-        assertEquals(true, viewModel.isHangUpButtonFocused.value)
-        assertEquals(1, viewModel.hangUpPressCount.value)
-
-        viewModel.activateFocusedButton() // Press 2
-        assertEquals(2, viewModel.hangUpPressCount.value)
-        io.mockk.verify(exactly = 0) { systemCallManager.hangUp() }
-
-        viewModel.activateFocusedButton() // Press 3
-        io.mockk.verify(exactly = 1) { systemCallManager.hangUp() }
-
-        // Clean up
-        mockCallStateFlow.value = com.andreas_kratzer.ghosttalk.core.call.CallState.NONE
-        testScheduler.runCurrent()
-    }
-
-    @Test
-    fun `activateFocusedButton enforces holdingTime debounce during active calls`() = runTest {
-        every { settingsRepository.hangUpPressesRequired } returns 2
-        every { settingsRepository.holdingTimeMillis } returns 500L
-        every { application.getString(com.andreas_kratzer.ghosttalk.R.string.call_hang_up) } returns "Hang Up"
-        viewModel = createViewModel()
-        mockCallStateFlow.value = com.andreas_kratzer.ghosttalk.core.call.CallState.ACTIVE
-        testScheduler.runCurrent()
-
-        // First press: accepted, triggers focus overlay and starts holding time tracker
-        viewModel.activateFocusedButton()
-        assertEquals(1, viewModel.hangUpPressCount.value)
-
-        // Second press: happens instantly (0ms delta), should be ignored because it is < 500ms
-        viewModel.activateFocusedButton()
-        assertEquals(1, viewModel.hangUpPressCount.value)
-        io.mockk.verify(exactly = 0) { systemCallManager.hangUp() }
-
-        // Simulate waiting for 600ms
-        Thread.sleep(600)
-
-        // Third press: happens after holding time, should be accepted and trigger hang up (since required presses is 2)
-        viewModel.activateFocusedButton()
-        assertEquals(2, viewModel.hangUpPressCount.value)
-        io.mockk.verify(exactly = 1) { systemCallManager.hangUp() }
-
-        // Clean up
-        mockCallStateFlow.value = com.andreas_kratzer.ghosttalk.core.call.CallState.NONE
-        testScheduler.runCurrent()
-    }
-
-    @Test
-    fun `suggestRowName returns category suggestion based on row buttons`() = runTest {
-        // Mock Gemini enabled
-        every { settingsRepository.isGeminiEnabled } returns true
-        
-        // Mock Gemini response
-        coEvery { geminiUseCase.generateResponse(any()) } returns "Obst"
-
-        val pageId = "p1"
-        val button1 = ButtonConfig(label = "Apfel")
-        val button2 = ButtonConfig(label = "Banane")
-        
-        val buttonConfigs = MutableList<ButtonConfig?>(49) { null }
-        buttonConfigs[0] = button1
-        buttonConfigs[1] = button2
-        
-        val page = Page(id = pageId, bookId = "b1", name = "P1", rows = 4, columns = 4, buttonConfigs = buttonConfigs)
-        every { getPagesUseCase.execute(any()) } returns MutableStateFlow<List<Page>>(listOf(page))
-
-        viewModel = createViewModel()
-        testScheduler.runCurrent()
-
-        var suggestionResult = ""
-        viewModel.suggestRowName(pageId, rowIndex = 0) { result ->
-            suggestionResult = result
-        }
-        testScheduler.advanceUntilIdle()
-
-        assertEquals("Obst", suggestionResult)
-    }
-
-    @Test
-    fun `suggestButtonLabel returns suggestion when Gemini is enabled`() = runTest {
-        every { settingsRepository.isGeminiEnabled } returns true
-        coEvery { geminiUseCase.generateResponse(any()) } returns "Begrüßung"
-
-        viewModel = createViewModel()
-        testScheduler.runCurrent()
-
-        var suggestionResult = ""
-        val buttonConfig = ButtonConfig(
-            spokenText = "Hallo Welt",
-            buttonAction = com.andreas_kratzer.ghosttalk.core.model.SpeakTextButtonAction()
-        )
-        viewModel.suggestButtonLabel(buttonConfig) { result ->
-            suggestionResult = result
-        }
-        testScheduler.advanceUntilIdle()
-
-        assertEquals("Begrüßung", suggestionResult)
-    }
-
-    @Test
-    fun `suggestButtonLabel returns empty when Gemini is disabled`() = runTest {
-        every { settingsRepository.isGeminiEnabled } returns false
-
-        viewModel = createViewModel()
-        testScheduler.runCurrent()
-
-        var suggestionResult = "initial"
-        val buttonConfig = ButtonConfig(
-            spokenText = "Hallo Welt",
-            buttonAction = com.andreas_kratzer.ghosttalk.core.model.SpeakTextButtonAction()
-        )
-        viewModel.suggestButtonLabel(buttonConfig) { result ->
-            suggestionResult = result
-        }
-        testScheduler.advanceUntilIdle()
-
-        assertEquals("", suggestionResult)
-    }
-
-    @Test
-    fun `suggestButtonLabel returns empty on API failure`() = runTest {
-        every { settingsRepository.isGeminiEnabled } returns true
-        coEvery { geminiUseCase.generateResponse(any()) } throws RuntimeException("Network Error")
-
-        viewModel = createViewModel()
-        testScheduler.runCurrent()
-
-        var suggestionResult = "initial"
-        val buttonConfig = ButtonConfig(
-            spokenText = "Hallo Welt",
-            buttonAction = com.andreas_kratzer.ghosttalk.core.model.SpeakTextButtonAction()
-        )
-        viewModel.suggestButtonLabel(buttonConfig) { result ->
-            suggestionResult = result
-        }
-        testScheduler.advanceUntilIdle()
-
-        assertEquals("", suggestionResult)
-    }
-
-    @Test
-    fun `suggestRowName returns empty when Gemini is disabled`() = runTest {
-        every { settingsRepository.isGeminiEnabled } returns false
-
-        viewModel = createViewModel()
-        testScheduler.runCurrent()
-
-        var suggestionResult = "initial"
-        viewModel.suggestRowName("p1", rowIndex = 0) { result ->
-            suggestionResult = result
-        }
-        testScheduler.advanceUntilIdle()
-
-        assertEquals("", suggestionResult)
-    }
-
-    @Test
-    fun `suggestRowName returns empty and does not crash when Gemini throws`() = runTest {
-        every { settingsRepository.isGeminiEnabled } returns true
-        coEvery { geminiUseCase.generateResponse(any()) } throws RuntimeException("API error")
-
-        val pageId = "p1"
-        val button = ButtonConfig(label = "Hallo")
-        val buttonConfigs = MutableList<ButtonConfig?>(49) { null }
-        buttonConfigs[0] = button
-        val page = Page(id = pageId, bookId = "b1", name = "P1", rows = 4, columns = 4, buttonConfigs = buttonConfigs)
-        every { getPagesUseCase.execute(any()) } returns MutableStateFlow<List<Page>>(listOf(page))
-
-        viewModel = createViewModel()
-        testScheduler.runCurrent()
-
-        var suggestionResult = "initial"
-        viewModel.suggestRowName(pageId, rowIndex = 0) { result ->
-            suggestionResult = result
-        }
-        testScheduler.advanceUntilIdle()
-
-        assertEquals("", suggestionResult)
-    }
-
-    @Test
-    fun `suggestRowName returns empty without Gemini call when row has no active buttons`() = runTest {
-        every { settingsRepository.isGeminiEnabled } returns true
-
-        val pageId = "p1"
-        // Alle Buttons in Zeile 0 sind inaktiv
-        val buttonConfigs = MutableList<ButtonConfig?>(49) { null }
-        buttonConfigs[0] = ButtonConfig(label = "Hidden", isActive = false)
-        val page = Page(id = pageId, bookId = "b1", name = "P1", rows = 4, columns = 4, buttonConfigs = buttonConfigs)
-        every { getPagesUseCase.execute(any()) } returns MutableStateFlow<List<Page>>(listOf(page))
-
-        viewModel = createViewModel()
-        testScheduler.runCurrent()
-
-        var suggestionResult = "initial"
-        viewModel.suggestRowName(pageId, rowIndex = 0) { result ->
-            suggestionResult = result
-        }
-        testScheduler.advanceUntilIdle()
-
-        assertEquals("", suggestionResult)
-        io.mockk.coVerify(exactly = 0) { geminiUseCase.generateResponse(any()) }
-    }
 
     @Test
     @Suppress("UNUSED_VARIABLE")
@@ -785,7 +485,7 @@ class PageViewModelTest {
 
         // Subscribe to flow to start collection (required for WhileSubscribed stateIn flows)
         val collectionJob = launch {
-            viewModel.layoutOptimizationProposals.collect {}
+            pageSplitViewModel.layoutOptimizationProposals.collect {}
         }
         testScheduler.runCurrent()
 
@@ -796,7 +496,7 @@ class PageViewModelTest {
         var list = emptyList<com.andreas_kratzer.ghosttalk.core.data.impl.analytics.PageLayoutOptimizer.LayoutOptimizationProposal>()
         var attempts = 0
         while (attempts < 40) {
-            list = viewModel.layoutOptimizationProposals.value
+            list = pageSplitViewModel.layoutOptimizationProposals.value
             if (list.isNotEmpty()) break
             Thread.sleep(25)
             attempts++
@@ -806,11 +506,11 @@ class PageViewModelTest {
         assertEquals("p2", list[1].pageId)
 
         // 2. Filter SPLIT_ONLY
-        viewModel.setProposalFilter(ProposalFilter.SPLIT_ONLY)
+        pageSplitViewModel.setProposalFilter(ProposalFilter.SPLIT_ONLY)
         testScheduler.runCurrent()
         var splitAttempts = 0
         while (splitAttempts < 40) {
-            list = viewModel.layoutOptimizationProposals.value
+            list = pageSplitViewModel.layoutOptimizationProposals.value
             if (list.size == 1) break
             Thread.sleep(25)
             splitAttempts++
@@ -819,11 +519,11 @@ class PageViewModelTest {
         assertEquals("p1", list[0].pageId)
 
         // 3. Filter PATTERN_ONLY
-        viewModel.setProposalFilter(ProposalFilter.PATTERN_ONLY)
+        pageSplitViewModel.setProposalFilter(ProposalFilter.PATTERN_ONLY)
         testScheduler.runCurrent()
         var patternAttempts = 0
         while (patternAttempts < 40) {
-            list = viewModel.layoutOptimizationProposals.value
+            list = pageSplitViewModel.layoutOptimizationProposals.value
             if (list.size == 1 && list[0].pageId == "p2") break
             Thread.sleep(25)
             patternAttempts++
@@ -832,12 +532,12 @@ class PageViewModelTest {
         assertEquals("p2", list[0].pageId)
 
         // 4. Sort PAGE_NAME_ASC with ALL filter
-        viewModel.setProposalFilter(ProposalFilter.ALL)
-        viewModel.setProposalSort(ProposalSort.PAGE_NAME_ASC)
+        pageSplitViewModel.setProposalFilter(ProposalFilter.ALL)
+        pageSplitViewModel.setProposalSort(ProposalSort.PAGE_NAME_ASC)
         testScheduler.runCurrent()
         var sortAttempts = 0
         while (sortAttempts < 40) {
-            list = viewModel.layoutOptimizationProposals.value
+            list = pageSplitViewModel.layoutOptimizationProposals.value
             if (list.size == 2 && list[0].pageId == "p2") break
             Thread.sleep(25)
             sortAttempts++
@@ -928,7 +628,7 @@ class PageViewModelTest {
         coEvery { pageRepository.updatePage(capture(updatedPageSlot)) } returns Unit
         
         val latch = java.util.concurrent.CountDownLatch(1)
-        viewModel.reorderByClickStats(targetPageId) {
+        pageSplitViewModel.reorderByClickStats(targetPageId) {
             latch.countDown()
         }
         latch.await(3, java.util.concurrent.TimeUnit.SECONDS)
@@ -972,7 +672,7 @@ class PageViewModelTest {
         // - btn2: counter=1. result=[btn1, btn2]. counter=2.
         // - btn4: counter=2. counter % 2 == 0, so insert home first: result=[btn1, btn2, home, btn4]. counter=3.
         val latch = java.util.concurrent.CountDownLatch(1)
-        viewModel.insertHomeNavigationEveryX(pageId, 2) {
+        pageSplitViewModel.insertHomeNavigationEveryX(pageId, 2) {
             latch.countDown()
         }
         latch.await(3, java.util.concurrent.TimeUnit.SECONDS)
@@ -1004,7 +704,7 @@ class PageViewModelTest {
         coEvery { pageRepository.updatePage(capture(updatedPageSlot)) } returns Unit
         
         val latch = java.util.concurrent.CountDownLatch(1)
-        viewModel.shrinkGridToMinimum(pageId) {
+        pageSplitViewModel.shrinkGridToMinimum(pageId) {
             latch.countDown()
         }
         latch.await(3, java.util.concurrent.TimeUnit.SECONDS)
@@ -1036,7 +736,7 @@ class PageViewModelTest {
         coEvery { pageRepository.updatePage(capture(updatedPageSlot)) } returns Unit
         
         val latch = java.util.concurrent.CountDownLatch(1)
-        viewModel.deleteDeactivatedButtons(pageId) {
+        pageSplitViewModel.deleteDeactivatedButtons(pageId) {
             latch.countDown()
         }
         latch.await(3, java.util.concurrent.TimeUnit.SECONDS)
@@ -1110,13 +810,13 @@ class PageViewModelTest {
         viewModel.setActiveBookId("b1")
         
         val collectionJob = launch {
-            viewModel.layoutOptimizationProposals.collect {}
+            pageSplitViewModel.layoutOptimizationProposals.collect {}
         }
         testScheduler.runCurrent()
         
         var magicAttempts = 0
         while (magicAttempts < 40) {
-            if (viewModel.layoutOptimizationProposals.value.isNotEmpty()) break
+            if (pageSplitViewModel.layoutOptimizationProposals.value.isNotEmpty()) break
             Thread.sleep(25)
             magicAttempts++
         }
@@ -1125,7 +825,7 @@ class PageViewModelTest {
         coEvery { pageRepository.updatePage(capture(updatedPageSlot)) } returns Unit
         
         val latch = java.util.concurrent.CountDownLatch(1)
-        viewModel.magicCleanup(targetPageId) {
+        pageSplitViewModel.magicCleanup(targetPageId) {
             latch.countDown()
         }
         latch.await(8, java.util.concurrent.TimeUnit.SECONDS)

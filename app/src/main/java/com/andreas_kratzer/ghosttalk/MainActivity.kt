@@ -59,6 +59,7 @@ import com.andreas_kratzer.ghosttalk.feature.settings.ui.SettingsViewModel
 import com.andreas_kratzer.ghosttalk.ui.books.BookViewModel
 import com.andreas_kratzer.ghosttalk.ui.main.GhostTalkNavHost
 import com.andreas_kratzer.ghosttalk.ui.pages.PageViewModel
+import com.andreas_kratzer.ghosttalk.ui.pages.CallViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -86,6 +87,7 @@ class MainActivity : AppCompatActivity() {
     private val bookViewModel: BookViewModel by viewModels()
     private val pageViewModel: PageViewModel by viewModels()
     private val settingsViewModel: SettingsViewModel by viewModels()
+    private val callViewModel: CallViewModel by viewModels()
 
     var navControllerForTesting: androidx.navigation.NavHostController? = null
 
@@ -301,7 +303,7 @@ class MainActivity : AppCompatActivity() {
         // --- Lockscreen Wake Management for Calls ---
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
-                pageViewModel.callState.collect { callState ->
+                callViewModel.callState.collect { callState ->
                     val isInCall = callState != com.andreas_kratzer.ghosttalk.core.call.CallState.NONE
                     setShowWhenLocked(isInCall)
                     setTurnScreenOn(isInCall)
@@ -353,14 +355,14 @@ class MainActivity : AppCompatActivity() {
             val activeBookId by pageViewModel.activeBookId.collectAsState()
             val currentPageId by pageViewModel.currentPageId.collectAsState()
 
-            val callState by pageViewModel.callState.collectAsState()
-            val callerName by pageViewModel.callerName.collectAsState()
-            val callerPhone by pageViewModel.callerPhone.collectAsState()
-            val callDurationSeconds by pageViewModel.callDurationSeconds.collectAsState()
-            val isOutgoing by pageViewModel.isOutgoing.collectAsState()
-            val isHangUpButtonFocused by pageViewModel.isHangUpButtonFocused.collectAsState()
-            val focusedCallScreenButton by pageViewModel.focusedCallScreenButton.collectAsState()
-            val isSimulatedCall by pageViewModel.isSimulatedCall.collectAsState()
+            val callState by callViewModel.callState.collectAsState()
+            val callerName by callViewModel.callerName.collectAsState()
+            val callerPhone by callViewModel.callerPhone.collectAsState()
+            val callDurationSeconds by callViewModel.callDurationSeconds.collectAsState()
+            val isOutgoing by callViewModel.isOutgoing.collectAsState()
+            val isHangUpButtonFocused by callViewModel.isHangUpButtonFocused.collectAsState()
+            val focusedCallScreenButton by callViewModel.focusedCallScreenButton.collectAsState()
+            val isSimulatedCall by callViewModel.isSimulatedCall.collectAsState()
             
             GhostTalkTheme(themeMode = themeMode) {
                 CompositionLocalProvider(
@@ -404,8 +406,8 @@ class MainActivity : AppCompatActivity() {
                                             callerName = callerName,
                                             callerPhone = callerPhone,
                                             focusedButton = focusedCallScreenButton,
-                                            onAnswer = { pageViewModel.callManagementDelegate.systemCallManager.answerCall() },
-                                            onReject = { pageViewModel.callManagementDelegate.systemCallManager.hangUp() },
+                                            onAnswer = { callViewModel.answerCall() },
+                                            onReject = { callViewModel.hangUp() },
                                             isSimulated = isSimulatedCall
                                         )
                                     }
@@ -418,7 +420,7 @@ class MainActivity : AppCompatActivity() {
                                             isDialing = callState == com.andreas_kratzer.ghosttalk.core.call.CallState.DIALING,
                                             isOutgoing = isOutgoing,
                                             isHangUpFocused = isHangUpButtonFocused,
-                                            onHangUp = { pageViewModel.callManagementDelegate.systemCallManager.hangUp() },
+                                            onHangUp = { callViewModel.hangUp() },
                                             isSimulated = isSimulatedCall
                                         )
                                     }
@@ -540,11 +542,7 @@ class MainActivity : AppCompatActivity() {
     @SuppressLint("RestrictedApi")
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
         securityManager.updateActivity()
-        val isCallActive = if (::globalPageViewModel.isInitialized) {
-            globalPageViewModel.callManagementDelegate.systemCallManager.callState.value != com.andreas_kratzer.ghosttalk.core.call.CallState.NONE
-        } else {
-            false
-        }
+        val isCallActive = callViewModel.callState.value != com.andreas_kratzer.ghosttalk.core.call.CallState.NONE
         val isUserMode = if (::globalPageViewModel.isInitialized) {
             globalPageViewModel.isUserModeActive.value || isCallActive
         } else {
@@ -558,7 +556,11 @@ class MainActivity : AppCompatActivity() {
         }
 
         if (keyEventCoordinator.shouldActivate(event, isUserMode)) {
-            globalPageViewModel.activateFocusedButton()
+            if (isCallActive) {
+                callViewModel.handleCallButtonPress()
+            } else {
+                globalPageViewModel.activateFocusedButton()
+            }
             return true
         }
         com.andreas_kratzer.ghosttalk.core.util.InputSourceTracker.isHardwareTriggered = true

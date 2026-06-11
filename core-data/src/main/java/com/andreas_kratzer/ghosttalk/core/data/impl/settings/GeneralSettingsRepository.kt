@@ -13,10 +13,12 @@ import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.K
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_THEME_MODE
 import kotlinx.coroutines.flow.StateFlow
 
-class GeneralSettingsRepository(
+import javax.inject.Inject
+
+class GeneralSettingsRepository @Inject constructor(
     prefs: SharedPreferences,
-    activeBookIdFlow: StateFlow<String?>
-) : BaseSettingsRepository(prefs, activeBookIdFlow) {
+    activeBookIdManager: ActiveBookIdManager
+) : BaseSettingsRepository(prefs, activeBookIdManager.activeBookIdFlow) {
 
     private val _themeMode = NonNullStringSetting(KEY_THEME_MODE, "LIGHT", isScoped = false)
     private val _pageSortOrder = NonNullStringSetting(KEY_PAGE_SORT_ORDER, "MANUAL")

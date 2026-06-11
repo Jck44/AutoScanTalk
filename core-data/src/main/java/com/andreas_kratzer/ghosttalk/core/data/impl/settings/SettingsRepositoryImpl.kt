@@ -27,41 +27,41 @@ class SettingsRepositoryImpl @Inject constructor(
     @param:ApplicationContext private val context: Context,
     private val bookRepository: BookRepository,
     private val settingsProfileDao: com.andreas_kratzer.ghosttalk.core.database.SettingsProfileDao,
-    @param:ApplicationScope private val scope: CoroutineScope
+    @param:ApplicationScope private val scope: CoroutineScope,
+    private val activeBookIdManager: ActiveBookIdManager,
+    private val voiceSettings: VoiceSettingsRepository,
+    private val scanningSettings: ScanningSettingsRepository,
+    private val securitySettings: SecuritySettingsRepository,
+    private val cloudSettings: CloudSettingsRepository,
+    private val smartHomeSettings: SmartHomeSettingsRepository,
+    private val genAiSettings: GenAiSettingsRepository,
+    private val generalSettings: GeneralSettingsRepository,
+    private val notificationSettings: NotificationSettingsRepository,
+    private val advancedSettings: AdvancedSettingsRepository,
+    private val userSettings: UserSettingsRepository,
+    private val callSettings: CallSettingsRepository
 ) : SettingsRepository {
 
     private val prefs: SharedPreferences = context.getSharedPreferences(SettingsConstants.PREFS_NAME, Context.MODE_PRIVATE)
 
-    private val _activeBookIdFlow = MutableStateFlow(prefs.getString(SettingsConstants.KEY_ACTIVE_BOOK_ID, "book-default") ?: "book-default")
-    override val activeBookIdFlow: StateFlow<String?> = _activeBookIdFlow.asStateFlow()
+    override val activeBookIdFlow: StateFlow<String?> = activeBookIdManager.activeBookIdFlow
 
     override var activeBookId: String
-        get() = _activeBookIdFlow.value
+        get() = activeBookIdManager.activeBookId
         set(value) {
-            _activeBookIdFlow.value = value
-            prefs.edit().putString(SettingsConstants.KEY_ACTIVE_BOOK_ID, value).apply()
-            refreshFlows()
+            activeBookIdManager.activeBookId = value
         }
-
-    // ── Sub-repositories ──────────────────────────────────────────────────
-
-    private val voiceSettings = VoiceSettingsRepository(prefs, activeBookIdFlow)
-    private val scanningSettings = ScanningSettingsRepository(prefs, activeBookIdFlow)
-    private val securitySettings = SecuritySettingsRepository(prefs, activeBookIdFlow)
-    private val cloudSettings = CloudSettingsRepository(prefs, activeBookIdFlow, context)
-    private val smartHomeSettings = SmartHomeSettingsRepository(prefs, activeBookIdFlow, context)
-    private val genAiSettings = GenAiSettingsRepository(prefs, activeBookIdFlow, context)
-    private val generalSettings = GeneralSettingsRepository(prefs, activeBookIdFlow)
-    private val notificationSettings = NotificationSettingsRepository(prefs, activeBookIdFlow)
-    private val advancedSettings = AdvancedSettingsRepository(prefs, activeBookIdFlow)
-    private val userSettings = UserSettingsRepository(prefs, activeBookIdFlow)
-    private val callSettings = CallSettingsRepository(prefs, activeBookIdFlow)
 
     init {
         scope.launch {
             val migrationManager = SettingsMigrationManager(context, settingsProfileDao, prefs)
             val activeProfileId = generalSettings.activeProfileId
-            migrationManager.migrateIfNeeded(_activeBookIdFlow.value, activeProfileId)
+            migrationManager.migrateIfNeeded(activeBookIdManager.activeBookId, activeProfileId)
+        }
+        scope.launch {
+            activeBookIdManager.activeBookIdFlow.collect {
+                refreshFlows()
+            }
         }
 
         val listener: (String) -> Unit = { key ->
@@ -948,7 +948,7 @@ class SettingsRepositoryImpl @Inject constructor(
 
     override fun resetToDefaults() {
         prefs.edit().clear().apply()
-        _activeBookIdFlow.value = "book-default"
+        activeBookIdManager.activeBookId = "book-default"
         refreshFlows()
     }
 

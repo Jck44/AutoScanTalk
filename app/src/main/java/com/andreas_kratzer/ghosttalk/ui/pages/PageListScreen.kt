@@ -299,7 +299,7 @@ fun PageListScreen(
                     val isLandscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
                     
                     var showSortMenu by remember { mutableStateOf(false) }
-                    val pageSortOrder by pageViewModel.settingsRepository.pageSortOrderFlow.collectAsState("MANUAL")
+                    val pageSortOrder by pageViewModel.pageSortOrderFlow.collectAsState("MANUAL")
                     
                     IconButton(onClick = { showSortMenu = true }) {
                         Icon(
@@ -321,7 +321,7 @@ fun PageListScreen(
                             DropdownMenuItem(
                                 text = { Text(label) },
                                 onClick = {
-                                    pageViewModel.settingsRepository.pageSortOrder = order.name
+                                    pageViewModel.pageSortOrder = order.name
                                     showSortMenu = false
                                 },
                                 trailingIcon = {

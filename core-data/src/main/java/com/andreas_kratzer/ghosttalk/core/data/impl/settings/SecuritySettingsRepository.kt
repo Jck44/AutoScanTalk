@@ -12,10 +12,12 @@ import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.K
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_SECURITY_REQUIRED_FOR_SETTINGS
 import kotlinx.coroutines.flow.StateFlow
 
-class SecuritySettingsRepository(
+import javax.inject.Inject
+
+class SecuritySettingsRepository @Inject constructor(
     prefs: SharedPreferences,
-    activeBookIdFlow: StateFlow<String?>
-) : BaseSettingsRepository(prefs, activeBookIdFlow) {
+    activeBookIdManager: ActiveBookIdManager
+) : BaseSettingsRepository(prefs, activeBookIdManager.activeBookIdFlow) {
 
     private val _securityPinHash = StringSetting(KEY_SECURITY_PIN_HASH, "", isScoped = false)
     private val _securityPinSalt = StringSetting(KEY_SECURITY_PIN_SALT, "", isScoped = false)

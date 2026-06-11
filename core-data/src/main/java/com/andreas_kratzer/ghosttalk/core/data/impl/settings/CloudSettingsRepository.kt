@@ -15,11 +15,14 @@ import com.andreas_kratzer.ghosttalk.core.model.CloudAuthType
 import com.andreas_kratzer.ghosttalk.core.settings.CloudSettings
 import kotlinx.coroutines.flow.StateFlow
 
-class CloudSettingsRepository(
+import dagger.hilt.android.qualifiers.ApplicationContext
+import javax.inject.Inject
+
+class CloudSettingsRepository @Inject constructor(
     prefs: SharedPreferences,
-    activeBookIdFlow: StateFlow<String?>,
-    private val context: android.content.Context
-) : BaseSettingsRepository(prefs, activeBookIdFlow), CloudSettings {
+    activeBookIdManager: ActiveBookIdManager,
+    @ApplicationContext private val context: android.content.Context
+) : BaseSettingsRepository(prefs, activeBookIdManager.activeBookIdFlow), CloudSettings {
 
     override val activeBookIdFlow: StateFlow<String?> = super.activeBookIdFlow
     override var activeBookId: String

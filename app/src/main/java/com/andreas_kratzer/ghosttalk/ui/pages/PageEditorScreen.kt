@@ -46,6 +46,8 @@ fun PageEditorScreen(
     pageId: String,
     initialButtonId: String? = null,
     pageViewModel: PageViewModel,
+    gridEditorViewModel: GridEditorViewModel = androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel(),
+    pageSplitViewModel: PageSplitViewModel = androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel(),
     onNavigateBack: () -> Unit,
     onEditPage: ((String, String?) -> Unit)? = null,
     onExitEditor: (() -> Unit)? = null
@@ -78,8 +80,8 @@ fun PageEditorScreen(
     val showWizardDialog = remember { mutableStateOf(false) }
     var manualPromptText by remember { mutableStateOf("") }
     
-    val pageSplitProposal by pageViewModel.pageSplitProposal.collectAsState()
-    val isPageSplitLoading by pageViewModel.isPageSplitLoading.collectAsState()
+    val pageSplitProposal by pageSplitViewModel.pageSplitProposal.collectAsState()
+    val isPageSplitLoading by pageSplitViewModel.isPageSplitLoading.collectAsState()
 
     val handleNavigateBack = {
         if (localName.isNotBlank()) {
@@ -103,8 +105,8 @@ fun PageEditorScreen(
                     LaunchedEffect(localName) {
                         if (localName != page.name && localName.isNotBlank()) {
                             delay(500)
-                            pageViewModel.updatePageSettings(
-                                pageId = page.id,
+                            gridEditorViewModel.updateGridSettings(
+                                itemId = page.id,
                                 update = GridSettingsUpdate(name = localName)
                             )
                         }
@@ -117,8 +119,8 @@ fun PageEditorScreen(
                         errorMessage = stringResource(R.string.error_page_name_required),
                         onFocusLost = {
                             if (it.isNotBlank() && it != page.name) {
-                                pageViewModel.updatePageSettings(
-                                    pageId = page.id,
+                                gridEditorViewModel.updateGridSettings(
+                                    itemId = page.id,
                                     update = GridSettingsUpdate(name = it)
                                 )
                             }
@@ -201,7 +203,7 @@ fun PageEditorScreen(
         
         GridEditorContent(
             item = page,
-            actions = pageViewModel,
+            actions = gridEditorViewModel,
             availablePages = unfilteredPages,
             templates = templates,
             featureGuard = pageViewModel.featureGuard,
@@ -215,18 +217,18 @@ fun PageEditorScreen(
         if (showLayoutAssistantDialog.value) {
             PageLayoutAssistantDialog(
                 page = page,
-                pageViewModel = pageViewModel,
+                pageSplitViewModel = pageSplitViewModel,
                 onStartPageSplit = {
-                    val accepted = pageViewModel.settingsRepository.hasAcceptedPageSplitOptIn
+                    val accepted = pageSplitViewModel.hasAcceptedPageSplitOptIn
                     if (accepted) {
                         showWizardDialog.value = true
-                        pageViewModel.generatePageSplitProposal(page.id)
+                        pageSplitViewModel.generatePageSplitProposal(page.id)
                     } else {
                         showOptInDialog.value = true
                     }
                 },
                 onStartMagicCleanup = {
-                    pageViewModel.magicCleanup(page.id) {
+                    pageSplitViewModel.magicCleanup(page.id) {
                         coroutineScope.launch {
                             val result = snackbarHostState.showSnackbar(
                                 message = "Magische Bereinigung erfolgreich abgeschlossen!",
@@ -234,7 +236,7 @@ fun PageEditorScreen(
                                 duration = androidx.compose.material3.SnackbarDuration.Long
                             )
                             if (result == androidx.compose.material3.SnackbarResult.ActionPerformed) {
-                                pageViewModel.undo { undoMsg ->
+                                gridEditorViewModel.undo { undoMsg ->
                                     coroutineScope.launch {
                                         snackbarHostState.showSnackbar(undoMsg)
                                     }
@@ -252,18 +254,18 @@ fun PageEditorScreen(
                 onConfirmCloud = { rememberDecision ->
                     showOptInDialog.value = false
                     if (rememberDecision) {
-                        pageViewModel.settingsRepository.hasAcceptedPageSplitOptIn = true
+                        pageSplitViewModel.hasAcceptedPageSplitOptIn = true
                     }
                     showWizardDialog.value = true
-                    pageViewModel.generatePageSplitProposal(page.id)
+                    pageSplitViewModel.generatePageSplitProposal(page.id)
                 },
                 onConfirmManual = {
                     showOptInDialog.value = false
-                    val defaultStartPageId = pageViewModel.settingsRepository.defaultStartPageId
+                    val defaultStartPageId = pageSplitViewModel.defaultStartPageId
                     val labels = page.buttonConfigs
-                        .filter { !pageViewModel.shouldFilterButtonFromSplit(it, defaultStartPageId, page.id) }
+                        .filter { !pageSplitViewModel.shouldFilterButtonFromSplit(it, defaultStartPageId, page.id) }
                         .map { it!!.label }
-                    manualPromptText = pageViewModel.generatePageSplitPrompt(labels)
+                    manualPromptText = pageSplitViewModel.generatePageSplitPrompt(labels)
                     showManualPromptDialog.value = true
                 },
                 onDismiss = { showOptInDialog.value = false }
@@ -274,7 +276,7 @@ fun PageEditorScreen(
             PageSplitManualPromptDialog(
                 promptText = manualPromptText,
                 onEvaluateResponse = { response ->
-                    pageViewModel.parsePageSplitProposal(response)
+                    pageSplitViewModel.parsePageSplitProposal(response)
                     showManualPromptDialog.value = false
                     showWizardDialog.value = true
                 },
@@ -292,17 +294,17 @@ fun PageEditorScreen(
                 allAvailableButtons = activeButtons,
                 isLoading = isPageSplitLoading,
                 onConfirm = { updatedProposal ->
-                    pageViewModel.applyPageSplit(page.id, updatedProposal)
+                    pageSplitViewModel.applyPageSplit(page.id, updatedProposal)
                     showWizardDialog.value = false
                 },
                 onDismiss = {
                     showWizardDialog.value = false
-                    pageViewModel.clearPageSplitProposal()
+                    pageSplitViewModel.clearPageSplitProposal()
                 }
             )
         }
 
-        val magicCleanupProgress by pageViewModel.magicCleanupProgress.collectAsState()
+        val magicCleanupProgress by pageSplitViewModel.magicCleanupProgress.collectAsState()
 
         magicCleanupProgress?.let { progressMessage ->
             androidx.compose.ui.window.Dialog(

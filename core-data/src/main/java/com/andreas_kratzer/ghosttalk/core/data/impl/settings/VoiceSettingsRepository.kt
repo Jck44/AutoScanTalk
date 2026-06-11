@@ -9,10 +9,12 @@ import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.K
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_TTS_VOICE_NAME
 import kotlinx.coroutines.flow.StateFlow
 
-class VoiceSettingsRepository(
+import javax.inject.Inject
+
+class VoiceSettingsRepository @Inject constructor(
     prefs: SharedPreferences,
-    activeBookIdFlow: StateFlow<String?>
-) : BaseSettingsRepository(prefs, activeBookIdFlow) {
+    activeBookIdManager: ActiveBookIdManager
+) : BaseSettingsRepository(prefs, activeBookIdManager.activeBookIdFlow) {
 
     private val _ttsLanguage = StringSetting(KEY_TTS_LANGUAGE)
     private val _ttsVoiceName = StringSetting(KEY_TTS_VOICE_NAME)

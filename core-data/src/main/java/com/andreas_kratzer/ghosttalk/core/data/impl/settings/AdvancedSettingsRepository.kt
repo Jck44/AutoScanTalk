@@ -16,10 +16,12 @@ import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.K
 import com.andreas_kratzer.ghosttalk.core.settings.AdvancedSettings
 import kotlinx.coroutines.flow.StateFlow
 
-class AdvancedSettingsRepository(
+import javax.inject.Inject
+
+class AdvancedSettingsRepository @Inject constructor(
     prefs: SharedPreferences,
-    activeBookIdFlow: StateFlow<String?>
-) : BaseSettingsRepository(prefs, activeBookIdFlow), AdvancedSettings {
+    activeBookIdManager: ActiveBookIdManager
+) : BaseSettingsRepository(prefs, activeBookIdManager.activeBookIdFlow), AdvancedSettings {
 
     private val _persistActionLogs = BooleanSetting(KEY_PERSIST_ACTION_LOGS, true, isScoped = false)
     private val _showTestButtons = BooleanSetting(KEY_SHOW_TEST_BUTTONS, false, isScoped = false)

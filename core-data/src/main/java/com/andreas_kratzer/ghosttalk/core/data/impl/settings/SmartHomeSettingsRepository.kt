@@ -5,11 +5,14 @@ import android.content.SharedPreferences
 import com.andreas_kratzer.ghosttalk.core.settings.SmartHomeSettings
 import kotlinx.coroutines.flow.StateFlow
 
-class SmartHomeSettingsRepository(
+import dagger.hilt.android.qualifiers.ApplicationContext
+import javax.inject.Inject
+
+class SmartHomeSettingsRepository @Inject constructor(
     prefs: SharedPreferences,
-    activeBookIdFlow: StateFlow<String?>,
-    private val context: Context
-) : BaseSettingsRepository(prefs, activeBookIdFlow), SmartHomeSettings {
+    activeBookIdManager: ActiveBookIdManager,
+    @ApplicationContext private val context: Context
+) : BaseSettingsRepository(prefs, activeBookIdManager.activeBookIdFlow), SmartHomeSettings {
 
     private val _hueBridgeIp = NonNullStringSetting(SettingsConstants.KEY_HUE_BRIDGE_IP, "")
     private val _hueUsername = NonNullStringSetting(

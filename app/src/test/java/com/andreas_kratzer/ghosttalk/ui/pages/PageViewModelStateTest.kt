@@ -165,13 +165,10 @@ class PageViewModelStateTest {
             smartPredictionDelegate = mockk(relaxed = true),
             callManagementDelegate = callManagementDelegate,
             navigationDelegate = navigationDelegate,
-            aiRestructureDelegate = aiRestructureDelegate,
             analyticsDelegate = mockk(relaxed = true),
             smartIntegrationDelegate = mockk(relaxed = true),
             suggestionsDelegate = mockk(relaxed = true),
             ttsPreviewDelegate = mockk(relaxed = true),
-            pageSplitDelegate = mockk(relaxed = true),
-            layoutWizardDelegate = mockk(relaxed = true),
             buttonTemplateDelegate = buttonTemplateDelegate,
             pageResolutionDelegate = pageResolutionDelegate,
             updateSmartPredictionsUseCase = updateSmartPredictionsUseCase,
@@ -180,8 +177,7 @@ class PageViewModelStateTest {
             geminiUseCase = mockk(relaxed = true),
             philipsHueManager = mockk(relaxed = true),
             createPageUseCase = mockk(relaxed = true),
-            buttonUsageRepository = buttonUsageRepository,
-            splitPageUseCase = mockk(relaxed = true)
+            buttonUsageRepository = buttonUsageRepository
         )
         
         // Advance to allow launch in init to execute

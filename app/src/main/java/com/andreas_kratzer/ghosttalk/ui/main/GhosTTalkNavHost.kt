@@ -289,8 +289,10 @@ fun GhostTalkNavHost(
             )
         }
         composable("main") {
+            val callViewModel = hiltViewModel<com.andreas_kratzer.ghosttalk.ui.pages.CallViewModel>()
             PageScreen(
                 pageViewModel = pageViewModel,
+                callViewModel = callViewModel,
                 onNavigateBack = { navController.safePopBackStack() },
                 modifier = Modifier.fillMaxSize()
             )

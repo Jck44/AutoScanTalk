@@ -131,7 +131,34 @@ class SettingsRepositoryTest {
         val mockSettingsProfileDao = mockk<com.andreas_kratzer.ghosttalk.core.database.SettingsProfileDao>(relaxed = true)
         mockBookRepository = mockk(relaxed = true)
         testScope = CoroutineScope(kotlinx.coroutines.test.UnconfinedTestDispatcher())
-        repository = SettingsRepositoryImpl(mockContext, mockBookRepository, mockSettingsProfileDao, testScope)
+        repository = createRepository(mockContext, mockBookRepository, mockSettingsProfileDao, testScope)
+    }
+
+    private fun createRepository(
+        context: Context = mockContext,
+        bookRepo: BookRepository = mockBookRepository,
+        profileDao: com.andreas_kratzer.ghosttalk.core.database.SettingsProfileDao = mockk(relaxed = true),
+        scope: CoroutineScope = testScope
+    ): SettingsRepositoryImpl {
+        val activeBookIdManager = ActiveBookIdManager(mockPrefs)
+        return SettingsRepositoryImpl(
+            context = context,
+            bookRepository = bookRepo,
+            settingsProfileDao = profileDao,
+            scope = scope,
+            activeBookIdManager = activeBookIdManager,
+            voiceSettings = VoiceSettingsRepository(mockPrefs, activeBookIdManager),
+            scanningSettings = ScanningSettingsRepository(mockPrefs, activeBookIdManager),
+            securitySettings = SecuritySettingsRepository(mockPrefs, activeBookIdManager),
+            cloudSettings = CloudSettingsRepository(mockPrefs, activeBookIdManager, context),
+            smartHomeSettings = SmartHomeSettingsRepository(mockPrefs, activeBookIdManager, context),
+            genAiSettings = GenAiSettingsRepository(mockPrefs, activeBookIdManager, context),
+            generalSettings = GeneralSettingsRepository(mockPrefs, activeBookIdManager),
+            notificationSettings = NotificationSettingsRepository(mockPrefs, activeBookIdManager),
+            advancedSettings = AdvancedSettingsRepository(mockPrefs, activeBookIdManager),
+            userSettings = UserSettingsRepository(mockPrefs, activeBookIdManager),
+            callSettings = CallSettingsRepository(mockPrefs, activeBookIdManager)
+        )
     }
 
     @Test
@@ -326,7 +353,7 @@ class SettingsRepositoryTest {
         mockedPrefsStore["book-default_sync_mode"] = "TWO_WAY"
         
         val mockSettingsProfileDao = mockk<com.andreas_kratzer.ghosttalk.core.database.SettingsProfileDao>(relaxed = true)
-        val newRepo = SettingsRepositoryImpl(mockContext, mockBookRepository, mockSettingsProfileDao, testScope)
+        val newRepo = createRepository(mockContext, mockBookRepository, mockSettingsProfileDao, testScope)
         
         assertEquals("TWO_WAY", newRepo.syncModeBook)
         assertEquals("TWO_WAY", newRepo.syncModeTts)
@@ -338,7 +365,7 @@ class SettingsRepositoryTest {
     fun testCloudSyncStatsDefaultsToRestoreOnlyOnNewSetup() = runBlocking {
         mockedPrefsStore.clear()
         val mockSettingsProfileDao = mockk<com.andreas_kratzer.ghosttalk.core.database.SettingsProfileDao>(relaxed = true)
-        val newRepo = SettingsRepositoryImpl(mockContext, mockBookRepository, mockSettingsProfileDao, testScope)
+        val newRepo = createRepository(mockContext, mockBookRepository, mockSettingsProfileDao, testScope)
         assertEquals("RESTORE_ONLY", newRepo.syncModeStats)
     }
 
@@ -349,7 +376,7 @@ class SettingsRepositoryTest {
         mockedPrefsStore["book-other_sync_mode"] = "BACKUP_ONLY"
         
         val mockSettingsProfileDao = mockk<com.andreas_kratzer.ghosttalk.core.database.SettingsProfileDao>(relaxed = true)
-        val newRepo = SettingsRepositoryImpl(mockContext, mockBookRepository, mockSettingsProfileDao, testScope)
+        val newRepo = createRepository(mockContext, mockBookRepository, mockSettingsProfileDao, testScope)
         
         // Initial book is book-default
         assertEquals("TWO_WAY", newRepo.syncModeBook)

@@ -11,10 +11,12 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
-class NotificationSettingsRepository(
+import javax.inject.Inject
+
+class NotificationSettingsRepository @Inject constructor(
     prefs: SharedPreferences,
-    activeBookIdFlow: StateFlow<String?>
-) : BaseSettingsRepository(prefs, activeBookIdFlow) {
+    activeBookIdManager: ActiveBookIdManager
+) : BaseSettingsRepository(prefs, activeBookIdManager.activeBookIdFlow) {
 
     private val _isNotificationReadingEnabled = BooleanSetting(KEY_NOTIFICATION_READING_ENABLED, false, isScoped = false)
     private val _monitoredNotificationApps = StringSetSetting(KEY_MONITORED_NOTIFICATION_APPS, isScoped = false)

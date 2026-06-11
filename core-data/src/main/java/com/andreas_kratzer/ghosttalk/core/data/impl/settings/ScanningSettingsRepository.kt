@@ -13,10 +13,12 @@ import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.K
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_VOLUME_KEYS_ACTIVATE
 import kotlinx.coroutines.flow.StateFlow
 
-class ScanningSettingsRepository(
+import javax.inject.Inject
+
+class ScanningSettingsRepository @Inject constructor(
     prefs: SharedPreferences,
-    activeBookIdFlow: StateFlow<String?>
-) : BaseSettingsRepository(prefs, activeBookIdFlow) {
+    activeBookIdManager: ActiveBookIdManager
+) : BaseSettingsRepository(prefs, activeBookIdManager.activeBookIdFlow) {
 
     init {
         // Migration/Cleanup: remove the deprecated static_row_scan_pattern key if it exists

@@ -145,7 +145,7 @@ class ScannerEngine @Inject constructor(
                     rows = totalRows,
                     columns = totalCols,
                     rowNames = combinedRowNames,
-                    startIndex = if (staticRowPage != null && startIndex >= 0 && pattern == "linear") {
+                    startIndex = if (staticRowPage != null && startIndex > 0 && pattern == "linear") {
                         startIndex + staticRowOffset
                     } else startIndex,
                     focusedButtonIndex = stateManager.focusedButtonIndex,
@@ -154,7 +154,12 @@ class ScannerEngine @Inject constructor(
                     onPrefetchCue = { handlePrefetchCue(it) },
                     onCycleCompleted = { _onCycleCompleted.emit(Unit) },
                     delayMillis = scanTimer.scanDelayMillis,
-                    featureGuard = featureGuard
+                    featureGuard = featureGuard,
+                    hasStaticRow = staticRowPage != null,
+                    staticRowPattern = staticRowPattern,
+                    pagePattern = pattern,
+                    mainRows = rows,
+                    mainColumns = columns
                 )
 
                 strategy.executeScan(context)
@@ -212,7 +217,12 @@ class ScannerEngine @Inject constructor(
                     onPrefetchCue = { handlePrefetchCue(it) },
                     onCycleCompleted = { _onCycleCompleted.emit(Unit) },
                     delayMillis = scanTimer.scanDelayMillis,
-                    featureGuard = featureGuard
+                    featureGuard = featureGuard,
+                    hasStaticRow = staticRowPage != null,
+                    staticRowPattern = currentStaticRowPattern,
+                    pagePattern = currentPattern,
+                    mainRows = currentRows,
+                    mainColumns = currentColumns
                 )
 
                 rowByRowStrategy.executeButtonScanInRow(context, currentRowIndex)

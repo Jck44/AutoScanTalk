@@ -17,7 +17,12 @@ data class ScanContext(
     val onPrefetchCue: suspend (String) -> Unit,
     val onCycleCompleted: suspend () -> Unit,
     val delayMillis: Long,
-    val featureGuard: FeatureGuardProxy
+    val featureGuard: FeatureGuardProxy,
+    val hasStaticRow: Boolean = false,
+    val staticRowPattern: String = "linear",
+    val pagePattern: String = "row_by_row",
+    val mainRows: Int = rows,
+    val mainColumns: Int = columns
 )
 
 interface ScanStrategy {

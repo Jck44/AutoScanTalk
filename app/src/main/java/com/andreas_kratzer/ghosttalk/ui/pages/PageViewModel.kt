@@ -31,6 +31,7 @@ import com.andreas_kratzer.ghosttalk.ui.pages.delegates.SmartPredictionDelegate
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -48,36 +49,41 @@ import javax.inject.Inject
 class PageViewModel @Inject constructor(
     application: Application,
     private val savedStateHandle: SavedStateHandle,
-    override val settingsRepository: SettingsRepository,
+    private val settingsRepository: SettingsRepository,
     private val bookRepository: com.andreas_kratzer.ghosttalk.core.data.BookRepository,
     private val ttsHelper: TextToSpeechHelper,
     val featureGuard: FeatureGuard,
-    val pageManagementDelegate: PageManagementDelegate,
-    val interactionDelegate: InteractionDelegate,
-    val screenManagementDelegate: ScreenManagementDelegate,
+    private val pageManagementDelegate: PageManagementDelegate,
+    internal val interactionDelegate: InteractionDelegate,
+    private val screenManagementDelegate: ScreenManagementDelegate,
     smartPredictionDelegate: SmartPredictionDelegate,
-    val callManagementDelegate: com.andreas_kratzer.ghosttalk.ui.pages.delegates.CallManagementDelegate,
-    val navigationDelegate: com.andreas_kratzer.ghosttalk.ui.pages.delegates.NavigationDelegate,
-    val aiRestructureDelegate: com.andreas_kratzer.ghosttalk.ui.pages.delegates.AiRestructureDelegate,
-    val analyticsDelegate: com.andreas_kratzer.ghosttalk.ui.pages.delegates.AnalyticsDelegate,
-    val smartIntegrationDelegate: com.andreas_kratzer.ghosttalk.ui.pages.delegates.SmartIntegrationDelegate,
-    val suggestionsDelegate: com.andreas_kratzer.ghosttalk.ui.pages.delegates.SuggestionsDelegate,
-    val ttsPreviewDelegate: com.andreas_kratzer.ghosttalk.ui.pages.delegates.TtsPreviewDelegate,
-    val pageSplitDelegate: com.andreas_kratzer.ghosttalk.ui.pages.delegates.PageSplitDelegate,
-    val layoutWizardDelegate: com.andreas_kratzer.ghosttalk.ui.pages.delegates.LayoutWizardDelegate,
-    val buttonTemplateDelegate: com.andreas_kratzer.ghosttalk.ui.pages.delegates.ButtonTemplateDelegate,
-    val pageResolutionDelegate: com.andreas_kratzer.ghosttalk.ui.pages.delegates.PageResolutionDelegate,
+    private val callManagementDelegate: com.andreas_kratzer.ghosttalk.ui.pages.delegates.CallManagementDelegate,
+    private val navigationDelegate: com.andreas_kratzer.ghosttalk.ui.pages.delegates.NavigationDelegate,
+    private val analyticsDelegate: com.andreas_kratzer.ghosttalk.ui.pages.delegates.AnalyticsDelegate,
+    private val smartIntegrationDelegate: com.andreas_kratzer.ghosttalk.ui.pages.delegates.SmartIntegrationDelegate,
+    private val suggestionsDelegate: com.andreas_kratzer.ghosttalk.ui.pages.delegates.SuggestionsDelegate,
+    private val ttsPreviewDelegate: com.andreas_kratzer.ghosttalk.ui.pages.delegates.TtsPreviewDelegate,
+    private val buttonTemplateDelegate: com.andreas_kratzer.ghosttalk.ui.pages.delegates.ButtonTemplateDelegate,
+    private val pageResolutionDelegate: com.andreas_kratzer.ghosttalk.ui.pages.delegates.PageResolutionDelegate,
     updateSmartPredictionsUseCase: UpdateSmartPredictionsUseCase,
-    val actionExecutor: ActionExecutor,
+    private val actionExecutor: ActionExecutor,
     private val scanCoordinator: ScanCoordinator,
     private val geminiUseCase: GeminiUseCase,
-    override val philipsHueManager: PhilipsHueManager,
+    private val philipsHueManager: PhilipsHueManager,
     private val createPageUseCase: CreatePageUseCase,
-    private val buttonUsageRepository: com.andreas_kratzer.ghosttalk.core.data.ButtonUsageRepository,
-    private val splitPageUseCase: SplitPageUseCase
-) : AndroidViewModel(application), com.andreas_kratzer.ghosttalk.ui.util.GridEditorActions {
+    private val buttonUsageRepository: com.andreas_kratzer.ghosttalk.core.data.ButtonUsageRepository
+) : AndroidViewModel(application) {
 
 
+
+    fun isButtonVisible(buttonConfig: ButtonConfig?): Boolean = buttonConfig == null || featureGuard.isButtonVisible(buttonConfig)
+
+    val pageSortOrderFlow: Flow<String> = settingsRepository.pageSortOrderFlow
+    var pageSortOrder: String
+        get() = settingsRepository.pageSortOrder
+        set(value) {
+            settingsRepository.pageSortOrder = value
+        }
 
     val activeBookId = pageManagementDelegate.activeBookId
 
@@ -94,39 +100,18 @@ class PageViewModel @Inject constructor(
     val templates = pageManagementDelegate.templates
     val activeTargetPageIds = pageManagementDelegate.activeTargetPageIds
 
-    override val buttonTemplates: StateFlow<List<ButtonTemplate>>
-        get() = buttonTemplateDelegate.buttonTemplates
-
-    override val buttonHistory = analyticsDelegate.buttonHistory
+    val buttonHistory = analyticsDelegate.buttonHistory
 
     val isCalculatingRecommendations = analyticsDelegate.isCalculatingRecommendations
 
-    override val shortcutRecommendations = analyticsDelegate.shortcutRecommendations
+    val shortcutRecommendations = analyticsDelegate.shortcutRecommendations
 
-    override fun applyShortcutRecommendation(
+    fun applyShortcutRecommendation(
         recommendation: com.andreas_kratzer.ghosttalk.core.data.impl.analytics.PathAnalyzer.ShortcutRecommendation,
         onResult: (Boolean, String) -> Unit
     ) {
         analyticsDelegate.applyShortcutRecommendation(recommendation, onResult)
     }
-
-    override fun saveButtonAsTemplate(name: String, config: ButtonConfig) {
-        buttonTemplateDelegate.saveButtonAsTemplate(name, config)
-    }
-
-    override fun deleteButtonTemplate(template: ButtonTemplate) {
-        buttonTemplateDelegate.deleteButtonTemplate(template)
-    }
-
-    override fun updateButtonTemplate(template: ButtonTemplate) {
-        buttonTemplateDelegate.updateButtonTemplate(template)
-    }
-
-    override fun updateButtonTemplatesOrder(templates: List<ButtonTemplate>) {
-        buttonTemplateDelegate.updateButtonTemplatesOrder(templates)
-    }
-
-
 
     val lastActions = interactionDelegate.lastActions
     val authRecoverIntent = interactionDelegate.authRecoverIntent
@@ -141,10 +126,11 @@ class PageViewModel @Inject constructor(
 
     val defaultScanPattern = settingsRepository.defaultScanPatternFlow
     val showTestButtons = settingsRepository.showTestButtonsFlow
+    val isGeminiEnabled get() = settingsRepository.isGeminiEnabled
 
-    override val spotifyUserDisplayName = smartIntegrationDelegate.spotifyUserDisplayName
-    override val spotifyPlaylists = smartIntegrationDelegate.spotifyPlaylists
-    override val isLoadingPlaylists = smartIntegrationDelegate.isLoadingPlaylists
+    val spotifyUserDisplayName = smartIntegrationDelegate.spotifyUserDisplayName
+    val spotifyPlaylists = smartIntegrationDelegate.spotifyPlaylists
+    val isLoadingPlaylists = smartIntegrationDelegate.isLoadingPlaylists
 
     val staticRowPage: StateFlow<Page?> = pageResolutionDelegate.getStaticRowPage(
         scope = viewModelScope,
@@ -153,7 +139,7 @@ class PageViewModel @Inject constructor(
         smartPredictions = smartPredictions
     )
 
-    override val isEditPreviewActive = pageResolutionDelegate.isEditPreviewActive
+    val isEditPreviewActive = pageResolutionDelegate.isEditPreviewActive
 
     fun toggleEditPreviewActive() {
         pageResolutionDelegate.toggleEditPreviewActive()
@@ -165,7 +151,7 @@ class PageViewModel @Inject constructor(
         isUserModeActive = isUserModeActive
     )
 
-    override val resolvedPage: StateFlow<Page?> = pageResolutionDelegate.getResolvedPage(
+    val resolvedPage: StateFlow<Page?> = pageResolutionDelegate.getResolvedPage(
         scope = viewModelScope,
         currentPage = currentPage,
         isPreviewOrUserMode = isPreviewOrUserMode,
@@ -177,15 +163,15 @@ class PageViewModel @Inject constructor(
 
 
     // --- Caregiver Visual Analytics Overlay States ---
-    override val isAnalyticsOverlayEnabled = analyticsDelegate.isAnalyticsOverlayEnabled
+    val isAnalyticsOverlayEnabled = analyticsDelegate.isAnalyticsOverlayEnabled
 
     fun toggleAnalyticsOverlay() {
         analyticsDelegate.toggleAnalyticsOverlay()
     }
 
-    override val pageMetrics = analyticsDelegate.pageMetrics
+    val pageMetrics = analyticsDelegate.pageMetrics
 
-    override suspend fun getMarkovSuccessors(buttonId: String): List<Pair<String, Int>> {
+    suspend fun getMarkovSuccessors(buttonId: String): List<Pair<String, Int>> {
         val bookId = activeBookId.value ?: return emptyList()
         return buttonUsageRepository.getMarkovSuccessors(bookId, buttonId)
     }
@@ -194,47 +180,13 @@ class PageViewModel @Inject constructor(
     val focusedRowIndex = scanCoordinator.focusedRowIndex
     val isScanning = scanCoordinator.isScanning
 
-    // --- Telephony Call States ---
-    val callState = callManagementDelegate.callState
-    val callerName = callManagementDelegate.callerName
-    val callerPhone = callManagementDelegate.callerPhone
-    val callDurationSeconds = callManagementDelegate.callDurationSeconds
-    val isOutgoing = callManagementDelegate.isOutgoing
-    val isSimulatedCall = callManagementDelegate.isSimulatedCall
-    val isHangUpButtonFocused = callManagementDelegate.isHangUpButtonFocused
-    val hangUpPressCount = callManagementDelegate.hangUpPressCount
-    val focusedCallScreenButton = callManagementDelegate.focusedCallScreenButton
 
-
-    fun startCallScanning() {
-        callManagementDelegate.startCallScanning(viewModelScope)
-    }
-
-    fun stopCallScanning() {
-        callManagementDelegate.stopCallScanning()
-    }
 
     fun loadStartPage() {
         navigationDelegate.loadStartPage()
     }
 
-    val selectedPageIds: StateFlow<Set<String>> = aiRestructureDelegate.selectedPageIds
 
-    val aiRestructureProposal: StateFlow<BookRestructureProposal?> = aiRestructureDelegate.aiRestructureProposal
-    val aiHierarchyProposal: StateFlow<com.andreas_kratzer.ghosttalk.core.model.BookHierarchyProposal?> = aiRestructureDelegate.aiHierarchyProposal
-    val aiPageLayoutProposals: StateFlow<Map<String, com.andreas_kratzer.ghosttalk.core.model.PageLayoutProposal>> = aiRestructureDelegate.aiPageLayoutProposals
-    val isAiHierarchyLoading: StateFlow<Boolean> = aiRestructureDelegate.isAiHierarchyLoading
-    val isLoadingPageLayout: StateFlow<Map<String, Boolean>> = aiRestructureDelegate.isLoadingPageLayout
-    val aiRestructureScope: StateFlow<String> = aiRestructureDelegate.aiRestructureScope
-    val aiRestructureError: StateFlow<String?> = aiRestructureDelegate.aiRestructureError
-
-    fun setAiRestructureScope(scope: String) {
-        aiRestructureDelegate.setAiRestructureScope(scope)
-    }
-
-    fun clearAiRestructureError() {
-        aiRestructureDelegate.clearAiRestructureError()
-    }
 
     val activeBook: StateFlow<Book?> = activeBookId.flatMapLatest { id ->
         if (id != null) bookRepository.getBookByIdFlow(id) else flowOf(null)
@@ -245,13 +197,7 @@ class PageViewModel @Inject constructor(
         smartIntegrationDelegate.init(viewModelScope)
         suggestionsDelegate.init(viewModelScope)
         ttsPreviewDelegate.init(viewModelScope)
-        pageSplitDelegate.init(
-            coroutineScope = viewModelScope,
-            unfilteredPages = pageManagementDelegate.unfilteredPages,
-            activeBookId = activeBookId,
-            buttonHistory = analyticsDelegate.buttonHistory
-        )
-        layoutWizardDelegate.init(viewModelScope)
+
         navigationDelegate.init(
             scope = viewModelScope,
             savedStateHandle = savedStateHandle,
@@ -266,7 +212,7 @@ class PageViewModel @Inject constructor(
         )
         navigationDelegate.restoreState()
 
-        loadSpotifyPlaylists()
+        smartIntegrationDelegate.loadSpotifyPlaylists()
         buttonTemplateDelegate.init(viewModelScope)
         pageManagementDelegate.init(viewModelScope)
         interactionDelegate.init(
@@ -351,18 +297,18 @@ class PageViewModel @Inject constructor(
                         scanCoordinator.stopScanning()
                         ttsHelper.stopAll()
                         actionExecutor.stopActions()
-                        startCallScanning()
+                        callManagementDelegate.startCallScanning(this)
                     }
                     CallState.DIALING,
                     CallState.ACTIVE -> {
                         scanCoordinator.stopScanning()
                         ttsHelper.stopAll()
                         actionExecutor.stopActions()
-                        stopCallScanning()
+                        callManagementDelegate.stopCallScanning()
                         callManagementDelegate.resetHangUpState()
                     }
                     CallState.NONE -> {
-                        stopCallScanning()
+                        callManagementDelegate.stopCallScanning()
                         callManagementDelegate.resetHangUpState()
                         if (isUserModeActive.value) {
                             loadStartPage()
@@ -397,32 +343,7 @@ class PageViewModel @Inject constructor(
         scanCycleCount?.let { scanCoordinator.setCycleCount(it) }
 
         // Observe book ID changes to load restructure proposal cache
-        viewModelScope.launch {
-            val flow = activeBookId
-            flow.collect { bookId ->
-                if (bookId != null) {
-                    aiRestructureDelegate.setAiRestructureProposal(loadProposalFromCache(bookId))
-                } else {
-                    aiRestructureDelegate.setAiRestructureProposal(null)
-                }
-            }
-        }
 
-        // Initialize selectedPageIds to active/reachable pages by default
-        viewModelScope.launch {
-            val unfilteredFlow = pageManagementDelegate.unfilteredPages
-            val activeTargetFlow = pageManagementDelegate.activeTargetPageIds
-            combine(
-                unfilteredFlow,
-                activeTargetFlow
-            ) { pages, activeIds ->
-                Pair(pages, activeIds)
-            }.collect { (pages, activeIds) ->
-                if (pages.isNotEmpty() && aiRestructureDelegate.selectedPageIds.value.isEmpty()) {
-                    aiRestructureDelegate.selectActivePagesOnly(pages, activeIds)
-                }
-            }
-        }
 
 
         ttsHelper.fallbackListener = object : TextToSpeechHelper.OnVoiceFallbackListener {
@@ -487,6 +408,16 @@ class PageViewModel @Inject constructor(
     }
 
 
+    val actionLogUseCase = interactionDelegate.actionLogUseCase
+
+    fun createNewPage(name: String, rows: Int, columns: Int, bookId: String, templateId: String?, onComplete: (String) -> Unit) {
+        pageManagementDelegate.createNewPage(name, rows, columns, bookId, templateId, onComplete)
+    }
+
+    suspend fun getPageById(id: String): Page? {
+        return pageManagementDelegate.getPageById(id)
+    }
+
     fun updateSearchQuery(query: String) = pageManagementDelegate.updateSearchQuery(query)
     fun setActiveBookId(bookId: String?) {
         navigationDelegate.pageBackStack.clear()
@@ -504,7 +435,6 @@ class PageViewModel @Inject constructor(
         navigationDelegate.navigateBack()
     }
 
-    override val availableGeminiTools = geminiUseCase.getAvailableTools()
 
     fun setUserModeActive(isActive: Boolean) {
         interactionDelegate.setUserModeActive(isActive)
@@ -518,10 +448,6 @@ class PageViewModel @Inject constructor(
         staticRowPage = staticRowPage.value
     )
     fun activateFocusedButton() {
-        if (callManagementDelegate.handleCallButtonPress()) {
-            return
-        }
-
         interactionDelegate.activateFocusedButton(resolvedPage.value, activeBookId.value, staticRowPage = staticRowPage.value)
     }
     fun clearActionLogs() = interactionDelegate.clearActionLogs()
@@ -531,108 +457,6 @@ class PageViewModel @Inject constructor(
     fun stopScanning() = scanCoordinator.stopScanning()
     @Suppress("unused")
     fun restartScanning() = scanCoordinator.restartScanning()
-
-    override fun updateButtonConfig(itemId: String, index: Int, newConfig: ButtonConfig?) {
-        pageManagementDelegate.updateButtonConfig(itemId, index, newConfig)
-    }
-
-    override fun insertButtonConfig(itemId: String, index: Int, newConfig: ButtonConfig, forceShift: Boolean, onResult: (Boolean) -> Unit) {
-        pageManagementDelegate.insertButtonConfig(itemId, index, newConfig, forceShift, onResult)
-    }
-
-    override fun moveButtonWithInsert(itemId: String, fromIndex: Int, toIndex: Int) {
-        pageManagementDelegate.moveButtonWithInsert(itemId, fromIndex, toIndex)
-    }
-
-    override fun undo(onSuccess: (String) -> Unit) {
-        pageManagementDelegate.undo(onSuccess)
-    }
-
-    override val canUndo: StateFlow<Boolean> = pageManagementDelegate.canUndo
-
-    override fun updateGridSettings(
-        itemId: String,
-        update: GridSettingsUpdate
-    ) {
-        updatePageSettings(itemId, update)
-    }
-
-    override val isExecuting: StateFlow<Boolean> = actionExecutor.isExecuting
-
-    override fun executeButtonAction(config: ButtonConfig) {
-        actionExecutor.executeButtonAction(config)
-    }
-
-    override fun isTextCached(text: String): Boolean {
-        return ttsPreviewDelegate.isTextCached(text)
-    }
-
-    override fun prefetchText(text: String, onComplete: () -> Unit) {
-        ttsPreviewDelegate.prefetchText(text, onComplete)
-    }
-
-    override fun isTtsElevenLabs(): Boolean {
-        return ttsPreviewDelegate.isTtsElevenLabs()
-    }
-
-    override fun createNewPage(
-        name: String,
-        rows: Int,
-        columns: Int,
-        bookId: String,
-        templateId: String?,
-        onCreated: (String) -> Unit
-    ) {
-        pageManagementDelegate.createNewPage(name, rows, columns, bookId, templateId, onCreated)
-    }
-
-    fun updatePageSettings(
-        pageId: String, 
-        update: GridSettingsUpdate
-    ) = pageManagementDelegate.updatePageSettings(pageId, update)
-
-    override fun updateRowName(itemId: String, rowIndex: Int, newName: String) {
-        pageManagementDelegate.updateRowName(itemId, rowIndex, newName)
-    }
-
-    override val isGeminiEnabled: Boolean
-        get() = settingsRepository.isGeminiEnabled
-
-    override fun suggestButtonLabel(config: ButtonConfig, onResult: (String) -> Unit) {
-        suggestionsDelegate.suggestButtonLabel(config, onResult)
-    }
-
-    override fun suggestRowName(itemId: String, rowIndex: Int, onResult: (String) -> Unit) {
-        suggestionsDelegate.suggestRowName(itemId, rowIndex, onResult)
-    }
-
-    override fun moveRow(itemId: String, fromRow: Int, toRow: Int) {
-        pageManagementDelegate.moveRow(itemId, fromRow, toRow)
-    }
-
-    override fun moveButton(itemId: String, fromIndex: Int, toIndex: Int) {
-        pageManagementDelegate.moveButton(itemId, fromIndex, toIndex)
-    }
-
-    override fun moveButtonToPage(
-        fromPageId: String,
-        fromIndex: Int,
-        toPageId: String,
-        forceMove: Boolean,
-        onResult: (com.andreas_kratzer.ghosttalk.core.domain.pages.MoveButtonToPageUseCase.MoveResult) -> Unit
-    ) {
-        pageManagementDelegate.moveButtonToPage(fromPageId, fromIndex, toPageId, forceMove, onResult)
-    }
-
-    override fun duplicateButtonToPage(
-        fromPageId: String,
-        fromIndex: Int,
-        toPageId: String,
-        forceMove: Boolean,
-        onResult: (com.andreas_kratzer.ghosttalk.core.domain.pages.MoveButtonToPageUseCase.MoveResult) -> Unit
-    ) {
-        pageManagementDelegate.duplicateButtonToPage(fromPageId, fromIndex, toPageId, forceMove, onResult)
-    }
 
     fun deletePage(page: Page, deleteUsages: Boolean = false) = pageManagementDelegate.deletePage(page, deleteUsages)
     suspend fun getPageUsages(pageId: String) = pageManagementDelegate.getPageUsages(pageId)
@@ -652,186 +476,13 @@ class PageViewModel @Inject constructor(
     @Suppress("unused")
     suspend fun exportToJson(): String = pageManagementDelegate.exportToJson()
 
-    override fun speakTtsPreview(text: String, onDone: () -> Unit) {
-        ttsPreviewDelegate.speakTtsPreview(text, onDone)
-    }
-
-    override fun stopTtsPreview() {
-        ttsPreviewDelegate.stopTtsPreview()
-    }
-
-    override fun refreshHueDevicesCache(silentOnFailure: Boolean, onResult: ((Boolean) -> Unit)?) {
-        smartIntegrationDelegate.refreshHueDevicesCache(silentOnFailure, onResult)
-    }
-
-    override fun connectSpotify(context: android.content.Context) {
-        smartIntegrationDelegate.connectSpotify(context)
-    }
-
-    override fun disconnectSpotify() {
-        smartIntegrationDelegate.disconnectSpotify()
-    }
-
-    override fun loadSpotifyPlaylists() {
-        smartIntegrationDelegate.loadSpotifyPlaylists()
-    }
-
     override fun onCleared() {
         super.onCleared()
         actionExecutor.stopActions()
         scanCoordinator.clear()
     }
 
-    // --- Page Split Wizard States & Functions ---
 
-    val pageSplitProposal: StateFlow<SplitPageUseCase.PageSplitProposal?> = pageSplitDelegate.pageSplitProposal
-    val isPageSplitLoading: StateFlow<Boolean> = pageSplitDelegate.isPageSplitLoading
-
-    fun generatePageSplitPrompt(buttonLabels: List<String>): String {
-        return pageSplitDelegate.generatePageSplitPrompt(buttonLabels)
-    }
-
-    fun parsePageSplitProposal(response: String) {
-        pageSplitDelegate.parsePageSplitProposal(response)
-    }
-
-    fun clearPageSplitProposal() {
-        pageSplitDelegate.clearPageSplitProposal()
-    }
-
-    val currentProposalFilter: StateFlow<ProposalFilter> = pageSplitDelegate.currentProposalFilter
-    val currentProposalSort: StateFlow<ProposalSort> = pageSplitDelegate.currentProposalSort
-
-    fun setProposalFilter(filter: ProposalFilter) {
-        pageSplitDelegate.setProposalFilter(filter)
-    }
-
-    fun setProposalSort(sort: ProposalSort) {
-        pageSplitDelegate.setProposalSort(sort)
-    }
-
-    val layoutOptimizationProposals: StateFlow<List<com.andreas_kratzer.ghosttalk.core.data.impl.analytics.PageLayoutOptimizer.LayoutOptimizationProposal>> = pageSplitDelegate.layoutOptimizationProposals
-
-    fun changePageScanPattern(pageId: String, pattern: String) {
-        pageSplitDelegate.changePageScanPattern(pageId, pattern)
-    }
-
-    fun changeScanDelay(delayMs: Long) {
-        pageSplitDelegate.changeScanDelay(delayMs)
-    }
-
-    fun applySpacerRelocate(pageId: String, buttonId: String, intendedButtonId: String) {
-        pageSplitDelegate.applySpacerRelocate(pageId, buttonId, intendedButtonId)
-    }
-
-    fun generatePageSplitProposal(pageId: String) {
-        pageSplitDelegate.generatePageSplitProposal(pageId)
-    }
-
-    fun applyPageSplit(pageId: String, proposal: SplitPageUseCase.PageSplitProposal) {
-        pageSplitDelegate.applyPageSplit(pageId, proposal)
-    }
-
-    fun shouldFilterButtonFromSplit(buttonConfig: ButtonConfig?, defaultStartPageId: String?, currentPageId: String?): Boolean {
-        return pageSplitDelegate.shouldFilterButtonFromSplit(buttonConfig, defaultStartPageId, currentPageId)
-    }
-
-    // --- AI Book Restructuring States & Functions ---
-
-    fun togglePageSelection(pageId: String) {
-        aiRestructureDelegate.togglePageSelection(pageId)
-    }
-
-    fun selectAllPages() {
-        aiRestructureDelegate.selectAllPages(pageManagementDelegate.unfilteredPages.value)
-    }
-
-    fun selectActivePagesOnly() {
-        aiRestructureDelegate.selectActivePagesOnly(
-            pages = pageManagementDelegate.unfilteredPages.value,
-            activeTargetPageIds = pageManagementDelegate.activeTargetPageIds.value
-        )
-    }
-
-
-    fun loadProposalFromCache(bookId: String): BookRestructureProposal? {
-        return aiRestructureDelegate.loadProposalFromCache(bookId)
-    }
-
-    val isAiRestructureLoading: StateFlow<Boolean> = aiRestructureDelegate.isAiRestructureLoading
-
-
-
-    fun clearAiRestructureProposal() {
-        val bookId = activeBookId.value ?: return
-        aiRestructureDelegate.deleteRestructureCache(viewModelScope, bookId)
-    }
-
-
-
-    fun generateAiHierarchyProposal(feedback: String? = null) {
-        val bookId = activeBookId.value ?: return
-        aiRestructureDelegate.generateAiHierarchyProposal(viewModelScope, bookId, pageManagementDelegate, feedback)
-    }
-
-    fun updateHierarchyManualEdit(updatedProposal: com.andreas_kratzer.ghosttalk.core.model.BookHierarchyProposal) {
-        aiRestructureDelegate.setAiHierarchyProposal(updatedProposal)
-    }
-
-    fun loadPageLayoutProposal(pageName: String) {
-        val bookId = activeBookId.value ?: return
-        aiRestructureDelegate.loadPageLayoutProposal(viewModelScope, bookId, pageManagementDelegate, pageName)
-    }
-
-    fun loadAllPageLayoutProposals(onComplete: () -> Unit) {
-        val hierarchy = aiHierarchyProposal.value ?: return
-        viewModelScope.launch(Dispatchers.Default) {
-            val missingPages = hierarchy.pages.filter { !aiPageLayoutProposals.value.containsKey(it.name) }
-            for (node in missingPages) {
-                loadPageLayoutProposal(node.name)
-            }
-            withContext(Dispatchers.Main) {
-                onComplete()
-            }
-        }
-    }
-
-    fun applyHierarchyProposal(onResult: (String) -> Unit) {
-        val currentBookId = activeBookId.value ?: return
-        aiRestructureDelegate.applyHierarchyProposal(
-            scope = viewModelScope,
-            currentBookId = currentBookId,
-            pageManagementDelegate = pageManagementDelegate,
-            setActiveBookId = ::setActiveBookId,
-            loadPage = ::loadPage,
-            onResult = onResult
-        )
-    }
-
-
-    // --- Layout- & Struktur-Assistent Actions ---
-
-    fun reorderByClickStats(pageId: String, onComplete: () -> Unit = {}) {
-        layoutWizardDelegate.reorderByClickStats(pageId, onComplete)
-    }
-
-    fun insertHomeNavigationEveryX(pageId: String, x: Int, onComplete: () -> Unit = {}) {
-        layoutWizardDelegate.insertHomeNavigationEveryX(pageId, x, onComplete)
-    }
-
-    fun shrinkGridToMinimum(pageId: String, onComplete: () -> Unit = {}) {
-        layoutWizardDelegate.shrinkGridToMinimum(pageId, onComplete)
-    }
-
-    fun deleteDeactivatedButtons(pageId: String, onComplete: () -> Unit = {}) {
-        layoutWizardDelegate.deleteDeactivatedButtons(pageId, onComplete)
-    }
-
-    val magicCleanupProgress: StateFlow<String?> = layoutWizardDelegate.magicCleanupProgress
-
-    fun magicCleanup(pageId: String, onComplete: () -> Unit = {}) {
-        layoutWizardDelegate.magicCleanup(pageId, onComplete)
-    }
 
     private var isRollingBack = false
 

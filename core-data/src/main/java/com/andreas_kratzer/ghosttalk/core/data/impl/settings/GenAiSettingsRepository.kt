@@ -11,11 +11,14 @@ import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.K
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_USE_LOCAL_GENERATIVE_AI
 import kotlinx.coroutines.flow.StateFlow
 
-class GenAiSettingsRepository(
+import dagger.hilt.android.qualifiers.ApplicationContext
+import javax.inject.Inject
+
+class GenAiSettingsRepository @Inject constructor(
     prefs: SharedPreferences,
-    activeBookIdFlow: StateFlow<String?>,
-    private val context: android.content.Context
-) : BaseSettingsRepository(prefs, activeBookIdFlow) {
+    activeBookIdManager: ActiveBookIdManager,
+    @ApplicationContext private val context: android.content.Context
+) : BaseSettingsRepository(prefs, activeBookIdManager.activeBookIdFlow) {
 
     private val _isGeminiEnabled = BooleanSetting(KEY_GEMINI_ENABLED, false)
     private val _useLocalGenerativeAi = BooleanSetting(KEY_USE_LOCAL_GENERATIVE_AI, true)

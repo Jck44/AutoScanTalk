@@ -16,10 +16,12 @@ import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.K
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_SIMULATE_CALLS_ENABLED
 import kotlinx.coroutines.flow.StateFlow
 
-class CallSettingsRepository(
+import javax.inject.Inject
+
+class CallSettingsRepository @Inject constructor(
     prefs: SharedPreferences,
-    activeBookIdFlow: StateFlow<String?>
-) : BaseSettingsRepository(prefs, activeBookIdFlow) {
+    activeBookIdManager: ActiveBookIdManager
+) : BaseSettingsRepository(prefs, activeBookIdManager.activeBookIdFlow) {
 
     private val _maxCallDurationSeconds = IntSetting(KEY_MAX_CALL_DURATION_SECONDS, 0, isScoped = false)
     private val _callDurationFeedbackIntervalSeconds = IntSetting(KEY_CALL_DURATION_FEEDBACK_INTERVAL_SECONDS, 60, isScoped = false)

@@ -48,13 +48,13 @@ import kotlin.math.roundToInt
 @Composable
 fun PageLayoutAssistantDialog(
     page: Page,
-    pageViewModel: PageViewModel,
+    pageSplitViewModel: PageSplitViewModel,
     onStartPageSplit: () -> Unit,
     onStartMagicCleanup: () -> Unit,
     onDismiss: () -> Unit
 ) {
     val context = LocalContext.current
-    val proposals by pageViewModel.layoutOptimizationProposals.collectAsState()
+    val proposals by pageSplitViewModel.layoutOptimizationProposals.collectAsState()
     val pageProposals = remember(proposals, page.id) {
         proposals.filter { it.pageId == page.id }
     }
@@ -212,7 +212,7 @@ fun PageLayoutAssistantDialog(
                                             )
                                             Button(
                                                 onClick = {
-                                                    pageViewModel.changePageScanPattern(proposal.pageId, "row_by_row")
+                                                    pageSplitViewModel.changePageScanPattern(proposal.pageId, "row_by_row")
                                                     Toast.makeText(context, "Scan-Muster erfolgreich auf zeilenweise geändert.", Toast.LENGTH_SHORT).show()
                                                     onDismiss()
                                                 },
@@ -245,7 +245,7 @@ fun PageLayoutAssistantDialog(
                                             )
                                             Button(
                                                 onClick = {
-                                                    pageViewModel.changeScanDelay(proposal.suggestedScanDelayMs)
+                                                    pageSplitViewModel.changeScanDelay(proposal.suggestedScanDelayMs)
                                                     Toast.makeText(context, "Scan-Verzögerung auf ${proposal.suggestedScanDelayMs}ms geändert.", Toast.LENGTH_SHORT).show()
                                                     onDismiss()
                                                 },
@@ -270,7 +270,7 @@ fun PageLayoutAssistantDialog(
                                             )
                                             Button(
                                                 onClick = {
-                                                    pageViewModel.applySpacerRelocate(proposal.pageId, proposal.buttonId, proposal.intendedButtonId)
+                                                    pageSplitViewModel.applySpacerRelocate(proposal.pageId, proposal.buttonId, proposal.intendedButtonId)
                                                     Toast.makeText(context, "Kacheln getauscht!", Toast.LENGTH_SHORT).show()
                                                     onDismiss()
                                                 },
@@ -329,7 +329,7 @@ fun PageLayoutAssistantDialog(
                             Spacer(modifier = Modifier.width(8.dp))
                             OutlinedButton(
                                 onClick = {
-                                    pageViewModel.reorderByClickStats(page.id) {
+                                    pageSplitViewModel.reorderByClickStats(page.id) {
                                         Toast.makeText(context, "Buttons nach Klicks sortiert und neu angeordnet.", Toast.LENGTH_LONG).show()
                                     }
                                     onDismiss()
@@ -390,7 +390,7 @@ fun PageLayoutAssistantDialog(
                                 }
                                 OutlinedButton(
                                     onClick = {
-                                        pageViewModel.insertHomeNavigationEveryX(page.id, homeInterval.roundToInt()) {
+                                        pageSplitViewModel.insertHomeNavigationEveryX(page.id, homeInterval.roundToInt()) {
                                             Toast.makeText(context, "Startseiten-Buttons alle ${homeInterval.roundToInt()} Kacheln verteilt.", Toast.LENGTH_LONG).show()
                                         }
                                         onDismiss()
@@ -434,7 +434,7 @@ fun PageLayoutAssistantDialog(
                             Spacer(modifier = Modifier.width(8.dp))
                             OutlinedButton(
                                 onClick = {
-                                    pageViewModel.shrinkGridToMinimum(page.id) {
+                                    pageSplitViewModel.shrinkGridToMinimum(page.id) {
                                         Toast.makeText(context, "Rastergröße auf das Minimum geschrumpft.", Toast.LENGTH_LONG).show()
                                     }
                                     onDismiss()
@@ -477,7 +477,7 @@ fun PageLayoutAssistantDialog(
                             Spacer(modifier = Modifier.width(8.dp))
                             OutlinedButton(
                                 onClick = {
-                                    pageViewModel.deleteDeactivatedButtons(page.id) {
+                                    pageSplitViewModel.deleteDeactivatedButtons(page.id) {
                                         Toast.makeText(context, "Deaktivierte Buttons gelöscht.", Toast.LENGTH_SHORT).show()
                                     }
                                     onDismiss()

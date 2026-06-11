@@ -47,6 +47,7 @@ import com.andreas_kratzer.ghosttalk.core.ui.R as CoreR
 @Composable
 fun PageScreen(
     pageViewModel: PageViewModel,
+    callViewModel: CallViewModel,
     onNavigateBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -65,7 +66,7 @@ fun PageScreen(
     val dimensions = LocalDimensions.current
 
     // Call Screen States
-    val callState by pageViewModel.callState.collectAsState()
+    val callState by callViewModel.callState.collectAsState()
 
     val page = currentPage
 
@@ -172,7 +173,7 @@ fun PageScreen(
                         focusedButtonIndex = focusedButtonIndex,
                         focusedRowIndex = focusedRowIndex,
                         isScanning = isScanning,
-                        isButtonVisible = { pageViewModel.featureGuard.isButtonVisible(it) },
+                        isButtonVisible = { pageViewModel.isButtonVisible(it) },
                         onButtonClick = { pageViewModel.activateButtonAtIndex(it) },
                         staticRowPage = staticRowPage
                     )
@@ -195,7 +196,7 @@ fun PageScreen(
                     ActionLogCard(
                         lastActions = lastActions,
                         onClearLogs = { pageViewModel.clearActionLogs() },
-                        actionLogUseCase = pageViewModel.interactionDelegate.actionLogUseCase,
+                        actionLogUseCase = pageViewModel.actionLogUseCase,
                         modifier = Modifier.weight(1f)
                     )
                 }
@@ -214,7 +215,7 @@ fun PageScreen(
                         focusedButtonIndex = focusedButtonIndex,
                         focusedRowIndex = focusedRowIndex,
                         isScanning = isScanning,
-                        isButtonVisible = { pageViewModel.featureGuard.isButtonVisible(it) },
+                        isButtonVisible = { pageViewModel.isButtonVisible(it) },
                         onButtonClick = { pageViewModel.activateButtonAtIndex(it) },
                         staticRowPage = staticRowPage
                     )
@@ -232,7 +233,7 @@ fun PageScreen(
                 ActionLogCard(
                     lastActions = lastActions,
                     onClearLogs = { pageViewModel.clearActionLogs() },
-                    actionLogUseCase = pageViewModel.interactionDelegate.actionLogUseCase
+                    actionLogUseCase = pageViewModel.actionLogUseCase
                 )
             }
         }

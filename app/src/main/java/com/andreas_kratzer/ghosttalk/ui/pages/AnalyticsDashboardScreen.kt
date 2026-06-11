@@ -62,6 +62,8 @@ internal data class PageUsage(val pageId: String, val name: String, val count: I
 @Composable
 fun AnalyticsDashboardScreen(
     pageViewModel: PageViewModel,
+    pageSplitViewModel: PageSplitViewModel = androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel(),
+    bookRestructureViewModel: BookRestructureViewModel = androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel(),
     onNavigateBack: () -> Unit,
     onEditPage: (String) -> Unit
 ) {
@@ -74,25 +76,25 @@ fun AnalyticsDashboardScreen(
     val recommendations by pageViewModel.shortcutRecommendations.collectAsState(emptyList())
     val isCalculatingRecommendations by pageViewModel.isCalculatingRecommendations.collectAsState()
     val userModeSessions by pageViewModel.userModeSessions.collectAsState(emptyList())
-    val layoutProposals by pageViewModel.layoutOptimizationProposals.collectAsState(emptyList())
-    val currentFilter by pageViewModel.currentProposalFilter.collectAsState()
-    val currentSort by pageViewModel.currentProposalSort.collectAsState()
+    val layoutProposals by pageSplitViewModel.layoutOptimizationProposals.collectAsState(emptyList())
+    val currentFilter by pageSplitViewModel.currentProposalFilter.collectAsState()
+    val currentSort by pageSplitViewModel.currentProposalSort.collectAsState()
 
     var selectedTabIndex by remember { mutableIntStateOf(0) }
 
-    val isGeminiEnabled = pageViewModel.settingsRepository.isGeminiEnabled
-    val aiProposal by pageViewModel.aiRestructureProposal.collectAsState()
-    val isAiLoading by pageViewModel.isAiRestructureLoading.collectAsState()
+    val isGeminiEnabled = pageViewModel.isGeminiEnabled
+    val aiProposal by bookRestructureViewModel.aiRestructureProposal.collectAsState()
+    val isAiLoading by bookRestructureViewModel.isAiRestructureLoading.collectAsState()
     val aiToastApplied = stringResource(R.string.analytics_ai_toast_applied)
-    val selectedPageIds by pageViewModel.selectedPageIds.collectAsState()
+    val selectedPageIds by bookRestructureViewModel.selectedPageIds.collectAsState()
     val activeTargetPageIds by pageViewModel.activeTargetPageIds.collectAsState()
-    val aiRestructureScope by pageViewModel.aiRestructureScope.collectAsState()
-    val aiRestructureError by pageViewModel.aiRestructureError.collectAsState()
+    val aiRestructureScope by bookRestructureViewModel.aiRestructureScope.collectAsState()
+    val aiRestructureError by bookRestructureViewModel.aiRestructureError.collectAsState()
 
-    val aiHierarchy by pageViewModel.aiHierarchyProposal.collectAsState()
-    val isAiHierarchyLoading by pageViewModel.isAiHierarchyLoading.collectAsState()
-    val aiPageLayouts by pageViewModel.aiPageLayoutProposals.collectAsState()
-    val isLoadingPageLayout by pageViewModel.isLoadingPageLayout.collectAsState()
+    val aiHierarchy by bookRestructureViewModel.aiHierarchyProposal.collectAsState()
+    val isAiHierarchyLoading by bookRestructureViewModel.isAiHierarchyLoading.collectAsState()
+    val aiPageLayouts by bookRestructureViewModel.aiPageLayoutProposals.collectAsState()
+    val isLoadingPageLayout by bookRestructureViewModel.isLoadingPageLayout.collectAsState()
 
     val statisticsTimeframeText = remember(historyEvents, userModeSessions, locale) {
         val minEvent = historyEvents.minOfOrNull { it.timestamp } ?: Long.MAX_VALUE
@@ -425,23 +427,23 @@ fun AnalyticsDashboardScreen(
                             onApplyShortcutRecommendation = { rec, onRes ->
                                 pageViewModel.applyShortcutRecommendation(rec, onRes)
                             },
-                            onSetProposalFilter = { pageViewModel.setProposalFilter(it) },
-                            onSetProposalSort = { pageViewModel.setProposalSort(it) },
-                            onGeneratePageSplitProposal = { pageViewModel.generatePageSplitProposal(it) },
-                            onChangePageScanPattern = { id, pat -> pageViewModel.changePageScanPattern(id, pat) },
-                            onChangeScanDelay = { pageViewModel.changeScanDelay(it) },
-                            onApplySpacerRelocate = { pageId, b1, b2 -> pageViewModel.applySpacerRelocate(pageId, b1, b2) },
-                            onSelectActivePagesOnly = { pageViewModel.selectActivePagesOnly() },
-                            onSelectAllPages = { pageViewModel.selectAllPages() },
-                            onTogglePageSelection = { pageViewModel.togglePageSelection(it) },
-                            onSetAiRestructureScope = { pageViewModel.setAiRestructureScope(it) },
-                            onClearAiRestructureError = { pageViewModel.clearAiRestructureError() },
-                            onClearAiRestructureProposal = { pageViewModel.clearAiRestructureProposal() },
-                            onGenerateAiHierarchyProposal = { pageViewModel.generateAiHierarchyProposal(it) },
-                            onUpdateHierarchyManualEdit = { pageViewModel.updateHierarchyManualEdit(it) },
-                            onLoadPageLayoutProposal = { pageViewModel.loadPageLayoutProposal(it) },
-                            onLoadAllPageLayoutProposals = { pageViewModel.loadAllPageLayoutProposals(it) },
-                            onApplyHierarchyProposal = { pageViewModel.applyHierarchyProposal(it) }
+                            onSetProposalFilter = { pageSplitViewModel.setProposalFilter(it) },
+                            onSetProposalSort = { pageSplitViewModel.setProposalSort(it) },
+                            onGeneratePageSplitProposal = { pageSplitViewModel.generatePageSplitProposal(it) },
+                            onChangePageScanPattern = { id, pat -> pageSplitViewModel.changePageScanPattern(id, pat) },
+                            onChangeScanDelay = { pageSplitViewModel.changeScanDelay(it) },
+                            onApplySpacerRelocate = { pageId, b1, b2 -> pageSplitViewModel.applySpacerRelocate(pageId, b1, b2) },
+                            onSelectActivePagesOnly = { bookRestructureViewModel.selectActivePagesOnly() },
+                            onSelectAllPages = { bookRestructureViewModel.selectAllPages() },
+                            onTogglePageSelection = { bookRestructureViewModel.togglePageSelection(it) },
+                            onSetAiRestructureScope = { bookRestructureViewModel.setAiRestructureScope(it) },
+                            onClearAiRestructureError = { bookRestructureViewModel.clearAiRestructureError() },
+                            onClearAiRestructureProposal = { bookRestructureViewModel.clearAiRestructureProposal() },
+                            onGenerateAiHierarchyProposal = { bookRestructureViewModel.generateAiHierarchyProposal(it) },
+                            onUpdateHierarchyManualEdit = { bookRestructureViewModel.updateHierarchyManualEdit(it) },
+                            onLoadPageLayoutProposal = { bookRestructureViewModel.loadPageLayoutProposal(it) },
+                            onLoadAllPageLayoutProposals = { bookRestructureViewModel.loadAllPageLayoutProposals(it) },
+                            onApplyHierarchyProposal = { bookRestructureViewModel.applyHierarchyProposal(it) }
                         )
                     }
                     2 -> {
