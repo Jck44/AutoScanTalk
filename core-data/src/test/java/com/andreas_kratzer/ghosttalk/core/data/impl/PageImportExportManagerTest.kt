@@ -77,6 +77,11 @@ class PageImportExportManagerTest {
         every { prefsEditor.putString(any(), any()) } returns prefsEditor
         every { buttonTemplateRepository.getTemplates() } returns kotlinx.coroutines.flow.flowOf(emptyList())
         every { context.filesDir } returns java.io.File(System.getProperty("java.io.tmpdir") ?: "/tmp")
+        // runInTransaction führt im echten Repo den Block aus; im Mock muss der Block
+        // ebenfalls ausgeführt werden, damit die Import-Logik (insertPage etc.) wirklich läuft.
+        coEvery { pageRepository.runInTransaction(any<suspend () -> Any?>()) } coAnswers {
+            firstArg<suspend () -> Any?>().invoke()
+        }
     }
 
     @Test
@@ -102,7 +107,7 @@ class PageImportExportManagerTest {
         val result = manager.importFromJson(jsonString, "test_book")
 
         assertTrue(result.isSuccess)
-        assertEquals(1, result.getOrNull())
+        assertEquals(1, result.getOrNull()?.pageCount)
         
         assertTrue(pageSlot.isCaptured)
         val page = pageSlot.captured
@@ -1274,6 +1279,56 @@ class PageImportExportManagerTest {
         assertEquals(1, staticRow.rows)
         assertEquals(4, staticRow.columns)
         assertEquals("linear", staticRow.scanPattern)
+    }
+
+    @Test
+    fun `importFromJson runs inside a transaction and fails atomically on insert error`() = runTest {
+        val jsonString = """
+            {
+                "pages": [
+                    { "importId": "p1", "name": "Page 1", "rows": 1, "columns": 1,
+                      "buttons": [ { "index": 0, "label": "B1", "active": true, "action": null } ] },
+                    { "importId": "p2", "name": "Page 2", "rows": 1, "columns": 1,
+                      "buttons": [ { "index": 0, "label": "B2", "active": true, "action": null } ] }
+                ]
+            }
+        """.trimIndent()
+
+        // Zweite Seite schlägt beim Insert fehl -> die gesamte Transaktion muss scheitern.
+        coEvery { pageRepository.insertPage(match { it.name == "Page 1" }) } returns Unit
+        coEvery { pageRepository.insertPage(match { it.name == "Page 2" }) } throws RuntimeException("DB voll")
+
+        val result = manager.importFromJson(jsonString, "book-atomic")
+
+        assertTrue("Import muss bei Insert-Fehler fehlschlagen", result.isFailure)
+        // Der schreibende Teil lief innerhalb von runInTransaction (Rollback garantiert Room in echt).
+        coVerify { pageRepository.runInTransaction(any<suspend () -> Any?>()) }
+    }
+
+    @Test
+    fun `importFromJson reports warning for unknown spokenTextMode but still succeeds`() = runTest {
+        val jsonString = """
+            {
+                "pages": [
+                    { "importId": "p1", "name": "WarnPage", "rows": 1, "columns": 1,
+                      "buttons": [
+                        { "index": 0, "label": "B1", "active": true, "spokenTextMode": "TOTALLY_INVALID",
+                          "action": { "type": "SpeakText", "textToSpeech": "Hi" } }
+                      ] }
+                ]
+            }
+        """.trimIndent()
+
+        coEvery { pageRepository.insertPage(any()) } returns Unit
+
+        val result = manager.importFromJson(jsonString, "book-warn")
+
+        assertTrue(result.isSuccess)
+        val importResult = result.getOrNull()
+        assertNotNull(importResult)
+        assertEquals(1, importResult!!.pageCount)
+        assertTrue("Es sollte eine Warnung zum spokenTextMode geben",
+            importResult.warnings.any { it.contains("spokenTextMode") })
     }
 
     @Test

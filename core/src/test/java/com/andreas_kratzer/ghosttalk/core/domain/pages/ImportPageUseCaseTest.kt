@@ -1,5 +1,6 @@
 package com.andreas_kratzer.ghosttalk.core.domain.pages
 
+import com.andreas_kratzer.ghosttalk.core.data.export.ImportResult
 import com.andreas_kratzer.ghosttalk.core.data.export.PageImportExportProvider
 import io.mockk.coEvery
 import io.mockk.mockk
@@ -24,7 +25,7 @@ class ImportPageUseCaseTest {
     fun `execute returns Success when manager succeeds`() = runTest {
         val json = "{\"test\": \"data\"}"
         val bookId = "book1"
-        coEvery { importExportManager.importFromJson(json, bookId, any(), any()) } returns Result.success(5)
+        coEvery { importExportManager.importFromJson(json, bookId, any(), any()) } returns Result.success(ImportResult(5))
 
         val result = useCase.execute(json, bookId)
 

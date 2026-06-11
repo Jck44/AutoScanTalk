@@ -4,6 +4,7 @@ import android.content.Context
 import android.util.Log
 import com.andreas_kratzer.ghosttalk.core.data.BookRepository
 import com.andreas_kratzer.ghosttalk.core.data.SyncLogProvider
+import com.andreas_kratzer.ghosttalk.core.data.export.ImportResult
 import com.andreas_kratzer.ghosttalk.core.data.impl.PageImportExportManager
 import com.andreas_kratzer.ghosttalk.core.model.Book
 import com.andreas_kratzer.ghosttalk.core.util.Logger
@@ -75,7 +76,7 @@ class BookMergeServiceTest {
 
         val localJson = "{\"bookUpdatedAt\":1000,\"versionSequence\":1,\"pages\":[]}"
         coEvery { mockImportExportManager.exportBookToJson(bookId) } returns localJson
-        coEvery { mockImportExportManager.importFromJson(any(), any(), any()) } returns Result.success(1)
+        coEvery { mockImportExportManager.importFromJson(any(), any(), any()) } returns Result.success(ImportResult(1))
 
         val remoteMasterFile = RemoteSyncFile(
             id = "master_1",

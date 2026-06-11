@@ -5,6 +5,7 @@ import android.content.Context
 import android.util.Log
 import com.andreas_kratzer.ghosttalk.core.data.BookRepository
 import com.andreas_kratzer.ghosttalk.core.data.SyncLogProvider
+import com.andreas_kratzer.ghosttalk.core.data.export.ImportResult
 import com.andreas_kratzer.ghosttalk.core.data.impl.PageImportExportManager
 import com.andreas_kratzer.ghosttalk.core.model.Book
 import com.andreas_kratzer.ghosttalk.core.util.Logger
@@ -294,7 +295,7 @@ class CloudSyncUseCaseTest {
         coEvery { mockBookRepository.getBookById(bookId) } returns mockBook
 
         coEvery { mockImportExportManager.exportBookToJson(bookId) } returns "{\"versionSequence\": 1, \"bookUpdatedAt\": $now}"
-        coEvery { mockImportExportManager.importFromJson(any(), any(), any()) } returns Result.success(5)
+        coEvery { mockImportExportManager.importFromJson(any(), any(), any()) } returns Result.success(ImportResult(5))
 
         useCase.syncBook(mockDrive, bookId, SyncMode.TWO_WAY)
         advanceUntilIdle()
@@ -662,7 +663,7 @@ class CloudSyncUseCaseTest {
         }
 
         // Import mock
-        coEvery { mockImportExportManager.importFromJson(any(), any(), any()) } returns Result.success(1)
+        coEvery { mockImportExportManager.importFromJson(any(), any(), any()) } returns Result.success(ImportResult(1))
 
         val result = useCase.syncBook(mockDrive, bookId, SyncMode.TWO_WAY)
         advanceUntilIdle()

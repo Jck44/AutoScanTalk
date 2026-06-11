@@ -12,6 +12,8 @@ class ImportPageUseCase @Inject constructor(
         regenerateIds: Boolean? = true,
         restoreSyncSettings: Boolean = true
     ): Result<Int> {
-        return importExportManager.importFromJson(jsonString, bookId, regenerateIds ?: true, restoreSyncSettings)
+        return importExportManager
+            .importFromJson(jsonString, bookId, regenerateIds ?: true, restoreSyncSettings)
+            .map { it.pageCount }
     }
 }

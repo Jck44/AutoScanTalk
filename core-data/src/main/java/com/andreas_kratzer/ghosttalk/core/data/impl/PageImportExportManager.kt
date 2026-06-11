@@ -8,6 +8,7 @@ import com.andreas_kratzer.ghosttalk.core.data.PageRepository
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.core.data.UserModeSessionRepository
 import com.andreas_kratzer.ghosttalk.core.data.VocalProfileRepository
+import com.andreas_kratzer.ghosttalk.core.data.export.ImportResult
 import com.andreas_kratzer.ghosttalk.core.data.export.PageImportExportProvider
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsMapper
@@ -214,11 +215,18 @@ class PageImportExportManager @Inject constructor(
         bookId: String,
         regenerateIds: Boolean,
         restoreSyncSettings: Boolean
-    ): Result<Int> = withContext(Dispatchers.IO) {
+    ): Result<ImportResult> = withContext(Dispatchers.IO) {
         try {
+            // Parsen bewusst VOR der Transaktion: Bei kaputtem JSON wird die DB nicht angefasst.
             val importData = this@PageImportExportManager.json.decodeFromString<ImportExportData>(json)
             logger.d(TAG, "Importing JSON for book $bookId: defaultStartPageId='${importData.defaultStartPageId}', bookName='${importData.bookName}'")
 
+            val warnings = mutableListOf<String>()
+
+            // Der gesamte schreibende Import läuft in EINER Transaktion: Schlägt irgendein
+            // Schritt fehl, wird alles zurückgerollt. Das verhindert "Partial Imports"
+            // (z. B. gelöschte Seiten ohne neu eingespielte) und damit Datenverlust.
+            pageRepository.runInTransaction {
             // 1. Clean state: Delete existing pages for this book before importing
             // This ensures that the restored book exactly matches the backup
             pageRepository.deletePagesForBook(bookId)
@@ -334,6 +342,7 @@ class PageImportExportManager @Inject constructor(
                         try {
                             com.andreas_kratzer.ghosttalk.core.model.SpokenTextMode.valueOf(modeString)
                         } catch (_: IllegalArgumentException) {
+                            warnings.add("Unbekannter spokenTextMode '$modeString' auf Seite '${importPage.name}' – Fallback auf TTS.")
                             com.andreas_kratzer.ghosttalk.core.model.SpokenTextMode.TTS
                         }
                     } else {
@@ -410,6 +419,7 @@ class PageImportExportManager @Inject constructor(
                             try {
                                 com.andreas_kratzer.ghosttalk.core.model.SpokenTextMode.valueOf(modeString)
                             } catch (_: IllegalArgumentException) {
+                                warnings.add("Unbekannter spokenTextMode '$modeString' in Vorlage '${importTemplate.name}' – Fallback auf TTS.")
                                 com.andreas_kratzer.ghosttalk.core.model.SpokenTextMode.TTS
                             }
                         } else {
@@ -462,12 +472,16 @@ class PageImportExportManager @Inject constructor(
             
             // Sanitize imported layout by purging any INSTALL_UPDATE actions
             pageRepository.purgeInstallUpdateButtons()
-            
-            // 4. Force refresh of settings flows to ensure UI is updated
+            } // Ende der Transaktion (Commit erst hier; bei Exception oben: Rollback)
+
+            // 4. Force refresh of settings flows to ensure UI is updated (nach Commit)
             settingsRepository.refresh()
             logger.d(TAG, "Triggered settingsRepository.refresh() after import.")
 
-            Result.success(importData.pages.size)
+            if (warnings.isNotEmpty()) {
+                logger.w(TAG, "Import für Buch $bookId abgeschlossen mit ${warnings.size} Warnung(en): $warnings")
+            }
+            Result.success(ImportResult(pageCount = importData.pages.size, warnings = warnings))
         } catch (e: Exception) {
             Result.failure(e)
         }
@@ -647,7 +661,7 @@ class PageImportExportManager @Inject constructor(
             }
 
             onProgress(1.0f, "Import complete.")
-            result
+            result.map { it.pageCount }
         } catch (e: Exception) {
             Result.failure(e)
         }

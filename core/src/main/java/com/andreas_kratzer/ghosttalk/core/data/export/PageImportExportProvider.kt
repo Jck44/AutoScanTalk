@@ -2,6 +2,19 @@ package com.andreas_kratzer.ghosttalk.core.data.export
 
 import com.andreas_kratzer.ghosttalk.core.model.Page
 
+/**
+ * Ergebnis eines JSON-Imports.
+ *
+ * @param pageCount Anzahl der importierten Seiten.
+ * @param warnings Nicht-fatale Auffälligkeiten, die früher still verschluckt wurden
+ *  (z. B. ein unbekannter SpokenTextMode, der auf den Default zurückfällt). Harte Fehler
+ *  führen weiterhin zu einem [Result.failure] mit Rollback der gesamten Transaktion.
+ */
+data class ImportResult(
+    val pageCount: Int,
+    val warnings: List<String> = emptyList()
+)
+
 interface PageImportExportProvider {
     suspend fun exportPageListToJson(pages: List<Page>): String
     suspend fun exportBookToJson(bookId: String, includeSettings: Boolean = true): String
@@ -13,7 +26,7 @@ interface PageImportExportProvider {
         bookId: String,
         regenerateIds: Boolean = false,
         restoreSyncSettings: Boolean = false
-    ): Result<Int>
+    ): Result<ImportResult>
     suspend fun exportBookToZip(
         bookId: String, 
         outputStream: java.io.OutputStream,

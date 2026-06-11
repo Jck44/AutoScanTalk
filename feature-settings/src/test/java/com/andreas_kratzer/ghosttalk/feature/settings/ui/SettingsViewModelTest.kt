@@ -9,6 +9,7 @@ import com.andreas_kratzer.ghosttalk.core.data.ButtonUsageRepository
 import com.andreas_kratzer.ghosttalk.core.data.GetPagesUseCase
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.core.data.UserModeSessionRepository
+import com.andreas_kratzer.ghosttalk.core.data.export.ImportResult
 import com.andreas_kratzer.ghosttalk.core.data.impl.PageImportExportManager
 import com.andreas_kratzer.ghosttalk.feature.settings.domain.DeleteBookUseCase
 import com.andreas_kratzer.ghosttalk.feature.settings.domain.UpdateActionLogLimitUseCase
@@ -225,7 +226,7 @@ class SettingsViewModelTest {
     fun `importLocalBackup calls manager if bookId matches`() = runTest {
         val json = "{\"bookId\":\"test-book\"}"
         coEvery { importExportManager.extractBookIdFromJson(json) } returns "test-book"
-        coEvery { importExportManager.importFromJson(any(), any(), any(), any()) } returns Result.success(5)
+        coEvery { importExportManager.importFromJson(any(), any(), any(), any()) } returns Result.success(ImportResult(5))
         
         var successCalled = false
         viewModel.importLocalBackup(json, onSuccess = { successCalled = true }, onError = {})

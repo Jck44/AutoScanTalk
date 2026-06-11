@@ -68,6 +68,10 @@ class SettingsRoundTripTest {
         coEvery { pageRepository.getPagesForBook(any()) } returns emptyList()
         coEvery { bookRepository.updateBook(any()) } returns Unit
         coEvery { pageRepository.deletePagesForBook(any()) } returns Unit
+        // Import läuft jetzt in pageRepository.runInTransaction { } -> Block im Mock ausführen.
+        coEvery { pageRepository.runInTransaction(any<suspend () -> Any?>()) } coAnswers {
+            firstArg<suspend () -> Any?>().invoke()
+        }
 
         // 1. Setup mock with distinct values
         val testValues = mutableMapOf<String, Any>()
