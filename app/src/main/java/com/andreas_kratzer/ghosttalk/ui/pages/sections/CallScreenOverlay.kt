@@ -48,13 +48,18 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
+import com.andreas_kratzer.ghosttalk.core.ui.theme.CallAcceptLight
+import com.andreas_kratzer.ghosttalk.core.ui.theme.CallAcceptDark
+import com.andreas_kratzer.ghosttalk.core.ui.theme.CallAcceptContainerLight
+import com.andreas_kratzer.ghosttalk.core.ui.theme.CallAcceptContainerDark
 import java.util.Locale
 
 // Colors for call buttons
-private val AnswerGreenLight = Color(0xFF2E7D32)
-private val AnswerGreenDark = Color(0xFF81C784)
-private val AnswerGreenContainerLight = Color(0xFFE8F5E9)
-private val AnswerGreenContainerDark = Color(0xFF1B5E20)
+private val AnswerGreenLight = CallAcceptLight
+private val AnswerGreenDark = CallAcceptDark
+private val AnswerGreenContainerLight = CallAcceptContainerLight
+private val AnswerGreenContainerDark = CallAcceptContainerDark
+
 
 /**
  * Full-screen overlay displayed when an incoming call is ringing.

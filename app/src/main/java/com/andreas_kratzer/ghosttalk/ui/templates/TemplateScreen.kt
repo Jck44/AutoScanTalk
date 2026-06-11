@@ -26,6 +26,7 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -55,6 +56,8 @@ import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
 import kotlinx.coroutines.launch
 import com.andreas_kratzer.ghosttalk.core.ui.R as CoreR
 
+import com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkScaffold
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TemplateScreen(
@@ -71,57 +74,49 @@ fun TemplateScreen(
         onNavigateBack()
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text(stringResource(CoreR.string.template_manage_title)) },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(CoreR.string.back_button_content_description))
+    GhostTalkScaffold(
+        title = stringResource(CoreR.string.template_manage_title),
+        onNavigateBack = onNavigateBack,
+        actions = {
+            var showSortMenu by remember { mutableStateOf(false) }
+            val templateSortOrder by templateViewModel.settingsRepository.templateSortOrderFlow.collectAsState("MANUAL")
+            
+            IconButton(onClick = { showSortMenu = true }) {
+                Icon(GhostTalkIcons.Sort, contentDescription = "Sortieren")
+            }
+            DropdownMenu(expanded = showSortMenu, onDismissRequest = { showSortMenu = false }) {
+                SortOrder.entries.filter { it != SortOrder.MANUAL }.forEach { order ->
+                    val label = when(order) {
+                        SortOrder.MANUAL -> "Manuell"
+                        SortOrder.NEWEST -> "Neueste zuerst"
+                        SortOrder.OLDEST -> "Älteste zuerst"
+                        SortOrder.A_Z -> "A -> Z"
+                        SortOrder.Z_A -> "Z -> A"
+                        SortOrder.ACTIVE_FIRST -> stringResource(R.string.sort_active_first)
+                        SortOrder.INACTIVE_FIRST -> stringResource(R.string.sort_inactive_first)
                     }
-                },
-                actions = {
-                    var showSortMenu by remember { mutableStateOf(false) }
-                    val templateSortOrder by templateViewModel.settingsRepository.templateSortOrderFlow.collectAsState("MANUAL")
-                    
-                    IconButton(onClick = { showSortMenu = true }) {
-                        Icon(GhostTalkIcons.Sort, contentDescription = "Sortieren")
-                    }
-                    DropdownMenu(expanded = showSortMenu, onDismissRequest = { showSortMenu = false }) {
-                        SortOrder.entries.filter { it != SortOrder.MANUAL }.forEach { order ->
-                            val label = when(order) {
-                                SortOrder.MANUAL -> "Manuell"
-                                SortOrder.NEWEST -> "Neueste zuerst"
-                                SortOrder.OLDEST -> "Älteste zuerst"
-                                SortOrder.A_Z -> "A -> Z"
-                                SortOrder.Z_A -> "Z -> A"
-                                SortOrder.ACTIVE_FIRST -> stringResource(R.string.sort_active_first)
-                                SortOrder.INACTIVE_FIRST -> stringResource(R.string.sort_inactive_first)
+                    DropdownMenuItem(
+                        text = { Text(label) },
+                        onClick = {
+                            templateViewModel.settingsRepository.templateSortOrder = order.name
+                            showSortMenu = false
+                        },
+                        trailingIcon = {
+                            if (templateSortOrder == order.name) {
+                                Icon(Icons.Default.Check, contentDescription = null)
                             }
-                            DropdownMenuItem(
-                                text = { Text(label) },
-                                onClick = {
-                                    templateViewModel.settingsRepository.templateSortOrder = order.name
-                                    showSortMenu = false
-                                },
-                                trailingIcon = {
-                                    if (templateSortOrder == order.name) {
-                                        Icon(Icons.Default.Check, contentDescription = null)
-                                    }
-                                }
-                            )
                         }
-                    }
+                    )
                 }
-            )
+            }
         },
         floatingActionButton = {
-            FloatingActionButton(
+            ExtendedFloatingActionButton(
                 onClick = { if (!showAddDialog) showAddDialog = true },
-                shape = MaterialTheme.shapes.large
-            ) {
-                Icon(Icons.Default.Add, contentDescription = stringResource(R.string.template_create_new))
-            }
+                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                icon = { Icon(Icons.Default.Add, contentDescription = null) },
+                text = { Text(stringResource(R.string.fab_new_template)) }
+            )
         }
     ) { innerPadding ->
         BoxWithConstraints(
@@ -152,22 +147,31 @@ fun TemplateScreen(
                     shape = MaterialTheme.shapes.large,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = dimensions.paddingLarge, vertical = dimensions.paddingMedium),
+                        .padding(horizontal = dimensions.screenPaddingHorizontal, vertical = dimensions.paddingMedium),
                     singleLine = true
                 )
 
-                LazyVerticalGrid(
-                    columns = GridCells.Adaptive(minSize = 300.dp),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f)
-                        .padding(horizontal = dimensions.paddingLarge),
-                    verticalArrangement = Arrangement.spacedBy(dimensions.gridSpacing),
-                    horizontalArrangement = Arrangement.spacedBy(dimensions.gridSpacing),
-                    contentPadding = PaddingValues(vertical = dimensions.paddingMedium)
-                ) {
-                    items(templates.size, key = { index -> templates[index].id }) { index ->
-                        val template = templates[index]
+                if (templates.isEmpty()) {
+                    com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkEmptyState(
+                        icon = com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons.GridView,
+                        title = "Keine Vorlagen",
+                        description = "Erstelle eine neue Vorlage, um ein konsistentes Raster für Seiten festzulegen.",
+                        actionLabel = "Vorlage erstellen",
+                        onAction = { if (!showAddDialog) showAddDialog = true }
+                    )
+                } else {
+                    LazyVerticalGrid(
+                        columns = GridCells.Adaptive(minSize = 300.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f)
+                            .padding(horizontal = dimensions.screenPaddingHorizontal),
+                        verticalArrangement = Arrangement.spacedBy(dimensions.gridSpacing),
+                        horizontalArrangement = Arrangement.spacedBy(dimensions.gridSpacing),
+                        contentPadding = PaddingValues(vertical = dimensions.paddingMedium)
+                    ) {
+                        items(templates.size, key = { index -> templates[index].id }) { index ->
+                            val template = templates[index]
                         GhostTalkCard(
                             title = template.name,
                             subtitle = "Raster: ${template.rows}x${template.columns} " + if (template.isBuiltIn) "(${stringResource(R.string.template_built_in_label)})" else "(${stringResource(R.string.template_custom_label)})",
@@ -228,87 +232,57 @@ fun TemplateScreen(
                         )
                     }
                 }
+            }
 
                 var usagesToDelete by remember { mutableStateOf<List<UsageLocation>>(emptyList()) }
                 val coroutineScope = rememberCoroutineScope()
 
                 templateToDelete?.let { template ->
                     if (usagesToDelete.isEmpty()) {
-                        AlertDialog(
-                            onDismissRequest = { templateToDelete = null },
-                            title = { Text(stringResource(R.string.template_delete_title)) },
-                            text = { Text(stringResource(R.string.template_delete_confirm, template.name)) },
-                            confirmButton = {
-                                Button(
-                                    onClick = {
-                                        coroutineScope.launch {
-                                            val usages = templateViewModel.getTemplateUsages(template.id)
-                                            if (usages.isNotEmpty()) {
-                                                usagesToDelete = usages
-                                            } else {
-                                                templateViewModel.deleteTemplate(template)
-                                                templateToDelete = null
-                                            }
-                                        }
-                                    },
-                                    shape = MaterialTheme.shapes.medium,
-                                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
-                                ) {
-                                    Text("Löschen")
+                        com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkDialog(
+                            title = stringResource(R.string.template_delete_title),
+                            onDismiss = { templateToDelete = null },
+                            confirmText = "Löschen",
+                            onConfirm = {
+                                coroutineScope.launch {
+                                    val usages = templateViewModel.getTemplateUsages(template.id)
+                                    if (usages.isNotEmpty()) {
+                                        usagesToDelete = usages
+                                    } else {
+                                        templateViewModel.deleteTemplate(template)
+                                        templateToDelete = null
+                                    }
                                 }
                             },
-                            dismissButton = {
-                                Button(
-                                    onClick = { templateToDelete = null },
-                                    shape = MaterialTheme.shapes.medium,
-                                    colors = ButtonDefaults.textButtonColors()
-                                ) {
-                                    Text("Abbrechen")
-                                }
-                            }
-                        )
+                            dismissText = stringResource(CoreR.string.action_cancel),
+                            isDestructive = true
+                        ) {
+                            Text(stringResource(R.string.template_delete_confirm, template.name))
+                        }
                     } else {
-                        AlertDialog(
-                            onDismissRequest = { 
+                        com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkDialog(
+                            title = stringResource(R.string.template_dialog_in_use_title),
+                            onDismiss = { 
                                 templateToDelete = null
                                 usagesToDelete = emptyList()
                             },
-                            title = { Text("Vorlage wird verwendet") },
-                            text = { 
-                                Column {
-                                    Text("Die Vorlage \"${template.name}\" wurde zur Erstellung folgender Seiten verwendet:")
-                                    for (usage in usagesToDelete) {
-                                        Text("• Seite: ${usage.name}", modifier = Modifier.padding(start = 8.dp, top = 4.dp))
-                                    }
-                                    Text("\nBeim Löschen der Vorlage wird die Verknüpfung in diesen Seiten aufgehoben.", style = MaterialTheme.typography.bodySmall)
-                                }
+                            confirmText = stringResource(R.string.template_dialog_delete_anyway),
+                            onConfirm = {
+                                templateViewModel.deleteTemplate(template, clearUsages = true)
+                                templateToDelete = null
+                                usagesToDelete = emptyList()
                             },
-                            confirmButton = {
-                                Button(
-                                    onClick = {
-                                        templateViewModel.deleteTemplate(template, clearUsages = true)
-                                        templateToDelete = null
-                                        usagesToDelete = emptyList()
-                                    },
-                                    shape = MaterialTheme.shapes.medium,
-                                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
-                                ) {
-                                    Text("Trotzdem Löschen")
+                            dismissText = stringResource(CoreR.string.action_cancel),
+                            isDestructive = true
+                        ) { 
+                            Column {
+                                Text(stringResource(R.string.template_dialog_in_use_message, template.name))
+                                for (usage in usagesToDelete) {
+                                    Text(stringResource(R.string.template_dialog_usage_page_item, usage.name), modifier = Modifier.padding(start = 8.dp, top = 4.dp))
                                 }
-                            },
-                            dismissButton = {
-                                Button(
-                                    onClick = { 
-                                        templateToDelete = null
-                                        usagesToDelete = emptyList()
-                                    },
-                                    shape = MaterialTheme.shapes.medium,
-                                    colors = ButtonDefaults.textButtonColors()
-                                ) {
-                                    Text(stringResource(CoreR.string.action_cancel))
-                                }
+                                Text(stringResource(R.string.template_dialog_delete_warning), style = MaterialTheme.typography.bodySmall)
                             }
-                        )
+                        }
                     }
                 }
 
@@ -360,7 +334,7 @@ fun AddTemplateDialog(
                 shape = MaterialTheme.shapes.medium,
                 enabled = name.isNotBlank()
             ) {
-                Text("Erstellen")
+                Text(stringResource(CoreR.string.action_create))
             }
         },
         dismissButton = {
@@ -369,7 +343,7 @@ fun AddTemplateDialog(
                 shape = MaterialTheme.shapes.medium,
                 colors = ButtonDefaults.textButtonColors()
             ) {
-                Text("Abbrechen")
+                Text(stringResource(CoreR.string.action_cancel))
             }
         }
     )

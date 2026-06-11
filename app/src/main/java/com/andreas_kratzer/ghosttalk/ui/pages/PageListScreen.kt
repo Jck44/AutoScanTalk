@@ -34,6 +34,7 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -68,6 +69,8 @@ import kotlinx.coroutines.launch
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import com.andreas_kratzer.ghosttalk.core.ui.R as CoreR
+
+import com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkScaffold
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -190,173 +193,142 @@ fun PageListScreen(
     val page = pageToDelete.value
     if (page != null) {
         val usages = usagesToDelete.value
-        AlertDialog(
-            onDismissRequest = { 
+        com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkDialog(
+            title = if (usages.isEmpty()) stringResource(R.string.page_dialog_delete_title) else stringResource(R.string.page_dialog_in_use_title),
+            onDismiss = { 
                 pageToDelete.value = null
                 usagesToDelete.value = emptyList()
             },
-            title = { Text(if (usages.isEmpty()) stringResource(R.string.page_dialog_delete_title) else "Seite wird verwendet") },
-            text = { 
-                Column {
-                    if (usages.isEmpty()) {
-                        Text(stringResource(R.string.page_dialog_delete_confirm, page.name))
-                    } else {
-                        Text("Die Seite \"${page.name}\" wird an folgenden Stellen zur Navigation verwendet:")
-                        
-                        val scrollState = rememberScrollState()
-                        Box(
-                            modifier = Modifier
-                                .padding(vertical = 8.dp)
-                                .heightIn(max = 280.dp)
-                                .verticalScroll(scrollState)
-                        ) {
-                            Column {
-                                for (usage in usages) {
-                                    Row(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(vertical = 4.dp),
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.SpaceBetween
-                                    ) {
-                                        val typePrefix = if (usage is UsageLocation.PageUsage) "Seite" else "Vorlage"
-                                        Column(modifier = Modifier.weight(1f)) {
-                                            Text("• $typePrefix: ${usage.name}", style = MaterialTheme.typography.bodyMedium)
-                                            if (usage.buttonLabel.isNotEmpty()) {
-                                                Text(
-                                                    text = "  Button: \"${usage.buttonLabel}\"",
-                                                    style = MaterialTheme.typography.bodySmall,
-                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                                )
-                                            }
-                                        }
-                                        IconButton(
-                                            onClick = {
-                                                pageToDelete.value = null
-                                                usagesToDelete.value = emptyList()
-                                                if (usage is UsageLocation.PageUsage) {
-                                                    onEditPage(usage.id)
-                                                } else {
-                                                    onEditTemplate(usage.id)
-                                                }
-                                            }
-                                        ) {
-                                            Icon(
-                                                imageVector = GhostTalkIcons.ArrowForward,
-                                                contentDescription = "Navigieren"
-                                            )
+            confirmText = if (usages.isEmpty()) stringResource(CoreR.string.action_delete) else stringResource(R.string.page_dialog_delete_all),
+            onConfirm = {
+                pageViewModel.deletePage(page, deleteUsages = usages.isNotEmpty())
+                pageToDelete.value = null
+                usagesToDelete.value = emptyList()
+            },
+            dismissText = stringResource(CoreR.string.action_cancel),
+            isDestructive = true
+        ) { 
+            if (usages.isEmpty()) {
+                Text(stringResource(R.string.page_dialog_delete_confirm, page.name))
+            } else {
+                Text(stringResource(R.string.page_dialog_in_use_message, page.name))
+                
+                val scrollState = rememberScrollState()
+                Box(
+                    modifier = Modifier
+                        .padding(vertical = 8.dp)
+                        .heightIn(max = 280.dp)
+                        .verticalScroll(scrollState)
+                ) {
+                    Column {
+                        for (usage in usages) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 4.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                val typePrefix = if (usage is UsageLocation.PageUsage) stringResource(R.string.common_page) else stringResource(R.string.common_template)
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(stringResource(R.string.page_dialog_usage_item, typePrefix, usage.name), style = MaterialTheme.typography.bodyMedium)
+                                    if (usage.buttonLabel.isNotEmpty()) {
+                                        Text(
+                                            text = stringResource(R.string.page_dialog_usage_button_label, usage.buttonLabel),
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                }
+                                IconButton(
+                                    onClick = {
+                                        pageToDelete.value = null
+                                        usagesToDelete.value = emptyList()
+                                        if (usage is UsageLocation.PageUsage) {
+                                            onEditPage(usage.id)
+                                        } else {
+                                            onEditTemplate(usage.id)
                                         }
                                     }
+                                ) {
+                                    Icon(
+                                        imageVector = GhostTalkIcons.ArrowForward,
+                                        contentDescription = stringResource(R.string.action_navigate)
+                                    )
                                 }
                             }
                         }
-                        
-                        Text("Beim Löschen werden auch alle Buttons entfernt, die auf diese Seite verweisen.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
                     }
                 }
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        pageViewModel.deletePage(page, deleteUsages = usages.isNotEmpty())
-                        pageToDelete.value = null
-                        usagesToDelete.value = emptyList()
-                    },
-                    shape = MaterialTheme.shapes.medium,
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
-                ) {
-                    Text(if (usages.isEmpty()) stringResource(CoreR.string.action_delete) else "Alles Löschen")
-                }
-            },
-            dismissButton = {
-                Button(
-                    onClick = { 
-                        pageToDelete.value = null
-                        usagesToDelete.value = emptyList()
-                    },
-                    shape = MaterialTheme.shapes.medium,
-                    colors = ButtonDefaults.textButtonColors()
-                ) {
-                    Text(stringResource(CoreR.string.action_cancel))
-                }
+                
+                Text(stringResource(R.string.page_dialog_delete_warning), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
             }
-        )
+        }
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text(stringResource(CoreR.string.page_list_title)) },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(CoreR.string.back_button_content_description)
-                        )
+    GhostTalkScaffold(
+        title = stringResource(CoreR.string.page_list_title),
+        onNavigateBack = onNavigateBack,
+        actions = {
+            val isLandscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
+            
+            var showSortMenu by remember { mutableStateOf(false) }
+            val pageSortOrder by pageViewModel.pageSortOrderFlow.collectAsState("MANUAL")
+            
+            IconButton(onClick = { showSortMenu = true }) {
+                Icon(
+                    imageVector = GhostTalkIcons.Sort,
+                    contentDescription = stringResource(R.string.action_sort)
+                )
+            }
+            DropdownMenu(expanded = showSortMenu, onDismissRequest = { showSortMenu = false }) {
+                SortOrder.entries.filter { it != SortOrder.MANUAL }.forEach { order ->
+                    val label = when(order) {
+                        SortOrder.MANUAL -> stringResource(R.string.sort_manual)
+                        SortOrder.NEWEST -> stringResource(R.string.sort_newest)
+                        SortOrder.OLDEST -> stringResource(R.string.sort_oldest)
+                        SortOrder.A_Z -> stringResource(R.string.sort_a_z)
+                        SortOrder.Z_A -> stringResource(R.string.sort_z_a)
+                        SortOrder.ACTIVE_FIRST -> stringResource(R.string.sort_active_first)
+                        SortOrder.INACTIVE_FIRST -> stringResource(R.string.sort_inactive_first)
                     }
-                },
-                actions = {
-                    val isLandscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
-                    
-                    var showSortMenu by remember { mutableStateOf(false) }
-                    val pageSortOrder by pageViewModel.pageSortOrderFlow.collectAsState("MANUAL")
-                    
-                    IconButton(onClick = { showSortMenu = true }) {
-                        Icon(
-                            imageVector = GhostTalkIcons.Sort,
-                            contentDescription = "Sortieren"
-                        )
-                    }
-                    DropdownMenu(expanded = showSortMenu, onDismissRequest = { showSortMenu = false }) {
-                        SortOrder.entries.filter { it != SortOrder.MANUAL }.forEach { order ->
-                            val label = when(order) {
-                                SortOrder.MANUAL -> "Manuell"
-                                SortOrder.NEWEST -> "Neueste zuerst"
-                                SortOrder.OLDEST -> "Älteste zuerst"
-                                SortOrder.A_Z -> "A -> Z"
-                                SortOrder.Z_A -> "Z -> A"
-                                SortOrder.ACTIVE_FIRST -> stringResource(R.string.sort_active_first)
-                                SortOrder.INACTIVE_FIRST -> stringResource(R.string.sort_inactive_first)
+                    DropdownMenuItem(
+                        text = { Text(label) },
+                        onClick = {
+                            pageViewModel.pageSortOrder = order.name
+                            showSortMenu = false
+                        },
+                        trailingIcon = {
+                            if (pageSortOrder == order.name) {
+                                Icon(Icons.Default.Check, contentDescription = null)
                             }
-                            DropdownMenuItem(
-                                text = { Text(label) },
-                                onClick = {
-                                    pageViewModel.pageSortOrder = order.name
-                                    showSortMenu = false
-                                },
-                                trailingIcon = {
-                                    if (pageSortOrder == order.name) {
-                                        Icon(Icons.Default.Check, contentDescription = null)
-                                    }
-                                }
-                            )
                         }
-                    }
-
-                    if (isLandscape) {
-                        Button(onClick = { importLauncher.launch("application/json") }) {
-                            Text(stringResource(R.string.action_import_json_migration))
-                        }
-                    } else {
-                        var showMenu by remember { mutableStateOf(false) }
-                        IconButton(onClick = { showMenu = true }) {
-                            Icon(Icons.Default.Add, contentDescription = stringResource(R.string.action_more))
-                        }
-                        DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
-                            DropdownMenuItem(text = { Text(stringResource(R.string.action_import_json_migration)) }, onClick = { showMenu = false; importLauncher.launch("application/json") })
-                        }
-                    }
+                    )
                 }
-            )
+            }
+
+            if (isLandscape) {
+                Button(onClick = { importLauncher.launch("application/json") }) {
+                    Text(stringResource(R.string.action_import_json_migration))
+                }
+            } else {
+                var showMenu by remember { mutableStateOf(false) }
+                IconButton(onClick = { showMenu = true }) {
+                    Icon(Icons.Default.Add, contentDescription = stringResource(R.string.action_more))
+                }
+                DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
+                    DropdownMenuItem(text = { Text(stringResource(R.string.action_import_json_migration)) }, onClick = { showMenu = false; importLauncher.launch("application/json") })
+                }
+            }
         },
         floatingActionButton = {
-            FloatingActionButton(
+            ExtendedFloatingActionButton(
                 onClick = { if (!showAddDialog) showAddDialog = true },
-                shape = MaterialTheme.shapes.large,
-                modifier = Modifier.testTag("page_add_fab")
-            ) {
-                Icon(Icons.Default.Add, contentDescription = stringResource(R.string.page_add_description))
-            }
+                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                modifier = Modifier.testTag("page_add_fab"),
+                icon = { Icon(Icons.Default.Add, contentDescription = null) },
+                text = { Text(stringResource(R.string.fab_new_page)) }
+            )
         }
     ) { paddingValues ->
         BoxWithConstraints(
@@ -387,25 +359,34 @@ fun PageListScreen(
                 shape = MaterialTheme.shapes.large,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = dimensions.paddingLarge, vertical = dimensions.paddingMedium),
+                    .padding(horizontal = dimensions.screenPaddingHorizontal, vertical = dimensions.paddingMedium),
                 singleLine = true
             )
 
-            LazyVerticalGrid(
-                state = gridState,
-                columns = GridCells.Adaptive(minSize = 300.dp),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f)
-                    .padding(horizontal = dimensions.paddingLarge),
-                verticalArrangement = Arrangement.spacedBy(dimensions.gridSpacing),
-                horizontalArrangement = Arrangement.spacedBy(dimensions.gridSpacing),
-                contentPadding = PaddingValues(vertical = dimensions.paddingMedium)
-            ) {
-                items(allPages.size, key = { index -> allPages[index].id }) { index ->
-                    val page = allPages[index]
-                    val isReferenced = activeTargetPageIds.contains(page.id) || page.id.startsWith("static_row_")
-                    GhostTalkCard(
+            if (allPages.isEmpty()) {
+                com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkEmptyState(
+                    icon = com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons.Description,
+                    title = "Keine Seiten",
+                    description = "Erstelle eine neue Seite, um Knöpfe und Aktionen zu definieren.",
+                    actionLabel = "Seite erstellen",
+                    onAction = { if (!showAddDialog) showAddDialog = true }
+                )
+            } else {
+                LazyVerticalGrid(
+                    state = gridState,
+                    columns = GridCells.Adaptive(minSize = 300.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f)
+                        .padding(horizontal = dimensions.screenPaddingHorizontal),
+                    verticalArrangement = Arrangement.spacedBy(dimensions.gridSpacing),
+                    horizontalArrangement = Arrangement.spacedBy(dimensions.gridSpacing),
+                    contentPadding = PaddingValues(vertical = dimensions.paddingMedium)
+                ) {
+                    items(allPages.size, key = { index -> allPages[index].id }) { index ->
+                        val page = allPages[index]
+                        val isReferenced = activeTargetPageIds.contains(page.id) || page.id.startsWith("static_row_")
+                        GhostTalkCard(
                         title = page.name,
                         subtitle = stringResource(R.string.page_grid_info, page.rows, page.columns),
                         icon = GhostTalkIcons.Description,
@@ -491,6 +472,7 @@ fun PageListScreen(
                         }
                     )
                 }
+            }
             }
         }
     }

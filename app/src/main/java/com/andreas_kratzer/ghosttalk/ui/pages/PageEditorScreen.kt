@@ -40,6 +40,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import com.andreas_kratzer.ghosttalk.core.ui.R as CoreR
 
+import com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkScaffold
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PageEditorScreen(
@@ -96,107 +98,99 @@ fun PageEditorScreen(
     val snackbarHostState = remember { androidx.compose.material3.SnackbarHostState() }
     val coroutineScope = androidx.compose.runtime.rememberCoroutineScope()
 
-    Scaffold(
-        snackbarHost = { androidx.compose.material3.SnackbarHost(snackbarHostState) },
-        topBar = {
-            TopAppBar(
-                windowInsets = WindowInsets.statusBars,
-                title = { 
-                    LaunchedEffect(localName) {
-                        if (localName != page.name && localName.isNotBlank()) {
-                            delay(500)
-                            gridEditorViewModel.updateGridSettings(
-                                itemId = page.id,
-                                update = GridSettingsUpdate(name = localName)
-                            )
-                        }
-                    }
-
-                    ValidatedTextField(
-                        value = localName,
-                        onValueChange = { localName = it },
-                        isRequired = true,
-                        errorMessage = stringResource(R.string.error_page_name_required),
-                        onFocusLost = {
-                            if (it.isNotBlank() && it != page.name) {
-                                gridEditorViewModel.updateGridSettings(
-                                    itemId = page.id,
-                                    update = GridSettingsUpdate(name = it)
-                                )
-                            }
-                        },
-                        placeholder = { Text(stringResource(R.string.page_name_label)) },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(end = dimensions.paddingLarge)
-                            .padding(vertical = 4.dp) // Reduce vertical impact
-                            .testTag("page_editor_name_field")
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = handleNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(CoreR.string.back_button_content_description))
-                    }
-                },
-                actions = {
-                    val isEditPreviewActive by pageViewModel.isEditPreviewActive.collectAsState()
-                    IconButton(
-                        onClick = { pageViewModel.toggleEditPreviewActive() },
-                        modifier = Modifier.testTag("page_editor_preview_toggle")
-                    ) {
-                        Icon(
-                            imageVector = if (isEditPreviewActive) GhostTalkIcons.Visibility else GhostTalkIcons.VisibilityOff,
-                            contentDescription = stringResource(R.string.page_editor_preview_toggle),
-                            tint = if (isEditPreviewActive) {
-                                MaterialTheme.colorScheme.primary
-                            } else {
-                                MaterialTheme.colorScheme.onSurfaceVariant
-                            }
-                        )
-                    }
-
-                    val isAnalyticsEnabled by pageViewModel.isAnalyticsOverlayEnabled.collectAsState()
-                    IconButton(
-                        onClick = { pageViewModel.toggleAnalyticsOverlay() },
-                        modifier = Modifier.testTag("page_editor_analytics_toggle")
-                    ) {
-                        Icon(
-                            imageVector = GhostTalkIcons.BarChart,
-                            contentDescription = stringResource(R.string.page_editor_analytics_toggle),
-                            tint = if (isAnalyticsEnabled) {
-                                MaterialTheme.colorScheme.primary
-                            } else {
-                                MaterialTheme.colorScheme.onSurfaceVariant
-                            }
-                        )
-                    }
-                    IconButton(
-                        onClick = {
-                            showLayoutAssistantDialog.value = true
-                        },
-                        modifier = Modifier.testTag("page_editor_split_wizard_trigger")
-                    ) {
-                        Icon(
-                            imageVector = GhostTalkIcons.AutoAwesome,
-                            contentDescription = "Layout- & Struktur-Assistent",
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-
-                    if (onExitEditor != null) {
-                        IconButton(
-                            onClick = onExitEditor,
-                            modifier = Modifier.testTag("page_editor_exit_button")
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Close,
-                                contentDescription = "Editor beenden",
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
-                }
+    LaunchedEffect(localName) {
+        if (localName != page.name && localName.isNotBlank()) {
+            delay(500)
+            gridEditorViewModel.updateGridSettings(
+                itemId = page.id,
+                update = GridSettingsUpdate(name = localName)
             )
+        }
+    }
+
+    GhostTalkScaffold(
+        title = "",
+        onNavigateBack = handleNavigateBack,
+        snackbarHost = { androidx.compose.material3.SnackbarHost(snackbarHostState) },
+        actions = {
+            val isEditPreviewActive by pageViewModel.isEditPreviewActive.collectAsState()
+            
+            ValidatedTextField(
+                value = localName,
+                onValueChange = { localName = it },
+                isRequired = true,
+                errorMessage = stringResource(R.string.error_page_name_required),
+                onFocusLost = {
+                    if (it.isNotBlank() && it != page.name) {
+                        gridEditorViewModel.updateGridSettings(
+                            itemId = page.id,
+                            update = GridSettingsUpdate(name = it)
+                        )
+                    }
+                },
+                placeholder = { Text(stringResource(R.string.page_name_label)) },
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(end = dimensions.screenPaddingHorizontal)
+                    .padding(vertical = 4.dp) // Reduce vertical impact
+                    .testTag("page_editor_name_field")
+            )
+
+            IconButton(
+                onClick = { pageViewModel.toggleEditPreviewActive() },
+                modifier = Modifier.testTag("page_editor_preview_toggle")
+            ) {
+                Icon(
+                    imageVector = if (isEditPreviewActive) GhostTalkIcons.Visibility else GhostTalkIcons.VisibilityOff,
+                    contentDescription = stringResource(R.string.page_editor_preview_toggle),
+                    tint = if (isEditPreviewActive) {
+                        MaterialTheme.colorScheme.primary
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    }
+                )
+            }
+
+            val isAnalyticsEnabled by pageViewModel.isAnalyticsOverlayEnabled.collectAsState()
+            IconButton(
+                onClick = { pageViewModel.toggleAnalyticsOverlay() },
+                modifier = Modifier.testTag("page_editor_analytics_toggle")
+            ) {
+                Icon(
+                    imageVector = GhostTalkIcons.BarChart,
+                    contentDescription = stringResource(R.string.page_editor_analytics_toggle),
+                    tint = if (isAnalyticsEnabled) {
+                        MaterialTheme.colorScheme.primary
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    }
+                )
+            }
+            IconButton(
+                onClick = {
+                    showLayoutAssistantDialog.value = true
+                },
+                modifier = Modifier.testTag("page_editor_split_wizard_trigger")
+            ) {
+                Icon(
+                    imageVector = GhostTalkIcons.AutoAwesome,
+                    contentDescription = "Layout- & Struktur-Assistent",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            if (onExitEditor != null) {
+                IconButton(
+                    onClick = onExitEditor,
+                    modifier = Modifier.testTag("page_editor_exit_button")
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = "Editor beenden",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
         }
     ) { paddingValues ->
         val templates by pageViewModel.templates.collectAsState()

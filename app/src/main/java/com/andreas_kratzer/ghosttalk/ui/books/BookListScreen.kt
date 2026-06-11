@@ -23,6 +23,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -59,6 +60,8 @@ import java.util.Date
 import com.andreas_kratzer.ghosttalk.core.ui.R as CoreR
 import com.andreas_kratzer.ghosttalk.feature.settings.R as SettingsR
 
+import com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkScaffold
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BookListScreen(
@@ -83,65 +86,65 @@ fun BookListScreen(
     val locale = LocalConfiguration.current.locales[0]
     val dateFormat = remember(locale) { SimpleDateFormat("dd.MM.yyyy HH:mm", locale) }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    AppBrandHeader(
-                        isLandscape = true, // Smaller version for TopAppBar
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                },
-                actions = {
-                    IconButton(
-                        onClick = onNavigateToGlobalSettings,
-                        modifier = Modifier.testTag("book_list_settings_button")
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Settings,
-                            contentDescription = stringResource(CoreR.string.settings_title_global)
-                        )
-                    }
-                }
-            )
+    GhostTalkScaffold(
+        title = stringResource(CoreR.string.app_name),
+        actions = {
+            IconButton(
+                onClick = onNavigateToGlobalSettings,
+                modifier = Modifier.testTag("book_list_settings_button")
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Settings,
+                    contentDescription = stringResource(CoreR.string.settings_title_global)
+                )
+            }
         },
         floatingActionButton = {
-            FloatingActionButton(
+            ExtendedFloatingActionButton(
                 onClick = { if (!showAddDialog) showAddDialog = true },
-                shape = MaterialTheme.shapes.large,
-                modifier = Modifier.testTag("book_add_fab")
-            ) {
-                Icon(Icons.Default.Add, contentDescription = stringResource(R.string.book_add_description))
-            }
+                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                modifier = Modifier.testTag("book_add_fab"),
+                icon = { Icon(Icons.Default.Add, contentDescription = null) },
+                text = { Text(stringResource(R.string.fab_new_book)) }
+            )
         }
     ) { paddingValues ->
         BoxWithConstraints(
         modifier = Modifier
             .fillMaxSize()
             .padding(paddingValues)
-            .padding(horizontal = dimensions.paddingLarge)
+            .padding(horizontal = dimensions.screenPaddingHorizontal)
     ) {
         val isLandscape = maxWidth > maxHeight
         val dynamicCardHeight = (maxHeight * if (isLandscape) 0.18f else 0.12f).coerceIn(90.dp, 140.dp)
 
-        LazyVerticalGrid(
-            columns = GridCells.Adaptive(minSize = 300.dp),
-            modifier = Modifier.fillMaxSize(),
-            verticalArrangement = Arrangement.spacedBy(dimensions.gridSpacing),
-            horizontalArrangement = Arrangement.spacedBy(dimensions.gridSpacing),
-            contentPadding = PaddingValues(vertical = dimensions.paddingMedium)
-        ) {
-            items(allBooks) { book ->
-                val favoriteId by bookViewModel.favoriteBookId.collectAsState()
-                val isFavorite = favoriteId == book.id
+        if (allBooks.isEmpty()) {
+            com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkEmptyState(
+                icon = com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons.Book,
+                title = "Keine Bücher",
+                description = "Erstelle ein neues Buch, um mit der Kommunikation zu beginnen.",
+                actionLabel = "Buch erstellen",
+                onAction = { if (!showAddDialog) showAddDialog = true }
+            )
+        } else {
+            LazyVerticalGrid(
+                columns = GridCells.Adaptive(minSize = 300.dp),
+                modifier = Modifier.fillMaxSize(),
+                verticalArrangement = Arrangement.spacedBy(dimensions.gridSpacing),
+                horizontalArrangement = Arrangement.spacedBy(dimensions.gridSpacing),
+                contentPadding = PaddingValues(vertical = dimensions.paddingMedium)
+            ) {
+                items(allBooks) { book ->
+                    val favoriteId by bookViewModel.favoriteBookId.collectAsState()
+                    val isFavorite = favoriteId == book.id
 
-                GhostTalkCard(
-                    title = book.name,
-                    subtitle = stringResource(R.string.book_last_modified_label, dateFormat.format(Date(book.updatedAt))),
-                    icon = null, // Removed left icon as requested
-                    onClick = { onBookSelected(book.id) },
-                    height = dynamicCardHeight,
-                    testTag = "book_card_${book.id}",
+                    GhostTalkCard(
+                        title = book.name,
+                        subtitle = stringResource(R.string.book_last_modified_label, dateFormat.format(Date(book.updatedAt))),
+                        icon = null, // Removed left icon as requested
+                        onClick = { onBookSelected(book.id) },
+                        height = dynamicCardHeight,
+                        testTag = "book_card_${book.id}",
                     trailingAction = {
                         Row(
                             horizontalArrangement = Arrangement.spacedBy(4.dp),
@@ -195,6 +198,7 @@ fun BookListScreen(
                 )
             }
         }
+        }
 
         // Security PIN verification for deletion
         if (showDeleteSecurity) {
@@ -215,32 +219,19 @@ fun BookListScreen(
         if (showDeleteConfirm) {
             val bookToDelete = deletingBook
             if (bookToDelete != null) {
-                AlertDialog(
-                    onDismissRequest = { showDeleteConfirm = false },
-                    title = { Text(stringResource(SettingsR.string.book_dialog_delete_title)) },
-                    text = { Text(stringResource(SettingsR.string.book_dialog_delete_confirm, bookToDelete.name)) },
-                    confirmButton = {
-                        Button(
-                            onClick = {
-                                showDeleteConfirm = false
-                                bookViewModel.deleteBook(bookToDelete)
-                            },
-                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
-                            shape = MaterialTheme.shapes.medium
-                        ) {
-                            Text(stringResource(R.string.action_delete))
-                        }
+                com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkDialog(
+                    title = stringResource(SettingsR.string.book_dialog_delete_title),
+                    onDismiss = { showDeleteConfirm = false },
+                    confirmText = stringResource(R.string.action_delete),
+                    onConfirm = {
+                        showDeleteConfirm = false
+                        bookViewModel.deleteBook(bookToDelete)
                     },
-                    dismissButton = {
-                        Button(
-                            onClick = { showDeleteConfirm = false },
-                            shape = MaterialTheme.shapes.medium,
-                            colors = ButtonDefaults.textButtonColors()
-                        ) {
-                            Text(stringResource(R.string.action_cancel))
-                        }
-                    }
-                )
+                    dismissText = stringResource(R.string.action_cancel),
+                    isDestructive = true
+                ) {
+                    Text(stringResource(SettingsR.string.book_dialog_delete_confirm, bookToDelete.name))
+                }
             }
         }
 

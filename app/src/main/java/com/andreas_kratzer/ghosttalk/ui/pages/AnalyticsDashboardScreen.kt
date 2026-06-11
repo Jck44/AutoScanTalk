@@ -46,16 +46,21 @@ import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.core.domain.pages.UsageLocation
 import com.andreas_kratzer.ghosttalk.core.model.Page
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
+import com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons
 import com.andreas_kratzer.ghosttalk.ui.pages.analytics.AnalyticsDetailsTab
 import com.andreas_kratzer.ghosttalk.ui.pages.analytics.AnalyticsOverviewTab
 import com.andreas_kratzer.ghosttalk.ui.pages.analytics.AnalyticsRecommendationsTab
+import com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkEmptyState
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
 import com.andreas_kratzer.ghosttalk.core.ui.R as CoreR
+import com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkScaffold
 
 internal data class TransitionFlow(val from: String, val to: String, val count: Int)
 internal data class PageUsage(val pageId: String, val name: String, val count: Int, val percentage: Float)
+
+
 
 @SuppressLint("LocalContextGetResourceValueCall")
 @OptIn(ExperimentalMaterial3Api::class)
@@ -324,59 +329,54 @@ fun AnalyticsDashboardScreen(
         )
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                windowInsets = WindowInsets.statusBars,
-                title = { Text(stringResource(R.string.settings_analytics_dashboard)) },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(CoreR.string.back_button_content_description)
-                        )
-                    }
-                }
-            )
-        }
+    GhostTalkScaffold(
+        title = stringResource(R.string.settings_analytics_dashboard),
+        onNavigateBack = onNavigateBack
     ) { paddingValues ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-        ) {
-            SecondaryTabRow(selectedTabIndex = selectedTabIndex) {
-                Tab(
-                    selected = selectedTabIndex == 0,
-                    onClick = { selectedTabIndex = 0 },
-                    text = { Text(stringResource(R.string.analytics_tab_overview)) }
-                )
-                Tab(
-                    selected = selectedTabIndex == 1,
-                    onClick = { selectedTabIndex = 1 },
-                    text = {
-                        val recCount = recommendations.size + layoutProposals.size + (if (aiProposal != null && !isAiLoading) aiProposal!!.actions.size else 0)
-                        if (recCount > 0) {
-                            Text(stringResource(R.string.analytics_tab_recommendations) + " ($recCount)")
-                        } else {
-                            Text(stringResource(R.string.analytics_tab_recommendations))
-                        }
-                    }
-                )
-                Tab(
-                    selected = selectedTabIndex == 2,
-                    onClick = { selectedTabIndex = 2 },
-                    text = { Text(stringResource(R.string.analytics_tab_details)) }
-                )
-            }
-
+        if (historyEvents.isEmpty() && userModeSessions.isEmpty()) {
+            GhostTalkEmptyState(
+                icon = GhostTalkIcons.History,
+                title = "Keine Statistiken erfasst",
+                description = "Verwende die Anwendung im Nutzermodus, um Nutzungsstatistiken und KI-Empfehlungen zu generieren."
+            )
+        } else {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(dimensions.paddingLarge)
-                    .verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(18.dp)
+                    .padding(paddingValues)
             ) {
+                SecondaryTabRow(selectedTabIndex = selectedTabIndex) {
+                    Tab(
+                        selected = selectedTabIndex == 0,
+                        onClick = { selectedTabIndex = 0 },
+                        text = { Text(stringResource(R.string.analytics_tab_overview)) }
+                    )
+                    Tab(
+                        selected = selectedTabIndex == 1,
+                        onClick = { selectedTabIndex = 1 },
+                        text = {
+                            val recCount = recommendations.size + layoutProposals.size + (if (aiProposal != null && !isAiLoading) aiProposal!!.actions.size else 0)
+                            if (recCount > 0) {
+                                Text(stringResource(R.string.analytics_tab_recommendations) + " ($recCount)")
+                            } else {
+                                Text(stringResource(R.string.analytics_tab_recommendations))
+                            }
+                        }
+                    )
+                    Tab(
+                        selected = selectedTabIndex == 2,
+                        onClick = { selectedTabIndex = 2 },
+                        text = { Text(stringResource(R.string.analytics_tab_details)) }
+                    )
+                }
+
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = dimensions.screenPaddingHorizontal, vertical = dimensions.screenPaddingVertical)
+                        .verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(dimensions.sectionSpacing)
+                ) {
                 when (selectedTabIndex) {
                     0 -> {
                         AnalyticsOverviewTab(
@@ -468,6 +468,7 @@ fun AnalyticsDashboardScreen(
             }
         }
     }
+}
 }
 
 @Composable

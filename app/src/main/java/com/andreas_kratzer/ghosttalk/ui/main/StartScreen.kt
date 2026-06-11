@@ -36,6 +36,8 @@ import com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
 import com.andreas_kratzer.ghosttalk.core.ui.R as CoreR
 
+import com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkScaffold
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun StartScreen(
@@ -49,45 +51,34 @@ fun StartScreen(
     val configuration = LocalConfiguration.current
     val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
     val dimensions = LocalDimensions.current
-    if (isLandscape) dimensions.paddingLarge else dimensions.paddingExtraLarge
 
     BackHandler {
         onNavigateToBooks()
     }
 
-    Scaffold(
-        topBar = {
-            CenterAlignedTopAppBar(
-                title = {
-                    Text(
-                        text = bookName,
-                        style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold)
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateToBooks) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.start_back_to_books))
-                    }
-                },
-                actions = {
-                    IconButton(
-                        onClick = onNavigateToSettings,
-                        modifier = Modifier.testTag("start_settings_button")
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Settings,
-                            contentDescription = stringResource(CoreR.string.settings_title_book)
-                        )
-                    }
-                }
-            )
+    GhostTalkScaffold(
+        title = bookName,
+        onNavigateBack = onNavigateToBooks,
+        actions = {
+            IconButton(
+                onClick = onNavigateToSettings,
+                modifier = Modifier.testTag("start_settings_button")
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Settings,
+                    contentDescription = stringResource(CoreR.string.settings_title_book)
+                )
+            }
         }
     ) { paddingValues ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .padding(dimensions.paddingExtraLarge)
+                .padding(
+                    horizontal = dimensions.screenPaddingHorizontal,
+                    vertical = dimensions.screenPaddingVertical
+                )
                 .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Top
@@ -132,8 +123,8 @@ fun StartScreen(
                     icon = GhostTalkIcons.BarChart,
                     onClick = onNavigateToAnalyticsDashboard,
                     modifier = cardModifier.testTag("start_card_analytics"),
-                    containerColor = MaterialTheme.colorScheme.errorContainer,
-                    iconColor = MaterialTheme.colorScheme.error,
+                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                    iconColor = MaterialTheme.colorScheme.secondary,
                     height = dynamicCardHeight
                 )
             }

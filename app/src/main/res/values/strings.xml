@@ -34,6 +34,12 @@
     <string name="error_book_name_required">Bitte gib einen Namen für das Buch ein.</string>
     <string name="error_page_name_required">Bitte gib einen Namen für die Seite ein.</string>
 
+    <!-- FAB Labels -->
+    <string name="fab_new_book">Neues Buch</string>
+    <string name="fab_new_page">Neue Seite</string>
+    <string name="fab_new_template">Neue Vorlage</string>
+
+
 
     <!-- Page List Screen -->
 
@@ -255,6 +261,26 @@
     <string name="template_delete_confirm">Möchtest du die Vorlage \"%s\" wirklich löschen?</string>
     <string name="template_create_new">Neue Vorlage erstellen</string>
     <string name="template_loading">Vorlage wird geladen…</string>
+    <string name="template_dialog_in_use_title">Vorlage wird verwendet</string>
+    <string name="template_dialog_delete_anyway">Trotzdem Löschen</string>
+    <string name="template_dialog_in_use_message">Die Vorlage \"%1$s\" wurde zur Erstellung folgender Seiten verwendet:</string>
+    <string name="template_dialog_usage_page_item">• Seite: %1$s</string>
+    <string name="template_dialog_delete_warning">\nBeim Löschen der Vorlage wird die Verknüpfung in diesen Seiten aufgehoben.</string>
+    <string name="page_dialog_in_use_title">Seite wird verwendet</string>
+    <string name="page_dialog_delete_all">Alles Löschen</string>
+    <string name="page_dialog_in_use_message">Die Seite \"%1$s\" wird an folgenden Stellen zur Navigation verwendet:</string>
+    <string name="page_dialog_usage_item">• %1$s: %2$s</string>
+    <string name="page_dialog_usage_button_label">  Button: \"%1$s\"</string>
+    <string name="page_dialog_delete_warning">Beim Löschen werden auch alle Buttons entfernt, die auf diese Seite verweisen.</string>
+    <string name="action_navigate">Navigieren</string>
+    <string name="common_page">Seite</string>
+    <string name="common_template">Vorlage</string>
+    <string name="action_sort">Sortieren</string>
+    <string name="sort_manual">Manuell</string>
+    <string name="sort_newest">Neueste zuerst</string>
+    <string name="sort_oldest">Älteste zuerst</string>
+    <string name="sort_a_z">A -> Z</string>
+    <string name="sort_z_a">Z -> A</string>
     <string name="permission_location_denied_weather">Standortberechtigung erforderlich für Wetterdaten.</string>
     <string name="button_test_started">Test gestartet</string>
     <string name="button_move_select_target">Ziel-Seite wählen</string>

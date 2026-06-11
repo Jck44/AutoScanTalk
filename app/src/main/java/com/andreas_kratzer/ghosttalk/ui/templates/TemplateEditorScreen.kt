@@ -34,6 +34,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import com.andreas_kratzer.ghosttalk.core.ui.R as CoreR
 
+import com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkScaffold
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TemplateEditorScreen(
@@ -60,33 +62,28 @@ fun TemplateEditorScreen(
         onNavigateBack()
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { 
-                    var localName by remember(template.name) { mutableStateOf(template.name) }
-                    
-                    LaunchedEffect(localName) {
-                        if (localName != template.name) {
-                            delay(500)
-                            templateViewModel.updateTemplate(template.copy(name = localName))
-                        }
-                    }
+    var localName by remember(template.name) { mutableStateOf(template.name) }
+    
+    LaunchedEffect(localName) {
+        if (localName != template.name) {
+            delay(500)
+            templateViewModel.updateTemplate(template.copy(name = localName))
+        }
+    }
 
-                    OutlinedTextField(
-                        value = localName,
-                        onValueChange = { localName = it },
-                        label = { Text(stringResource(R.string.template_name_label)) },
-                        singleLine = true,
-                        shape = MaterialTheme.shapes.large,
-                        modifier = Modifier.fillMaxWidth().padding(end = dimensions.paddingLarge)
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(CoreR.string.back_button_content_description))
-                    }
-                }
+    GhostTalkScaffold(
+        title = "",
+        onNavigateBack = onNavigateBack,
+        actions = {
+            OutlinedTextField(
+                value = localName,
+                onValueChange = { localName = it },
+                label = { Text(stringResource(R.string.template_name_label)) },
+                singleLine = true,
+                shape = MaterialTheme.shapes.large,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(end = dimensions.screenPaddingHorizontal)
             )
         }
     ) { paddingValues ->

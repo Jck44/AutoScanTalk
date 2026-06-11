@@ -34,6 +34,12 @@
     <string name="error_book_name_required">Please enter a name for the book.</string>
     <string name="error_page_name_required">Please enter a name for the page.</string>
 
+    <!-- FAB Labels -->
+    <string name="fab_new_book">New Book</string>
+    <string name="fab_new_page">New Page</string>
+    <string name="fab_new_template">New Template</string>
+
+
     <!-- Page List Screen -->
 
     <string name="page_add_description">Add new page</string>
@@ -250,6 +256,26 @@
     <string name="template_delete_confirm">Do you really want to delete the template \"%s\"?</string>
     <string name="template_create_new">Create New Template</string>
     <string name="template_loading">Loading template…</string>
+    <string name="template_dialog_in_use_title">Template in use</string>
+    <string name="template_dialog_delete_anyway">Delete Anyway</string>
+    <string name="template_dialog_in_use_message">Template \"%1$s\" was used to create the following pages:</string>
+    <string name="template_dialog_usage_page_item">• Page: %1$s</string>
+    <string name="template_dialog_delete_warning">\nDeleting the template will remove the link in these pages.</string>
+    <string name="page_dialog_in_use_title">Page in use</string>
+    <string name="page_dialog_delete_all">Delete All</string>
+    <string name="page_dialog_in_use_message">Page \"%1$s\" is used for navigation in the following locations:</string>
+    <string name="page_dialog_usage_item">• %1$s: %2$s</string>
+    <string name="page_dialog_usage_button_label">  Button: \"%1$s\"</string>
+    <string name="page_dialog_delete_warning">Deleting this page will also remove all buttons that link to it.</string>
+    <string name="action_navigate">Navigate</string>
+    <string name="common_page">Page</string>
+    <string name="common_template">Template</string>
+    <string name="action_sort">Sort</string>
+    <string name="sort_manual">Manual</string>
+    <string name="sort_newest">Newest first</string>
+    <string name="sort_oldest">Oldest first</string>
+    <string name="sort_a_z">A -> Z</string>
+    <string name="sort_z_a">Z -> A</string>
     <string name="permission_location_denied_weather">Location permission required for weather data.</string>
     <string name="button_test_started">Test started</string>
     <string name="button_move_select_target">Select Target Page</string>

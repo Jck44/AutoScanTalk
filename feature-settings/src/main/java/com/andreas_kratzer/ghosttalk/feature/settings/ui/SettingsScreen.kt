@@ -105,6 +105,7 @@ import kotlinx.coroutines.withContext
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import com.andreas_kratzer.ghosttalk.core.ui.R as CoreR
+import com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkScaffold
 
 enum class SettingsSection(private val titleRes: Int, val icon: ImageVector) {
     GENERAL(R.string.settings_category_general, Icons.Default.Settings),
@@ -385,47 +386,65 @@ fun SettingsScreen(
 
     val isProfileSyncing by viewModel.isProfileSyncing.collectAsState()
 
-    Scaffold(
-        topBar = {
-            SettingsTopBar(
-                selectedSection = selectedSection,
-                isLargeScreen = isLargeScreen,
-                isEditing = editingProfileId != null,
-                editingProfileName = editingProfileName,
-                isSyncing = isProfileSyncing,
-                onBack = handleBack
-            )
-        },
-        bottomBar = {
-            if (editingProfileId != null) {
-                Surface(
-                    tonalElevation = 8.dp,
-                    shadowElevation = 8.dp,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(dimensions.paddingMedium),
-                        horizontalArrangement = Arrangement.End
+    val screenTitle = if (editingProfileId != null) {
+        val editingTitle = if (isGlobal) "Globales Profil bearbeiten" else "Profil bearbeiten"
+        if (selectedSection != null) {
+            "$editingTitle – " + stringResource(selectedSection!!.getTitleRes())
+        } else {
+            editingTitle
+        }
+    } else {
+        if (isLargeScreen) {
+            if (isGlobal) "Globale Einstellungen" else "Einstellungen"
+        } else {
+            if (selectedSection != null) {
+                stringResource(selectedSection!!.getTitleRes())
+            } else {
+                if (isGlobal) "Globale Einstellungen" else "Einstellungen"
+            }
+        }
+    }
+
+    GhostTalkScaffold(
+        title = screenTitle,
+        onNavigateBack = handleBack
+    ) { paddingValues ->
+        Scaffold(
+            bottomBar = {
+                if (editingProfileId != null) {
+                    Surface(
+                        tonalElevation = 8.dp,
+                        shadowElevation = 8.dp,
+                        modifier = Modifier.fillMaxWidth()
                     ) {
-                        OutlinedButton(
-                            onClick = { viewModel.cancelEditingProfile() },
-                            modifier = Modifier.padding(end = dimensions.paddingSmall)
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(dimensions.paddingMedium),
+                            horizontalArrangement = Arrangement.End
                         ) {
-                            Text("Abbrechen")
-                        }
-                        Button(
-                            onClick = { viewModel.saveEditingProfile() }
-                        ) {
-                            Text("Speichern")
+                            OutlinedButton(
+                                onClick = { viewModel.cancelEditingProfile() },
+                                modifier = Modifier.padding(end = dimensions.paddingSmall)
+                            ) {
+                                Text(stringResource(CoreR.string.action_cancel))
+                            }
+                            Button(
+                                onClick = { viewModel.saveEditingProfile() }
+                            ) {
+                                Text(stringResource(CoreR.string.action_save))
+                            }
                         }
                     }
                 }
             }
-        }
-    ) { paddingValues ->
-        Box(modifier = Modifier.fillMaxSize()) {
+        ) { innerScaffoldPadding ->
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+                    .padding(innerScaffoldPadding)
+            ) {
             if (isLargeScreen) {
                 Row(
                     modifier = Modifier
@@ -543,7 +562,7 @@ fun SettingsScreen(
                         if (editingProfileId != null) {
                             ProfileEditBanner(
                                 profileName = editingProfileName ?: "Entwurf",
-                                modifier = Modifier.padding(horizontal = dimensions.paddingLarge, vertical = dimensions.paddingMedium)
+                                modifier = Modifier.padding(horizontal = dimensions.screenPaddingHorizontal, vertical = dimensions.screenPaddingVertical)
                             )
                         }
                         Box(
@@ -577,7 +596,7 @@ fun SettingsScreen(
                         modifier = Modifier
                             .fillMaxSize()
                             .padding(paddingValues)
-                            .padding(horizontal = dimensions.paddingLarge, vertical = dimensions.paddingMedium)
+                            .padding(horizontal = dimensions.screenPaddingHorizontal, vertical = dimensions.screenPaddingVertical)
                     ) {
                         if (editingProfileId != null) {
                             ProfileEditBanner(
@@ -652,7 +671,7 @@ fun SettingsScreen(
                         if (editingProfileId != null) {
                             ProfileEditBanner(
                                 profileName = editingProfileName ?: "Entwurf",
-                                modifier = Modifier.padding(horizontal = dimensions.paddingLarge, vertical = dimensions.paddingMedium)
+                                modifier = Modifier.padding(horizontal = dimensions.screenPaddingHorizontal, vertical = dimensions.screenPaddingVertical)
                             )
                         }
                         SettingsSubMenu(
@@ -676,6 +695,7 @@ fun SettingsScreen(
             }
 
 
+            }
         }
     }
 
@@ -685,8 +705,8 @@ fun SettingsScreen(
     if (showDiscardChangesDialog) {
         androidx.compose.material3.AlertDialog(
             onDismissRequest = { showDiscardChangesDialog = false },
-            title = { Text("Änderungen verwerfen?") },
-            text = { Text("Sie haben ungespeicherte Änderungen. Möchten Sie diese wirklich verwerfen?") },
+            title = { Text(stringResource(R.string.settings_dialog_discard_changes_title)) },
+            text = { Text(stringResource(R.string.settings_dialog_discard_changes_message)) },
             confirmButton = {
                 androidx.compose.material3.TextButton(
                     onClick = {
@@ -694,14 +714,14 @@ fun SettingsScreen(
                         viewModel.cancelEditingProfile()
                     }
                 ) {
-                    Text("Verwerfen")
+                    Text(stringResource(R.string.settings_dialog_discard_changes_confirm))
                 }
             },
             dismissButton = {
                 androidx.compose.material3.TextButton(
                     onClick = { showDiscardChangesDialog = false }
                 ) {
-                    Text("Abbrechen")
+                    Text(stringResource(CoreR.string.action_cancel))
                 }
             }
         )
@@ -810,7 +830,7 @@ private fun ProfileNameEditCard(
             modifier = Modifier.padding(16.dp)
         ) {
             Text(
-                text = "Profilname",
+                text = stringResource(R.string.settings_profile_name_hint),
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -821,7 +841,7 @@ private fun ProfileNameEditCard(
                 onValueChange = onNameChange,
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
-                placeholder = { Text("Name eingeben") }
+                placeholder = { Text(stringResource(R.string.settings_profile_enter_name_placeholder)) }
             )
         }
     }
@@ -1040,7 +1060,7 @@ private fun SettingsSubMenu(
             .padding(padding)
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = dimensions.paddingLarge, vertical = dimensions.paddingMedium)
+            .padding(horizontal = dimensions.screenPaddingHorizontal, vertical = dimensions.screenPaddingVertical)
     ) {
         SubmenuContent(
             section,

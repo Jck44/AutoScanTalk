@@ -101,3 +101,24 @@ val StatusInactiveTextLight = Color(0xFFC62828)
 val StatusInactiveBgDark = Color(0x33C62828)
 val StatusInactiveTextDark = Color(0xFFFFCDD2)
 
+// Call Screen Overlay Colors
+val CallAcceptLight = Color(0xFF2E7D32)
+val CallAcceptDark = Color(0xFF81C784)
+val CallAcceptContainerLight = Color(0xFFE8F5E9)
+val CallAcceptContainerDark = Color(0xFF1B5E20)
+
+// Frustration / Effort level colors - Light Theme
+val FrustrationLowLight = Color(0xFF388E3C)
+val FrustrationMediumLight = Color(0xFFF57C00)
+val FrustrationHighLight = Color(0xFFD32F2F)
+val FrustrationNeutralLight = Color(0xFF78909C)
+val FrustrationWarningLight = Color(0xFFFBC02D)
+
+// Frustration / Effort level colors - Dark Theme
+val FrustrationLowDark = Color(0xFF81C784)
+val FrustrationMediumDark = Color(0xFFFFB74D)
+val FrustrationHighDark = Color(0xFFE57373)
+val FrustrationNeutralDark = Color(0xFFB0BEC5)
+val FrustrationWarningDark = Color(0xFFFFF176)
+
+

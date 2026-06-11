@@ -30,4 +30,5 @@
     <string name="dialog_confirm">Confirm</string>
     <string name="dialog_close">Close</string>
     <string name="dialog_back">Back</string>
+    <string name="common_back">Back</string>
 </resources>

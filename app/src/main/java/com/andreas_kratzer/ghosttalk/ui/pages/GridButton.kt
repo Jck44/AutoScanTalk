@@ -95,6 +95,13 @@ import com.andreas_kratzer.ghosttalk.core.ui.theme.WeatherBadgeBgDark
 import com.andreas_kratzer.ghosttalk.core.ui.theme.WeatherBadgeBgLight
 import com.andreas_kratzer.ghosttalk.core.ui.theme.WeatherBadgeTextDark
 import com.andreas_kratzer.ghosttalk.core.ui.theme.WeatherBadgeTextLight
+import com.andreas_kratzer.ghosttalk.core.ui.theme.FrustrationNeutralLight
+import com.andreas_kratzer.ghosttalk.core.ui.theme.FrustrationNeutralDark
+import com.andreas_kratzer.ghosttalk.core.ui.theme.FrustrationWarningLight
+import com.andreas_kratzer.ghosttalk.core.ui.theme.FrustrationWarningDark
+import com.andreas_kratzer.ghosttalk.core.ui.theme.FrustrationHighLight
+import com.andreas_kratzer.ghosttalk.core.ui.theme.FrustrationHighDark
+
 
 object GridButtonColors {
     fun getBadgeColors(action: ButtonAction, isDark: Boolean): Pair<Color, Color> {
@@ -306,12 +313,14 @@ fun GridButton(
 
                     // Access Effort Badge (F-Index based color code)
                     if (effortMetrics != null) {
+                        val isDark = isSystemInDarkTheme()
                         val badgeColor = when {
-                            effortMetrics.frustrationIndex < 0.3f -> Color(0xFF78909C) // Grey / Neutral
-                            effortMetrics.frustrationIndex < 0.7f -> Color(0xFFFBC02D) // Yellow / Warning
-                            else -> Color(0xFFD32F2F) // Red / Critical Frustration
+                            effortMetrics.frustrationIndex < 0.3f -> if (isDark) FrustrationNeutralDark else FrustrationNeutralLight
+                            effortMetrics.frustrationIndex < 0.7f -> if (isDark) FrustrationWarningDark else FrustrationWarningLight
+                            else -> if (isDark) FrustrationHighDark else FrustrationHighLight
                         }
                         Surface(
+
                             color = badgeColor,
                             contentColor = Color.White,
                             shape = MaterialTheme.shapes.extraSmall,

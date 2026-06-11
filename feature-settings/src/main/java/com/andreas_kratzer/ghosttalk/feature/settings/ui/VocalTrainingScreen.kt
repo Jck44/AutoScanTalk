@@ -66,6 +66,11 @@ import com.andreas_kratzer.ghosttalk.core.ui.components.SettingsDropdownItem
 import com.andreas_kratzer.ghosttalk.core.ui.components.SettingsEditTextItem
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
 
+import com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkScaffold
+import androidx.compose.ui.res.stringResource
+import com.andreas_kratzer.ghosttalk.feature.settings.R
+import com.andreas_kratzer.ghosttalk.core.ui.R as CoreR
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun VocalTrainingScreen(
@@ -117,39 +122,28 @@ fun VocalTrainingScreen(
         }
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Vocal Switch Training (Mini-Euphonia)", fontWeight = FontWeight.Bold) },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Zurück")
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
-                )
-            )
-        }
+    GhostTalkScaffold(
+        title = stringResource(R.string.settings_vocal_training_title),
+        onNavigateBack = onNavigateBack
     ) { innerPadding ->
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .padding(horizontal = dimensions.paddingLarge),
-            verticalArrangement = Arrangement.spacedBy(dimensions.paddingMedium)
+                .padding(horizontal = dimensions.screenPaddingHorizontal),
+            verticalArrangement = Arrangement.spacedBy(dimensions.listItemSpacing)
         ) {
             item {
                 Spacer(modifier = Modifier.height(dimensions.paddingMedium))
                 Text(
-                    text = "Lerne GhostTalk deine Laute an! Du nimmst denselben Laut 5-mal auf. GhostTalk berechnet daraus einen akustischen Fingerabdruck und vergleicht ihn im Hintergrund. Wenn du den Laut machst, wird die Aktion sofort ausgelöst.",
+                    text = stringResource(R.string.settings_vocal_training_desc),
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
 
             item {
-                PreferenceCategory("1. Laut aufnehmen (5 Proben)") {
+                PreferenceCategory(stringResource(R.string.settings_vocal_step_record_title)) {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -171,9 +165,9 @@ fun VocalTrainingScreen(
             }
 
             item {
-                PreferenceCategory("2. Aktion zuweisen") {
+                PreferenceCategory(stringResource(R.string.settings_vocal_step_assign_title)) {
                     SettingsEditTextItem(
-                        label = "Name des Lautes (z.B. Clicks, Ähh)",
+                        label = stringResource(R.string.settings_vocal_profile_name_label),
                         value = profileName,
                         onValueChange = { viewModel.profileName.value = it }
                     )
@@ -181,25 +175,25 @@ fun VocalTrainingScreen(
                     Spacer(modifier = Modifier.height(dimensions.paddingSmall))
 
                     val selectedActionLabel = when (actionType) {
-                        "taster_click" -> "Simuliere Taster-Klick"
-                        "speak_text" -> "Text sprechen & ausgeben"
-                        "navigate_page" -> "Direkt zu Seite springen"
+                        "taster_click" -> stringResource(R.string.settings_vocal_action_switch_click)
+                        "speak_text" -> stringResource(R.string.settings_vocal_action_speak_text)
+                        "navigate_page" -> stringResource(R.string.settings_vocal_action_navigate)
                         else -> actionType
                     }
 
                     SettingsDropdownItem(
-                        label = "Aktionstyp",
+                        label = stringResource(R.string.settings_vocal_action_type_label),
                         selectedOption = selectedActionLabel,
                         options = listOf(
-                            "Simuliere Taster-Klick" to { viewModel.actionType.value = "taster_click" },
-                            "Text sprechen & ausgeben" to { viewModel.actionType.value = "speak_text" },
-                            "Direkt zu Seite springen" to { viewModel.actionType.value = "navigate_page" }
+                            stringResource(R.string.settings_vocal_action_switch_click) to { viewModel.actionType.value = "taster_click" },
+                            stringResource(R.string.settings_vocal_action_speak_text) to { viewModel.actionType.value = "speak_text" },
+                            stringResource(R.string.settings_vocal_action_navigate) to { viewModel.actionType.value = "navigate_page" }
                         )
                     )
 
                     if (actionType == "speak_text") {
                         SettingsEditTextItem(
-                            label = "Was soll gesprochen werden?",
+                            label = stringResource(R.string.settings_vocal_spoken_text_label),
                             value = spokenText,
                             onValueChange = { viewModel.spokenText.value = it }
                         )
@@ -207,10 +201,10 @@ fun VocalTrainingScreen(
 
                     if (actionType == "navigate_page" && allPages.isNotEmpty()) {
                         val selectedPage = allPages.find { it.id == selectedPageId }
-                        val selectedPageLabel = selectedPage?.name ?: "Auswählen"
+                        val selectedPageLabel = selectedPage?.name ?: stringResource(R.string.settings_sync_select_button)
                         
                         SettingsDropdownItem(
-                            label = "Zielseite",
+                            label = stringResource(R.string.settings_vocal_target_page),
                             selectedOption = selectedPageLabel,
                             options = allPages.map { page ->
                                 page.name to { viewModel.selectedPageId.value = page.id }
@@ -225,14 +219,14 @@ fun VocalTrainingScreen(
                         enabled = profileName.isNotBlank() && slotStatusList.all { it == VocalTrainingViewModel.SlotStatus.DONE },
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text("Vocal-Profil speichern")
+                        Text(stringResource(R.string.settings_vocal_profile_save))
                     }
                 }
             }
 
             item {
                 val testState by viewModel.testState.collectAsState()
-                PreferenceCategory("Live-Test & Kalibrierung") {
+                PreferenceCategory(stringResource(R.string.settings_vocal_live_test_title)) {
                     VocalSwitchTestDashboard(
                         testState = testState,
                         allProfiles = allProfiles,
@@ -266,10 +260,10 @@ fun VocalTrainingScreen(
             }
 
             item {
-                PreferenceCategory("Trainierte Vocal-Profile") {
+                PreferenceCategory(stringResource(R.string.settings_vocal_trained_profiles_title)) {
                     if (allProfiles.isEmpty()) {
                         Text(
-                            "Keine trainierten Vocal-Profile vorhanden.",
+                            stringResource(R.string.settings_vocal_no_profiles),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.fillMaxWidth(),
@@ -286,13 +280,13 @@ fun VocalTrainingScreen(
             }
 
             item {
-                PreferenceCategory("Modell-Einstellungen") {
+                PreferenceCategory(stringResource(R.string.settings_vocal_model_settings_title)) {
                     Button(
                         onClick = { showResetDialog = true },
                         colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text("Vocal Switch Modell zurücksetzen", color = MaterialTheme.colorScheme.onError)
+                        Text(stringResource(R.string.settings_vocal_reset_model), color = MaterialTheme.colorScheme.onError)
                     }
                     Spacer(modifier = Modifier.height(dimensions.paddingLarge))
                 }
@@ -303,8 +297,8 @@ fun VocalTrainingScreen(
     if (showResetDialog) {
         AlertDialog(
             onDismissRequest = { showResetDialog = false },
-            title = { Text("Modell zurücksetzen?") },
-            text = { Text("Möchtest du das gesamte Vocal Switch Modell zurücksetzen? Dadurch werden alle trainierten Laute unwiderruflich gelöscht.") },
+            title = { Text(stringResource(R.string.settings_vocal_reset_dialog_title)) },
+            text = { Text(stringResource(R.string.settings_vocal_reset_dialog_message)) },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -313,12 +307,12 @@ fun VocalTrainingScreen(
                     },
                     colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
                 ) {
-                    Text("Zurücksetzen")
+                    Text(stringResource(R.string.settings_vocal_reset_confirm))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showResetDialog = false }) {
-                    Text("Abbrechen")
+                    Text(stringResource(CoreR.string.action_cancel))
                 }
             }
         )
@@ -327,16 +321,13 @@ fun VocalTrainingScreen(
     if (showPermissionDeniedHint) {
         AlertDialog(
             onDismissRequest = { showPermissionDeniedHint = false },
-            title = { Text("Mikrofon-Zugriff benötigt") },
+            title = { Text(stringResource(R.string.settings_vocal_mic_permission_title)) },
             text = {
-                Text(
-                    "GhostTalk benötigt Zugriff auf das Mikrofon, um deine Laute aufzunehmen. " +
-                    "Bitte erlaube den Zugriff unter Einstellungen → Apps → GhostTalk → Berechtigungen → Mikrofon."
-                )
+                Text(stringResource(R.string.settings_vocal_mic_permission_message))
             },
             confirmButton = {
                 TextButton(onClick = { showPermissionDeniedHint = false }) {
-                    Text("Verstanden")
+                    Text(stringResource(R.string.settings_vocal_understood))
                 }
             }
         )
@@ -406,11 +397,11 @@ fun TrainingSlot(
         }
         Text(
             text = when (status) {
-                VocalTrainingViewModel.SlotStatus.EMPTY -> "Leer"
-                VocalTrainingViewModel.SlotStatus.RECORDING -> "Aufnahme"
-                VocalTrainingViewModel.SlotStatus.PROCESSING -> "AI Anal."
-                VocalTrainingViewModel.SlotStatus.DONE -> "Bereit"
-                VocalTrainingViewModel.SlotStatus.ERROR -> "Fehler"
+                VocalTrainingViewModel.SlotStatus.EMPTY -> stringResource(R.string.settings_vocal_slot_empty)
+                VocalTrainingViewModel.SlotStatus.RECORDING -> stringResource(R.string.settings_vocal_slot_recording)
+                VocalTrainingViewModel.SlotStatus.PROCESSING -> stringResource(R.string.settings_vocal_slot_processing)
+                VocalTrainingViewModel.SlotStatus.DONE -> stringResource(R.string.settings_vocal_slot_ready)
+                VocalTrainingViewModel.SlotStatus.ERROR -> stringResource(R.string.settings_vocal_slot_error)
             },
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -535,19 +526,23 @@ fun VocalSwitchTestDashboard(
                         verticalArrangement = Arrangement.spacedBy(dimensions.paddingSmall)
                     ) {
                         Text(
-                            text = if (testState.isMatch) "Erkannt!" else "Nicht erkannt / Blockiert",
+                            text = if (testState.isMatch) stringResource(R.string.settings_vocal_test_recognized) else stringResource(R.string.settings_vocal_test_not_recognized),
                             fontWeight = FontWeight.Bold,
                             style = MaterialTheme.typography.titleMedium,
                             color = if (testState.isMatch) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
                         )
                         if (testState.isMatch && testState.matchedProfileName != null) {
                             Text(
-                                text = "Profil: ${testState.matchedProfileName}",
+                                text = stringResource(R.string.settings_vocal_test_profile_match, testState.matchedProfileName),
                                 style = MaterialTheme.typography.bodyLarge
                             )
                         }
                         Text(
-                            text = "Ziel-Konfidenz: ${(testState.positiveConfidence * 100).toInt()}% | Noise-Konfidenz: ${(testState.negativeConfidence * 100).toInt()}%",
+                            text = stringResource(
+                                R.string.settings_vocal_test_confidence,
+                                (testState.positiveConfidence * 100).toInt(),
+                                (testState.negativeConfidence * 100).toInt()
+                            ),
                             style = MaterialTheme.typography.bodyMedium
                         )
 
@@ -555,12 +550,12 @@ fun VocalSwitchTestDashboard(
                         if (allProfiles.isNotEmpty()) {
                             HorizontalDivider(modifier = Modifier.padding(vertical = dimensions.paddingSmall))
                             Text(
-                                text = "War das ein Fehlalarm?",
+                                text = stringResource(R.string.settings_vocal_false_positive_question),
                                 fontWeight = FontWeight.Bold,
                                 style = MaterialTheme.typography.bodyMedium
                             )
                             Text(
-                                text = "Registriere dieses Geräusch als Fehlalarm für ein Profil, damit es künftig blockiert wird.",
+                                text = stringResource(R.string.settings_vocal_register_fp_desc),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -570,7 +565,7 @@ fun VocalSwitchTestDashboard(
                                     onClick = { showFPMenu = true },
                                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)
                                 ) {
-                                    Text("Fehlalarm registrieren...")
+                                    Text(stringResource(R.string.settings_vocal_register_fp_btn))
                                 }
                                 DropdownMenu(
                                     expanded = showFPMenu,

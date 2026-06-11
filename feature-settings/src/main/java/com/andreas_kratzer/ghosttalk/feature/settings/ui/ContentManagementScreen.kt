@@ -20,10 +20,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.andreas_kratzer.ghosttalk.core.ui.components.SectionHeader
 import com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkCard
 import com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
 import com.andreas_kratzer.ghosttalk.core.ui.R as CoreR
+
+import com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkScaffold
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -39,29 +42,15 @@ fun ContentManagementScreen(
         onNavigateBack()
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text(stringResource(CoreR.string.start_manage_content)) },
-                navigationIcon = {
-                    IconButton(
-                        onClick = onNavigateBack,
-                        modifier = Modifier.testTag("content_management_back_button")
-                    ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(CoreR.string.back_button_content_description)
-                        )
-                    }
-                }
-            )
-        }
+    GhostTalkScaffold(
+        title = stringResource(CoreR.string.start_manage_content),
+        onNavigateBack = onNavigateBack
     ) { paddingValues ->
         BoxWithConstraints(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .padding(dimensions.paddingLarge)
+                .padding(dimensions.screenPaddingHorizontal)
         ) {
             val isLandscape = maxWidth > maxHeight
             val dynamicCardHeight = (maxHeight * if (isLandscape) 0.18f else 0.12f).coerceIn(90.dp, 140.dp)
@@ -69,10 +58,12 @@ fun ContentManagementScreen(
             Column(
                 modifier = Modifier.fillMaxSize(),
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(dimensions.paddingLarge)
+                verticalArrangement = Arrangement.spacedBy(dimensions.listItemSpacing)
             ) {
-            GhostTalkCard(
-                title = stringResource(CoreR.string.page_list_title),
+                SectionHeader(title = stringResource(CoreR.string.start_manage_content))
+
+                GhostTalkCard(
+                    title = stringResource(CoreR.string.page_list_title),
                 icon = GhostTalkIcons.Description,
                 onClick = onNavigateToPageManager,
                 height = dynamicCardHeight,

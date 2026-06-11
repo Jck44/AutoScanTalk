@@ -27,7 +27,14 @@ data class Dimensions(
     val buttonAspectRatio: Float = 1.0f,
     val baseMaxButtonWidth: Dp = 180.dp,
     val minButtonWidth: Dp = 45.dp,
-    val isTablet: Boolean = false
+    val isTablet: Boolean = false,
+
+    val screenPaddingHorizontal: Dp = 16.dp,
+    val screenPaddingVertical: Dp = 16.dp,
+    val sectionSpacing: Dp = 24.dp,
+    val listItemSpacing: Dp = 8.dp,
+    val minTouchTarget: Dp = 48.dp,
+    val dialogCornerRadius: Dp = 28.dp
 )
 
 val LocalDimensions = compositionLocalOf { Dimensions() }

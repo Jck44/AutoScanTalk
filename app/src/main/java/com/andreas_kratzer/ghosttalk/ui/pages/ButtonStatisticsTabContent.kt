@@ -1,6 +1,7 @@
 package com.andreas_kratzer.ghosttalk.ui.pages
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -37,6 +38,12 @@ import androidx.compose.ui.unit.dp
 import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.core.data.ButtonUsageRepository.ButtonUsageEvent
 import com.andreas_kratzer.ghosttalk.core.model.ButtonEffortMetrics
+import com.andreas_kratzer.ghosttalk.core.ui.theme.FrustrationLowLight
+import com.andreas_kratzer.ghosttalk.core.ui.theme.FrustrationLowDark
+import com.andreas_kratzer.ghosttalk.core.ui.theme.FrustrationMediumLight
+import com.andreas_kratzer.ghosttalk.core.ui.theme.FrustrationMediumDark
+import com.andreas_kratzer.ghosttalk.core.ui.theme.FrustrationHighLight
+import com.andreas_kratzer.ghosttalk.core.ui.theme.FrustrationHighDark
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -184,10 +191,11 @@ fun ButtonStatisticsTabContent(
 
                     // Frustration Index Card
                     val frustrationVal = metrics?.frustrationIndex ?: 0f
+                    val isDark = isSystemInDarkTheme()
                     val frustrationColor = when {
-                        frustrationVal > 0.6f -> Color(0xFFD32F2F)
-                        frustrationVal > 0.3f -> Color(0xFFF57C00)
-                        else -> Color(0xFF388E3C)
+                        frustrationVal > 0.6f -> if (isDark) FrustrationHighDark else FrustrationHighLight
+                        frustrationVal > 0.3f -> if (isDark) FrustrationMediumDark else FrustrationMediumLight
+                        else -> if (isDark) FrustrationLowDark else FrustrationLowLight
                     }
                     val frustrationLabel = when {
                         frustrationVal > 0.6f -> "Hoch"
@@ -315,10 +323,11 @@ fun ButtonStatisticsTabContent(
 
                     // Frustration Index Card
                     val frustrationVal = metrics?.frustrationIndex ?: 0f
+                    val isDark = isSystemInDarkTheme()
                     val frustrationColor = when {
-                        frustrationVal > 0.6f -> Color(0xFFD32F2F)
-                        frustrationVal > 0.3f -> Color(0xFFF57C00)
-                        else -> Color(0xFF388E3C)
+                        frustrationVal > 0.6f -> if (isDark) FrustrationHighDark else FrustrationHighLight
+                        frustrationVal > 0.3f -> if (isDark) FrustrationMediumDark else FrustrationMediumLight
+                        else -> if (isDark) FrustrationLowDark else FrustrationLowLight
                     }
                     val frustrationLabel = when {
                         frustrationVal > 0.6f -> "Hoch"
