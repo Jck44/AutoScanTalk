@@ -94,7 +94,8 @@ data class ImportExportData(
     val pages: List<ImportPage> = emptyList(),
     val logicalVersion: Int? = null,
     val deletedEntities: List<ExportedTombstone>? = null,
-    val versionSequence: Long? = null
+    val versionSequence: Long? = null,
+    val app_version_code: Long? = null
 )
 
 @Serializable

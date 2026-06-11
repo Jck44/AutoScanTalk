@@ -9,5 +9,7 @@ data class SettingsProfile(
     val config: ProfileConfig,
     val profileVersionSequence: Long,
     val updatedAt: Long,
-    val isDeleted: Boolean = false
+    val isDeleted: Boolean = false,
+    val ghosttalk_import_version: String? = "1.1",
+    val app_version_code: Long? = null
 )

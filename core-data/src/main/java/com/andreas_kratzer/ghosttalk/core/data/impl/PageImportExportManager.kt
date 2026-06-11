@@ -144,6 +144,13 @@ class PageImportExportManager @Inject constructor(
             )
         }
 
+        val localVersionCode = try {
+            val pInfo = context.packageManager.getPackageInfo(context.packageName, 0)
+            androidx.core.content.pm.PackageInfoCompat.getLongVersionCode(pInfo)
+        } catch (_: Exception) {
+            null
+        }
+
         val baseExportData = ImportExportData(
             ghosttalk_import_version = "1.1",
             appName = "GhostTalk",
@@ -153,6 +160,7 @@ class PageImportExportManager @Inject constructor(
             bookUpdatedAt = book.updatedAt,
             versionSequence = book.versionSequence,
             sourceDevice = "${android.os.Build.MANUFACTURER} ${android.os.Build.MODEL}",
+            app_version_code = localVersionCode,
             buttonTemplates = mappedButtonTemplates.sortedBy { it.id },
             pages = pages.map { page ->
                 ImportPage(

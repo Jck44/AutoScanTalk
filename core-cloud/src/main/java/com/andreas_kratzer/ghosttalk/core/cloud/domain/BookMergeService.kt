@@ -144,7 +144,11 @@ class BookMergeService @Inject constructor(
             }
         } else {
             val newSeq = maxOf(localSeq, maxRemoteSeq) + 1
-            val mergedWithNewSeq = merged.copy(versionSequence = newSeq)
+            val mergedWithNewSeq = merged.copy(
+                versionSequence = newSeq,
+                app_version_code = VersionSafetyGuard.getLocalVersionCode(context),
+                ghosttalk_import_version = VersionSafetyGuard.CURRENT_FORMAT_VERSION
+            )
             val mergedJson = jsonParser.encodeToString(mergedWithNewSeq)
 
             Log.d(TAG, "[COMMIT-SEQ] Phase 1: Starte lokalen Datenbank-Commit via importFromJson...")
@@ -354,14 +358,15 @@ class BookMergeService @Inject constructor(
     ): Map<String, String> {
         return mapOf(
             "app_name" to "GhostTalk",
-            "ghosttalk_import_version" to "1.1",
+            "ghosttalk_import_version" to VersionSafetyGuard.CURRENT_FORMAT_VERSION,
             "book_id" to bookId,
             "book_name" to bookName,
             "book_created_at" to createdAt.toString(),
             "book_updated_at" to updatedAt.toString(),
             "version_sequence" to versionSequence.toString(),
             "structure_md5" to structureMd5,
-            "source_device" to "${android.os.Build.MANUFACTURER} ${android.os.Build.MODEL}"
+            "source_device" to "${android.os.Build.MANUFACTURER} ${android.os.Build.MODEL}",
+            "app_version_code" to VersionSafetyGuard.getLocalVersionCode(context).toString()
         )
     }
 

@@ -5,11 +5,13 @@ import androidx.core.net.toUri
 import com.andreas_kratzer.ghosttalk.core.data.BookRepository
 import com.andreas_kratzer.ghosttalk.core.data.SyncLogProvider
 import com.andreas_kratzer.ghosttalk.core.data.impl.PageImportExportManager
+import com.andreas_kratzer.ghosttalk.core.model.importexport.ImportExportData
 import com.andreas_kratzer.ghosttalk.core.util.Logger
 import com.google.api.services.drive.Drive
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.json.Json
 import java.io.File
 import javax.inject.Inject
 
@@ -67,6 +69,22 @@ class ImportCloudBackupUseCase @Inject constructor(
                     }
                 } else {
                     val json = tempFile.readText()
+                    try {
+                        val jsonParser = kotlinx.serialization.json.Json { ignoreUnknownKeys = true }
+                        val parsedData = jsonParser.decodeFromString<ImportExportData>(json)
+                        val compatCheck = VersionSafetyGuard.checkJsonCompatibility(
+                            context,
+                            parsedData.ghosttalk_import_version,
+                            parsedData.app_version_code
+                        )
+                        if (compatCheck.isFailure) {
+                            val errorMsg = compatCheck.exceptionOrNull()?.message ?: "Inkompatible Version"
+                            logger.w(TAG, "execute: Compatibility check failed: $errorMsg")
+                            syncLogProvider.addLogEntry("Import abgebrochen: $errorMsg", null, null, isError = true)
+                            tempFile.delete()
+                            return@withContext Result.failure<String>(Exception(errorMsg))
+                        }
+                    } catch (_: Exception) {}
                     importExportManager.importCloudBackup(json, fileId)
                 }
                 tempFile.delete()
@@ -192,6 +210,27 @@ class ImportCloudBackupUseCase @Inject constructor(
                     downloadFile.delete()
                     return false
                 }
+                try {
+                    val jsonParser = kotlinx.serialization.json.Json { ignoreUnknownKeys = true }
+                    val parsedData = jsonParser.decodeFromString<ImportExportData>(remoteJson)
+                    val compatCheck = VersionSafetyGuard.checkJsonCompatibility(
+                        context,
+                        parsedData.ghosttalk_import_version,
+                        parsedData.app_version_code
+                    )
+                    if (compatCheck.isFailure) {
+                        val errorMsg = compatCheck.exceptionOrNull()?.message ?: "Inkompatible Version"
+                        logger.w(TAG, "downloadAndImport: Compatibility check failed for $fileName: $errorMsg")
+                        syncLogProvider.addLogEntry(
+                            "Import abgebrochen: $errorMsg",
+                            book.id,
+                            book.name,
+                            isError = true
+                        )
+                        downloadFile.delete()
+                        return false
+                    }
+                } catch (_: Exception) {}
                 importExportManager.importFromJson(remoteJson, book.id, restoreSyncSettings = false)
             }
 

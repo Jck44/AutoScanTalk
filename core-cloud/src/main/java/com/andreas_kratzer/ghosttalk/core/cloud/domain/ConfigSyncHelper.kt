@@ -42,7 +42,9 @@ class ConfigSyncHelper(
     private fun calculateDeterministicMd5(profile: com.andreas_kratzer.ghosttalk.core.model.SettingsProfile): String {
         val cleanProfile = profile.copy(
             profileVersionSequence = 0L,
-            updatedAt = 0L
+            updatedAt = 0L,
+            ghosttalk_import_version = null,
+            app_version_code = null
         )
         val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }
         val jsonStr = json.encodeToString(com.andreas_kratzer.ghosttalk.core.model.SettingsProfile.serializer(), cleanProfile)
@@ -70,7 +72,9 @@ class ConfigSyncHelper(
             "updated_at" to updatedAt.toString(),
             "source_device" to device,
             "device_id" to androidId,
-            "app_version" to versionName
+            "app_version" to versionName,
+            "app_version_code" to VersionSafetyGuard.getLocalVersionCode(context).toString(),
+            "ghosttalk_import_version" to VersionSafetyGuard.CURRENT_FORMAT_VERSION
         ) + extraProperties
         val displayType = if (type == "profile") "Profile" else "Config"
         val description = "$name $displayType (Uploaded by $device - App v$versionName - Device ID: $androidId)"
@@ -267,8 +271,29 @@ class ConfigSyncHelper(
         val profileFileName = "profile_${activeProfile.id}.json"
         val remoteFile = remoteFiles.find { it.name == profileFileName }
 
+        // 1. Check metadata compatibility
+        if (remoteFile != null) {
+            val compatibilityCheck = VersionSafetyGuard.checkCompatibility(context, remoteFile.properties)
+            if (compatibilityCheck.isFailure) {
+                val errorMsg = compatibilityCheck.exceptionOrNull()?.message ?: "Inkompatible Version"
+                logger.w(TAG, "syncProfile: Compatibility check failed for $profileFileName: $errorMsg")
+                syncLogProvider.addLogEntry(
+                    "Profil-Sync abgebrochen: $errorMsg",
+                    activeProfile.id,
+                    activeProfile.name,
+                    isError = true
+                )
+                return@withContext
+            }
+        }
+
+        val profileToUpload = activeProfile.copy(
+            ghosttalk_import_version = VersionSafetyGuard.CURRENT_FORMAT_VERSION,
+            app_version_code = VersionSafetyGuard.getLocalVersionCode(context)
+        )
+
         val jsonSerializer = Json { ignoreUnknownKeys = true; prettyPrint = true; encodeDefaults = true }
-        val localJson = jsonSerializer.encodeToString(com.andreas_kratzer.ghosttalk.core.model.SettingsProfile.serializer(), activeProfile)
+        val localJson = jsonSerializer.encodeToString(com.andreas_kratzer.ghosttalk.core.model.SettingsProfile.serializer(), profileToUpload)
         val localMd5 = com.andreas_kratzer.ghosttalk.core.cloud.CloudSyncOptimizer().calculateMD5(localJson)
 
         val baseBackupFile = File(File(context.filesDir, "local_backups"), profileFileName)
@@ -321,6 +346,29 @@ class ConfigSyncHelper(
         }
 
         if (remoteJson == null) return@withContext
+
+        // Check JSON compatibility
+        try {
+            val parsedProfile = jsonSerializer.decodeFromString(com.andreas_kratzer.ghosttalk.core.model.SettingsProfile.serializer(), remoteJson)
+            val jsonCheck = VersionSafetyGuard.checkJsonCompatibility(
+                context,
+                parsedProfile.ghosttalk_import_version,
+                parsedProfile.app_version_code
+            )
+            if (jsonCheck.isFailure) {
+                val errorMsg = jsonCheck.exceptionOrNull()?.message ?: "Inkompatibles Format"
+                logger.w(TAG, "syncProfile: JSON compatibility check failed for $profileFileName: $errorMsg")
+                syncLogProvider.addLogEntry(
+                    "Profil-Sync abgebrochen: $errorMsg",
+                    activeProfile.id,
+                    activeProfile.name,
+                    isError = true
+                )
+                return@withContext
+            }
+        } catch (_: Exception) {
+            // Fallback for legacy format
+        }
 
         val remoteProfileConfig = try {
             val parsedProfile = jsonSerializer.decodeFromString(com.andreas_kratzer.ghosttalk.core.model.SettingsProfile.serializer(), remoteJson)
@@ -406,7 +454,9 @@ class ConfigSyncHelper(
                 config = mergedConfig,
                 profileVersionSequence = mergedSequence,
                 updatedAt = mergedUpdatedAt,
-                isDeleted = mergedIsDeleted
+                isDeleted = mergedIsDeleted,
+                ghosttalk_import_version = VersionSafetyGuard.CURRENT_FORMAT_VERSION,
+                app_version_code = VersionSafetyGuard.getLocalVersionCode(context)
             )
 
             val updatedProfileJson = jsonSerializer.encodeToString(com.andreas_kratzer.ghosttalk.core.model.SettingsProfile.serializer(), updatedProfile)

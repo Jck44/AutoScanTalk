@@ -131,6 +131,23 @@ class CloudSyncUseCase @Inject constructor(
                     val remoteMasterFile = remoteFiles.find { it.name == masterFileName }
                     val legacyZipFile = remoteFiles.find { it.name == zipFileName }
                     val effectiveMasterFile = remoteMasterFile ?: legacyZipFile
+
+                    // Check compatibility
+                    if (effectiveMasterFile != null) {
+                        val compatCheck = VersionSafetyGuard.checkCompatibility(context, effectiveMasterFile.properties)
+                        if (compatCheck.isFailure) {
+                            val errorMsg = compatCheck.exceptionOrNull()?.message ?: "Inkompatible Version"
+                            logger.w(TAG, "syncBook: Compatibility check failed for $masterFileName: $errorMsg")
+                            syncLogProvider.addLogEntry(
+                                "Buch-Sync abgebrochen: $errorMsg",
+                                bookId,
+                                book.name,
+                                isError = true
+                            )
+                            return@withContext false
+                        }
+                    }
+
                     val remoteConflictFiles = remoteFiles.filter {
                         it.name.startsWith("merged_") && (it.name.contains(zipFileName) || it.name.contains(masterFileName))
                     }
@@ -243,6 +260,17 @@ class CloudSyncUseCase @Inject constructor(
                                         val remoteJson = readJsonFromFile(downloadFile)
                                         val jsonParser = kotlinx.serialization.json.Json { ignoreUnknownKeys = true; encodeDefaults = true }
                                         val remoteData = jsonParser.decodeFromString<ImportExportData>(remoteJson)
+                                        val jsonCompat = VersionSafetyGuard.checkJsonCompatibility(
+                                            context,
+                                            remoteData.ghosttalk_import_version,
+                                            remoteData.app_version_code
+                                        )
+                                        if (jsonCompat.isFailure) {
+                                            val errorMsg = jsonCompat.exceptionOrNull()?.message ?: "Inkompatible Version (JSON)"
+                                            logger.w(TAG, "syncBook: JSON compatibility check failed: $errorMsg")
+                                            syncLogProvider.addLogEntry("Buch-Sync abgebrochen: $errorMsg", bookId, book.name, isError = true)
+                                            return@withContext false
+                                        }
                                         remoteSeq = remoteData.versionSequence ?: 0L
                                     } else {
                                         logger.e(TAG, "Failed to download remote master file for evaluation.")
@@ -606,14 +634,15 @@ class CloudSyncUseCase @Inject constructor(
     ): Map<String, String> {
         return mapOf(
             "app_name" to "GhostTalk",
-            "ghosttalk_import_version" to "1.1",
+            "ghosttalk_import_version" to VersionSafetyGuard.CURRENT_FORMAT_VERSION,
             "book_id" to bookId,
             "book_name" to bookName,
             "book_created_at" to createdAt.toString(),
             "book_updated_at" to updatedAt.toString(),
             "version_sequence" to versionSequence.toString(),
             "structure_md5" to structureMd5,
-            "source_device" to "${android.os.Build.MANUFACTURER} ${android.os.Build.MODEL}"
+            "source_device" to "${android.os.Build.MANUFACTURER} ${android.os.Build.MODEL}",
+            "app_version_code" to VersionSafetyGuard.getLocalVersionCode(context).toString()
         )
     }
 
