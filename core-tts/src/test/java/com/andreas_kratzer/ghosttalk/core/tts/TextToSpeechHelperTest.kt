@@ -122,13 +122,21 @@ class TextToSpeechHelperTest {
         // Switch to elevenlabs
         ttsEngineFlow.value = "elevenlabs"
         
+        assertFalse(helper.isFallbackActiveFlow.value)
+
         // Capture the error callback from ElevenLabs.speak
         val errorSlot = io.mockk.slot<(String) -> Unit>()
+        var first = true
         every { 
             mockElevenLabsProvider.speak(any(), any(), any(), capture(errorSlot)) 
         } answers {
-            // Simulate error by calling the captured error callback
-            errorSlot.captured.invoke("API Error")
+            if (first) {
+                first = false
+                errorSlot.captured.invoke("API Error")
+            } else {
+                val onDone = args[2] as? (() -> Unit)
+                onDone?.invoke()
+            }
         }
         
         helper.speak("Fallback Test")
@@ -137,5 +145,44 @@ class TextToSpeechHelperTest {
         verify { mockElevenLabsProvider.speak("Fallback Test", any(), any(), any()) }
         // Verify Android TTS was called as fallback
         verify { mockAndroidProvider.speak("Fallback Test", any(), any(), any()) }
+
+        // Fallback state flow should be active
+        assertTrue(helper.isFallbackActiveFlow.value)
+
+        // A new speak call resets it to false
+        helper.speak("Next Attempt")
+        assertFalse(helper.isFallbackActiveFlow.value)
+    }
+
+    @Test
+    fun `isSpeaking delegates polymorphically to current provider`() {
+        every { mockAndroidProvider.isSpeaking() } returns true
+        assertTrue(helper.isSpeaking())
+
+        every { mockAndroidProvider.isSpeaking() } returns false
+        assertFalse(helper.isSpeaking())
+
+        // Switch to elevenlabs
+        ttsEngineFlow.value = "elevenlabs"
+        every { mockElevenLabsProvider.isSpeaking() } returns true
+        assertTrue(helper.isSpeaking())
+
+        every { mockElevenLabsProvider.isSpeaking() } returns false
+        assertFalse(helper.isSpeaking())
+    }
+
+    @Test
+    fun `concurrent provider switching and speaking does not crash`() {
+        val threads = mutableListOf<Thread>()
+        for (i in 0 until 20) {
+            threads.add(Thread {
+                helper.switchProvider(if (i % 2 == 0) "elevenlabs" else "google")
+            })
+            threads.add(Thread {
+                helper.speak("Thread Speech $i")
+            })
+        }
+        threads.forEach { it.start() }
+        threads.forEach { it.join() }
     }
 }

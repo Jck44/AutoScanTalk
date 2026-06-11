@@ -10,6 +10,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
@@ -28,17 +29,25 @@ open class TextToSpeechHelper @Inject constructor(
     private val elevenLabsTtsProvider: Provider<ElevenLabsTtsProvider>
 ) {
 
+    private val lock = Any()
+
+    private val _isFallbackActiveFlow = MutableStateFlow(false)
+    val isFallbackActiveFlow: StateFlow<Boolean> = _isFallbackActiveFlow.asStateFlow()
+
     private val currentProviderFlow = MutableStateFlow<TtsProvider>(androidTtsProvider.get())
     private var currentProvider: TtsProvider 
-        get() = currentProviderFlow.value
-        set(value) { currentProviderFlow.value = value }
+        get() = synchronized(lock) { currentProviderFlow.value }
+        set(value) { synchronized(lock) { currentProviderFlow.value = value } }
     
     @OptIn(ExperimentalCoroutinesApi::class)
     val availableVoicesFlow: StateFlow<List<TtsVoice>> = currentProviderFlow
         .flatMapLatest { it.availableVoicesFlow }
         .stateIn(scope, SharingStarted.Eagerly, emptyList())
 
-    open val isReady: Boolean get() = currentProvider.isReady || androidTtsProvider.get().isReady
+    open val isReady: Boolean 
+        get() = synchronized(lock) {
+            currentProvider.isReady || androidTtsProvider.get().isReady
+        }
 
     // Support for interrupting ONLY notifications
     var isReadingNotification: Boolean = false
@@ -80,32 +89,43 @@ open class TextToSpeechHelper @Inject constructor(
     }
 
     fun switchProvider(engineId: String?) {
-        val nextProvider = when (engineId) {
-            "elevenlabs" -> elevenLabsTtsProvider.get()
-            else -> androidTtsProvider.get()
-        }
-        
-        if (nextProvider != currentProvider) {
-            currentProvider.stopAll()
-            currentProvider = nextProvider
-            // Providers maintain their own settings via independent flows, no need to force sync here
+        synchronized(lock) {
+            val baseProvider = when (engineId) {
+                "elevenlabs" -> elevenLabsTtsProvider.get()
+                else -> androidTtsProvider.get()
+            }
+            
+            val nextProvider = if (engineId == "elevenlabs") {
+                FallbackTtsProvider(
+                    primary = baseProvider,
+                    fallback = androidTtsProvider.get(),
+                    onFallbackTriggered = { error ->
+                        _isFallbackActiveFlow.value = true
+                    }
+                )
+            } else {
+                _isFallbackActiveFlow.value = false
+                baseProvider
+            }
+            
+            val currentBase = when (val curr = currentProvider) {
+                is FallbackTtsProvider -> elevenLabsTtsProvider.get()
+                else -> curr
+            }
+            
+            if (baseProvider != currentBase) {
+                currentProvider.stopAll()
+                currentProvider = nextProvider
+            }
         }
     }
 
     open fun speak(text: String, queueMode: Int = 0, onDone: (() -> Unit)? = null, onError: ((String) -> Unit)? = null) {
-        val provider = currentProvider
-        if (provider is ElevenLabsTtsProvider) {
-            provider.speak(
-                text = text,
-                queueMode = queueMode,
-                onDone = { onDone?.invoke() },
-                onError = { error ->
-                    Log.w("TextToSpeechHelper", "ElevenLabs speak failed, falling back to Android TTS: $error")
-                    androidTtsProvider.get().speak(text, queueMode, onDone, onError)
-                }
-            )
-        } else {
-            provider.speak(text, queueMode, onDone, onError)
+        synchronized(lock) {
+            if (currentProvider is FallbackTtsProvider) {
+                _isFallbackActiveFlow.value = false
+            }
+            currentProvider.speak(text, queueMode, onDone, onError)
         }
     }
 
@@ -117,39 +137,33 @@ open class TextToSpeechHelper @Inject constructor(
         onDone: (() -> Unit)? = null,
         onError: ((String) -> Unit)? = null
     ) {
-        val provider = currentProvider
-        val engineType = if (provider is ElevenLabsTtsProvider) "elevenlabs" else "android"
-        Log.i("TextToSpeechHelper", "speakRouted: engine=$engineType, text='${text.take(20)}...', isReady=${provider.isReady}")
-        
-        if (provider is ElevenLabsTtsProvider) {
-            provider.speakRouted(
-                text = text,
-                deviceAddress = deviceAddress,
-                queueMode = queueMode,
-                isForCues = isForCues,
-                onDone = { onDone?.invoke() },
-                onError = { error ->
-                    Log.w("TextToSpeechHelper", "ElevenLabs speakRouted failed, falling back to Android TTS: $error")
-                    androidTtsProvider.get().speakRouted(text, deviceAddress, queueMode, isForCues, onDone, onError)
-                }
-            )
-        } else {
+        synchronized(lock) {
+            val provider = currentProvider
+            val engineType = if (provider is FallbackTtsProvider) "elevenlabs" else "android"
+            Log.i("TextToSpeechHelper", "speakRouted: engine=$engineType, text='${text.take(20)}...', isReady=${provider.isReady}")
+            if (provider is FallbackTtsProvider) {
+                _isFallbackActiveFlow.value = false
+            }
             provider.speakRouted(text, deviceAddress, queueMode, isForCues, onDone, onError)
         }
     }
 
     fun getAvailableLanguages(): List<Locale> {
-        return currentProvider.getAvailableLanguages()
+        return synchronized(lock) {
+            currentProvider.getAvailableLanguages()
+        }
     }
 
-
-
     fun setVoice(voiceName: String?) {
-        currentProvider.setVoice(voiceName)
+        synchronized(lock) {
+            currentProvider.setVoice(voiceName)
+        }
     }
 
     fun setLanguageAndVoice(languageTag: String?, voiceName: String? = null) {
-        currentProvider.setLanguageAndVoice(languageTag, voiceName)
+        synchronized(lock) {
+            currentProvider.setLanguageAndVoice(languageTag, voiceName)
+        }
     }
 
     interface OnVoiceFallbackListener {
@@ -158,9 +172,11 @@ open class TextToSpeechHelper @Inject constructor(
     
     var fallbackListener: OnVoiceFallbackListener? = null
         set(value) {
-            field = value
-            // Delegate to providers if they support it
-            androidTtsProvider.get().fallbackListener = value
+            synchronized(lock) {
+                field = value
+                // Delegate to providers if they support it
+                androidTtsProvider.get().fallbackListener = value
+            }
         }
 
     fun stopNotificationTTS() {
@@ -172,25 +188,25 @@ open class TextToSpeechHelper @Inject constructor(
     }
 
     suspend fun prefetch(text: String) {
-        currentProvider.prefetch(text)
+        val provider = synchronized(lock) { currentProvider }
+        provider.prefetch(text)
     }
 
     fun isCached(text: String): Boolean {
-        return currentProvider.isCached(text)
-    }
-
-    fun stopAll() {
-        currentProvider.stopAll()
-    }
-
-    open fun isSpeaking(): Boolean {
-        val provider = currentProvider
-        return if (provider is AndroidTtsProvider) {
-            provider.isSpeaking()
-        } else {
-            false
+        return synchronized(lock) {
+            currentProvider.isCached(text)
         }
     }
 
+    fun stopAll() {
+        synchronized(lock) {
+            currentProvider.stopAll()
+        }
+    }
 
+    open fun isSpeaking(): Boolean {
+        return synchronized(lock) {
+            currentProvider.isSpeaking()
+        }
+    }
 }

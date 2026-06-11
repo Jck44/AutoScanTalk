@@ -56,6 +56,14 @@ abstract class AppDatabase : RoomDatabase() {
         @Volatile
         private var INSTANCE: AppDatabase? = null
 
+        @Volatile
+        var migrationErrorsCount = 0
+            internal set
+
+        fun resetMigrationErrorsCount() {
+            migrationErrorsCount = 0
+        }
+
         val MIGRATION_33_34: Migration = object : Migration(33, 34) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("ALTER TABLE `books` ADD COLUMN `actionLogsStorage` TEXT")
@@ -422,6 +430,7 @@ abstract class AppDatabase : RoomDatabase() {
                                 }
                             } catch (e: Exception) {
                                 Log.e("AppDatabase", "Failed to migrate buttonConfigs for page $pageId", e)
+                                migrationErrorsCount++
                             }
                         }
                     }
@@ -456,6 +465,7 @@ abstract class AppDatabase : RoomDatabase() {
                                 db.execSQL("UPDATE templates SET buttonConfigs = ? WHERE id = ?", arrayOf(newConfigsJson, templateId))
                             } catch (e: Exception) {
                                 Log.e("AppDatabase", "Failed to migrate templates for id $templateId", e)
+                                migrationErrorsCount++
                             }
                         }
                     }
@@ -477,6 +487,7 @@ abstract class AppDatabase : RoomDatabase() {
                                 db.execSQL("UPDATE button_usage_stats SET actionJson = ? WHERE bookId = ? AND buttonConfigId = ?", arrayOf(newActionJson, bookId, configId))
                             } catch (e: Exception) {
                                 Log.e("AppDatabase", "Failed to migrate usage stat for $configId", e)
+                                migrationErrorsCount++
                             }
                         }
                     }
