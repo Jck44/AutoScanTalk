@@ -12,8 +12,6 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -32,7 +30,10 @@ class ScannerEngine @Inject constructor(
     val focusedRowIndex: StateFlow<Int?> = stateManager.focusedRowIndex
     val isScanning: StateFlow<Boolean> = stateManager.isScanning
 
-    private val scanMutex = Mutex()
+    // Schützt den gesamten veränderlichen Zustand (scanJob + alle current*-Felder).
+    // Bewusst ein JVM-Monitor statt eines Coroutine-Mutex, weil alle mutierenden Methoden
+    // nicht-suspend sind (sie werden aus nicht-suspend Flow-Collectoren aufgerufen).
+    private val lock = Any()
 
     private var currentButtonConfigs: List<ButtonConfig?> = emptyList()
     private var currentRows: Int = 4
@@ -75,7 +76,7 @@ class ScannerEngine @Inject constructor(
         pageId: String? = null,
         staticRowPage: Page? = null,
         staticRowPattern: String = "linear"
-    ) {
+    ) = synchronized(lock) {
         if (scanJob?.isActive == true &&
             currentPageId == pageId &&
             currentPattern == pattern &&
@@ -87,7 +88,7 @@ class ScannerEngine @Inject constructor(
         ) {
             // Update button configs in place without resetting the scan job
             currentButtonConfigs = buttonConfigs
-            return
+            return@synchronized
         }
 
         scanJob?.cancel()
@@ -164,7 +165,7 @@ class ScannerEngine @Inject constructor(
 
                 strategy.executeScan(context)
             } finally {
-                scanMutex.withLock {
+                synchronized(lock) {
                     if (scanJob === this@launch) {
                         stateManager.setScanning(false)
                     }
@@ -183,13 +184,20 @@ class ScannerEngine @Inject constructor(
         feedbackProvider.prefetchCue(text)
     }
 
-    fun selectCurrentRow() {
-        val currentRowIndex = focusedRowIndex.value ?: return
+    fun selectCurrentRow() = synchronized(lock) {
+        val currentRowIndex = focusedRowIndex.value ?: return@synchronized
+        // Konsistenten Snapshot des aktuellen Zustands ziehen, damit ein paralleles
+        // startScanning die im Coroutine-Body genutzten Felder nicht unter uns wegzieht.
         val staticRowPage = currentStaticRowPage
-        
+        val buttonConfigsSnapshot = currentButtonConfigs
+        val rowsSnapshot = currentRows
+        val columnsSnapshot = currentColumns
+        val patternSnapshot = currentPattern
+        val staticRowPatternSnapshot = currentStaticRowPattern
+
         scanJob?.cancel()
         scanJob = null
-        
+
         stateManager.setScanning(true)
         val job = scope.launch {
             try {
@@ -200,14 +208,14 @@ class ScannerEngine @Inject constructor(
                         combinedButtonConfigs.add(null)
                     }
                 }
-                combinedButtonConfigs.addAll(currentButtonConfigs)
+                combinedButtonConfigs.addAll(buttonConfigsSnapshot)
 
-                val totalCols = if (staticRowPage != null) maxOf(staticRowPage.columns, currentColumns) else currentColumns
+                val totalCols = if (staticRowPage != null) maxOf(staticRowPage.columns, columnsSnapshot) else columnsSnapshot
 
                 val context = ScanContext(
                     scope = scope,
                     buttonConfigs = combinedButtonConfigs,
-                    rows = (if (staticRowPage != null) 1 else 0) + currentRows,
+                    rows = (if (staticRowPage != null) 1 else 0) + rowsSnapshot,
                     columns = totalCols,
                     rowNames = emptyList(),
                     startIndex = 0,
@@ -219,15 +227,15 @@ class ScannerEngine @Inject constructor(
                     delayMillis = scanTimer.scanDelayMillis,
                     featureGuard = featureGuard,
                     hasStaticRow = staticRowPage != null,
-                    staticRowPattern = currentStaticRowPattern,
-                    pagePattern = currentPattern,
-                    mainRows = currentRows,
-                    mainColumns = currentColumns
+                    staticRowPattern = staticRowPatternSnapshot,
+                    pagePattern = patternSnapshot,
+                    mainRows = rowsSnapshot,
+                    mainColumns = columnsSnapshot
                 )
 
                 rowByRowStrategy.executeButtonScanInRow(context, currentRowIndex)
             } finally {
-                scanMutex.withLock {
+                synchronized(lock) {
                     if (scanJob === this@launch) {
                         stateManager.setScanning(false)
                     }
@@ -237,13 +245,13 @@ class ScannerEngine @Inject constructor(
         scanJob = job
     }
 
-    fun pauseScanning() {
+    fun pauseScanning() = synchronized(lock) {
         scanJob?.cancel()
         scanJob = null
         stateManager.setScanning(false)
     }
 
-    fun stopScanning() {
+    fun stopScanning() = synchronized(lock) {
         scanJob?.cancel()
         scanJob = null
         stateManager.setScanning(false)
@@ -258,7 +266,7 @@ class ScannerEngine @Inject constructor(
         stateManager.setFocusedRowIndex(index)
     }
     
-    fun clear() {
+    fun clear() = synchronized(lock) {
         scanJob?.cancel()
         stateManager.clear()
     }

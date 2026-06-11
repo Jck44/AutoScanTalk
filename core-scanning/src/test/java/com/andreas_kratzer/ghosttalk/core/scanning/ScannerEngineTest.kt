@@ -212,6 +212,44 @@ class ScannerEngineTest {
         engine.stopScanning()
     }
 
+    // --- Lifecycle / Race-Konsistenz ---
+
+    @Test
+    fun `rapid page switch keeps scanning active (stale job finally must not stop new scan)`() = runTest {
+        val engine = createEngine(this)
+        val configs = createConfigs(listOf(0, 7))
+
+        engine.startScanning(
+            buttonConfigs = configs,
+            startIndex = 0,
+            pattern = "linear",
+            columns = 2,
+            pageId = "page1"
+        )
+        advanceTimeBy(110)
+        assertEquals(true, engine.isScanning.value)
+
+        // Sofortiger Seitenwechsel -> der alte Job wird gecancelt, ein neuer gestartet.
+        engine.startScanning(
+            buttonConfigs = configs,
+            startIndex = 0,
+            pattern = "linear",
+            columns = 2,
+            pageId = "page2"
+        )
+        // Zeit vorspulen, damit das finally des abgebrochenen alten Jobs laeuft.
+        advanceTimeBy(150)
+
+        // Der neue Scan muss aktiv bleiben: das finally des alten Jobs darf isScanning
+        // nicht abschalten, weil scanJob inzwischen auf den neuen Job zeigt.
+        assertEquals("Scanning muss nach schnellem Seitenwechsel aktiv bleiben", true, engine.isScanning.value)
+        org.junit.Assert.assertNotNull("Neuer Scan muss Fokus erzeugen", engine.focusedButtonIndex.value)
+
+        engine.stopScanning()
+        runCurrent()
+        assertEquals(false, engine.isScanning.value)
+    }
+
     // --- Row-by-Row Scanning ---
 
     @Test
