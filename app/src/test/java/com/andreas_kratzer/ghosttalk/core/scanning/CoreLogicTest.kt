@@ -64,12 +64,16 @@ class CoreLogicTest {
             every { isActionEnabled(any()) } returns true
         }
         val feedbackProvider = mockk<ScannerFeedbackProvider>(relaxed = true)
+        val linearStrategy = LinearScanStrategy()
+        val rowByRowStrategy = RowByRowScanStrategy()
         val engine = ScannerEngine(
             scope = this,
             featureGuard = featureGuard,
             feedbackProvider = feedbackProvider,
             stateManager = ScanStateManager(),
-            scanTimer = ScanTimer()
+            scanTimer = ScanTimer(),
+            linearStrategy = linearStrategy,
+            rowByRowStrategy = rowByRowStrategy
         )
         
         // Mock buttons: 2 rows, 2 columns. 4 active configs

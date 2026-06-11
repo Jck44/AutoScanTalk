@@ -63,23 +63,44 @@ open class GeminiUseCase @Inject constructor(
     
     companion object {
         private const val TAG = "GeminiUseCase"
-        private var activeModelName = "gemini-flash-lite-latest" 
         private const val BASE_URL_TEMPLATE = "https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent"
         private const val LIST_MODELS_URL = "https://generativelanguage.googleapis.com/v1beta/models"
         private const val MIN_REQUEST_INTERVAL_MS = 1000L
         private const val CACHE_TTL_MS = 24 * 60 * 60 * 1000L // 24 Hours
 
-        internal var lastSuccess: Boolean? = null // null: unknown, true: success, false: failed
-        internal var lockoutUntilTime: Long = 0
-        private var cachedModelsJson: String? = null
-        private var lastModelsFetchTime: Long = 0L
+        private val stateLock = Any()
+        
+        private var _activeModelName = "gemini-flash-lite-latest"
+        var activeModelName: String
+            get() = synchronized(stateLock) { _activeModelName }
+            set(value) = synchronized(stateLock) { _activeModelName = value }
 
-        internal fun resetHealthStateForTesting() {
-            lastSuccess = null
-            lockoutUntilTime = 0
-            activeModelName = "gemini-flash-lite-latest"
-            cachedModelsJson = null
-            lastModelsFetchTime = 0L
+        private var _lastSuccess: Boolean? = null
+        var lastSuccess: Boolean?
+            get() = synchronized(stateLock) { _lastSuccess }
+            set(value) = synchronized(stateLock) { _lastSuccess = value }
+
+        private var _lockoutUntilTime: Long = 0
+        var lockoutUntilTime: Long
+            get() = synchronized(stateLock) { _lockoutUntilTime }
+            set(value) = synchronized(stateLock) { _lockoutUntilTime = value }
+
+        private var _cachedModelsJson: String? = null
+        var cachedModelsJson: String?
+            get() = synchronized(stateLock) { _cachedModelsJson }
+            set(value) = synchronized(stateLock) { _cachedModelsJson = value }
+
+        private var _lastModelsFetchTime: Long = 0L
+        var lastModelsFetchTime: Long
+            get() = synchronized(stateLock) { _lastModelsFetchTime }
+            set(value) = synchronized(stateLock) { _lastModelsFetchTime = value }
+
+        internal fun resetHealthStateForTesting() = synchronized(stateLock) {
+            _lastSuccess = null
+            _lockoutUntilTime = 0
+            _activeModelName = "gemini-flash-lite-latest"
+            _cachedModelsJson = null
+            _lastModelsFetchTime = 0L
         }
     }
     private var appCommandHandler: ((String, Map<String, String>) -> Unit)? = null
@@ -266,7 +287,7 @@ open class GeminiUseCase @Inject constructor(
                 if (part.has("functionCall")) {
                     hasFunctionCall = true
                     val call = part.getJSONObject("functionCall")
-                    val result = handleFunctionCall(token, call)
+                    val result = handleFunctionCall(token, call, prompt, contentsHistory)
                     
                     functionResponseParts.put(JSONObject().apply {
                         put("functionResponse", JSONObject().apply {
@@ -444,7 +465,32 @@ open class GeminiUseCase @Inject constructor(
         return 60 // Default fallback
     }
 
-    private suspend fun handleFunctionCall(token: String, call: JSONObject): String {
+    private fun hasForeignContentInHistory(contentsHistory: JSONArray): Boolean {
+        for (i in 0 until contentsHistory.length()) {
+            val turn = contentsHistory.optJSONObject(i) ?: continue
+            val parts = turn.optJSONArray("parts") ?: continue
+            for (j in 0 until parts.length()) {
+                val part = parts.optJSONObject(j) ?: continue
+                if (part.has("functionCall")) {
+                    val fc = part.getJSONObject("functionCall")
+                    val name = fc.optString("name")
+                    if (name == "read_gmail" || name == "search_drive" || name == "search_wikipedia") {
+                        return true
+                    }
+                }
+                if (part.has("functionResponse")) {
+                    val fr = part.getJSONObject("functionResponse")
+                    val name = fr.optString("name")
+                    if (name == "read_gmail" || name == "search_drive" || name == "search_wikipedia") {
+                        return true
+                    }
+                }
+            }
+        }
+        return false
+    }
+
+    internal suspend fun handleFunctionCall(token: String, call: JSONObject, prompt: String, contentsHistory: JSONArray): String {
         val name = call.getString("name")
         val argsObj = call.optJSONObject("args")
         val args = mutableMapOf<String, Any?>()
@@ -457,6 +503,37 @@ open class GeminiUseCase @Inject constructor(
         val tool = aiTools.find { it.name == name }
         if (tool == null) {
             return "Funktion nicht gefunden."
+        }
+
+        // Validate and constrain inputs for tools
+        if (name == "read_gmail") {
+            val maxResults = args["maxResults"] as? Number
+            if (maxResults != null && (maxResults.toInt() < 1 || maxResults.toInt() > 10)) {
+                return "Fehler: maxResults muss zwischen 1 und 10 liegen."
+            }
+        }
+        if (name == "create_calendar_event") {
+            val summary = args["summary"] as? String ?: ""
+            if (summary.length > 100) {
+                return "Fehler: Der Titel des Termins ist zu lang (max 100 Zeichen)."
+            }
+        }
+        if (name == "play_on_spotify") {
+            val query = args["query"] as? String ?: ""
+            if (query.length > 100) {
+                return "Fehler: Die Suchanfrage ist zu lang (max 100 Zeichen)."
+            }
+        }
+
+        // Security check: require confirmation if writing actions are triggered after reading foreign content
+        val isWriteAction = name == "create_calendar_event" || name == "play_on_spotify"
+        if (isWriteAction && hasForeignContentInHistory(contentsHistory)) {
+            val confirmationKeywords = listOf("ja", "yes", "bestätigen", "bestätige", "ok", "okay", "confirm", "proceed", "mach das", "freigeben", "abspielen", "erstellen")
+            val lowercasePrompt = prompt.lowercase()
+            val hasConfirmation = confirmationKeywords.any { lowercasePrompt.contains(it) }
+            if (!hasConfirmation) {
+                return "CONFIRMATION_REQUIRED: Der Benutzer muss die Aktion '$name' mit den Parametern $args erst bestätigen. Bitte frage den Benutzer explizit, ob er diese Aktion ausführen möchte."
+            }
         }
 
         return try {

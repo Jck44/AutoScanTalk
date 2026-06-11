@@ -8,29 +8,24 @@ import javax.inject.Singleton
 
 @Singleton
 class ScanStateManager @Inject constructor() {
-    private val _focusedButtonIndex = MutableStateFlow<Int?>(null)
-    val focusedButtonIndex: StateFlow<Int?> = _focusedButtonIndex.asStateFlow()
-
-    private val _focusedRowIndex = MutableStateFlow<Int?>(null)
-    val focusedRowIndex: StateFlow<Int?> = _focusedRowIndex.asStateFlow()
-
-    private val _isScanning = MutableStateFlow(false)
-    val isScanning: StateFlow<Boolean> = _isScanning.asStateFlow()
+    val focusedButtonIndex = MutableStateFlow<Int?>(null)
+    val focusedRowIndex = MutableStateFlow<Int?>(null)
+    val isScanning = MutableStateFlow(false)
 
     fun setFocusedButtonIndex(index: Int?) {
-        _focusedButtonIndex.value = index
+        focusedButtonIndex.value = index
     }
 
     fun setFocusedRowIndex(index: Int?) {
-        _focusedRowIndex.value = index
+        focusedRowIndex.value = index
     }
 
     fun setScanning(scanning: Boolean) {
-        _isScanning.value = scanning
+        isScanning.value = scanning
     }
 
     fun clear() {
-        _focusedButtonIndex.value = null
-        _focusedRowIndex.value = null
+        focusedButtonIndex.value = null
+        focusedRowIndex.value = null
     }
 }

@@ -18,6 +18,8 @@ class ScannerEngineTest {
 
     private lateinit var featureGuard: FeatureGuardProxy
     private lateinit var feedbackProvider: ScannerFeedbackProvider
+    private lateinit var linearStrategy: LinearScanStrategy
+    private lateinit var rowByRowStrategy: RowByRowScanStrategy
 
     @Before
     fun setup() {
@@ -30,6 +32,11 @@ class ScannerEngineTest {
             every { isButtonVisible(any()) } returns true
         }
         feedbackProvider = mockk(relaxed = true)
+        
+        // We can either use real strategies (they are stateless helpers mostly) or mocks.
+        // Let's use the real strategy implementations for integration coverage in this engine test.
+        linearStrategy = LinearScanStrategy()
+        rowByRowStrategy = RowByRowScanStrategy()
     }
 
     /**
@@ -55,7 +62,9 @@ class ScannerEngineTest {
             featureGuard = featureGuard,
             feedbackProvider = feedbackProvider,
             stateManager = ScanStateManager(),
-            scanTimer = ScanTimer()
+            scanTimer = ScanTimer(),
+            linearStrategy = linearStrategy,
+            rowByRowStrategy = rowByRowStrategy
         )
         engine.scanDelayMillis = delayMs
         return engine

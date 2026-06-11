@@ -217,7 +217,11 @@ class ExportLogsUseCase @Inject constructor(
 
     suspend fun shareLogs(context: Context) = withContext(Dispatchers.IO) {
         val logContent = generateLogString()
-        val tempFile = File(context.cacheDir, "ghosttalk_error_log.txt")
+        val logsDir = File(context.cacheDir, "logs")
+        if (!logsDir.exists()) {
+            logsDir.mkdirs()
+        }
+        val tempFile = File(logsDir, "ghosttalk_error_log.txt")
         tempFile.writeText(logContent)
         
         val authority = "${context.packageName}.fileprovider"

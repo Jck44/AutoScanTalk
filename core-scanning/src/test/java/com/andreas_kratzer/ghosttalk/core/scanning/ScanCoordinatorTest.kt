@@ -428,5 +428,71 @@ class ScanCoordinatorTest {
         
         assertEquals(true, scanCoordinator.isPredictionTimedOut.value)
     }
+
+    @Test
+    fun `predictionTimeoutJob is cancelled when page changes or scan stops`() = runTest(testDispatcher) {
+        val rawPage = mockk<Page>(relaxed = true) {
+            every { id } returns "raw1"
+            every { name } returns "Raw Page"
+            every { buttonConfigs } returns listOf(ButtonConfig(label = "Gemini", auditoryCue = null, buttonAction = SmartPredictionButtonAction(1), isActive = true))
+        }
+        every { scanningSettings.scanDelayFlow } returns MutableStateFlow(100L)
+        val scanCoordinator = createCoordinator(backgroundScope)
+
+        currentPage.value = rawPage
+        resolvedPage.value = rawPage
+        smartPredictions.value = null
+        isSmartPredictionLoading.value = true
+
+        advanceUntilIdle()
+        assertEquals(false, scanCoordinator.isPredictionTimedOut.value)
+
+        // When: Page changes before timeout
+        currentPage.value = null
+        advanceUntilIdle()
+
+        // Fast forward past the original timeout delay
+        kotlinx.coroutines.delay(150L)
+        // Then: prediction should not have timed out since the job was cancelled
+        assertEquals(false, scanCoordinator.isPredictionTimedOut.value)
+    }
+
+    @Test
+    fun `should pause during calls and resume when call ends`() = runTest(testDispatcher) {
+        val page = Page(
+            id = "p1",
+            bookId = "b1",
+            name = "Page 1",
+            buttonConfigs = listOf(ButtonConfig(label = "Button 1"))
+        )
+        val isInCallFlow = MutableStateFlow(false)
+        every { callActionProxy.isInCall } returns isInCallFlow
+
+        currentPage.value = page
+        resolvedPage.value = page
+        isUserModeActive.value = true
+
+        createCoordinator(backgroundScope)
+        advanceUntilIdle()
+
+        // Verify initially scanning starts
+        verify { scannerEngine.startScanning(any(), any(), any(), any(), any(), any(), eq("p1")) }
+        clearMocks(scannerEngine, answers = false)
+
+        // When: Call starts
+        isInCallFlow.value = true
+        advanceUntilIdle()
+
+        // Then: scanning should pause
+        verify { scannerEngine.pauseScanning() }
+        clearMocks(scannerEngine, answers = false)
+
+        // When: Call ends
+        isInCallFlow.value = false
+        advanceUntilIdle()
+
+        // Then: scanning should resume
+        verify { scannerEngine.startScanning(any(), any(), any(), any(), any(), any(), eq("p1")) }
+    }
 }
 

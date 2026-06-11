@@ -43,8 +43,16 @@ class CloudSettingsRepository(
     private val _elevenLabsStability = FloatSetting(SettingsConstants.KEY_ELEVENLABS_STABILITY, 0.5f)
     private val _elevenLabsSimilarityBoost = FloatSetting(SettingsConstants.KEY_ELEVENLABS_SIMILARITY_BOOST, 0.75f)
     private val _elevenLabsTtsLanguage = StringSetting(SettingsConstants.KEY_ELEVENLABS_TTS_LANGUAGE)
-    private val _spotifyAccessToken = StringSetting(SettingsConstants.KEY_SPOTIFY_ACCESS_TOKEN)
-    private val _spotifyRefreshToken = StringSetting(SettingsConstants.KEY_SPOTIFY_REFRESH_TOKEN)
+    private val _spotifyAccessToken = StringSetting(
+        key = SettingsConstants.KEY_SPOTIFY_ACCESS_TOKEN,
+        encrypt = { SecuritySettingsEncryptor.encryptLocal(it, context) },
+        decrypt = { SecuritySettingsEncryptor.decryptLocal(it, context) }
+    )
+    private val _spotifyRefreshToken = StringSetting(
+        key = SettingsConstants.KEY_SPOTIFY_REFRESH_TOKEN,
+        encrypt = { SecuritySettingsEncryptor.encryptLocal(it, context) },
+        decrypt = { SecuritySettingsEncryptor.decryptLocal(it, context) }
+    )
     private val _spotifyTokenExpiresAt = LongSetting(SettingsConstants.KEY_SPOTIFY_TOKEN_EXPIRES_AT, 0L)
     private val _spotifyUserDisplayName = StringSetting(SettingsConstants.KEY_SPOTIFY_USER_DISPLAY_NAME)
     private val _googleDriveFolderId = StringSetting(KEY_GOOGLE_DRIVE_FOLDER_ID)

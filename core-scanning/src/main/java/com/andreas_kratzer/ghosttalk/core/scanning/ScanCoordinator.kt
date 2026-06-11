@@ -289,6 +289,8 @@ class ScanCoordinator @Inject constructor(
     }
 
     fun stopScanning() {
+        predictionTimeoutJob?.cancel()
+        _isPredictionTimedOut.value = false
         scannerEngine.stopScanning()
     }
 

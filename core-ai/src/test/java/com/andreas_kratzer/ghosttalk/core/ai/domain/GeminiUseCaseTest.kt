@@ -92,4 +92,100 @@ class GeminiUseCaseTest {
         assertEquals(GeminiUseCase.ToolStatus.FAILED, status["wikipedia_search"])
         assertEquals(GeminiUseCase.ToolStatus.FAILED, status["search_drive"])
     }
+
+    @Test
+    fun `handleFunctionCall create_calendar_event requires confirmation if gmail read is in history and prompt is not confirmation`() = kotlinx.coroutines.runBlocking {
+        val calendarTool = mockk<AiTool>(relaxed = true) {
+            every { name } returns "create_calendar_event"
+        }
+        val useCase = GeminiUseCase(googleAuthManager, logger, setOf(calendarTool), settingsRepository)
+
+        val call = org.json.JSONObject().apply {
+            put("name", "create_calendar_event")
+            put("args", org.json.JSONObject().apply {
+                put("summary", "meeting")
+                put("startTime", "2026-06-11T12:00:00Z")
+                put("endTime", "2026-06-11T13:00:00Z")
+            })
+        }
+
+        val history = org.json.JSONArray().apply {
+            put(org.json.JSONObject().apply {
+                put("role", "user")
+                put("parts", org.json.JSONArray().apply {
+                    put(org.json.JSONObject().apply {
+                        put("functionCall", org.json.JSONObject().apply {
+                            put("name", "read_gmail")
+                        })
+                    })
+                })
+            })
+        }
+
+        val result = useCase.handleFunctionCall("token", call, "Lies meine Mails und erstelle einen Termin", history)
+        org.junit.Assert.assertTrue(result.contains("CONFIRMATION_REQUIRED"))
+    }
+
+    @Test
+    fun `handleFunctionCall create_calendar_event executes if prompt is confirmation`() = kotlinx.coroutines.runBlocking {
+        val calendarTool = mockk<AiTool>(relaxed = true) {
+            every { name } returns "create_calendar_event"
+            io.mockk.coEvery { execute(any()) } returns "Success"
+        }
+        val useCase = GeminiUseCase(googleAuthManager, logger, setOf(calendarTool), settingsRepository)
+
+        val call = org.json.JSONObject().apply {
+            put("name", "create_calendar_event")
+            put("args", org.json.JSONObject().apply {
+                put("summary", "meeting")
+                put("startTime", "2026-06-11T12:00:00Z")
+                put("endTime", "2026-06-11T13:00:00Z")
+            })
+        }
+
+        val history = org.json.JSONArray().apply {
+            put(org.json.JSONObject().apply {
+                put("role", "user")
+                put("parts", org.json.JSONArray().apply {
+                    put(org.json.JSONObject().apply {
+                        put("functionCall", org.json.JSONObject().apply {
+                            put("name", "read_gmail")
+                        })
+                    })
+                })
+            })
+        }
+
+        val result = useCase.handleFunctionCall("token", call, "Ja, bitte", history)
+        assertEquals("Success", result)
+    }
+
+    @Test
+    fun `handleFunctionCall enforces bounds and lengths`() = kotlinx.coroutines.runBlocking {
+        val calendarTool = mockk<AiTool>(relaxed = true) {
+            every { name } returns "create_calendar_event"
+        }
+        val gmailTool = mockk<AiTool>(relaxed = true) {
+            every { name } returns "read_gmail"
+        }
+        val useCase = GeminiUseCase(googleAuthManager, logger, setOf(calendarTool, gmailTool), settingsRepository)
+
+        val longCall = org.json.JSONObject().apply {
+            put("name", "create_calendar_event")
+            put("args", org.json.JSONObject().apply {
+                put("summary", "a".repeat(101))
+            })
+        }
+        val resultLong = useCase.handleFunctionCall("token", longCall, "test", org.json.JSONArray())
+        org.junit.Assert.assertTrue(resultLong.contains("Fehler: Der Titel des Termins ist zu lang"))
+
+        val gmailCall = org.json.JSONObject().apply {
+            put("name", "read_gmail")
+            put("args", org.json.JSONObject().apply {
+                put("maxResults", 50)
+            })
+        }
+        val resultGmail = useCase.handleFunctionCall("token", gmailCall, "test", org.json.JSONArray())
+        org.junit.Assert.assertTrue(resultGmail.contains("Fehler: maxResults muss zwischen 1 und 10 liegen"))
+    }
 }

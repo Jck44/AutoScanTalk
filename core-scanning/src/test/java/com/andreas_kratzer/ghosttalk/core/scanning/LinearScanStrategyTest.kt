@@ -31,22 +31,40 @@ class LinearScanStrategyTest {
         focusedRowIndex.value = null
     }
 
+    private fun createContext(
+        scope: kotlinx.coroutines.CoroutineScope,
+        buttonConfigs: List<ButtonConfig?>,
+        rows: Int = 4,
+        columns: Int = 4,
+        rowNames: List<String> = emptyList(),
+        startIndex: Int = 0,
+        onSpeakCue: suspend (String) -> Unit = {},
+        onPrefetchCue: suspend (String) -> Unit = {},
+        onCycleCompleted: suspend () -> Unit = {},
+        delayMillis: Long = 1000L
+    ) = ScanContext(
+        scope = scope,
+        buttonConfigs = buttonConfigs,
+        rows = rows,
+        columns = columns,
+        rowNames = rowNames,
+        startIndex = startIndex,
+        focusedButtonIndex = focusedButtonIndex,
+        focusedRowIndex = focusedRowIndex,
+        onSpeakCue = onSpeakCue,
+        onPrefetchCue = onPrefetchCue,
+        onCycleCompleted = onCycleCompleted,
+        delayMillis = delayMillis,
+        featureGuard = featureGuard
+    )
+
     @Test
     fun `executeScan with empty configs sets focus to null`() = runTest {
         strategy.executeScan(
-            scope = this,
-            buttonConfigs = emptyList(),
-            rows = 4,
-            columns = 4,
-            rowNames = emptyList(),
-            startIndex = 0,
-            focusedButtonIndex = focusedButtonIndex,
-            focusedRowIndex = focusedRowIndex,
-            onSpeakCue = {},
-            onPrefetchCue = {},
-            onCycleCompleted = {},
-            delayMillis = 1000,
-            featureGuard = featureGuard
+            createContext(
+                scope = this,
+                buttonConfigs = emptyList()
+            )
         )
         assertNull(focusedButtonIndex.value)
     }
@@ -67,19 +85,13 @@ class LinearScanStrategyTest {
         // Use a background scope for the infinite scan loop
         val job = launch {
             strategy.executeScan(
-                scope = this,
-                buttonConfigs = configs,
-                rows = 1,
-                columns = 4,
-                rowNames = emptyList(),
-                startIndex = 0,
-                focusedButtonIndex = focusedButtonIndex,
-                focusedRowIndex = focusedRowIndex,
-                onSpeakCue = { cues.add(it) },
-                onPrefetchCue = {},
-                onCycleCompleted = {},
-                delayMillis = 1000,
-                featureGuard = featureGuard
+                createContext(
+                    scope = this,
+                    buttonConfigs = configs,
+                    rows = 1,
+                    columns = 4,
+                    onSpeakCue = { cues.add(it) }
+                )
             )
         }
 
@@ -111,19 +123,13 @@ class LinearScanStrategyTest {
         val cues = mutableListOf<String>()
         val job = launch {
             strategy.executeScan(
-                scope = this,
-                buttonConfigs = listOf(config),
-                rows = 1,
-                columns = 4,
-                rowNames = emptyList(),
-                startIndex = 0,
-                focusedButtonIndex = focusedButtonIndex,
-                focusedRowIndex = focusedRowIndex,
-                onSpeakCue = { cues.add(it) },
-                onPrefetchCue = {},
-                onCycleCompleted = {},
-                delayMillis = 1000,
-                featureGuard = featureGuard
+                createContext(
+                    scope = this,
+                    buttonConfigs = listOf(config),
+                    rows = 1,
+                    columns = 4,
+                    onSpeakCue = { cues.add(it) }
+                )
             )
         }
 
@@ -142,19 +148,13 @@ class LinearScanStrategyTest {
 
         val job = launch {
             strategy.executeScan(
-                scope = this,
-                buttonConfigs = configs,
-                rows = 1,
-                columns = 4,
-                rowNames = emptyList(),
-                startIndex = 2,
-                focusedButtonIndex = focusedButtonIndex,
-                focusedRowIndex = focusedRowIndex,
-                onSpeakCue = { },
-                onPrefetchCue = {},
-                onCycleCompleted = {},
-                delayMillis = 1000,
-                featureGuard = featureGuard
+                createContext(
+                    scope = this,
+                    buttonConfigs = configs,
+                    rows = 1,
+                    columns = 4,
+                    startIndex = 2
+                )
             )
         }
 
@@ -178,19 +178,14 @@ class LinearScanStrategyTest {
         var cycleCount = 0
         val job = launch {
             strategy.executeScan(
-                scope = this,
-                buttonConfigs = listOf(config),
-                rows = 1,
-                columns = 1,
-                rowNames = emptyList(),
-                startIndex = 0,
-                focusedButtonIndex = focusedButtonIndex,
-                focusedRowIndex = focusedRowIndex,
-                onSpeakCue = { },
-                onPrefetchCue = {},
-                onCycleCompleted = { cycleCount++ },
-                delayMillis = 100,
-                featureGuard = featureGuard
+                createContext(
+                    scope = this,
+                    buttonConfigs = listOf(config),
+                    rows = 1,
+                    columns = 1,
+                    onCycleCompleted = { cycleCount++ },
+                    delayMillis = 100
+                )
             )
         }
 

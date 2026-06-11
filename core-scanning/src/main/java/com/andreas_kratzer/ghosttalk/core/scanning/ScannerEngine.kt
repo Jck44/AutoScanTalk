@@ -7,10 +7,13 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -21,11 +24,15 @@ class ScannerEngine @Inject constructor(
     private val featureGuard: FeatureGuardProxy,
     private val feedbackProvider: ScannerFeedbackProvider,
     private val stateManager: ScanStateManager,
-    private val scanTimer: ScanTimer
+    private val scanTimer: ScanTimer,
+    private val linearStrategy: LinearScanStrategy,
+    private val rowByRowStrategy: RowByRowScanStrategy
 ) {
     val focusedButtonIndex: StateFlow<Int?> = stateManager.focusedButtonIndex
     val focusedRowIndex: StateFlow<Int?> = stateManager.focusedRowIndex
     val isScanning: StateFlow<Boolean> = stateManager.isScanning
+
+    private val scanMutex = Mutex()
 
     private var currentButtonConfigs: List<ButtonConfig?> = emptyList()
     private var currentRows: Int = 4
@@ -49,11 +56,6 @@ class ScannerEngine @Inject constructor(
         set(value) {
             scanTimer.scanDelayMillis = value
         }
-
-    sealed interface ScanStep {
-        data class Button(val index: Int) : ScanStep
-        data class Row(val rowIndex: Int, val name: String) : ScanStep
-    }
 
     private fun getButtonConfigByIndex(index: Int): ButtonConfig? {
         return if (index < 49) {
@@ -102,132 +104,65 @@ class ScannerEngine @Inject constructor(
 
         stateManager.setScanning(true)
 
-        val steps = mutableListOf<ScanStep>()
-
-        // 1. Static Row Steps (if enabled)
-        if (staticRowPage != null) {
-            val staticRowActiveButtons = staticRowPage.buttonConfigs
-                .mapIndexedNotNull { index, config ->
-                    if (config != null &&
-                        config.isActive &&
-                        com.andreas_kratzer.ghosttalk.core.util.GridUtils.isVisibleInGrid(index, rows = staticRowPage.rows, columns = staticRowPage.columns) &&
-                        featureGuard.isButtonVisible(config)) {
-                        Pair(index, config)
-                    } else null
-                }
-            
-            if (staticRowActiveButtons.isNotEmpty()) {
-                if (staticRowPattern == "row_by_row") {
-                    val rowName = staticRowPage.rowNames.getOrNull(0)?.takeIf { it.isNotBlank() } ?: "Statische Zeile"
-                    steps.add(ScanStep.Row(rowIndex = 0, name = rowName))
-                } else { // "linear"
-                    for ((index, config) in staticRowActiveButtons) {
-                        steps.add(ScanStep.Button(index = index))
-                    }
-                }
-            }
-        }
-
-        // 2. Main Page Steps
-        val mainPageActiveButtons = buttonConfigs
-            .mapIndexedNotNull { index, config ->
-                if (config != null &&
-                    config.isActive &&
-                    com.andreas_kratzer.ghosttalk.core.util.GridUtils.isVisibleInGrid(index, rows = rows, columns = columns) &&
-                    featureGuard.isButtonVisible(config)) {
-                    Pair(index, config)
-                } else null
-            }
-        
-        if (mainPageActiveButtons.isNotEmpty()) {
-            if (pattern == "row_by_row") {
-                val startRowIndexOffset = if (staticRowPage != null) 1 else 0
-                for (r in 0 until rows) {
-                    val hasBtns = (0 until columns).any { c ->
-                        val idx = com.andreas_kratzer.ghosttalk.core.util.GridUtils.getGlobalIndex(r, c)
-                        val config = buttonConfigs.getOrNull(idx)
-                        config != null && config.isActive && featureGuard.isButtonVisible(config)
-                    }
-                    if (hasBtns) {
-                        val rowName = rowNames.getOrNull(r) ?: "Zeile ${r + 1}"
-                        steps.add(ScanStep.Row(rowIndex = r + startRowIndexOffset, name = rowName))
-                    }
-                }
-            } else { // "linear"
-                val shiftOffset = if (staticRowPage != null) 49 else 0
-                for ((index, config) in mainPageActiveButtons) {
-                    steps.add(ScanStep.Button(index = shiftOffset + index))
-                }
-            }
-        }
-
+        // Delegate scanning to the selected strategy
         val job = scope.launch {
             try {
-                if (steps.isEmpty()) {
-                    stateManager.clear()
-                    return@launch
+                // Build a combined list representing the static row (first, if present) and main buttons
+                val combinedButtonConfigs = mutableListOf<ButtonConfig?>()
+                var staticRowOffset = 0
+                if (staticRowPage != null) {
+                    // Prepend static row buttons up to 49
+                    combinedButtonConfigs.addAll(staticRowPage.buttonConfigs)
+                    while (combinedButtonConfigs.size < 49) {
+                        combinedButtonConfigs.add(null)
+                    }
+                    staticRowOffset = 49
+                }
+                combinedButtonConfigs.addAll(buttonConfigs)
+
+                // The virtual rows and columns for row-by-row scanning
+                val totalRows = (if (staticRowPage != null) 1 else 0) + rows
+                val totalCols = if (staticRowPage != null) maxOf(staticRowPage.columns, columns) else columns
+
+                // Prepare row names (first row is static row name if present)
+                val combinedRowNames = mutableListOf<String>()
+                if (staticRowPage != null) {
+                    val staticRowName = staticRowPage.rowNames.getOrNull(0)?.takeIf { it.isNotBlank() } ?: "Statische Zeile"
+                    combinedRowNames.add(staticRowName)
+                }
+                combinedRowNames.addAll(rowNames)
+
+                // Select strategy
+                val strategy = if (pattern == "row_by_row" || (staticRowPage != null && staticRowPattern == "row_by_row")) {
+                    rowByRowStrategy
+                } else {
+                    linearStrategy
                 }
 
-                delay(100)
+                val context = ScanContext(
+                    scope = scope,
+                    buttonConfigs = combinedButtonConfigs,
+                    rows = totalRows,
+                    columns = totalCols,
+                    rowNames = combinedRowNames,
+                    startIndex = if (staticRowPage != null && startIndex >= 0 && pattern == "linear") {
+                        startIndex + staticRowOffset
+                    } else startIndex,
+                    focusedButtonIndex = stateManager.focusedButtonIndex,
+                    focusedRowIndex = stateManager.focusedRowIndex,
+                    onSpeakCue = { handleSpeakCue(it) },
+                    onPrefetchCue = { handlePrefetchCue(it) },
+                    onCycleCompleted = { _onCycleCompleted.emit(Unit) },
+                    delayMillis = scanTimer.scanDelayMillis,
+                    featureGuard = featureGuard
+                )
 
-                var currentStepPos = 0
-                if (startIndex > 0) {
-                    val found = steps.indexOfFirst { step ->
-                        when (step) {
-                            is ScanStep.Button -> step.index >= startIndex
-                            is ScanStep.Row -> step.rowIndex >= startIndex
-                        }
-                    }
-                    if (found != -1) {
-                        currentStepPos = found
-                    }
-                }
-
-                while (true) {
-                    for (i in currentStepPos until steps.size) {
-                        val step = steps[i]
-                        
-                        // Prefetch next step cue
-                        val nextStepPos = if (i + 1 < steps.size) i + 1 else 0
-                        val nextCueText = when (val nextStep = steps[nextStepPos]) {
-                            is ScanStep.Button -> {
-                                val nextConfig = getButtonConfigByIndex(nextStep.index)
-                                val nextCue = nextConfig?.auditoryCue
-                                (nextCue as? com.andreas_kratzer.ghosttalk.core.model.AuditoryCue.TextToSpeechCue)?.text?.takeIf { it.isNotBlank() } ?: nextConfig?.label ?: ""
-                            }
-                            is ScanStep.Row -> {
-                                nextStep.name
-                            }
-                        }
-                        scope.launch(Dispatchers.IO) {
-                            handlePrefetchCue(nextCueText)
-                        }
-
-                        // Execute current step focus & speak
-                        when (step) {
-                            is ScanStep.Button -> {
-                                stateManager.setFocusedRowIndex(null)
-                                stateManager.setFocusedButtonIndex(step.index)
-                                val currentConfig = getButtonConfigByIndex(step.index)
-                                val cue = currentConfig?.auditoryCue
-                                val cueText = (cue as? com.andreas_kratzer.ghosttalk.core.model.AuditoryCue.TextToSpeechCue)?.text?.takeIf { it.isNotBlank() } ?: currentConfig?.label ?: ""
-                                handleSpeakCue(cueText)
-                            }
-                            is ScanStep.Row -> {
-                                stateManager.setFocusedButtonIndex(null)
-                                stateManager.setFocusedRowIndex(step.rowIndex)
-                                handleSpeakCue(step.name)
-                            }
-                        }
-
-                        scanTimer.delayTick()
-                    }
-                    _onCycleCompleted.emit(Unit)
-                    currentStepPos = 0
-                }
+                strategy.executeScan(context)
             } finally {
-                if (scanJob === this@launch) {
-                    stateManager.setScanning(false)
+                scanMutex.withLock {
+                    if (scanJob === this@launch) {
+                        stateManager.setScanning(false)
+                    }
                 }
             }
         }
@@ -247,73 +182,45 @@ class ScannerEngine @Inject constructor(
         val currentRowIndex = focusedRowIndex.value ?: return
         val staticRowPage = currentStaticRowPage
         
-        val rowButtons = mutableListOf<Pair<Int, ButtonConfig>>()
-
-        if (currentRowIndex == 0 && staticRowPage != null) {
-            // Static row buttons (indices < 49)
-            staticRowPage.buttonConfigs.forEachIndexed { index, config ->
-                if (config != null &&
-                    config.isActive &&
-                    com.andreas_kratzer.ghosttalk.core.util.GridUtils.isVisibleInGrid(index, rows = staticRowPage.rows, columns = staticRowPage.columns) &&
-                    featureGuard.isButtonVisible(config)) {
-                    rowButtons.add(Pair(index, config))
-                }
-            }
-        } else {
-            // Main page row buttons
-            val pageRow = if (staticRowPage != null) currentRowIndex - 1 else currentRowIndex
-            val shiftOffset = if (staticRowPage != null) 49 else 0
-            if (pageRow in 0 until currentRows) {
-                for (c in 0 until currentColumns) {
-                    val globalIndex = com.andreas_kratzer.ghosttalk.core.util.GridUtils.getGlobalIndex(pageRow, c)
-                    val config = currentButtonConfigs.getOrNull(globalIndex)
-                    if (config != null &&
-                        config.isActive &&
-                        featureGuard.isButtonVisible(config)) {
-                        rowButtons.add(Pair(shiftOffset + globalIndex, config))
-                    }
-                }
-            }
-        }
-
-        if (rowButtons.isEmpty()) return
-
         scanJob?.cancel()
         scanJob = null
         
         stateManager.setScanning(true)
         val job = scope.launch {
             try {
-                delay(100)
-                
-                while (true) {
-                    for (i in rowButtons.indices) {
-                        val globalIndex = rowButtons[i].first
-                        val config = getButtonConfigByIndex(globalIndex)
-                        stateManager.setFocusedButtonIndex(globalIndex)
-
-                        // Prefetch next button cue
-                        val nextIndex = if (i + 1 < rowButtons.size) i + 1 else 0
-                        val nextGlobalIndex = rowButtons[nextIndex].first
-                        val nextConfig = getButtonConfigByIndex(nextGlobalIndex)
-                        val nextCue = nextConfig?.auditoryCue
-                        val nextCueText = (nextCue as? com.andreas_kratzer.ghosttalk.core.model.AuditoryCue.TextToSpeechCue)?.text?.takeIf { it.isNotBlank() } ?: nextConfig?.label ?: ""
-                        scope.launch(Dispatchers.IO) {
-                            handlePrefetchCue(nextCueText)
-                        }
-
-                        // Speak current button cue
-                        val cue = config?.auditoryCue
-                        val cueText = (cue as? com.andreas_kratzer.ghosttalk.core.model.AuditoryCue.TextToSpeechCue)?.text?.takeIf { it.isNotBlank() } ?: config?.label ?: ""
-                        handleSpeakCue(cueText)
-                        
-                        scanTimer.delayTick()
+                val combinedButtonConfigs = mutableListOf<ButtonConfig?>()
+                if (staticRowPage != null) {
+                    combinedButtonConfigs.addAll(staticRowPage.buttonConfigs)
+                    while (combinedButtonConfigs.size < 49) {
+                        combinedButtonConfigs.add(null)
                     }
-                    _onCycleCompleted.emit(Unit)
                 }
+                combinedButtonConfigs.addAll(currentButtonConfigs)
+
+                val totalCols = if (staticRowPage != null) maxOf(staticRowPage.columns, currentColumns) else currentColumns
+
+                val context = ScanContext(
+                    scope = scope,
+                    buttonConfigs = combinedButtonConfigs,
+                    rows = (if (staticRowPage != null) 1 else 0) + currentRows,
+                    columns = totalCols,
+                    rowNames = emptyList(),
+                    startIndex = 0,
+                    focusedButtonIndex = stateManager.focusedButtonIndex,
+                    focusedRowIndex = stateManager.focusedRowIndex,
+                    onSpeakCue = { handleSpeakCue(it) },
+                    onPrefetchCue = { handlePrefetchCue(it) },
+                    onCycleCompleted = { _onCycleCompleted.emit(Unit) },
+                    delayMillis = scanTimer.scanDelayMillis,
+                    featureGuard = featureGuard
+                )
+
+                rowByRowStrategy.executeButtonScanInRow(context, currentRowIndex)
             } finally {
-                if (scanJob === this@launch) {
-                    stateManager.setScanning(false)
+                scanMutex.withLock {
+                    if (scanJob === this@launch) {
+                        stateManager.setScanning(false)
+                    }
                 }
             }
         }

@@ -9,40 +9,28 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 
-class LinearScanStrategy : ScanStrategy {
-    override suspend fun executeScan(
-        scope: CoroutineScope,
-        buttonConfigs: List<ButtonConfig?>,
-        rows: Int,
-        columns: Int,
-        rowNames: List<String>,
-        startIndex: Int,
-        focusedButtonIndex: MutableStateFlow<Int?>,
-        focusedRowIndex: MutableStateFlow<Int?>,
-        onSpeakCue: suspend (String) -> Unit,
-        onPrefetchCue: suspend (String) -> Unit,
-        onCycleCompleted: suspend () -> Unit,
-        delayMillis: Long,
-        featureGuard: FeatureGuardProxy
-    ) {
-        focusedRowIndex.value = null
+import javax.inject.Inject
+
+class LinearScanStrategy @Inject constructor() : ScanStrategy {
+    override suspend fun executeScan(context: ScanContext) {
+        context.focusedRowIndex.value = null
         
-        val activeButtonsWithGlobalIndices = buttonConfigs
+        val activeButtonsWithGlobalIndices = context.buttonConfigs
             .mapIndexedNotNull { index, buttonConfig ->
                 if (buttonConfig != null && 
                     buttonConfig.isActive && 
-                    GridUtils.isVisibleInGrid(index, rows = rows, columns = columns) &&
-                    featureGuard.isButtonVisible(buttonConfig)) {
+                    GridUtils.isVisibleInGrid(index, rows = context.rows, columns = context.columns) &&
+                    context.featureGuard.isButtonVisible(buttonConfig)) {
                     Pair(index, buttonConfig)
                 } else null
             }
 
         if (activeButtonsWithGlobalIndices.isEmpty()) {
-            focusedButtonIndex.value = null
+            context.focusedButtonIndex.value = null
             return
         }
 
-        val startingPosition = activeButtonsWithGlobalIndices.indexOfFirst { it.first >= startIndex }
+        val startingPosition = activeButtonsWithGlobalIndices.indexOfFirst { it.first >= context.startIndex }
             .coerceAtLeast(0)
 
         var currentPos = startingPosition
@@ -53,7 +41,7 @@ class LinearScanStrategy : ScanStrategy {
         while (true) {
             for (i in currentPos until activeButtonsWithGlobalIndices.size) {
                 val (globalIndex, buttonConfig) = activeButtonsWithGlobalIndices[i]
-                focusedButtonIndex.value = globalIndex
+                context.focusedButtonIndex.value = globalIndex
                 
                 val cue = buttonConfig.auditoryCue
                 val cueText = (cue as? AuditoryCue.TextToSpeechCue)?.text?.takeIf { it.isNotBlank() } ?: buttonConfig.label
@@ -64,15 +52,15 @@ class LinearScanStrategy : ScanStrategy {
                 val nextCue = nextButtonConfig.auditoryCue
                 val nextCueText = (nextCue as? AuditoryCue.TextToSpeechCue)?.text?.takeIf { it.isNotBlank() } ?: nextButtonConfig.label
                 
-                scope.launch(Dispatchers.IO) {
-                    onPrefetchCue(nextCueText)
+                context.scope.launch(Dispatchers.IO) {
+                    context.onPrefetchCue(nextCueText)
                 }
 
-                onSpeakCue(cueText)
+                context.onSpeakCue(cueText)
                 
-                delay(delayMillis)
+                delay(context.delayMillis)
             }
-            onCycleCompleted()
+            context.onCycleCompleted()
             currentPos = 0
         }
     }

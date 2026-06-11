@@ -81,7 +81,15 @@ class PhilipsHueManager @Inject constructor(
         val url = URL(urlStr)
         val connection = url.openConnection() as HttpsURLConnection
         connection.sslSocketFactory = createFingerprintSslSocketFactory(fingerprint)
-        connection.hostnameVerifier = bypassHostnameVerifier
+        connection.hostnameVerifier = HostnameVerifier { _, session ->
+            try {
+                val cert = session.peerCertificates[0] as X509Certificate
+                val actualFingerprint = getSha256Fingerprint(cert)
+                actualFingerprint.equals(fingerprint, ignoreCase = true)
+            } catch (e: Exception) {
+                false
+            }
+        }
         return connection
     }
 

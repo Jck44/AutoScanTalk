@@ -1,17 +1,29 @@
 package com.andreas_kratzer.ghosttalk.core.data.impl.settings
 
+import android.content.Context
 import android.content.SharedPreferences
 import com.andreas_kratzer.ghosttalk.core.settings.SmartHomeSettings
 import kotlinx.coroutines.flow.StateFlow
 
 class SmartHomeSettingsRepository(
     prefs: SharedPreferences,
-    activeBookIdFlow: StateFlow<String?>
+    activeBookIdFlow: StateFlow<String?>,
+    private val context: Context
 ) : BaseSettingsRepository(prefs, activeBookIdFlow), SmartHomeSettings {
 
     private val _hueBridgeIp = NonNullStringSetting(SettingsConstants.KEY_HUE_BRIDGE_IP, "")
-    private val _hueUsername = NonNullStringSetting(SettingsConstants.KEY_HUE_USERNAME, "")
-    private val _hueBridgeFingerprint = NonNullStringSetting(SettingsConstants.KEY_HUE_BRIDGE_FINGERPRINT, "")
+    private val _hueUsername = NonNullStringSetting(
+        key = SettingsConstants.KEY_HUE_USERNAME,
+        default = "",
+        encrypt = { SecuritySettingsEncryptor.encryptLocal(it, context) },
+        decrypt = { SecuritySettingsEncryptor.decryptLocal(it, context) }
+    )
+    private val _hueBridgeFingerprint = NonNullStringSetting(
+        key = SettingsConstants.KEY_HUE_BRIDGE_FINGERPRINT,
+        default = "",
+        encrypt = { SecuritySettingsEncryptor.encryptLocal(it, context) },
+        decrypt = { SecuritySettingsEncryptor.decryptLocal(it, context) }
+    )
     private val _hueCachedDevices = NonNullStringSetting(SettingsConstants.KEY_HUE_CACHED_DEVICES, "")
 
     override val hueBridgeIpFlow = _hueBridgeIp.flow

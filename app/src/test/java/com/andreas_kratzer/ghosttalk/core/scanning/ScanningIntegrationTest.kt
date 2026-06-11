@@ -73,7 +73,9 @@ class ScanningIntegrationTest {
             featureGuard = featureGuard,
             feedbackProvider = mockk(relaxed = true),
             stateManager = ScanStateManager(),
-            scanTimer = ScanTimer()
+            scanTimer = ScanTimer(),
+            linearStrategy = LinearScanStrategy(),
+            rowByRowStrategy = RowByRowScanStrategy()
         )
 
         val actionCoordinator = ActionCoordinator(componentScope, mockk(relaxed = true))

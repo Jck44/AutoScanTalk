@@ -37,6 +37,33 @@ class RowByRowScanStrategyTest {
         }
     }
 
+    private fun createContext(
+        scope: kotlinx.coroutines.CoroutineScope,
+        buttonConfigs: List<ButtonConfig?>,
+        rows: Int = 7,
+        columns: Int = 2,
+        rowNames: List<String> = emptyList(),
+        startIndex: Int = 0,
+        onSpeakCue: suspend (String) -> Unit = {},
+        onPrefetchCue: suspend (String) -> Unit = {},
+        onCycleCompleted: suspend () -> Unit = {},
+        delayMillis: Long = 1000L
+    ) = ScanContext(
+        scope = scope,
+        buttonConfigs = buttonConfigs,
+        rows = rows,
+        columns = columns,
+        rowNames = rowNames,
+        startIndex = startIndex,
+        focusedButtonIndex = focusedButtonIndex,
+        focusedRowIndex = focusedRowIndex,
+        onSpeakCue = onSpeakCue,
+        onPrefetchCue = onPrefetchCue,
+        onCycleCompleted = onCycleCompleted,
+        delayMillis = delayMillis,
+        featureGuard = featureGuard
+    )
+
     @Test
     fun `executeScan skips rows without active or visible buttons`() = runTest {
         // MAX_GRID_SIZE is 7
@@ -57,19 +84,14 @@ class RowByRowScanStrategyTest {
         val cues = mutableListOf<String>()
         val job = launch {
             strategy.executeScan(
-                scope = this,
-                buttonConfigs = modifiedConfigs,
-                rows = 7,
-                columns = 2,
-                rowNames = listOf("R1", "R2"),
-                startIndex = 0,
-                focusedButtonIndex = focusedButtonIndex,
-                focusedRowIndex = focusedRowIndex,
-                onSpeakCue = { cues.add(it) },
-                onPrefetchCue = {},
-                onCycleCompleted = {},
-                delayMillis = 1000,
-                featureGuard = featureGuard
+                createContext(
+                    scope = this,
+                    buttonConfigs = modifiedConfigs,
+                    rows = 7,
+                    columns = 2,
+                    rowNames = listOf("R1", "R2"),
+                    onSpeakCue = { cues.add(it) }
+                )
             )
         }
 
@@ -89,19 +111,13 @@ class RowByRowScanStrategyTest {
         val cues = mutableListOf<String>()
         val job = launch {
             strategy.executeScan(
-                scope = this,
-                buttonConfigs = configs,
-                rows = 7,
-                columns = 1,
-                rowNames = emptyList(),
-                startIndex = 0,
-                focusedButtonIndex = focusedButtonIndex,
-                focusedRowIndex = focusedRowIndex,
-                onSpeakCue = { cues.add(it) },
-                onPrefetchCue = {},
-                onCycleCompleted = {},
-                delayMillis = 1000,
-                featureGuard = featureGuard
+                createContext(
+                    scope = this,
+                    buttonConfigs = configs,
+                    rows = 7,
+                    columns = 1,
+                    onSpeakCue = { cues.add(it) }
+                )
             )
         }
 
@@ -120,17 +136,14 @@ class RowByRowScanStrategyTest {
         val cues = mutableListOf<String>()
         val job = launch {
             strategy.executeButtonScanInRow(
-                scope = this,
-                buttonConfigs = configs,
-                rows = 7,
-                columns = 2,
-                rowIndex = 1,
-                focusedButtonIndex = focusedButtonIndex,
-                onSpeakCue = { cues.add(it) },
-                onPrefetchCue = {},
-                onCycleCompleted = {},
-                delayMillis = 1000,
-                featureGuard = featureGuard
+                createContext(
+                    scope = this,
+                    buttonConfigs = configs,
+                    rows = 7,
+                    columns = 2,
+                    onSpeakCue = { cues.add(it) }
+                ),
+                rowIndex = 1
             )
         }
 
@@ -155,17 +168,13 @@ class RowByRowScanStrategyTest {
         }
         
         strategy.executeButtonScanInRow(
-            scope = this,
-            buttonConfigs = configs,
-            rows = 7,
-            columns = 1,
-            rowIndex = 0,
-            focusedButtonIndex = focusedButtonIndex,
-            onSpeakCue = { },
-            onPrefetchCue = {},
-            onCycleCompleted = {},
-            delayMillis = 1000,
-            featureGuard = featureGuard
+            createContext(
+                scope = this,
+                buttonConfigs = configs,
+                rows = 7,
+                columns = 1
+            ),
+            rowIndex = 0
         )
         
         assertNull(focusedButtonIndex.value)
@@ -181,24 +190,28 @@ class RowByRowScanStrategyTest {
         val focusedRowIndex = MutableStateFlow<Int?>(null)
         val speakCount = MutableStateFlow(0)
 
+        val customFeatureGuard = mockk<FeatureGuardProxy>(relaxed = true) {
+            every { isButtonVisible(any()) } returns true
+        }
+
         // Use backgroundScope from runTest to ensure cleanup
         backgroundScope.launch {
             strategy.executeScan(
-                scope = this,
-                buttonConfigs = buttonConfigs,
-                rows = 1,
-                columns = 1,
-                rowNames = emptyList(),
-                startIndex = 0,
-                focusedButtonIndex = focusedButtonIndex,
-                focusedRowIndex = focusedRowIndex,
-                onSpeakCue = { speakCount.value++ },
-                onPrefetchCue = {},
-                onCycleCompleted = {},
-                delayMillis = 500,
-                featureGuard = mockk(relaxed = true) {
-                    every { isButtonVisible(any()) } returns true
-                }
+                ScanContext(
+                    scope = this,
+                    buttonConfigs = buttonConfigs,
+                    rows = 1,
+                    columns = 1,
+                    rowNames = emptyList(),
+                    startIndex = 0,
+                    focusedButtonIndex = focusedButtonIndex,
+                    focusedRowIndex = focusedRowIndex,
+                    onSpeakCue = { speakCount.value++ },
+                    onPrefetchCue = {},
+                    onCycleCompleted = {},
+                    delayMillis = 500,
+                    featureGuard = customFeatureGuard
+                )
             )
         }
 
