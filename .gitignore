@@ -42,3 +42,13 @@ local.properties
 /test_results.txt
 /test_results_v2.txt
 /verification_build.txt
+
+# Build-/Log-/Debug-Artefakte (nicht versionieren)
+/build_errors.txt
+/build_errors_2.txt
+/core_tts_test_compile_log.txt
+/feature_settings_test_compile_log.txt
+/logcat_dump.txt
+/test_compile_log.txt
+/test_keys.py
+*.txt.bak
