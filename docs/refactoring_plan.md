@@ -24,6 +24,10 @@ Jeder Schritt ist so konzipiert, dass die App danach vollständig kompilierbar, 
 | 10 | MainActivity | ✅ fertig + committet (`bf88f9d1`) |
 | 11 | SystemCallManager | ✅ fertig + committet (`f3b5c525`) |
 | 12 | PageSplitDialogs / GridEditor / DeviceActionFields | ✅ umgesetzt + reviewt, abnahmereif — **Roadmap komplett** |
+| 13 | Code-Analysis-Bereinigung | ✅ fertig + committet |
+| 14 | Stabilitäts-Fixes (Gemini-Analyse, verifiziert) | ✅ fertig + committet (`2b196cb2`) |
+| 15 | `feature-settings`-Modul | ➡️ **Detailplan in `docs/refactoring_plan_phase15.md`** (läuft) |
+| 16 | `core-data`-Monolithen (ImportExport, CloneBook) | ➡️ **Detailplan in `docs/refactoring_plan_phase16.md`** |
 
 ---
 

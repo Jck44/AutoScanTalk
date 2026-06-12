@@ -41,7 +41,7 @@ fun CallSettingsSection(viewModel: SettingsViewModel) {
     val context = LocalContext.current
     val dimensions = LocalDimensions.current
     val forceKeyboard by viewModel.forceSoftKeyboard.collectAsState()
-    val simulateCallsEnabled by viewModel.simulateCallsEnabled.collectAsState()
+    val simulateCallsEnabled by viewModel.call.simulateCallsEnabled.collectAsState()
 
     FlowRow(
         modifier = Modifier.fillMaxWidth(),
@@ -51,18 +51,18 @@ fun CallSettingsSection(viewModel: SettingsViewModel) {
     ) {
         val categoryCall = stringResource(R.string.settings_category_call)
         PreferenceCategory(categoryCall, modifier = Modifier.weight(1f)) {
-            val maxCallDurationSeconds by viewModel.maxCallDurationSeconds.collectAsState()
-            val callDurationFeedbackIntervalSeconds by viewModel.callDurationFeedbackIntervalSeconds.collectAsState()
-            val outgoingCallIntro by viewModel.outgoingCallIntro.collectAsState()
-            val incomingCallIntro by viewModel.incomingCallIntro.collectAsState()
-            val incomingCallScanLimitActive by viewModel.incomingCallScanLimitUserModeActive.collectAsState()
-            val incomingCallAutoActionActive by viewModel.incomingCallAutoActionUserModeActive.collectAsState()
-            val incomingCallDelayInactive by viewModel.incomingCallDelayUserModeInactive.collectAsState()
-            val incomingCallAutoActionInactive by viewModel.incomingCallAutoActionUserModeInactive.collectAsState()
-            val callAnnouncementAsCue by viewModel.callAnnouncementAsCue.collectAsState()
-            val autoEnableSpeakerphone by viewModel.autoEnableSpeakerphone.collectAsState()
-            val hangUpPressesRequired by viewModel.hangUpPressesRequired.collectAsState()
-            val filterCallsNotInContacts by viewModel.filterCallsNotInContacts.collectAsState()
+            val maxCallDurationSeconds by viewModel.call.maxCallDurationSeconds.collectAsState()
+            val callDurationFeedbackIntervalSeconds by viewModel.call.callDurationFeedbackIntervalSeconds.collectAsState()
+            val outgoingCallIntro by viewModel.call.outgoingCallIntro.collectAsState()
+            val incomingCallIntro by viewModel.call.incomingCallIntro.collectAsState()
+            val incomingCallScanLimitActive by viewModel.call.incomingCallScanLimitUserModeActive.collectAsState()
+            val incomingCallAutoActionActive by viewModel.call.incomingCallAutoActionUserModeActive.collectAsState()
+            val incomingCallDelayInactive by viewModel.call.incomingCallDelayUserModeInactive.collectAsState()
+            val incomingCallAutoActionInactive by viewModel.call.incomingCallAutoActionUserModeInactive.collectAsState()
+            val callAnnouncementAsCue by viewModel.call.callAnnouncementAsCue.collectAsState()
+            val autoEnableSpeakerphone by viewModel.call.autoEnableSpeakerphone.collectAsState()
+            val hangUpPressesRequired by viewModel.call.hangUpPressesRequired.collectAsState()
+            val filterCallsNotInContacts by viewModel.call.filterCallsNotInContacts.collectAsState()
 
             var isDefaultDialer by remember { mutableStateOf(false) }
             val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
@@ -88,7 +88,7 @@ fun CallSettingsSection(viewModel: SettingsViewModel) {
             val activity = context.findActivity()
             if (activity != null) {
                 Button(
-                    onClick = { viewModel.requestDefaultDialer(activity) },
+                    onClick = { viewModel.call.requestDefaultDialer(activity) },
                     modifier = Modifier.fillMaxWidth(),
                     shape = MaterialTheme.shapes.medium,
                     enabled = !isDefaultDialer
@@ -123,7 +123,7 @@ fun CallSettingsSection(viewModel: SettingsViewModel) {
                 label = maxDurationLabel,
                 selectedOption = selectedDurationLabel,
                 options = durationOptions.map { (seconds, label) ->
-                    label to { viewModel.setMaxCallDurationSeconds(seconds) }
+                    label to { viewModel.call.setMaxCallDurationSeconds(seconds) }
                 }
             )
 
@@ -143,7 +143,7 @@ fun CallSettingsSection(viewModel: SettingsViewModel) {
                 label = feedbackIntervalLabel,
                 selectedOption = selectedFeedbackLabel,
                 options = feedbackIntervalOptions.map { (seconds, label) ->
-                    label to { viewModel.setCallDurationFeedbackIntervalSeconds(seconds) }
+                    label to { viewModel.call.setCallDurationFeedbackIntervalSeconds(seconds) }
                 }
             )
 
@@ -151,7 +151,7 @@ fun CallSettingsSection(viewModel: SettingsViewModel) {
             SettingsEditTextItem(
                 label = stringResource(R.string.settings_call_intro_outgoing),
                 value = outgoingCallIntro,
-                onValueChange = { viewModel.setOutgoingCallIntro(it) },
+                onValueChange = { viewModel.call.setOutgoingCallIntro(it) },
                 forceKeyboard = forceKeyboard
             )
 
@@ -159,7 +159,7 @@ fun CallSettingsSection(viewModel: SettingsViewModel) {
             SettingsEditTextItem(
                 label = stringResource(R.string.settings_call_intro_incoming),
                 value = incomingCallIntro,
-                onValueChange = { viewModel.setIncomingCallIntro(it) },
+                onValueChange = { viewModel.call.setIncomingCallIntro(it) },
                 forceKeyboard = forceKeyboard
             )
 
@@ -167,14 +167,14 @@ fun CallSettingsSection(viewModel: SettingsViewModel) {
             SettingsToggleItem(
                 label = stringResource(R.string.settings_call_announcement_as_cue),
                 checked = callAnnouncementAsCue,
-                onCheckedChange = { viewModel.setCallAnnouncementAsCue(it) }
+                onCheckedChange = { viewModel.call.setCallAnnouncementAsCue(it) }
             )
 
             // Auto Speakerphone Toggle
             SettingsToggleItem(
                 label = stringResource(R.string.settings_call_auto_enable_speakerphone),
                 checked = autoEnableSpeakerphone,
-                onCheckedChange = { viewModel.setAutoEnableSpeakerphone(it) }
+                onCheckedChange = { viewModel.call.setAutoEnableSpeakerphone(it) }
             )
 
             // Block calls not in contacts Toggle
@@ -182,7 +182,7 @@ fun CallSettingsSection(viewModel: SettingsViewModel) {
                 label = stringResource(R.string.settings_call_filter_not_in_contacts),
                 description = stringResource(R.string.settings_call_filter_not_in_contacts_desc),
                 checked = filterCallsNotInContacts,
-                onCheckedChange = { viewModel.setFilterCallsNotInContacts(it) }
+                onCheckedChange = { viewModel.call.setFilterCallsNotInContacts(it) }
             )
 
             Spacer(modifier = Modifier.height(dimensions.paddingSmall))
@@ -200,7 +200,7 @@ fun CallSettingsSection(viewModel: SettingsViewModel) {
                 label = scanLimitLabel,
                 selectedOption = "$incomingCallScanLimitActive Durchläufe",
                 options = scanLimitOptions.map { limit ->
-                    "$limit Durchläufe" to { viewModel.setIncomingCallScanLimitUserModeActive(limit) }
+                    "$limit Durchläufe" to { viewModel.call.setIncomingCallScanLimitUserModeActive(limit) }
                 }
             )
 
@@ -215,7 +215,7 @@ fun CallSettingsSection(viewModel: SettingsViewModel) {
                 label = autoActionLabel,
                 selectedOption = selectedActionLabel,
                 options = actionOptions.map { (action, label) ->
-                    label to { viewModel.setIncomingCallAutoActionUserModeActive(action) }
+                    label to { viewModel.call.setIncomingCallAutoActionUserModeActive(action) }
                 }
             )
 
@@ -241,7 +241,7 @@ fun CallSettingsSection(viewModel: SettingsViewModel) {
                         5 -> "5"
                         else -> presses.toString()
                     }
-                    optLabel to { viewModel.setHangUpPressesRequired(presses) }
+                    optLabel to { viewModel.call.setHangUpPressesRequired(presses) }
                 }
             )
 
@@ -260,7 +260,7 @@ fun CallSettingsSection(viewModel: SettingsViewModel) {
                 label = delayLabel,
                 selectedOption = "$incomingCallDelayInactive Sekunden",
                 options = delayOptions.map { seconds ->
-                    "$seconds Sekunden" to { viewModel.setIncomingCallDelayUserModeInactive(seconds) }
+                    "$seconds Sekunden" to { viewModel.call.setIncomingCallDelayUserModeInactive(seconds) }
                 }
             )
 
@@ -270,7 +270,7 @@ fun CallSettingsSection(viewModel: SettingsViewModel) {
                 label = autoActionInactiveLabel,
                 selectedOption = selectedActionInactiveLabel,
                 options = actionOptions.map { (action, label) ->
-                    label to { viewModel.setIncomingCallAutoActionUserModeInactive(action) }
+                    label to { viewModel.call.setIncomingCallAutoActionUserModeInactive(action) }
                 }
             )
         }
@@ -293,7 +293,7 @@ fun CallSettingsSection(viewModel: SettingsViewModel) {
             SettingsToggleItem(
                 label = "Ausgehende Anrufe bei Button-Klick simulieren",
                 checked = simulateCallsEnabled,
-                onCheckedChange = { viewModel.setSimulateCallsEnabled(it) }
+                onCheckedChange = { viewModel.call.setSimulateCallsEnabled(it) }
             )
 
             Spacer(modifier = Modifier.height(dimensions.paddingSmall))
@@ -315,7 +315,7 @@ fun CallSettingsSection(viewModel: SettingsViewModel) {
             Spacer(modifier = Modifier.height(dimensions.paddingMedium))
 
             Button(
-                onClick = { viewModel.simulateIncomingCall(simName, simPhone) },
+                onClick = { viewModel.call.simulateIncomingCall(simName, simPhone) },
                 modifier = Modifier.fillMaxWidth(),
                 shape = MaterialTheme.shapes.medium
             ) {
@@ -325,7 +325,7 @@ fun CallSettingsSection(viewModel: SettingsViewModel) {
             Spacer(modifier = Modifier.height(dimensions.paddingSmall))
 
             Button(
-                onClick = { viewModel.simulateOutgoingCall(simName, simPhone) },
+                onClick = { viewModel.call.simulateOutgoingCall(simName, simPhone) },
                 modifier = Modifier.fillMaxWidth(),
                 shape = MaterialTheme.shapes.medium
             ) {

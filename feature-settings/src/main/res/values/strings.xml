@@ -12,6 +12,7 @@
     <string name="settings_category_gemini">KI &amp; Vorhersagen</string>
     <string name="settings_category_elevenlabs">Eleven Labs</string>
     <string name="settings_category_notifications">Benachrichtigungen &amp; Berechtigungen</string>
+    <string name="settings_category_permissions">Berechtigungen</string>
     <string name="settings_category_cloud_book">Sicherung</string>
     <string name="settings_category_cloud_sync">Synchronisierung</string>
     <string name="settings_category_advanced">System &amp; Wartung</string>
@@ -542,4 +543,23 @@
     <string name="settings_vocal_register_fp_desc">Registriere dieses Geräusch als Fehlalarm für ein Profil, damit es künftig blockiert wird.</string>
     <string name="settings_vocal_test_recognized">Erkannt!</string>
     <string name="settings_vocal_test_not_recognized">Nicht erkannt / Blockiert</string>
+
+    <!-- Phase 15 Refactoring Strings -->
+    <string name="settings_elevenlabs_testing">ElevenLabs Verbindung wird getestet...</string>
+    <string name="settings_error_delete_book">Fehler beim Löschen des Buches</string>
+    <string name="settings_error_share_logs">Fehler beim Teilen des Fehlerberichts: %1$s</string>
+    <string name="settings_logs_uploading">Fehlerbericht wird hochgeladen...</string>
+    <string name="settings_error_upload_failed">Upload fehlgeschlagen: %1$s</string>
+    <string name="settings_error_delete_last_profile">Das einzige verbleibende Profil kann nicht gelöscht werden.</string>
+    <string name="settings_selected_saf_folder">Ausgewählter SAF-Ordner</string>
+    <string name="settings_error_import">Fehler beim Importieren: %1$s</string>
+    <string name="settings_edit_global_profile">Globales Profil bearbeiten</string>
+    <string name="settings_global_settings">Globale Einstellungen</string>
+    <string name="settings_title_settings">Einstellungen</string>
+    <string name="settings_edit_profile">Profil bearbeiten</string>
+    <string name="settings_draft">Entwurf</string>
+    <string name="settings_import_success">Buch erfolgreich importiert.</string>
+    <string name="settings_error_import_export">Fehler beim Import/Export: %1$s</string>
+    <string name="settings_profile_edit_draft_title">Profil bearbeiten (Entwurf)</string>
+    <string name="settings_profile_edit_draft_desc">Sie bearbeiten Einstellungen für das Profil \'%1$s\'. Diese werden erst beim Speichern angewendet und in die Cloud synchronisiert.</string>
 </resources>

@@ -218,7 +218,7 @@ fun GhostTalkNavHost(
                     }
                 },
                 onRequestDefaultDialer = { activity ->
-                    settingsViewModel.requestDefaultDialer(activity)
+                    settingsViewModel.call.requestDefaultDialer(activity)
                 }
             )
         }

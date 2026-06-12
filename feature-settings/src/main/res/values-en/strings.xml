@@ -12,6 +12,7 @@
     <string name="settings_category_gemini">Gemini AI Assistant</string>
     <string name="settings_category_elevenlabs">ElevenLabs</string>
     <string name="settings_category_notifications">Notifications &amp; Permissions</string>
+    <string name="settings_category_permissions">Permissions</string>
     <string name="settings_category_cloud_book">Backup</string>
     <string name="settings_category_cloud_sync">Synchronization</string>
     <string name="settings_category_advanced">Advanced Settings</string>
@@ -541,4 +542,23 @@
     <string name="settings_vocal_register_fp_desc">Register this noise as a false alarm for a profile to block it in the future.</string>
     <string name="settings_vocal_test_recognized">Recognized!</string>
     <string name="settings_vocal_test_not_recognized">Not recognized / Blocked</string>
+
+    <!-- Phase 15 Refactoring Strings -->
+    <string name="settings_elevenlabs_testing">Testing ElevenLabs connection...</string>
+    <string name="settings_error_delete_book">Error deleting book</string>
+    <string name="settings_error_share_logs">Error sharing error report: %1$s</string>
+    <string name="settings_logs_uploading">Uploading error report...</string>
+    <string name="settings_error_upload_failed">Upload failed: %1$s</string>
+    <string name="settings_error_delete_last_profile">The only remaining profile cannot be deleted.</string>
+    <string name="settings_selected_saf_folder">Selected SAF folder</string>
+    <string name="settings_error_import">Error importing: %1$s</string>
+    <string name="settings_edit_global_profile">Edit global profile</string>
+    <string name="settings_global_settings">Global settings</string>
+    <string name="settings_title_settings">Settings</string>
+    <string name="settings_edit_profile">Edit profile</string>
+    <string name="settings_draft">Draft</string>
+    <string name="settings_import_success">Book successfully imported.</string>
+    <string name="settings_error_import_export">Error import/export: %1$s</string>
+    <string name="settings_profile_edit_draft_title">Edit Profile (Draft)</string>
+    <string name="settings_profile_edit_draft_desc">You are editing settings for the profile \'%1$s\'. These will only be applied and synced to the cloud when saved.</string>
 </resources>

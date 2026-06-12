@@ -455,12 +455,12 @@ class SettingsViewModelTest {
 
     @Test
     fun `resetMonitoredNotificationAppsToMessagingDefaults does not crash under test context`() = runTest {
-        viewModel.resetMonitoredNotificationAppsToMessagingDefaults()
+        viewModel.notifications.resetMonitoredNotificationAppsToMessagingDefaults()
     }
 
     @Test
     fun `setCallDurationFeedbackIntervalSeconds updates repository`() {
-        viewModel.setCallDurationFeedbackIntervalSeconds(30)
+        viewModel.call.setCallDurationFeedbackIntervalSeconds(30)
         verify { settingsRepository.callDurationFeedbackIntervalSeconds = 30 }
     }
 

@@ -35,6 +35,7 @@ import com.andreas_kratzer.ghosttalk.feature.settings.R
 import com.andreas_kratzer.ghosttalk.feature.settings.domain.DeleteBookUseCase
 import com.andreas_kratzer.ghosttalk.feature.settings.domain.UpdateActionLogLimitUseCase
 import com.andreas_kratzer.ghosttalk.feature.settings.domain.UpdateActiveBookNameUseCase
+import com.andreas_kratzer.ghosttalk.feature.settings.domain.MessagingAppsDetector
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates.BackupSettingsDelegate
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates.CloudSyncSettingsDelegate
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates.ExperimentalSettingsDelegate
@@ -44,6 +45,9 @@ import com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates.ScanningSetti
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates.SpotifySettingsDelegate
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates.TtsPrefetchSettingsDelegate
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates.TtsSettingsDelegate
+import com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates.CallSettingsDelegate
+import com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates.SecuritySettingsDelegate
+import com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates.NotificationSettingsDelegate
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -99,10 +103,22 @@ class SettingsViewModel @Inject constructor(
     val authManager: com.andreas_kratzer.ghosttalk.core.cloud.AuthManager
 ) : AndroidViewModel(application) {
 
-    private val _draftManager = MutableStateFlow<ProfileDraftManager?>(null)
-    val editingProfileId: StateFlow<String?> = _draftManager.map { it?.profileId }.stateIn(viewModelScope, SharingStarted.Eagerly, null)
-    val editingProfileName: StateFlow<String?> = _draftManager.flatMapLatest { it?.nameState ?: flowOf(null) }.stateIn(viewModelScope, SharingStarted.Eagerly, null)
-    val hasUnsavedChanges: StateFlow<Boolean> = _draftManager.flatMapLatest { it?.hasUnsavedChanges ?: flowOf(false) }.stateIn(viewModelScope, SharingStarted.Eagerly, false)
+    private val messagingAppsDetector = MessagingAppsDetector(application, settingsRepository)
+
+    val draftCoordinator = ProfileDraftCoordinator(
+        settingsRepository,
+        performProfilesSyncUseCase,
+        cloudSyncDelegate,
+        viewModelScope
+    )
+
+    val editingProfileId = draftCoordinator.editingProfileId
+    val editingProfileName = draftCoordinator.editingProfileName
+    val hasUnsavedChanges = draftCoordinator.hasUnsavedChanges
+
+    val call = CallSettingsDelegate(application, settingsRepository, draftCoordinator, callActionProxy)
+    val security = SecuritySettingsDelegate(settingsRepository, draftCoordinator, securityManager)
+    val notifications = NotificationSettingsDelegate(settingsRepository, draftCoordinator, messagingAppsDetector, viewModelScope)
 
     private val _activeBookId = settingsRepository.activeBookIdFlow
     val allPages: StateFlow<List<Page>> = getPagesUseCase.execute(_activeBookId)
@@ -186,12 +202,6 @@ class SettingsViewModel @Inject constructor(
     
     val isSmartPredictionEnabled = profileScopedFlow(settingsRepository.isSmartPredictionEnabledFlow) { it.isSmartPredictionEnabled }
     
-    val isNotificationReadingEnabled = profileScopedFlow(settingsRepository.isNotificationReadingEnabledFlow) { it.isNotificationReadingEnabled }
-    val monitoredNotificationApps = profileScopedFlow(settingsRepository.monitoredNotificationAppsFlow) { it.monitoredNotificationApps }
-    val autoReadMode = profileScopedFlow(settingsRepository.autoReadModeFlow) { it.autoReadMode }
-    val autoReadOnlyInUserMode = profileScopedFlow(settingsRepository.autoReadOnlyInUserModeFlow) { it.autoReadOnlyInUserMode }
-    val autoReadInStandby = profileScopedFlow(settingsRepository.autoReadInStandbyFlow) { it.autoReadInStandby }
-    
     val selectedAppLanguage = profileScopedFlow(settingsRepository.appLanguageFlow) { it.appLanguage }
     val themeMode = profileScopedFlow(settingsRepository.themeModeFlow) { it.themeMode }
     val buttonHistory = buttonUsageRepository.buttonHistory
@@ -208,13 +218,6 @@ class SettingsViewModel @Inject constructor(
     val speakerVolume = profileScopedFlow(settingsRepository.speakerVolumeFlow) { it.speakerVolume }
     val headphoneVolume = profileScopedFlow(settingsRepository.headphoneVolumeFlow) { it.headphoneVolume }
  
-    val securityPin = profileScopedFlow(settingsRepository.securityPinFlow) { "" } // Room settings profile doesn't store hashed pin directly
-    val securityPinTimeoutMinutes = profileScopedFlow(settingsRepository.securityPinTimeoutMinutesFlow) { it.securityPinTimeoutMinutes }
-    val isPinRequiredForDeletion = profileScopedFlow(settingsRepository.isPinRequiredForDeletionFlow) { it.isPinRequiredForDeletion }
-    val isBiometricEnabled = profileScopedFlow(settingsRepository.isBiometricEnabledFlow) { false } // Biometrics is device-specific
-    val isSecurityRequiredForEdit = profileScopedFlow(settingsRepository.isSecurityRequiredForEditFlow) { it.isSecurityRequiredForEdit }
-    val isSecurityRequiredForSettings = profileScopedFlow(settingsRepository.isSecurityRequiredForSettingsFlow) { it.isSecurityRequiredForSettings }
-    val isSecurityRequiredForAnalytics = profileScopedFlow(settingsRepository.isSecurityRequiredForAnalyticsFlow) { it.isSecurityRequiredForAnalytics }
     val startupBehavior = profileScopedFlow(settingsRepository.startupBehaviorFlow) { it.startupBehavior }
     val logIgnoredActions = profileScopedFlow(settingsRepository.logIgnoredActionsFlow) { it.logIgnoredActions }
     val logStopActions = profileScopedFlow(settingsRepository.logStopActionsFlow) { it.logStopActions }
@@ -230,21 +233,6 @@ class SettingsViewModel @Inject constructor(
     val elevenLabsSimilarityBoost = profileScopedFlow(settingsRepository.elevenLabsSimilarityBoostFlow) { it.elevenLabsSimilarityBoost }
     val ttsPlaybackSpeed = profileScopedFlow(settingsRepository.ttsPlaybackSpeedFlow) { it.ttsPlaybackSpeed }
  
-    // --- CallSettings ---
-    val maxCallDurationSeconds = profileScopedFlow(settingsRepository.maxCallDurationSecondsFlow) { it.maxCallDurationSeconds }
-    val callDurationFeedbackIntervalSeconds = profileScopedFlow(settingsRepository.callDurationFeedbackIntervalSecondsFlow) { it.callDurationFeedbackIntervalSeconds }
-    val outgoingCallIntro = profileScopedFlow(settingsRepository.outgoingCallIntroFlow) { it.outgoingCallIntro }
-    val incomingCallIntro = profileScopedFlow(settingsRepository.incomingCallIntroFlow) { it.incomingCallIntro }
-    val incomingCallScanLimitUserModeActive = profileScopedFlow(settingsRepository.incomingCallScanLimitUserModeActiveFlow) { it.incomingCallScanLimitUserModeActive }
-    val incomingCallAutoActionUserModeActive = profileScopedFlow(settingsRepository.incomingCallAutoActionUserModeActiveFlow) { it.incomingCallAutoActionUserModeActive }
-    val incomingCallDelayUserModeInactive = profileScopedFlow(settingsRepository.incomingCallDelayUserModeInactiveFlow) { it.incomingCallDelayUserModeInactive }
-    val incomingCallAutoActionUserModeInactive = profileScopedFlow(settingsRepository.incomingCallAutoActionUserModeInactiveFlow) { it.incomingCallAutoActionUserModeInactive }
-    val callAnnouncementAsCue = profileScopedFlow(settingsRepository.callAnnouncementAsCueFlow) { it.callAnnouncementAsCue }
-    val autoEnableSpeakerphone = profileScopedFlow(settingsRepository.autoEnableSpeakerphoneFlow) { it.autoEnableSpeakerphone }
-    val simulateCallsEnabled = profileScopedFlow(settingsRepository.simulateCallsEnabledFlow) { it.simulateCallsEnabled }
-    val hangUpPressesRequired = profileScopedFlow(settingsRepository.hangUpPressesRequiredFlow) { it.hangUpPressesRequired }
-    val filterCallsNotInContacts = profileScopedFlow(settingsRepository.filterCallsNotInContactsFlow) { it.filterCallsNotInContacts }
-    
     private val _showActionHistoryDialog = MutableStateFlow(false)
     val showActionHistoryDialog = _showActionHistoryDialog.asStateFlow()
  
@@ -301,34 +289,19 @@ class SettingsViewModel @Inject constructor(
         repoFlow: StateFlow<T>,
         getConfigVal: (com.andreas_kratzer.ghosttalk.core.model.ProfileConfig) -> T
     ): StateFlow<T> {
-        return _draftManager.flatMapLatest { draft ->
-            if (draft != null) {
-                draft.configState.map { config -> getConfigVal(config) }
-            } else {
-                repoFlow
-            }
-        }.stateIn(viewModelScope, SharingStarted.Eagerly, repoFlow.value)
+        return draftCoordinator.scopedFlow(repoFlow, getConfigVal)
     }
 
     private fun updateSetting(
         updateRepo: () -> Unit,
         updateConfig: (com.andreas_kratzer.ghosttalk.core.model.ProfileConfig) -> com.andreas_kratzer.ghosttalk.core.model.ProfileConfig
     ) {
-        val draft = _draftManager.value
-        if (draft != null) {
-            draft.updateConfig(updateConfig)
-        } else {
-            updateRepo()
-        }
+        draftCoordinator.update(updateRepo, updateConfig)
     }
 
-    private val _isProfileSyncing = MutableStateFlow(false)
-    val isProfileSyncing = _isProfileSyncing.asStateFlow()
+    val isProfileSyncing = draftCoordinator.isProfileSyncing
 
     private var prefetchJob: kotlinx.coroutines.Job? = null
-    private var debouncedSyncJob: kotlinx.coroutines.Job? = null
-    private var lastUploadedSequence: Long? = null
-    private var lastUploadedTimestamp: Long? = null
 
     init {
         ttsDelegate.initialize(viewModelScope)
@@ -338,79 +311,10 @@ class SettingsViewModel @Inject constructor(
         spotifyDelegate.initialize(viewModelScope)
         prefetchDelegate.initialize(viewModelScope)
         backupDelegate.initialize(viewModelScope)
-        setupDebouncedProfileUpload()
-    }
-
-    private fun setupDebouncedProfileUpload() {
-        viewModelScope.launch {
-            // Initial load of version/timestamp
-            val activeId = settingsRepository.activeProfileId
-            settingsRepository.getProfileById(activeId)?.let { initialProfile ->
-                lastUploadedSequence = initialProfile.profileVersionSequence
-                lastUploadedTimestamp = initialProfile.updatedAt
-            }
-
-            kotlinx.coroutines.flow.combine(
-                settingsRepository.activeProfileIdFlow,
-                settingsRepository.getAllProfilesFlow()
-            ) { activeId, allProfiles ->
-                allProfiles.find { it.id == activeId }
-            }.collect { profile ->
-                if (profile == null) return@collect
-
-                val isLocalChange = !cloudSyncDelegate.isSyncing.value && !_isProfileSyncing.value &&
-                        (lastUploadedSequence == null || profile.profileVersionSequence > lastUploadedSequence!! || profile.updatedAt > lastUploadedTimestamp!!)
-
-                if (isLocalChange) {
-                    lastUploadedSequence = profile.profileVersionSequence
-                    lastUploadedTimestamp = profile.updatedAt
-
-                    scheduleDebouncedProfileSync()
-                }
-            }
-        }
-    }
-
-    private fun scheduleDebouncedProfileSync() {
-        debouncedSyncJob?.cancel()
-        debouncedSyncJob = viewModelScope.launch {
-            delay(5000)
-            if (userEmail.value == null) return@launch
-            val activeId = settingsRepository.activeProfileId
-            try {
-                _isProfileSyncing.value = true
-                performProfilesSyncUseCase.execute()
-                settingsRepository.getProfileById(activeId)?.let { currentProfile ->
-                    lastUploadedSequence = currentProfile.profileVersionSequence
-                    lastUploadedTimestamp = currentProfile.updatedAt
-                }
-            } catch (e: kotlinx.coroutines.CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                android.util.Log.e("SettingsViewModel", "Debounced profiles sync failed", e)
-            } finally {
-                _isProfileSyncing.value = false
-            }
-        }
     }
 
     fun autoSyncProfilesOnOpen() {
-        if (userEmail.value == null) return
-
-        viewModelScope.launch {
-            _isProfileSyncing.value = true
-            try {
-                val result = performProfilesSyncUseCase.execute()
-                if (result is PerformProfilesSyncUseCase.Result.Success) {
-                    val activeId = settingsRepository.activeProfileId
-                    settingsRepository.loadProfile(activeId)
-                }
-            } catch (e: Exception) {
-                android.util.Log.e("SettingsViewModel", "Auto profiles sync on open failed", e)
-            } finally {
-                _isProfileSyncing.value = false
-            }
-        }
+        draftCoordinator.autoSyncProfilesOnOpen(userEmail.value)
     }
     
     fun triggerStartSetupWizard() {
@@ -617,37 +521,58 @@ class SettingsViewModel @Inject constructor(
     fun saveApiKeyToGoogle(activity: android.app.Activity) {
         viewModelScope.launch {
             val result = ttsDelegate.saveApiKeyToGoogle(activity)
-            handlePasswordManagerResult(result, isImport = false)
+            handlePasswordManagerResult(
+                result = result,
+                isImport = false,
+                successImportRes = R.string.elevenlabs_api_key_imported_google,
+                successSaveRes = R.string.elevenlabs_api_key_saved_google,
+                notFoundRes = R.string.elevenlabs_api_key_not_found_google,
+                noManagerRes = R.string.elevenlabs_api_key_no_manager_google,
+                errorRes = R.string.elevenlabs_api_key_error_google
+            )
         }
     }
 
     fun importApiKeyFromGoogle(activity: android.app.Activity) {
         viewModelScope.launch {
             val result = ttsDelegate.importApiKeyFromGoogle(activity)
-            handlePasswordManagerResult(result, isImport = true)
+            handlePasswordManagerResult(
+                result = result,
+                isImport = true,
+                successImportRes = R.string.elevenlabs_api_key_imported_google,
+                successSaveRes = R.string.elevenlabs_api_key_saved_google,
+                notFoundRes = R.string.elevenlabs_api_key_not_found_google,
+                noManagerRes = R.string.elevenlabs_api_key_no_manager_google,
+                errorRes = R.string.elevenlabs_api_key_error_google
+            )
         }
     }
 
     private fun handlePasswordManagerResult(
         result: com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates.PasswordManagerResult,
-        isImport: Boolean
+        isImport: Boolean,
+        successImportRes: Int,
+        successSaveRes: Int,
+        notFoundRes: Int,
+        noManagerRes: Int,
+        errorRes: Int
     ) {
         val message = when (result) {
             is com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates.PasswordManagerResult.Success -> {
                 if (isImport) {
-                    application.getString(R.string.elevenlabs_api_key_imported_google)
+                    application.getString(successImportRes)
                 } else {
-                    application.getString(R.string.elevenlabs_api_key_saved_google)
+                    application.getString(successSaveRes)
                 }
             }
             is com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates.PasswordManagerResult.NoKeyFound -> 
-                application.getString(R.string.elevenlabs_api_key_not_found_google)
+                application.getString(notFoundRes)
             is com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates.PasswordManagerResult.NoManager -> 
-                application.getString(R.string.elevenlabs_api_key_no_manager_google)
+                application.getString(noManagerRes)
             is com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates.PasswordManagerResult.Cancelled -> 
                 null // Don't show anything on cancel
             is com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates.PasswordManagerResult.Error -> 
-                application.getString(R.string.elevenlabs_api_key_error_google, result.message)
+                application.getString(errorRes, result.message)
         }
 
         if (message != null) {
@@ -658,41 +583,30 @@ class SettingsViewModel @Inject constructor(
     fun saveGeminiApiKeyToGoogle(activity: android.app.Activity) {
         viewModelScope.launch {
             val result = genAiDelegate.saveGeminiApiKeyToGoogle(activity)
-            handleGeminiPasswordManagerResult(result, isImport = false)
+            handlePasswordManagerResult(
+                result = result,
+                isImport = false,
+                successImportRes = R.string.gemini_api_key_imported_google,
+                successSaveRes = R.string.gemini_api_key_saved_google,
+                notFoundRes = R.string.gemini_api_key_not_found_google,
+                noManagerRes = R.string.gemini_api_key_no_manager_google,
+                errorRes = R.string.gemini_api_key_error_google
+            )
         }
     }
 
     fun importGeminiApiKeyFromGoogle(activity: android.app.Activity) {
         viewModelScope.launch {
             val result = genAiDelegate.importGeminiApiKeyFromGoogle(activity)
-            handleGeminiPasswordManagerResult(result, isImport = true)
-        }
-    }
-
-    private fun handleGeminiPasswordManagerResult(
-        result: com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates.PasswordManagerResult,
-        isImport: Boolean
-    ) {
-        val message = when (result) {
-            is com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates.PasswordManagerResult.Success -> {
-                if (isImport) {
-                    application.getString(R.string.gemini_api_key_imported_google)
-                } else {
-                    application.getString(R.string.gemini_api_key_saved_google)
-                }
-            }
-            is com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates.PasswordManagerResult.NoKeyFound -> 
-                application.getString(R.string.gemini_api_key_not_found_google)
-            is com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates.PasswordManagerResult.NoManager -> 
-                application.getString(R.string.gemini_api_key_no_manager_google)
-            is com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates.PasswordManagerResult.Cancelled -> 
-                null // Don't show anything on cancel
-            is com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates.PasswordManagerResult.Error -> 
-                application.getString(R.string.gemini_api_key_error_google, result.message)
-        }
-
-        if (message != null) {
-            Toast.makeText(application, message, Toast.LENGTH_LONG).show()
+            handlePasswordManagerResult(
+                result = result,
+                isImport = true,
+                successImportRes = R.string.gemini_api_key_imported_google,
+                successSaveRes = R.string.gemini_api_key_saved_google,
+                notFoundRes = R.string.gemini_api_key_not_found_google,
+                noManagerRes = R.string.gemini_api_key_no_manager_google,
+                errorRes = R.string.gemini_api_key_error_google
+            )
         }
     }
 
@@ -708,7 +622,7 @@ class SettingsViewModel @Inject constructor(
             settingsRepository.ttsEngine = "elevenlabs"
             
             withContext(Dispatchers.Main) {
-                Toast.makeText(application, "ElevenLabs Verbindung wird getestet...", Toast.LENGTH_SHORT).show()
+                Toast.makeText(application, R.string.settings_elevenlabs_testing, Toast.LENGTH_SHORT).show()
             }
             
             // Give the helper time to switch the provider
@@ -788,26 +702,6 @@ class SettingsViewModel @Inject constructor(
     }) { it.copy(appLanguage = if (code == "default") null else code) }
 
     fun setThemeMode(m: String) = updateSetting({ settingsRepository.themeMode = m }) { it.copy(themeMode = m) }
-
-    fun setNotificationReadingEnabled(e: Boolean) = updateSetting({ settingsRepository.isNotificationReadingEnabled = e }) { it.copy(isNotificationReadingEnabled = e) }
-    fun setAutoReadMode(mode: com.andreas_kratzer.ghosttalk.core.settings.AutoReadMode) = updateSetting({ 
-        settingsRepository.autoReadMode = mode
-    }) { it.copy(autoReadMode = mode.name) }
-
-    fun setAutoReadOnlyInUserMode(e: Boolean) = updateSetting({ settingsRepository.autoReadOnlyInUserMode = e }) { it.copy(autoReadOnlyInUserMode = e) }
-    fun setAutoReadInStandby(e: Boolean) = updateSetting({ settingsRepository.autoReadInStandby = e }) { it.copy(autoReadInStandby = e) }
-    fun toggleMonitoredNotificationApp(pkg: String, e: Boolean) = updateSetting({ 
-        val current = settingsRepository.monitoredNotificationApps.toMutableSet()
-        if (e) current.add(pkg) else current.remove(pkg)
-        settingsRepository.monitoredNotificationApps = current
-    }) { 
-        val current = it.monitoredNotificationApps.toMutableSet()
-        if (e) current.add(pkg) else current.remove(pkg)
-        it.copy(monitoredNotificationApps = current)
-    }
-    fun setMonitoredNotificationApps(apps: Set<String>) = updateSetting({ 
-        settingsRepository.monitoredNotificationApps = apps
-    }) { it.copy(monitoredNotificationApps = apps) }
 
     fun clearButtonUsageStats(bookId: String) {
         viewModelScope.launch { 
@@ -906,39 +800,6 @@ class SettingsViewModel @Inject constructor(
         val v = input.toIntOrNull() ?: it.actionLogLimit
         it.copy(actionLogLimit = v)
     }
-
-    fun setSecurityPin(pin: String) {
-        settingsRepository.securityPin = pin
-    }
-
-    fun clearSecurityPin() {
-        securityManager.clearPin()
-    }
-
-    fun setSecurityPinTimeoutMinutes(minutes: Long) = updateSetting({ 
-        settingsRepository.securityPinTimeoutMinutes = minutes
-    }) { it.copy(securityPinTimeoutMinutes = minutes) }
-
-    fun setPinRequiredForDeletion(required: Boolean) = updateSetting({ 
-        settingsRepository.isPinRequiredForDeletion = required
-    }) { it.copy(isPinRequiredForDeletion = required) }
-
-    fun setBiometricEnabled(enabled: Boolean) {
-        settingsRepository.isBiometricEnabled = enabled
-    }
-
-    fun setSecurityRequiredForEdit(required: Boolean) = updateSetting({ 
-        settingsRepository.isSecurityRequiredForEdit = required
-    }) { it.copy(isSecurityRequiredForEdit = required) }
-
-    fun setSecurityRequiredForSettings(required: Boolean) = updateSetting({ 
-        settingsRepository.isSecurityRequiredForSettings = required
-    }) { it.copy(isSecurityRequiredForSettings = required) }
-
-    fun setSecurityRequiredForAnalytics(required: Boolean) = updateSetting({ 
-        settingsRepository.isSecurityRequiredForAnalytics = required
-    }) { it.copy(isSecurityRequiredForAnalytics = required) }
-
     fun setStartupBehavior(behavior: String) = updateSetting({ 
         settingsRepository.startupBehavior = behavior
     }) { it.copy(startupBehavior = behavior) }
@@ -946,10 +807,6 @@ class SettingsViewModel @Inject constructor(
     fun setForceSoftKeyboard(enabled: Boolean) = updateSetting({ 
         settingsRepository.forceSoftKeyboard = enabled
     }) { it.copy(forceSoftKeyboard = enabled) }
-
-    fun lock() {
-        securityManager.lock()
-    }
 
     val weatherCacheTimeout = settingsRepository.weatherCacheTimeoutFlow
     fun setWeatherCacheTimeoutInput(input: String) = updateSetting({ 
@@ -985,68 +842,6 @@ class SettingsViewModel @Inject constructor(
     }) { it.copy(backgroundWeatherInterval = hours) }
 
     // --- CallSettings Setters ---
-    fun setMaxCallDurationSeconds(seconds: Int) = updateSetting({ 
-        settingsRepository.maxCallDurationSeconds = seconds
-    }) { it.copy(maxCallDurationSeconds = seconds) }
-    fun setCallDurationFeedbackIntervalSeconds(seconds: Int) = updateSetting({ 
-        settingsRepository.callDurationFeedbackIntervalSeconds = seconds
-    }) { it.copy(callDurationFeedbackIntervalSeconds = seconds) }
-    fun setOutgoingCallIntro(text: String) = updateSetting({ 
-        settingsRepository.outgoingCallIntro = text
-    }) { it.copy(outgoingCallIntro = text) }
-    fun setIncomingCallIntro(text: String) = updateSetting({ 
-        settingsRepository.incomingCallIntro = text
-    }) { it.copy(incomingCallIntro = text) }
-    fun setIncomingCallScanLimitUserModeActive(limit: Int) = updateSetting({ 
-        settingsRepository.incomingCallScanLimitUserModeActive = limit
-    }) { it.copy(incomingCallScanLimitUserModeActive = limit) }
-    fun setIncomingCallAutoActionUserModeActive(action: String) = updateSetting({ 
-        settingsRepository.incomingCallAutoActionUserModeActive = action
-    }) { it.copy(incomingCallAutoActionUserModeActive = action) }
-    fun setIncomingCallDelayUserModeInactive(seconds: Int) = updateSetting({ 
-        settingsRepository.incomingCallDelayUserModeInactive = seconds
-    }) { it.copy(incomingCallDelayUserModeInactive = seconds) }
-    fun setIncomingCallAutoActionUserModeInactive(action: String) = updateSetting({ 
-        settingsRepository.incomingCallAutoActionUserModeInactive = action
-    }) { it.copy(incomingCallAutoActionUserModeInactive = action) }
-    fun setCallAnnouncementAsCue(asCue: Boolean) = updateSetting({ 
-        settingsRepository.callAnnouncementAsCue = asCue
-    }) { it.copy(callAnnouncementAsCue = asCue) }
-    fun setAutoEnableSpeakerphone(enable: Boolean) = updateSetting({ 
-        settingsRepository.autoEnableSpeakerphone = enable
-    }) { it.copy(autoEnableSpeakerphone = enable) }
-    fun setSimulateCallsEnabled(enable: Boolean) = updateSetting({ 
-        settingsRepository.simulateCallsEnabled = enable
-    }) { it.copy(simulateCallsEnabled = enable) }
-    fun setHangUpPressesRequired(presses: Int) = updateSetting({ 
-        settingsRepository.hangUpPressesRequired = presses
-    }) { it.copy(hangUpPressesRequired = presses) }
-    fun setFilterCallsNotInContacts(filter: Boolean) = updateSetting({ 
-        settingsRepository.filterCallsNotInContacts = filter
-    }) { it.copy(filterCallsNotInContacts = filter) }
-
-    val isDefaultDialer: Boolean
-        get() {
-            val telecomManager = application.getSystemService(Context.TELECOM_SERVICE) as android.telecom.TelecomManager
-            return telecomManager.defaultDialerPackage == application.packageName
-        }
-
-    fun requestDefaultDialer(activity: android.app.Activity) {
-        val roleManager = activity.getSystemService(android.app.role.RoleManager::class.java)
-        if (roleManager != null && roleManager.isRoleAvailable(android.app.role.RoleManager.ROLE_DIALER) && !roleManager.isRoleHeld(android.app.role.RoleManager.ROLE_DIALER)) {
-            val intent = roleManager.createRequestRoleIntent(android.app.role.RoleManager.ROLE_DIALER)
-            activity.startActivityForResult(intent, 123)
-            return
-        }
-        val telecomManager = activity.getSystemService(android.telecom.TelecomManager::class.java)
-        if (telecomManager != null && telecomManager.defaultDialerPackage != activity.packageName) {
-            val intent = Intent(android.telecom.TelecomManager.ACTION_CHANGE_DEFAULT_DIALER).apply {
-                putExtra(android.telecom.TelecomManager.EXTRA_CHANGE_DEFAULT_DIALER_PACKAGE_NAME, activity.packageName)
-            }
-            activity.startActivityForResult(intent, 123)
-        }
-    }
-
     val activeBookId: String
         get() = settingsRepository.activeBookId
 
@@ -1123,7 +918,7 @@ class SettingsViewModel @Inject constructor(
                 }
             } else {
                 withContext(Dispatchers.Main) {
-                    Toast.makeText(application, "Fehler beim Löschen des Buches", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(application, R.string.settings_error_delete_book, Toast.LENGTH_SHORT).show()
                 }
             }
         }
@@ -1205,145 +1000,9 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
-    @SuppressLint("QueryPermissionsNeeded")
     private fun initializeDefaultMessagingAppsIfNeeded() {
-        try {
-            val sharedPrefs = application.getSharedPreferences("ghosttalk_app_meta", Context.MODE_PRIVATE) ?: return
-            val hasInitialized = sharedPrefs.getBoolean("has_initialized_monitored_apps", false)
-            if (!hasInitialized) {
-                viewModelScope.launch(Dispatchers.IO) {
-                    try {
-                        val pm = application.packageManager ?: return@launch
-                        val mainIntent = Intent(Intent.ACTION_MAIN, null).apply {
-                            addCategory(Intent.CATEGORY_LAUNCHER)
-                        }
-                        val resolveInfos = pm.queryIntentActivities(mainIntent, 0)
-                        val detectedApps = mutableSetOf<String>()
-                        
-                        for (resolveInfo in resolveInfos) {
-                            val packageName = resolveInfo.activityInfo?.packageName ?: continue
-                            if (packageName.isNotEmpty()) {
-                                try {
-                                    val appInfo = pm.getApplicationInfo(packageName, 0)
-                                    if (isMessagingOrSocialApp(appInfo)) {
-                                        detectedApps.add(packageName)
-                                    }
-                                } catch (_: Exception) {
-                                    // ignore
-                                }
-                            }
-                        }
-                        
-                        withContext(Dispatchers.Main) {
-                            if (detectedApps.isNotEmpty()) {
-                                val current = settingsRepository.monitoredNotificationApps.toMutableSet()
-                                current.addAll(detectedApps)
-                                settingsRepository.monitoredNotificationApps = current
-                            }
-                            sharedPrefs.edit { putBoolean("has_initialized_monitored_apps", true) }
-                        }
-                    } catch (_: Exception) {
-                        // ignore background thread exceptions under test/mock environment
-                    }
-                }
-            }
-        } catch (_: Exception) {
-            // ignore exceptions under test/mock environment
-        }
+        messagingAppsDetector.initializeIfNeeded(viewModelScope)
     }
-
-    @SuppressLint("QueryPermissionsNeeded")
-    fun resetMonitoredNotificationAppsToMessagingDefaults() {
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                val pm = application.packageManager ?: return@launch
-                val mainIntent = Intent(Intent.ACTION_MAIN, null).apply {
-                    addCategory(Intent.CATEGORY_LAUNCHER)
-                }
-                val resolveInfos = pm.queryIntentActivities(mainIntent, 0)
-                val detectedApps = mutableSetOf<String>()
-                
-                for (resolveInfo in resolveInfos) {
-                    val packageName = resolveInfo.activityInfo?.packageName ?: continue
-                    if (packageName.isNotEmpty()) {
-                        try {
-                            val appInfo = pm.getApplicationInfo(packageName, 0)
-                            if (isMessagingOrSocialApp(appInfo)) {
-                                detectedApps.add(packageName)
-                            }
-                        } catch (_: Exception) {
-                            // ignore
-                        }
-                    }
-                }
-                
-                withContext(Dispatchers.Main) {
-                    settingsRepository.monitoredNotificationApps = detectedApps
-                }
-            } catch (_: Exception) {
-                // ignore
-            }
-        }
-    }
-
-    private fun isMessagingOrSocialApp(appInfo: android.content.pm.ApplicationInfo): Boolean {
-        val pkg = appInfo.packageName.lowercase()
-        
-        // Exclude system, utility, mail, browser, contacts, dialer, accessibility, and companion apps that might match CATEGORY_SOCIAL
-        val excludeKeywords = listOf(
-            "browser", "watch", "wear", "companion", "launcher", "keyboard", 
-            "weather", "clock", "email", "mail", "gmail", "calendar", "chrome", 
-            "firefox", "opera", "edge", "safari", "system", "service", "provider",
-            "contacts", "dialer", "phone", "accessibility", "hearing", "speech", 
-            "transcribe", "translate"
-        )
-        if (excludeKeywords.any { pkg.contains(it) }) {
-            return false
-        }
-
-        // 1. Exact or prefix matches for well-known messaging app package names
-        val knownPackages = listOf(
-            "com.whatsapp", "com.whatsapp.w4b",
-            "org.telegram.messenger", "org.telegram.messenger.web", "org.telegram.plus",
-            "org.thoughtcrime.securesms", // Signal
-            "com.facebook.orca", "com.facebook.mlite", // Messenger
-            "com.discord",
-            "com.skype.raider", "com.skype.m2",
-            "com.viber.voip",
-            "ch.threema.app", "ch.threema.app.work",
-            "jp.naver.line.android",
-            "com.tencent.mm", // WeChat
-            "com.slack",
-            "com.microsoft.teams",
-            "com.google.android.apps.dynamite", // Google Chat
-            "com.google.android.apps.messaging", // Google Messages
-            "com.android.mms" // Default System SMS
-        )
-        if (knownPackages.any { pkg == it || pkg.startsWith("$it.") }) {
-            return true
-        }
-
-        // 2. Check if category is social
-        if (appInfo.category == android.content.pm.ApplicationInfo.CATEGORY_SOCIAL) {
-            return true
-        }
-        
-        // 3. Fallback to general keywords (only if not excluded by excludeKeywords)
-        val knownKeywords = listOf(
-            "whatsapp", "telegram", "signal", "messenger", "discord", "skype", 
-            "viber", "threema", "wechat", "imessage", "sms"
-        )
-        return knownKeywords.any { pkg.contains(it) }
-    }
-
-    fun simulateIncomingCall(name: String, phone: String) {
-        callActionProxy.get().simulateIncomingCall(name, phone)
-    }
-
-    fun simulateOutgoingCall(name: String, phone: String) {
-        callActionProxy.get().simulateOutgoingCall(name, phone)
-    }
-
     fun setSyncModeLogs(mode: String) {
         settingsRepository.syncModeLogs = mode
         rescheduleLogUploadUseCase()
@@ -1359,14 +1018,14 @@ class SettingsViewModel @Inject constructor(
             try {
                 exportLogsUseCase.shareLogs(ctx)
             } catch (e: Exception) {
-                Toast.makeText(application, "Fehler beim Teilen des Fehlerberichts: ${e.message}", Toast.LENGTH_LONG).show()
+                Toast.makeText(application, application.getString(R.string.settings_error_share_logs, e.message), Toast.LENGTH_LONG).show()
             }
         }
     }
 
     fun uploadLogsNow() {
         viewModelScope.launch {
-            Toast.makeText(application, "Fehlerbericht wird hochgeladen...", Toast.LENGTH_SHORT).show()
+            Toast.makeText(application, R.string.settings_logs_uploading, Toast.LENGTH_SHORT).show()
             when (val result = exportLogsUseCase.performAutoUpload(force = true)) {
                 is LogUploadResult.Success -> {
                     Toast.makeText(application, R.string.settings_logs_upload_success, Toast.LENGTH_LONG).show()
@@ -1375,7 +1034,7 @@ class SettingsViewModel @Inject constructor(
                     Toast.makeText(application, R.string.settings_logs_upload_skipped, Toast.LENGTH_LONG).show()
                 }
                 is LogUploadResult.Error -> {
-                    Toast.makeText(application, "Upload fehlgeschlagen: ${result.message}", Toast.LENGTH_LONG).show()
+                    Toast.makeText(application, application.getString(R.string.settings_error_upload_failed, result.message), Toast.LENGTH_LONG).show()
                 }
             }
         }
@@ -1390,95 +1049,37 @@ class SettingsViewModel @Inject constructor(
     )
 
     fun setActiveProfileId(profileId: String) {
-        settingsRepository.activeProfileId = profileId
+        draftCoordinator.setActiveProfileId(profileId)
     }
 
     fun renameActiveProfile(newName: String) {
-        viewModelScope.launch {
-            val activeId = settingsRepository.activeProfileId
-            val activeProfile = settingsRepository.getProfileById(activeId)
-            if (activeProfile != null && newName.isNotBlank() && activeProfile.name != newName) {
-                val updatedProfile = activeProfile.copy(
-                    name = newName,
-                    profileVersionSequence = activeProfile.profileVersionSequence + 1,
-                    updatedAt = System.currentTimeMillis()
-                )
-                settingsRepository.updateProfile(updatedProfile)
-            }
-        }
+        draftCoordinator.renameActiveProfile(newName)
     }
 
     fun startEditingProfile(profileId: String) {
-        viewModelScope.launch {
-            val profile = settingsRepository.getProfileById(profileId) ?: return@launch
-            _draftManager.value = ProfileDraftManager(profile.id, profile.name, profile.config)
-        }
+        draftCoordinator.startEditingProfile(profileId)
     }
 
     fun saveEditingProfile() {
-        viewModelScope.launch {
-            val draft = _draftManager.value ?: return@launch
-            val original = settingsRepository.getProfileById(draft.profileId) ?: return@launch
-            val updatedProfile = original.copy(
-                name = draft.nameState.value,
-                config = draft.configState.value,
-                profileVersionSequence = original.profileVersionSequence + 1,
-                updatedAt = System.currentTimeMillis()
-            )
-            settingsRepository.updateProfile(updatedProfile)
-            if (settingsRepository.activeProfileId == draft.profileId) {
-                settingsRepository.loadProfile(draft.profileId)
-            }
-            _draftManager.value = null
-            // Trigger sync immediately to push updated profile json
-            scheduleDebouncedProfileSync()
-        }
+        draftCoordinator.saveEditingProfile()
     }
 
     fun cancelEditingProfile() {
-        _draftManager.value = null
+        draftCoordinator.cancelEditingProfile()
     }
 
     fun updateEditingProfileName(name: String) {
-        _draftManager.value?.let {
-            it.nameState.value = name
-            it.hasUnsavedChanges.value = true
-        }
+        draftCoordinator.updateEditingProfileName(name)
     }
 
     fun createNewProfile(name: String) {
-        viewModelScope.launch {
-            val currentConfig = settingsRepository.getProfileById(settingsRepository.activeProfileId)?.config 
-                ?: com.andreas_kratzer.ghosttalk.core.model.ProfileConfig()
-            val newProfile = com.andreas_kratzer.ghosttalk.core.model.SettingsProfile(
-                id = "profile-${java.util.UUID.randomUUID()}",
-                name = name,
-                config = currentConfig,
-                profileVersionSequence = 1L,
-                updatedAt = System.currentTimeMillis()
-            )
-            settingsRepository.insertProfile(newProfile)
-            settingsRepository.activeProfileId = newProfile.id
-        }
+        draftCoordinator.createNewProfile(name)
     }
 
     fun deleteProfile(profile: com.andreas_kratzer.ghosttalk.core.model.SettingsProfile) {
-        viewModelScope.launch {
-            if (profile.id != "profile-default") {
-                val allProfiles = settingsRepository.getAllProfiles()
-                if (allProfiles.size <= 1) {
-                    // Cannot delete the only remaining profile
-                    withContext(Dispatchers.Main) {
-                        Toast.makeText(application, "Das einzige verbleibende Profil kann nicht gelöscht werden.", Toast.LENGTH_LONG).show()
-                    }
-                    return@launch
-                }
-                settingsRepository.deleteProfile(profile)
-                if (settingsRepository.activeProfileId == profile.id) {
-                    // Fall back to default or another remaining profile
-                    val remainingProfile = allProfiles.find { it.id != profile.id }
-                    settingsRepository.activeProfileId = remainingProfile?.id ?: "profile-default"
-                }
+        draftCoordinator.deleteProfile(profile) { success, resId ->
+            if (!success) {
+                Toast.makeText(application, resId, Toast.LENGTH_LONG).show()
             }
         }
     }
@@ -1524,25 +1125,6 @@ class SettingsViewModel @Inject constructor(
                 }
             )
         }
-    }
-}
-
-class ProfileDraftManager(
-    val profileId: String,
-    initialName: String,
-    initialConfig: com.andreas_kratzer.ghosttalk.core.model.ProfileConfig
-) {
-    val nameState = MutableStateFlow(initialName)
-    val configState = MutableStateFlow(initialConfig)
-    val hasUnsavedChanges = MutableStateFlow(false)
-
-    fun <T> getScopedValue(getConfigVal: (com.andreas_kratzer.ghosttalk.core.model.ProfileConfig) -> T): T {
-        return getConfigVal(configState.value)
-    }
-
-    fun updateConfig(update: (com.andreas_kratzer.ghosttalk.core.model.ProfileConfig) -> com.andreas_kratzer.ghosttalk.core.model.ProfileConfig) {
-        configState.value = update(configState.value)
-        hasUnsavedChanges.value = true
     }
 }
 
