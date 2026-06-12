@@ -6,4 +6,5 @@
     <string name="security_biometric_cancel">Abbrechen</string>
     <string name="security_biometric_auth_title">Sicherheits-Check</string>
     <string name="security_biometric_auth_subtitle">Fingerabdruck zum Entsperren verwenden</string>
+    <string name="log_stop_actions_message">Stoppe alle laufenden Aktionen (z.B. wegen Seitenwechsel)</string>
 </resources>

@@ -381,6 +381,17 @@ open class AndroidTtsProvider @Inject constructor(
         val pendingDirect = directCallbacks.values.toList()
         directCallbacks.clear()
         pendingDirect.forEach { cb -> handler.post { cb() } }
+        
+        val requestsToCancel = synchronized(pendingRequests) {
+            val copy = ArrayList(pendingRequests)
+            pendingRequests.clear()
+            copy
+        }
+        requestsToCancel.forEach { req ->
+            handler.post {
+                req.onError?.invoke("TTS stopped") ?: req.onDone?.invoke()
+            }
+        }
     }
 
     override fun shutdown() {

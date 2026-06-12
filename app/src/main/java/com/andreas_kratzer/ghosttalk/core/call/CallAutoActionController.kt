@@ -41,7 +41,6 @@ class CallAutoActionController @Inject constructor(
                         when (autoAction) {
                             CallAutoAction.ANSWER -> onAnswer()
                             CallAutoAction.REJECT -> onHangUp()
-                            else -> {}
                         }
                     }
                 }
@@ -67,7 +66,6 @@ class CallAutoActionController @Inject constructor(
                 when (autoAction) {
                     CallAutoAction.ANSWER -> onAnswer()
                     CallAutoAction.REJECT -> onHangUp()
-                    else -> {}
                 }
             }
         }

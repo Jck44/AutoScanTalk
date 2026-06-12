@@ -6,4 +6,5 @@
     <string name="security_biometric_cancel">Cancel</string>
     <string name="security_biometric_auth_title">Security Check</string>
     <string name="security_biometric_auth_subtitle">Use fingerprint to unlock</string>
+    <string name="log_stop_actions_message">Stopping all running actions (e.g. due to page change)</string>
 </resources>

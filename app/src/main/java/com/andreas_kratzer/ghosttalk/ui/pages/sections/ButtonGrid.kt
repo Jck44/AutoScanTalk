@@ -167,7 +167,7 @@ fun ButtonGrid(
             val rows = page.rows
             val cols = page.columns
             val startRowIndexOffset = if (staticRowPage != null) 1 else 0
-            val shiftOffset = if (staticRowPage != null) 49 else 0
+            val shiftOffset = if (staticRowPage != null) com.andreas_kratzer.ghosttalk.core.scanning.ScanGrid.STATIC_ROW_SLOT_COUNT else 0
             
             for (r in 0 until rows) {
                 val visualRowIndex = r + startRowIndexOffset

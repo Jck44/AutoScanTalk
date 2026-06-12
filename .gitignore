@@ -55,3 +55,6 @@ local.properties
 
 # IDE-generierte Markdown-Settings
 /.idea/markdown.xml
+
+# Gemini-Scratch-Notizen
+/task.md

@@ -273,8 +273,11 @@ class ActionExecutor @Inject constructor(
      * Wird z.B. bei einem Seitenwechsel aufgerufen.
      */
     fun stopActions(skipLog: Boolean = false) {
-        if (!skipLog) {
-            log("Stoppe alle laufenden Aktionen (z.B. wegen Seitenwechsel)")
+        val shouldLog = !skipLog && settingsRepository.getLogStopActionsForBook(settingsRepository.activeBookId)
+        if (shouldLog) {
+            val msg = context?.getString(com.andreas_kratzer.ghosttalk.core.R.string.log_stop_actions_message)
+                ?: "Stoppe alle laufenden Aktionen (z.B. wegen Seitenwechsel)"
+            log(msg)
         }
         // Incremenet execution ID to orphan ANY current callbacks, just in case
         activeExecutionId++

@@ -126,9 +126,7 @@ class BookRestructureViewModel @Inject constructor(
             pageManagementDelegate = pageManagementDelegate,
             setActiveBookId = { bookId ->
                 navigationDelegate.pageBackStack.clear()
-                if (bookId != null) {
-                    settingsRepository.activeBookId = bookId
-                }
+                settingsRepository.activeBookId = bookId
                 pageManagementDelegate.setActiveBookId(bookId)
             },
             loadPage = { page ->

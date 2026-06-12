@@ -135,7 +135,7 @@ fun SmartPredictionKpiSection(
                                 },
                                 modifier = if (isClickable) {
                                     Modifier.clickable {
-                                        onNavigateToPage?.invoke(targetPage.id)
+                                        onNavigateToPage.invoke(targetPage.id)
                                     }
                                 } else Modifier
                             )

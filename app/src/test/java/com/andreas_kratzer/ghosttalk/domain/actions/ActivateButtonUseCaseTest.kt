@@ -115,4 +115,24 @@ class ActivateButtonUseCaseTest {
             resolveSmartPredictionUseCase.execute("pred1", page, "b1", true, actionExecutor) 
         }
     }
+
+    @Test
+    fun `execute with globalIndex sets focusedIndex to globalIndex`() = runTest {
+        val testButton = ButtonConfig(id = "btn1", label = "Test", auditoryCue = null, buttonAction = SpeakTextButtonAction())
+        val testPage = Page(id = "p1", bookId = "b1", name = "P1", buttonConfigs = MutableList(36) { if (it == 0) testButton else null }, rows = 2, columns = 2)
+
+        useCase.execute(0, testPage, "b1", true, emptyList(), actionExecutor, scanCoordinator, globalIndex = 52)
+
+        verify { scanCoordinator.setFocusedIndex(52) }
+    }
+
+    @Test
+    fun `execute without globalIndex sets focusedIndex to index`() = runTest {
+        val testButton = ButtonConfig(id = "btn1", label = "Test", auditoryCue = null, buttonAction = SpeakTextButtonAction())
+        val testPage = Page(id = "p1", bookId = "b1", name = "P1", buttonConfigs = MutableList(36) { if (it == 0) testButton else null }, rows = 2, columns = 2)
+
+        useCase.execute(0, testPage, "b1", true, emptyList(), actionExecutor, scanCoordinator, globalIndex = null)
+
+        verify { scanCoordinator.setFocusedIndex(0) }
+    }
 }

@@ -153,12 +153,12 @@ class InteractionDelegate @Inject constructor(
         }
         scope.launch {
             val targetPage = if (staticRowPage != null) {
-                if (index < 49) staticRowPage else currentPage
+                if (index < com.andreas_kratzer.ghosttalk.core.scanning.ScanGrid.STATIC_ROW_SLOT_COUNT) staticRowPage else currentPage
             } else {
                 currentPage
             }
             val targetIndex = if (staticRowPage != null) {
-                if (index < 49) index else index - 49
+                if (index < com.andreas_kratzer.ghosttalk.core.scanning.ScanGrid.STATIC_ROW_SLOT_COUNT) index else index - com.andreas_kratzer.ghosttalk.core.scanning.ScanGrid.STATIC_ROW_SLOT_COUNT
             } else {
                 index
             }
@@ -172,7 +172,8 @@ class InteractionDelegate @Inject constructor(
                 smartPredictions = _smartPredictions.value ?: emptyList(),
                 actionExecutor = actionExecutor,
                 scanCoordinator = scanCoordinator,
-                isHardwareTriggered = isHardwareTriggered
+                isHardwareTriggered = isHardwareTriggered,
+                globalIndex = index
             )
         }
     }

@@ -51,6 +51,7 @@ data class ActionParams(
 
 object ButtonActionFactory {
     fun actionTypeIdOf(action: ButtonAction): ActionTypeId {
+        @Suppress("DEPRECATION")
         return when (action) {
             is NavigateToPageButtonAction -> ActionTypeId.NAVIGATE
             is NavigateBackButtonAction -> ActionTypeId.NAVIGATE_BACK

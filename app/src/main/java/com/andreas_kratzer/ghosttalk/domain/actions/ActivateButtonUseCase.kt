@@ -22,7 +22,8 @@ class ActivateButtonUseCase @Inject constructor(
         smartPredictions: List<String>,
         actionExecutor: ActionExecutor,
         scanCoordinator: ScanCoordinator,
-        isHardwareTriggered: Boolean = false
+        isHardwareTriggered: Boolean = false,
+        globalIndex: Int? = null
     ) {
         val page = currentPage ?: return
         val buttonConfig = page.buttonConfigs.getOrNull(index) ?: return
@@ -34,7 +35,7 @@ class ActivateButtonUseCase @Inject constructor(
 
         ttsHelper.stopNotificationTTS()
         
-        scanCoordinator.setFocusedIndex(index)
+        scanCoordinator.setFocusedIndex(globalIndex ?: index)
         
         val smartAction = buttonConfig.buttonAction as? SmartPredictionButtonAction
         if (smartAction != null) {

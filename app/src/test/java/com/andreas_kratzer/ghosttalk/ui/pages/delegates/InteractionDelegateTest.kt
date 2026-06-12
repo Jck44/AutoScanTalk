@@ -71,7 +71,8 @@ class InteractionDelegateTest {
             isUserModeActive = true,
             smartPredictions = any(),
             actionExecutor = actionExecutor,
-            scanCoordinator = scanCoordinator
+            scanCoordinator = scanCoordinator,
+            globalIndex = 5
         ) }
     }
 
@@ -84,5 +85,61 @@ class InteractionDelegateTest {
         verify { ttsHelper.stopNotificationTTS() }
         verify { actionExecutor.stopActions() }
         verify { appStateRepository.setUserModeActive(false) }
+    }
+
+    @Test
+    fun `activateButtonAtIndex with staticRowPage and index above threshold uses main page and adjusted index`() = runTest(testDispatcher) {
+        val mainPage = Page(id = "p1", bookId = "b1", name = "Main", rows = 4, columns = 4, buttonConfigs = emptyList())
+        val staticPage = Page(id = "s1", bookId = "b1", name = "Static", rows = 1, columns = 7, buttonConfigs = emptyList())
+        val smartPredictions = MutableStateFlow<List<String>?>(null)
+
+        delegate.init(scope, actionExecutor, {}, {}, smartPredictions, MutableStateFlow("b1"), { _, _, _, _, _ -> })
+
+        delegate.activateButtonAtIndex(
+            index = 52,
+            currentPage = mainPage,
+            activeBookId = "b1",
+            staticRowPage = staticPage
+        )
+
+        coVerify { activateButtonUseCase.execute(
+            index = 3,
+            currentPage = mainPage,
+            activeBookId = "b1",
+            isUserModeActive = true,
+            smartPredictions = any(),
+            actionExecutor = actionExecutor,
+            scanCoordinator = scanCoordinator,
+            isHardwareTriggered = false,
+            globalIndex = 52
+        ) }
+    }
+
+    @Test
+    fun `activateButtonAtIndex with staticRowPage and index below threshold uses static page and same index`() = runTest(testDispatcher) {
+        val mainPage = Page(id = "p1", bookId = "b1", name = "Main", rows = 4, columns = 4, buttonConfigs = emptyList())
+        val staticPage = Page(id = "s1", bookId = "b1", name = "Static", rows = 1, columns = 7, buttonConfigs = emptyList())
+        val smartPredictions = MutableStateFlow<List<String>?>(null)
+
+        delegate.init(scope, actionExecutor, {}, {}, smartPredictions, MutableStateFlow("b1"), { _, _, _, _, _ -> })
+
+        delegate.activateButtonAtIndex(
+            index = 5,
+            currentPage = mainPage,
+            activeBookId = "b1",
+            staticRowPage = staticPage
+        )
+
+        coVerify { activateButtonUseCase.execute(
+            index = 5,
+            currentPage = staticPage,
+            activeBookId = "b1",
+            isUserModeActive = true,
+            smartPredictions = any(),
+            actionExecutor = actionExecutor,
+            scanCoordinator = scanCoordinator,
+            isHardwareTriggered = false,
+            globalIndex = 5
+        ) }
     }
 }

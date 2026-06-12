@@ -87,7 +87,7 @@ class BookViewModel @Inject constructor(
         limitScanCycles: Boolean = false,
         scanCycleLimit: Int = 2,
         logIgnoredActions: Boolean = true,
-        logStopActions: Boolean = true
+        logStopActions: Boolean = false
     ) {
         val now = System.currentTimeMillis()
         val newBook = Book(

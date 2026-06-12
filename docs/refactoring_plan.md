@@ -694,6 +694,57 @@ Plan eingehalten, Verhalten strikt paritätisch verschoben: `CallDurationAnnounc
 
 ---
 
+### Phase 14: Verifizierte Stabilitäts-Fixes (aus Geminis Architektur-Analyse, 2026-06-12)
+
+**Kontext**: Gemini hat auf Andreas' Frage eine Architektur-/Stabilitäts-Analyse geliefert. Claude hat jede Behauptung im Code verifiziert. **Nur die hier gelisteten Punkte umsetzen** — die übrigen sind veraltet, bereits gelöst oder bewusst abgelehnt (Begründungen unten, nicht erneut vorschlagen).
+
+#### Schritt 14.1: 🐛 `AndroidTtsProvider.stopAll()` leert `pendingRequests` nicht (verifiziert, echter Bug)
+* `stopAll()` (Z. 372–384) räumt `playRequests` und `directCallbacks`, aber **nicht** die `pendingRequests`-Warteschlange (Z. 54), in der Anfragen landen, solange die Engine nicht initialisiert ist (Z. 182). Folge: Bei verzögerter Init und Abbruch durch den Nutzer spielt die Engine nach der Init veraltete Cues ab.
+* Fix: In `stopAll()` zusätzlich `synchronized(pendingRequests) { … }` leeren und die Callbacks der entfernten Einträge via `handler.post` aufrufen (damit wartende Coroutines freigegeben werden) — gleiches Muster wie bei `playRequests` direkt darüber.
+* **Test**: Request vor Init einreihen, `stopAll()`, dann Init simulieren → es darf nichts gesprochen werden und der Callback muss gefeuert haben.
+
+#### Schritt 14.2: 🐛 `SyncConcurrencyGuard`: Check-then-Act (verifiziert, Semantik-Bug)
+* `runExclusive` prüft `isLocked` außerhalb des Locks; ein zweiter zeitgleicher Aufrufer passiert den Check, **wartet** dann am `withLock` und läuft direkt im Anschluss — gewollt war „überspringen". Dank Anker-Merge keine Datenkorruption, aber unnötige Doppel-Syncs.
+* Fix mit `tryLock` (atomar):
+  ```text
+  if (!localMutex.tryLock()) { Log.w(...); return null }
+  return try { block() } finally { localMutex.unlock() }
+  ```
+* **Test**: zwei parallele `runExclusive`-Aufrufe (erster hängt in einem `CompletableDeferred`) → genau einer führt `block` aus, der zweite liefert `null`.
+
+#### Schritt 14.3: Magic Number 49 → `ScanGrid.STATIC_ROW_SLOT_COUNT` (teilverifiziert, kleiner Sweep)
+* Bestätigtes nacktes Literal: `ui/pages/sections/ButtonGrid.kt:170` (`if (staticRowPage != null) 49 else 0`). Weitere Kandidaten bei den „Ensure 49 slots"-Kommentaren: `TemplateViewModel.kt` (Z. 137/271/298), `PageManagementDelegate.kt` (Z. 212), `GridUtils.kt` (Z. 62) — dort prüfen, ob im Code darunter wirklich ein 49-Literal steht, und nur diese ersetzen. `core-scanning` nutzt die Konstante bereits korrekt.
+
+#### Schritt 14.4 (optional): `GeminiUseCaseTest` um Rate-Limit-Fall (HTTP 429) ergänzen
+* Der Test existiert bereits (Auth-Verhalten abgedeckt); nur ergänzen, falls der Use-Case-Code eine unterscheidbare 429-Behandlung hat — sonst weglassen.
+
+#### Review-Befund Phase 13 + 14 (Claude, 2026-06-12)
+
+**Phase 13**: ✅ komplett, committet (`dcd8f9a5`/`8d643997`/`d2dc0e5f`), alle Inspektionspunkte verifiziert weg (inkl. `DateTimeReadFields`: 0× `context.getString`, 23× `stringResource`).
+
+**Phase 14 (geplante Punkte)**: ✅ alle drei exakt nach Plan — `stopAll()` leert `pendingRequests` mit Callback-Freigabe; `SyncConcurrencyGuard` nutzt `tryLock` + `try/finally`; 49-Literale in `ButtonGrid`/`InteractionDelegate` ersetzt. Neue Tests vorhanden (je 1 Testfall — dünn, aber das Kernszenario ist abgedeckt). Suite grün.
+
+**⚠️ Ungeplante Änderungen im selben Diff (nicht im Phase-14-Plan, brauchen Freigabe von Andreas)**:
+1. **`logStopActions`-Cluster**: ✅ **freigegeben — Default-Flip auf `false` war ein expliziter Wunsch von Andreas** (2026-06-12). Default in `Book.kt`/`BookViewModel` auf `false` + `ActionExecutor` respektiert jetzt das Buch-Setting beim „Stoppe alle Aktionen"-Logeintrag (behebt zugleich die Inkonsistenz zum `NavigationDelegate`, der es schon respektierte).
+2. **`globalIndex`-Fix** in `ActivateButtonUseCase`/`InteractionDelegate`: ✅ **freigegeben — Bug von Andreas gefunden, Fix von ihm beauftragt** (2026-06-12). Bei aktiver Static-Row wurde der lokale Index an `scanCoordinator.setFocusedIndex` übergeben, die Engine arbeitet aber global (0–48 Static-Row, 49+ Hauptseite) → Scan-Resume-Position nach Touch-Aktivierung war falsch.
+   **Noch offen: Regressionstest (von Andreas bestätigt), zwei Ebenen**:
+   * In `InteractionDelegateTest` (Muster des bestehenden Tests `activateButtonAtIndex should call ActivateButtonUseCase` wiederverwenden): `activateButtonAtIndex(index = 52, currentPage = mainPage, staticRowPage = staticPage)` → `coVerify { activateButtonUseCase.execute(index = 3, currentPage = mainPage, …, globalIndex = 52) }` (52 − `STATIC_ROW_SLOT_COUNT` = 3; Konstante referenzieren, nicht 49 hartcodieren). Zweiter Fall: `index = 5` mit Static-Row → `execute(index = 5, currentPage = staticPage, …, globalIndex = 5)`.
+   * In `ActivateButtonUseCaseTest`: `execute(index = 3, …, globalIndex = 52)` → `verify { scanCoordinator.setFocusedIndex(52) }`; und ohne `globalIndex` (null) → `setFocusedIndex(3)` (Fallback-Verhalten).
+   * Plus Geräte-Smoke: Static-Row aktiv, Hauptseiten-Button per Touch aktivieren, Scanning fortsetzen → Resume an der richtigen Position.
+3. Harmlos (ok): `else`-Zweige in exhaustiven `when`s entfernt, toter Null-Check in `BookRestructureViewModel`, `?.`→`.` in `SmartPredictionKpiSection`, `@Suppress("DEPRECATION")` in `ButtonActionFactory`.
+4. `task.md` (Geminis Scratch-Datei) liegt im Repo-Root — **nicht committen** (löschen oder in `.gitignore`).
+
+**Commit-Empfehlung**: Phase-14-Plan-Punkte als ein Commit; die zwei ungeplanten Cluster nach Freigabe als separate Commits mit eigener Begründung.
+
+#### Geprüft und NICHT umsetzen (Begründungen — nicht erneut vorschlagen)
+* **Delegates auf `@ViewModelScoped`**: Abgelehnt. `@Singleton` ist eine dokumentierte, bewusste Entscheidung (`DelegateScopingTest` erzwingt sie — verhindert State-Mismatch durch Mehrfach-Instanzen). Das „Memory-Leak beim Drehen"-Argument ist falsch: Single-Activity-App, das Hilt-ViewModel **überlebt** Rotation. Der Design-Smell (Singletons mit VM-Callbacks) ist real, aber ein Umbau ohne nachgewiesenes Problem wäre Änderung um der Änderung willen.
+* **ScanStrategy-Registry (`Map<String, ScanStrategy>`)**: Abgelehnt bei genau 2 Strategien — erst bei der dritten umbauen.
+* **`ActionExecutorTest`/`FallbackTtsProviderTest` „implementieren"**: Existieren bereits (3 Executor-Testdateien; `FallbackTtsProviderTest` mit 8 Tests). `documentation/TEST_PLAN_75.md` (Stand 09.06.) ist teilweise abgearbeitet — bei Gelegenheit aktualisieren statt blind abarbeiten.
+* **Vector Clocks im `BookMergeEngine`**: LWW-Kernproblem ist seit der anker-basierten 3-Wege-Synchronisation (`9fd899da`) entschärft; die leichte Clock-Skew-Warnung ist bereits als optionale Phase 4 im `plan_usermode_sync_stabilization.md` notiert. Großumbau ohne akuten Anlass.
+* **50/100-ms-`postDelayed` vor Audio-Start** und **5-s-Timeout im `TtsScannerFeedbackProvider`**: valide Beobachtungen, aber keine Quick-Fixes — eine Timeout-Verkürzung kann legitime lange Cues (ElevenLabs-Fetch) abschneiden. Als Design-Diskussion zur optionalen Sync-Plan-Phase 4 notiert, jetzt nicht ändern.
+
+---
+
 #### Review-Befund Phase 12 (Claude, 2026-06-12) — ✅ abnahmereif, Roadmap damit komplett
 
 * **12a**: `PageSplitDialogs.kt` aufgelöst → `pagesplit/` mit 3 Dialog-Dateien (90/125/378 Z.), `DraggableChip` nach `ui/components/` ✅, Aufrufer (`PageEditorScreen`) aktualisiert ✅. Der Wizard blieb intern ein Composable (378 Z., unter dem 400er-Ziel) — die Schritt-Aufteilung war als „je nach innerer Struktur" formuliert, akzeptiert.
