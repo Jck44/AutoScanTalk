@@ -1,11 +1,8 @@
 package com.andreas_kratzer.ghosttalk.feature.settings.ui
 
-import android.annotation.SuppressLint
 import android.app.Application
 import android.content.Context
-import android.content.Intent
 import android.widget.Toast
-import androidx.core.content.edit
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.andreas_kratzer.ghosttalk.core.SecurityManager
@@ -33,21 +30,21 @@ import com.andreas_kratzer.ghosttalk.core.tts.CachedAudioItem
 import com.andreas_kratzer.ghosttalk.core.tts.TextToSpeechHelper
 import com.andreas_kratzer.ghosttalk.feature.settings.R
 import com.andreas_kratzer.ghosttalk.feature.settings.domain.DeleteBookUseCase
+import com.andreas_kratzer.ghosttalk.feature.settings.domain.MessagingAppsDetector
 import com.andreas_kratzer.ghosttalk.feature.settings.domain.UpdateActionLogLimitUseCase
 import com.andreas_kratzer.ghosttalk.feature.settings.domain.UpdateActiveBookNameUseCase
-import com.andreas_kratzer.ghosttalk.feature.settings.domain.MessagingAppsDetector
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates.BackupSettingsDelegate
+import com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates.CallSettingsDelegate
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates.CloudSyncSettingsDelegate
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates.ExperimentalSettingsDelegate
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates.GenAiSettingsDelegate
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates.HueSettingsDelegate
+import com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates.NotificationSettingsDelegate
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates.ScanningSettingsDelegate
+import com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates.SecuritySettingsDelegate
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates.SpotifySettingsDelegate
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates.TtsPrefetchSettingsDelegate
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates.TtsSettingsDelegate
-import com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates.CallSettingsDelegate
-import com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates.SecuritySettingsDelegate
-import com.andreas_kratzer.ghosttalk.feature.settings.ui.delegates.NotificationSettingsDelegate
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -59,7 +56,6 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext

@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION")
+
 package com.andreas_kratzer.ghosttalk.ui.pages.components
 
 import com.andreas_kratzer.ghosttalk.core.model.ButtonAction

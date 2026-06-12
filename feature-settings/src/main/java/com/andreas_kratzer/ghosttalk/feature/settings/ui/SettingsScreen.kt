@@ -49,7 +49,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import com.andreas_kratzer.ghosttalk.core.ui.R as CoreR
 import com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkScaffold
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
 import com.andreas_kratzer.ghosttalk.feature.settings.R
@@ -58,6 +57,7 @@ import com.andreas_kratzer.ghosttalk.feature.settings.ui.dialogs.BackupRestorePr
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.dialogs.UsageStatisticsDialog
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.search.SettingsSearchBar
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.search.SettingsSearchResults
+import com.andreas_kratzer.ghosttalk.core.ui.R as CoreR
 
 
 @OptIn(ExperimentalMaterial3Api::class)

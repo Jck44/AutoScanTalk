@@ -2,7 +2,6 @@
 package com.andreas_kratzer.ghosttalk.feature.settings.ui.sections
 
 import android.app.Activity
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -37,7 +36,6 @@ import com.andreas_kratzer.ghosttalk.core.ui.components.PreferenceCategory
 import com.andreas_kratzer.ghosttalk.core.ui.components.SettingsDropdownItem
 import com.andreas_kratzer.ghosttalk.core.ui.components.SettingsEditTextItem
 import com.andreas_kratzer.ghosttalk.core.ui.components.SettingsToggleItem
-import com.andreas_kratzer.ghosttalk.core.ui.theme.Dimensions
 import com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
 import com.andreas_kratzer.ghosttalk.feature.settings.R

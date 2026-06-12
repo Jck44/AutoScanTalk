@@ -1,6 +1,5 @@
 package com.andreas_kratzer.ghosttalk.feature.settings.ui
 
-import android.content.Context
 import com.andreas_kratzer.ghosttalk.core.cloud.domain.PerformProfilesSyncUseCase
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.core.model.ProfileConfig

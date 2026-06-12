@@ -28,8 +28,8 @@ import androidx.compose.ui.unit.dp
 import com.andreas_kratzer.ghosttalk.core.ui.theme.Dimensions
 import com.andreas_kratzer.ghosttalk.feature.settings.R
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.ProfileEditSections
-import com.andreas_kratzer.ghosttalk.feature.settings.ui.SettingsSection
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.SettingsSearchItem
+import com.andreas_kratzer.ghosttalk.feature.settings.ui.SettingsSection
 
 @Composable
 fun getSearchableItems(): List<SettingsSearchItem> {

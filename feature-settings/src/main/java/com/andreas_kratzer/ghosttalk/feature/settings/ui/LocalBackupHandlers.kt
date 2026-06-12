@@ -4,13 +4,13 @@ import android.content.Context
 import android.net.Uri
 import android.widget.Toast
 import com.andreas_kratzer.ghosttalk.feature.settings.R
-import com.andreas_kratzer.ghosttalk.core.ui.R as CoreR
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.BufferedReader
 import java.io.InputStreamReader
+import com.andreas_kratzer.ghosttalk.core.ui.R as CoreR
 
 internal fun isZipUri(fileName: String?, mimeType: String?): Boolean {
     val lowerFileName = fileName?.lowercase() ?: ""

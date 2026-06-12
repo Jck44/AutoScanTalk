@@ -6,9 +6,14 @@ import android.os.Looper
 import com.andreas_kratzer.ghosttalk.core.audio.AudioDeviceManager
 import com.andreas_kratzer.ghosttalk.core.audio.RoutedAudioPlayer
 import com.andreas_kratzer.ghosttalk.core.settings.TtsSettings
-import io.mockk.*
+import io.mockk.every
+import io.mockk.mockk
+import io.mockk.mockkConstructor
+import io.mockk.mockkStatic
+import io.mockk.unmockkAll
 import org.junit.After
-import org.junit.Assert.*
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import java.lang.reflect.Field
