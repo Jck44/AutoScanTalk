@@ -52,3 +52,6 @@ local.properties
 /test_compile_log.txt
 /test_keys.py
 *.txt.bak
+
+# IDE-generierte Markdown-Settings
+/.idea/markdown.xml

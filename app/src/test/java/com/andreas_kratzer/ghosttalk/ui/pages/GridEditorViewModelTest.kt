@@ -33,6 +33,8 @@ class GridEditorViewModelTest {
     private lateinit var actionExecutor: ActionExecutor
     private lateinit var settingsRepository: SettingsRepository
     private lateinit var geminiUseCase: GeminiUseCase
+    private lateinit var analyticsDelegate: com.andreas_kratzer.ghosttalk.ui.pages.delegates.AnalyticsDelegate
+    private lateinit var pageResolutionDelegate: com.andreas_kratzer.ghosttalk.ui.pages.delegates.PageResolutionDelegate
     private lateinit var viewModel: GridEditorViewModel
 
     @Before
@@ -46,6 +48,8 @@ class GridEditorViewModelTest {
         actionExecutor = mockk(relaxed = true)
         settingsRepository = mockk(relaxed = true)
         geminiUseCase = mockk(relaxed = true)
+        analyticsDelegate = mockk(relaxed = true)
+        pageResolutionDelegate = mockk(relaxed = true)
 
         viewModel = GridEditorViewModel(
             pageManagementDelegate = pageManagementDelegate,
@@ -54,7 +58,9 @@ class GridEditorViewModelTest {
             ttsPreviewDelegate = ttsPreviewDelegate,
             actionExecutor = actionExecutor,
             settingsRepository = settingsRepository,
-            geminiUseCase = geminiUseCase
+            geminiUseCase = geminiUseCase,
+            analyticsDelegate = analyticsDelegate,
+            pageResolutionDelegate = pageResolutionDelegate
         )
     }
 
