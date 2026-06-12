@@ -22,8 +22,8 @@ Jeder Schritt ist so konzipiert, dass die App danach vollständig kompilierbar, 
 | 8B | Gemini Nano entfernen (inkl. lokaler Vision) | ✅ umgesetzt + reviewt, Must-Fix behoben, abnahmereif |
 | 9 | Analytics-Tabs | ✅ fertig + committet (`924b6f72`) |
 | 10 | MainActivity | ✅ fertig + committet (`bf88f9d1`) |
-| 11 | SystemCallManager | ✅ umgesetzt + reviewt, abnahmereif — Geräte-Smoke (Simulation) vor Commit Pflicht |
-| 12 | PageSplitDialogs / GridEditor / DeviceActionFields | 📋 Detailplan fertig (3 Mini-Phasen) |
+| 11 | SystemCallManager | ✅ fertig + committet (`f3b5c525`) |
+| 12 | PageSplitDialogs / GridEditor / DeviceActionFields | ✅ umgesetzt + reviewt, abnahmereif — **Roadmap komplett** |
 
 ---
 
@@ -656,3 +656,11 @@ Plan eingehalten, Verhalten strikt paritätisch verschoben: `CallDurationAnnounc
 #### 12c: `ui/pages/actions/DeviceActionFields.kt` (578 Z.)
 * Ein Composable (Z. 92–578) mit Feldgruppen je `DeviceActionType`. Aufteilen nach dem Muster der bestehenden Nachbarn (`CallFields`, `MessagingFields`): `VolumeActionFields`, `DateTimeReadFields` (Präfix/Suffix/Offset/Wochentag), `NotificationActionFields`; `getDeviceActionIcon` ggf. mit dem Icon-Mapping aus `ActionTypeDropdownSection` zusammenführen.
 * Smoke: je Aktionstyp einmal die Felder durchschalten (Lautstärke, Datum/Zeit, Nachricht, Kontakt).
+
+#### Review-Befund Phase 12 (Claude, 2026-06-12) — ✅ abnahmereif, Roadmap damit komplett
+
+* **12a**: `PageSplitDialogs.kt` aufgelöst → `pagesplit/` mit 3 Dialog-Dateien (90/125/378 Z.), `DraggableChip` nach `ui/components/` ✅, Aufrufer (`PageEditorScreen`) aktualisiert ✅. Der Wizard blieb intern ein Composable (378 Z., unter dem 400er-Ziel) — die Schritt-Aufteilung war als „je nach innerer Struktur" formuliert, akzeptiert.
+* **12b**: Drop-Entscheidungslogik als `GridDragDropHandler` extrahiert (statt des vorgeschlagenen `rememberGridDragState` — der Gesten-State blieb bewusst im Composable, nur die Dispatch-Logik wanderte; risikoärmere Interpretation, gut). Alte Inline-Logik vollständig entfernt, nicht dupliziert ✅. Zusätzlich `GridEditorLayoutSheet` + `GridTemplateSaveDialog` extrahiert. 591→423 Z.
+* **12c**: `VolumeActionFields` (36 Z.) + `DateTimeReadFields` (279 Z.) extrahiert und verdrahtet, 578→336 Z.
+* `assembleDebug` + volle Test-Suite grün (kompletter Lauf).
+* **Smoke vor Commit**: Drag&Drop im Grid-Editor (Button verschieben Swap+Insert, Vorlage platzieren/einfügen, Button→Vorlagen-Panel, Vorlagen umsortieren), Page-Split-Wizard komplett durchspielen, Geräte-Aktionsfelder durchschalten.

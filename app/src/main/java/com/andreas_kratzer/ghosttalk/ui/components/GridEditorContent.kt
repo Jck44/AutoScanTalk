@@ -2,35 +2,27 @@ package com.andreas_kratzer.ghosttalk.ui.components
 
 import android.annotation.SuppressLint
 import android.content.res.Configuration
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -53,7 +45,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.andreas_kratzer.ghosttalk.R
-import com.andreas_kratzer.ghosttalk.core.model.ActionCategoryRegistry
 import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.core.model.ButtonTemplate
 import com.andreas_kratzer.ghosttalk.core.model.GridItem
@@ -165,129 +156,22 @@ fun GridEditorContent(
         }
 
         val onDrop: (Any, Any) -> Unit = { draggedItem, target ->
-            when (draggedItem) {
-                is ButtonTemplate -> {
-                    when (target) {
-                        is GridCellTarget -> {
-                            val config = draggedItem.buttonConfig.copy(
-                                id = java.util.UUID.randomUUID().toString()
-                            )
-                            actions.insertButtonConfig(item.id, target.index, config, false) { success ->
-                                if (success) {
-                                    showUndoSnackbar("Vorlage platziert")
-                                } else {
-                                    scope.launch {
-                                        snackbarHostState.showSnackbar("Zielseite ist voll")
-                                    }
-                                }
-                            }
-                        }
-                        is InsertTarget -> {
-                            val config = draggedItem.buttonConfig.copy(
-                                id = java.util.UUID.randomUUID().toString()
-                            )
-                            actions.insertButtonConfig(item.id, target.index, config, true) { success ->
-                                if (success) {
-                                    showUndoSnackbar("Vorlage eingefügt")
-                                } else {
-                                    scope.launch {
-                                        snackbarHostState.showSnackbar("Zielseite ist voll")
-                                    }
-                                }
-                            }
-                        }
-                        is TemplateDropTarget -> {
-                            val allTemplates = actions.buttonTemplates.value
-                            val fromItem = draggedItem
-                            val toItem = target.template
-                            if (fromItem.id != toItem.id) {
-                                val fromCategory = ActionCategoryRegistry.getGroupForAction(fromItem.buttonConfig.buttonAction)
-                                val toCategory = ActionCategoryRegistry.getGroupForAction(toItem.buttonConfig.buttonAction)
-                                
-                                if (fromCategory == toCategory) {
-                                    val categoryTemplates = allTemplates
-                                        .filter { ActionCategoryRegistry.getGroupForAction(it.buttonConfig.buttonAction) == fromCategory }
-                                        .sortedBy { it.orderIndex }
-                                        .toMutableList()
-                                        
-                                    val fromIdxInCat = categoryTemplates.indexOfFirst { it.id == fromItem.id }
-                                    val toIdxInCat = categoryTemplates.indexOfFirst { it.id == toItem.id }
-                                    
-                                    if (fromIdxInCat != -1 && toIdxInCat != -1) {
-                                        categoryTemplates.removeAt(fromIdxInCat)
-                                        categoryTemplates.add(toIdxInCat, fromItem)
-                                        
-                                        val grouped = allTemplates.groupBy {
-                                            ActionCategoryRegistry.getGroupForAction(it.buttonConfig.buttonAction)
-                                        }
-                                        
-                                        val newGlobalList = mutableListOf<ButtonTemplate>()
-                                        ActionCategoryRegistry.ALL_GROUPS.forEach { cat ->
-                                            val itemsInCat = if (cat == fromCategory) {
-                                                categoryTemplates
-                                            } else {
-                                                grouped[cat]?.sortedBy { it.orderIndex } ?: emptyList()
-                                            }
-                                            newGlobalList.addAll(itemsInCat)
-                                        }
-                                        
-                                        actions.updateButtonTemplatesOrder(newGlobalList)
-                                    }
-                                }
-                            }
-                        }
-                        is CategoryHeaderDropTarget -> {
-                            val allTemplates = actions.buttonTemplates.value
-                            val fromItem = draggedItem
-                            val fromCategory = ActionCategoryRegistry.getGroupForAction(fromItem.buttonConfig.buttonAction)
-                            val toCategory = target.groupName
-                            
-                            if (fromCategory == toCategory) {
-                                val categoryTemplates = allTemplates
-                                    .filter { ActionCategoryRegistry.getGroupForAction(it.buttonConfig.buttonAction) == fromCategory }
-                                    .sortedBy { it.orderIndex }
-                                    .toMutableList()
-                                    
-                                val fromIdxInCat = categoryTemplates.indexOfFirst { it.id == fromItem.id }
-                                if (fromIdxInCat != -1) {
-                                    categoryTemplates.removeAt(fromIdxInCat)
-                                    categoryTemplates.add(0, fromItem)
-                                    
-                                    val grouped = allTemplates.groupBy {
-                                        ActionCategoryRegistry.getGroupForAction(it.buttonConfig.buttonAction)
-                                    }
-                                    
-                                    val newGlobalList = mutableListOf<ButtonTemplate>()
-                                    ActionCategoryRegistry.ALL_GROUPS.forEach { cat ->
-                                        val itemsInCat = if (cat == fromCategory) {
-                                            categoryTemplates
-                                        } else {
-                                            grouped[cat]?.sortedBy { it.orderIndex } ?: emptyList()
-                                        }
-                                        newGlobalList.addAll(itemsInCat)
-                                    }
-                                    
-                                    actions.updateButtonTemplatesOrder(newGlobalList)
-                                }
-                            }
-                        }
+            GridDragDropHandler.handleDrop(
+                draggedItem = draggedItem,
+                target = target,
+                itemId = item.id,
+                actions = actions,
+                showUndoSnackbar = { msg -> showUndoSnackbar(msg) },
+                showSnackbar = { msg ->
+                    scope.launch {
+                        snackbarHostState.showSnackbar(msg)
                     }
+                },
+                onSaveAsTemplate = { config ->
+                    showSaveTemplateDialogConfig = config
+                    newTemplateName = config.label
                 }
-                is DraggedGridCell -> {
-                    if (target is GridCellTarget) {
-                        if (draggedItem.index != target.index) {
-                            actions.moveButton(item.id, draggedItem.index, target.index)
-                            showUndoSnackbar("Button verschoben")
-                        }
-                    } else if (target is InsertTarget) {
-                        actions.moveButtonWithInsert(item.id, draggedItem.index, target.index)
-                        showUndoSnackbar("Button verschoben")
-                    } else if (target is TemplatesPanelTarget || target is TemplateDropTarget || target is CategoryHeaderDropTarget) {
-                        showSaveTemplateDialogConfig = draggedItem.config
-                        newTemplateName = draggedItem.config.label
-                    }
-                }
-            }
+            )
         }
 
         DragDropContainer(
@@ -407,42 +291,12 @@ fun GridEditorContent(
             }
 
             if (showLayoutSettingsSheet) {
-                ModalBottomSheet(
-                    onDismissRequest = { showLayoutSettingsSheet = false },
+                GridEditorLayoutSheet(
+                    item = item,
+                    actions = actions,
                     sheetState = sheetState,
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    dragHandle = {
-                        Box(
-                            modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(32.dp, 4.dp)
-                                    .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f), MaterialTheme.shapes.extraSmall)
-                            )
-                        }
-                    }
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(bottom = dimensions.paddingDoubleExtraLarge)
-                            .padding(horizontal = dimensions.paddingExtraLarge)
-                    ) {
-                        Text(
-                            text = stringResource(R.string.page_grid_info, item.rows, item.columns),
-                            style = MaterialTheme.typography.titleLarge,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            modifier = Modifier.padding(bottom = dimensions.paddingLarge)
-                        )
-                        GridEditorControls(
-                            item = item,
-                            actions = actions,
-                            forceVertical = true
-                        )
-                    }
-                }
+                    onDismissRequest = { showLayoutSettingsSheet = false }
+                )
             }
 
             Box(
@@ -549,41 +403,19 @@ fun GridEditorContent(
             }
 
             if (showSaveTemplateDialogConfig != null) {
-                AlertDialog(
-                    onDismissRequest = { showSaveTemplateDialogConfig = null },
-                    title = { Text(stringResource(R.string.template_save_as_title)) },
-                    text = {
-                        Column {
-                            Text(stringResource(R.string.template_enter_name_prompt))
-                            Spacer(modifier = Modifier.height(dimensions.paddingMedium))
-                            OutlinedTextField(
-                                value = newTemplateName,
-                                onValueChange = { newTemplateName = it },
-                                label = { Text(stringResource(R.string.template_name_label)) },
-                                singleLine = true,
-                                modifier = Modifier.fillMaxWidth()
-                            )
+                val config = showSaveTemplateDialogConfig!!
+                GridTemplateSaveDialog(
+                    buttonConfig = config,
+                    templateName = newTemplateName,
+                    onTemplateNameChange = { newTemplateName = it },
+                    onConfirm = {
+                        if (newTemplateName.isNotBlank()) {
+                            actions.saveButtonAsTemplate(newTemplateName, config)
+                            android.widget.Toast.makeText(context, context.getString(R.string.editor_template_saved), android.widget.Toast.LENGTH_SHORT).show()
                         }
+                        showSaveTemplateDialogConfig = null
                     },
-                    confirmButton = {
-                        TextButton(
-                            onClick = {
-                                val config = showSaveTemplateDialogConfig
-                                if (config != null && newTemplateName.isNotBlank()) {
-                                    actions.saveButtonAsTemplate(newTemplateName, config)
-                                    android.widget.Toast.makeText(context, context.getString(R.string.editor_template_saved), android.widget.Toast.LENGTH_SHORT).show()
-                                }
-                                showSaveTemplateDialogConfig = null
-                            }
-                        ) {
-                            Text(stringResource(R.string.action_save))
-                        }
-                    },
-                    dismissButton = {
-                        TextButton(onClick = { showSaveTemplateDialogConfig = null }) {
-                            Text(stringResource(R.string.action_cancel))
-                        }
-                    }
+                    onDismiss = { showSaveTemplateDialogConfig = null }
                 )
             }
         }

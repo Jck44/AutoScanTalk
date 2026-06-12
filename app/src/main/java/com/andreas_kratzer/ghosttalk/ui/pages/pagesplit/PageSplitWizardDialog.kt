@@ -1,9 +1,5 @@
-@file:Suppress("UNUSED_PARAMETER", "UNUSED_VALUE")
-package com.andreas_kratzer.ghosttalk.ui.pages
+package com.andreas_kratzer.ghosttalk.ui.pages.pagesplit
 
-
-import android.content.ClipData
-import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,18 +12,14 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -36,18 +28,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.platform.ClipEntry
-import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
@@ -55,178 +42,14 @@ import androidx.compose.ui.zIndex
 import com.andreas_kratzer.ghosttalk.core.ai.domain.SplitPageUseCase.CategoryProposal
 import com.andreas_kratzer.ghosttalk.core.ai.domain.SplitPageUseCase.PageSplitProposal
 import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
-import kotlinx.coroutines.launch
+import com.andreas_kratzer.ghosttalk.ui.components.DraggableChip
 import kotlin.math.roundToInt
-
-/**
- * Dialog zur Abfrage der Datenschutz-Zustimmung.
- */
-@Composable
-fun PageSplitOptInDialog(
-    onConfirmCloud: (rememberDecision: Boolean) -> Unit,
-    onConfirmManual: () -> Unit,
-    onDismiss: () -> Unit
-) {
-    var rememberDecision by remember { mutableStateOf(false) }
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Seiten-Kategorisierung (Datenschutz)", fontWeight = FontWeight.Bold) },
-        text = {
-            Column {
-                Text(
-                    "Um diese Seite automatisch aufzuteilen, können wir die Bezeichnungen der Tasten anonymisiert an die Google Cloud API senden. Es werden dabei keinerlei persönliche Daten oder Benutzer-IDs übertragen.",
-                    style = MaterialTheme.typography.bodyMedium
-                )
-                Spacer(modifier = Modifier.height(12.dp))
-                Text(
-                    "Tipp: Unter Einstellungen -> KI kannst du einen eigenen Gemini API Key hinterlegen, um sicherzustellen, dass die Daten ausschließlich in deinem eigenen Google Cloud Projekt verarbeitet werden.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Checkbox(
-                        checked = rememberDecision,
-                        onCheckedChange = { rememberDecision = it }
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        "Entscheidung merken (Opt-In speichern)",
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                }
-            }
-        },
-        confirmButton = {
-            Button(
-                onClick = { onConfirmCloud(rememberDecision) }
-            ) {
-                Text("Cloud API nutzen")
-            }
-        },
-        dismissButton = {
-            Row {
-                OutlinedButton(
-                    onClick = onConfirmManual
-                ) {
-                    Text("Manuell (Copy/Paste)")
-                }
-                Spacer(modifier = Modifier.width(8.dp))
-                TextButton(onClick = onDismiss) {
-                    Text("Abbrechen")
-                }
-            }
-        }
-    )
-}
-
-/**
- * Dialog für das manuelle Kopieren des Prompts und Einfügen der KI-Antwort.
- */
-@Composable
-fun PageSplitManualPromptDialog(
-    promptText: String,
-    onEvaluateResponse: (String) -> Unit,
-    onDismiss: () -> Unit
-) {
-    val clipboard = LocalClipboard.current
-    val coroutineScope = rememberCoroutineScope()
-    var pastedJson by remember { mutableStateOf("") }
-    val parseError = remember { mutableStateOf<String?>(null) }
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Manuelle KI-Kategorisierung", fontWeight = FontWeight.Bold) },
-        text = {
-            Column(modifier = Modifier.fillMaxWidth()) {
-                Text(
-                    "Kopiere den generierten Prompt und füge ihn in eine KI deiner Wahl (z.B. ChatGPT, Gemini Web) ein. Kopiere die Antwort der KI und füge sie unten ein.",
-                    style = MaterialTheme.typography.bodyMedium
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                
-                // Prompt Text Display (Read-Only)
-                OutlinedTextField(
-                    value = promptText,
-                    onValueChange = {},
-                    readOnly = true,
-                    label = { Text("1. Prompt kopieren") },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(max = 120.dp),
-                    textStyle = MaterialTheme.typography.bodySmall
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                Button(
-                    onClick = {
-                        coroutineScope.launch {
-                            clipboard.setClipEntry(ClipEntry(ClipData.newPlainText("Prompt", promptText)))
-                        }
-                    },
-                    modifier = Modifier.align(Alignment.End)
-                ) {
-                    Text("Prompt kopieren")
-                }
-                
-                Spacer(modifier = Modifier.height(16.dp))
-                
-                // Input for LLM JSON Response
-                OutlinedTextField(
-                    value = pastedJson,
-                    onValueChange = { 
-                        pastedJson = it 
-                        parseError.value = null
-                    },
-                    label = { Text("2. KI-Antwort (JSON) einfügen") },
-                    placeholder = { Text("Füge hier das von der KI generierte JSON-Objekt ein...") },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(150.dp),
-                    maxLines = 10,
-                    isError = parseError.value != null
-                )
-                if (parseError.value != null) {
-                    Text(
-                        text = parseError.value ?: "",
-                        color = MaterialTheme.colorScheme.error,
-                        style = MaterialTheme.typography.bodySmall,
-                        modifier = Modifier.padding(top = 4.dp)
-                    )
-                }
-            }
-        },
-        confirmButton = {
-            Button(
-                onClick = {
-                    try {
-                        onEvaluateResponse(pastedJson)
-                    } catch (e: Exception) {
-                        parseError.value = "Ungültiges JSON-Format. Bitte stelle sicher, dass die Struktur genau dem Prompt entspricht."
-                    }
-                },
-                enabled = pastedJson.isNotBlank()
-            ) {
-                Text("Antwort auswerten")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Abbrechen")
-            }
-        }
-    )
-}
 
 /**
  * Dialog zur Vorschau des Seiten-Splits mit Drag & Drop Support.
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-
 fun PageSplitWizardDialog(
     proposal: PageSplitProposal?,
     allAvailableButtons: List<ButtonConfig>,
@@ -552,63 +375,4 @@ fun PageSplitWizardDialog(
             }
         }
     )
-}
-
-/**
- * Ein flexibler, via Long-Press ziehbarer Chip für die Kachel-Labels.
- */
-@Composable
-fun DraggableChip(
-    label: String,
-    isDragged: Boolean,
-    onDragStart: (center: Offset, size: Offset) -> Unit, // liefert die initiale globale Mitte und Größe
-    onDrag: (Offset) -> Unit,      // liefert das Drag-Delta
-    onDragEnd: () -> Unit,
-    onDragCancel: () -> Unit = {}
-) {
-    var globalPos by remember { mutableStateOf(Offset.Zero) }
-    var chipSize by remember { mutableStateOf(Offset.Zero) }
-
-    val currentOnDragStart by rememberUpdatedState(onDragStart)
-    val currentOnDrag by rememberUpdatedState(onDrag)
-    val currentOnDragEnd by rememberUpdatedState(onDragEnd)
-    val currentOnDragCancel by rememberUpdatedState(onDragCancel)
-
-    Surface(
-        shape = MaterialTheme.shapes.small,
-        color = if (isDragged) {
-            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
-        } else {
-            MaterialTheme.colorScheme.surfaceVariant
-        },
-        tonalElevation = 0.dp,
-        modifier = Modifier
-            .onGloballyPositioned { layoutCoordinates ->
-                val bounds = layoutCoordinates.boundsInRoot()
-                globalPos = bounds.center
-                chipSize = Offset(bounds.width, bounds.height)
-            }
-            .pointerInput(Unit) {
-                detectDragGesturesAfterLongPress(
-                    onDragStart = { offset -> currentOnDragStart(globalPos, chipSize) },
-                    onDrag = { change, dragAmount ->
-                        change.consume()
-                        currentOnDrag(dragAmount)
-                    },
-                    onDragEnd = { currentOnDragEnd() },
-                    onDragCancel = { currentOnDragCancel() }
-                )
-            }
-    ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodyMedium,
-            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-            color = if (isDragged) {
-                MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)
-            } else {
-                MaterialTheme.colorScheme.onSurfaceVariant
-            }
-        )
-    }
 }

@@ -1,0 +1,57 @@
+package com.andreas_kratzer.ghosttalk.ui.components
+
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import com.andreas_kratzer.ghosttalk.R
+import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
+import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
+
+@Composable
+fun GridTemplateSaveDialog(
+    buttonConfig: ButtonConfig,
+    templateName: String,
+    onTemplateNameChange: (String) -> Unit,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    val dimensions = LocalDimensions.current
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.template_save_as_title)) },
+        text = {
+            Column {
+                Text(stringResource(R.string.template_enter_name_prompt))
+                Spacer(modifier = Modifier.height(dimensions.paddingMedium))
+                OutlinedTextField(
+                    value = templateName,
+                    onValueChange = onTemplateNameChange,
+                    label = { Text(stringResource(R.string.template_name_label)) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = onConfirm
+            ) {
+                Text(stringResource(R.string.action_save))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.action_cancel))
+            }
+        }
+    )
+}
