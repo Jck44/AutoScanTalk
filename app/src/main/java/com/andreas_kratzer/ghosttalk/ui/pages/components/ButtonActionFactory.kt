@@ -24,7 +24,6 @@ import com.andreas_kratzer.ghosttalk.core.model.WeatherButtonAction
 data class ActionParams(
     val targetPageId: String = "",
     val geminiPrompt: String = "",
-    val geminiVisionUseCloud: Boolean = false,
     val geminiVisionPlayShutterSound: Boolean = true,
     val rank: Int = 1,
     val predictionType: PredictionType = PredictionType.ALL,
@@ -58,7 +57,7 @@ object ButtonActionFactory {
             is NavigateToStartPageButtonAction -> ActionTypeId.NAVIGATE_TO_START_PAGE
             is GeminiButtonAction -> ActionTypeId.GEMINI
             is GeminiSearchButtonAction -> ActionTypeId.GEMINI_SEARCH
-            is GeminiNanoButtonAction -> ActionTypeId.GEMINI_NANO
+            is GeminiNanoButtonAction -> ActionTypeId.GEMINI
             is GeminiVisionButtonAction -> ActionTypeId.GEMINI_VISION
             is WeatherButtonAction -> ActionTypeId.WEATHER
             is ControlDeviceButtonAction -> {
@@ -118,8 +117,7 @@ object ButtonActionFactory {
             ActionTypeId.NAVIGATE_TO_START_PAGE -> NavigateToStartPageButtonAction()
             ActionTypeId.GEMINI -> GeminiButtonAction(params.geminiPrompt)
             ActionTypeId.GEMINI_SEARCH -> GeminiSearchButtonAction(params.geminiPrompt)
-            ActionTypeId.GEMINI_NANO -> GeminiNanoButtonAction(intent = params.geminiPrompt)
-            ActionTypeId.GEMINI_VISION -> GeminiVisionButtonAction(params.geminiPrompt, params.geminiVisionUseCloud, params.geminiVisionPlayShutterSound)
+            ActionTypeId.GEMINI_VISION -> GeminiVisionButtonAction(params.geminiPrompt, true, params.geminiVisionPlayShutterSound)
             ActionTypeId.FREQUENT -> FrequentActionButtonAction(params.rank)
             ActionTypeId.PREVIOUS -> PreviousActionButtonAction(params.rank)
             ActionTypeId.SMART -> SmartPredictionButtonAction(params.rank, params.predictionType)

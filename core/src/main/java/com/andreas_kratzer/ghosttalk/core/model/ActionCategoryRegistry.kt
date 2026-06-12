@@ -7,7 +7,6 @@ enum class ActionCategory {
     NAVIGATE_TO_START_PAGE,
     GEMINI,
     GEMINI_SEARCH,
-    GEMINI_NANO,
     GEMINI_VISION,
     FREQUENT_ACTION,
     SMART_PREDICTION,
@@ -88,7 +87,7 @@ object ActionCategoryRegistry {
             is NavigateToStartPageButtonAction -> ActionCategory.NAVIGATE_TO_START_PAGE
             is GeminiButtonAction -> ActionCategory.GEMINI
             is GeminiSearchButtonAction -> ActionCategory.GEMINI_SEARCH
-            is GeminiNanoButtonAction -> ActionCategory.GEMINI_NANO
+            is GeminiNanoButtonAction -> ActionCategory.GEMINI
             is GeminiVisionButtonAction -> ActionCategory.GEMINI_VISION
             is FrequentActionButtonAction -> ActionCategory.FREQUENT_ACTION
             is SmartPredictionButtonAction -> ActionCategory.SMART_PREDICTION

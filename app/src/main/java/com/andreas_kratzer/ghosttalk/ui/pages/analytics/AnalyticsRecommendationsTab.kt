@@ -1,4 +1,4 @@
-@file:Suppress("DEPRECATION", "UNUSED_VALUE", "ASSIGNED_VALUE_IS_NEVER_READ", "UNUSED_PARAMETER")
+@file:Suppress("DEPRECATION")
 package com.andreas_kratzer.ghosttalk.ui.pages.analytics
 
 import android.content.Context

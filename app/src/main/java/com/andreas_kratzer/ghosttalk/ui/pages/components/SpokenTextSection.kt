@@ -67,10 +67,7 @@ fun SpokenTextSection(
     spokenTextPlayback: TtsFieldPlaybackState,
     playingField: String?,
     onPlayTts: ((String, () -> Unit) -> Unit)?,
-    micPermissionLauncher: ManagedActivityResultLauncher<String, Boolean>,
-    onStartVoiceRecording: () -> Unit,
-    onStopVoiceRecording: () -> Unit,
-    onPlayRecording: (File) -> Unit,
+    audioRecordingController: AudioRecordingController,
     onAutoSave: () -> Unit
 ) {
     Text(
@@ -226,16 +223,7 @@ fun SpokenTextSection(
                         ) {
                             Button(
                                 onClick = {
-                                    if (state.isRecording) {
-                                        onStopVoiceRecording()
-                                    } else {
-                                        val hasMicPermission = ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
-                                        if (hasMicPermission) {
-                                            onStartVoiceRecording()
-                                        } else {
-                                            micPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
-                                        }
-                                    }
+                                    audioRecordingController.toggleRecordingOrRequestPermission()
                                 },
                                 colors = ButtonDefaults.buttonColors(
                                     containerColor = if (state.isRecording) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
@@ -254,7 +242,7 @@ fun SpokenTextSection(
                             OutlinedButton(
                                 onClick = {
                                     val file = File(context.filesDir.resolve("audio_recordings"), state.audioFileName ?: "")
-                                    onPlayRecording(file)
+                                    audioRecordingController.playRecording(file)
                                 },
                                 enabled = audioFileExists && !state.isRecording,
                                 colors = ButtonDefaults.outlinedButtonColors(

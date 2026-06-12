@@ -18,7 +18,6 @@ data class ImportExportData(
     val geminiRedoPrediction: Boolean? = null,
     val geminiTimeout: Long? = null,
     val isGeminiEnabled: Boolean? = null,
-    val useLocalGenerativeAi: Boolean? = null,
     val isDataCloudSyncEnabled: Boolean? = null,
     val syncIntervalMinutes: Long? = null,
     val syncMode: String? = null,

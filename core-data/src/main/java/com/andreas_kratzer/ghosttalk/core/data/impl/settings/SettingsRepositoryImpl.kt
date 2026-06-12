@@ -147,7 +147,6 @@ class SettingsRepositoryImpl @Inject constructor(
                             isSmartPredictionEnabled = isSmartPredictionEnabled,
                             smartPredictionDelay = smartPredictionDelay,
                             isGeminiEnabled = isGeminiEnabled,
-                            useLocalGenerativeAi = useLocalGenerativeAi,
                             geminiRedoPrediction = geminiRedoPrediction,
                             geminiTimeout = geminiTimeout,
                             maxCallDurationSeconds = maxCallDurationSeconds,
@@ -658,7 +657,6 @@ class SettingsRepositoryImpl @Inject constructor(
             editor.putBoolean(SettingsConstants.KEY_SMART_PREDICTION_ENABLED, config.isSmartPredictionEnabled)
             editor.putLong(SettingsConstants.KEY_SMART_PREDICTION_DELAY, config.smartPredictionDelay)
             editor.putBoolean(SettingsConstants.KEY_GEMINI_ENABLED, config.isGeminiEnabled)
-            editor.putBoolean(SettingsConstants.KEY_USE_LOCAL_GENERATIVE_AI, config.useLocalGenerativeAi)
             editor.putBoolean(SettingsConstants.KEY_GEMINI_REDO_PREDICTION, config.geminiRedoPrediction)
             editor.putLong(SettingsConstants.KEY_GEMINI_TIMEOUT, config.geminiTimeout)
             editor.putInt(SettingsConstants.KEY_MAX_CALL_DURATION_SECONDS, config.maxCallDurationSeconds)

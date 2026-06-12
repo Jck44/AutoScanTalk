@@ -48,7 +48,6 @@ object GhostTalkIcons {
             ActionCategory.NAVIGATE_TO_START_PAGE -> Icons.Default.Home
             ActionCategory.GEMINI,
             ActionCategory.GEMINI_SEARCH,
-            ActionCategory.GEMINI_NANO,
             ActionCategory.GEMINI_VISION -> AutoAwesome
             ActionCategory.WEATHER -> PartlyCloudy
             ActionCategory.SMART_HOME -> Icons.Default.Home

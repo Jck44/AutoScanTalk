@@ -133,7 +133,6 @@ fun CueAndTogglesSection(
         if (!isActionEnabled) {
             val featureName = when (currentAction) {
                 is GeminiButtonAction, is GeminiSearchButtonAction -> "Gemini Cloud"
-                is GeminiNanoButtonAction -> "Gemini Nano"
                 is SmartHomeButtonAction -> "Smart Home"
                 is SmartPredictionButtonAction, is FrequentActionButtonAction -> "Smart Prediction"
                 is WeatherButtonAction -> "Wetter"

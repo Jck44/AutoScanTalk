@@ -78,7 +78,6 @@ class ProfileBootstrapper @Inject constructor(
                 isSmartPredictionEnabled = prefs.getBoolean(SettingsConstants.KEY_SMART_PREDICTION_ENABLED, false),
                 smartPredictionDelay = prefs.getLong(SettingsConstants.KEY_SMART_PREDICTION_DELAY, 2000L),
                 isGeminiEnabled = prefs.getBoolean(SettingsConstants.KEY_GEMINI_ENABLED, false),
-                useLocalGenerativeAi = prefs.getBoolean(SettingsConstants.KEY_USE_LOCAL_GENERATIVE_AI, true),
                 geminiRedoPrediction = prefs.getBoolean(SettingsConstants.KEY_GEMINI_REDO_PREDICTION, false),
                 geminiTimeout = prefs.getLong(SettingsConstants.KEY_GEMINI_TIMEOUT, 10000L),
                 maxCallDurationSeconds = prefs.getInt(SettingsConstants.KEY_MAX_CALL_DURATION_SECONDS, 300),

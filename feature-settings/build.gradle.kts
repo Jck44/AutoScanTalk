@@ -57,6 +57,7 @@ dependencies {
     implementation(project(":core-tts"))
     implementation(project(":core-scanning"))
     
+    implementation(libs.androidx.appcompat)
     implementation(libs.androidx.core.ktx)
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.ui)
@@ -80,7 +81,6 @@ dependencies {
     implementation(libs.google.api.client.android)
     implementation(libs.google.api.services.drive)
     implementation(libs.google.http.client.gson)
-    implementation(libs.google.generativeai.mlkit)
     implementation(libs.gms.play.services.auth)
 
     

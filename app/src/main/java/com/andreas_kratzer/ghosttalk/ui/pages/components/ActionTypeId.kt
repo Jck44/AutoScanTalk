@@ -52,8 +52,5 @@ enum class ActionTypeId {
     // Verlauf & Vorhersage
     FREQUENT,
     PREVIOUS,
-    SMART,
-
-    // Gemini Nano explicitly!
-    GEMINI_NANO
+    SMART
 }

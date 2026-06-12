@@ -1,6 +1,7 @@
 package com.andreas_kratzer.ghosttalk.ui.pages.components
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -77,9 +78,10 @@ fun rememberTtsFieldPlayback(
     onStopTts: (() -> Unit)?,
     onPlayTts: ((String, () -> Unit) -> Unit)?,
     getPlayingField: () -> String?,
-    setPlayingField: (String?) -> Unit
+    setPlayingField: (String?) -> Unit,
+    currentText: String
 ): TtsFieldPlaybackState {
-    return remember(fieldName) {
+    val state = remember(fieldName) {
         TtsFieldPlaybackState(
             fieldName = fieldName,
             isElevenLabs = isElevenLabs,
@@ -91,4 +93,10 @@ fun rememberTtsFieldPlayback(
             setPlayingField = setPlayingField
         )
     }
+
+    LaunchedEffect(currentText, isElevenLabs, isTextCached) {
+        state.updateCachedState(currentText)
+    }
+
+    return state
 }

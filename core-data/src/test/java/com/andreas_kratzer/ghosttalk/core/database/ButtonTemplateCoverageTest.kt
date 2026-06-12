@@ -39,6 +39,16 @@ class ButtonTemplateCoverageTest {
     }
 
     @Test
+    fun testEnsureBuiltInTemplates_deletesRetiredTemplates() = runTest {
+        val dao = mockk<ButtonTemplateDao>(relaxed = true)
+        val repository = ButtonTemplateRepositoryImpl(dao)
+
+        repository.ensureBuiltInTemplates()
+
+        coVerify { dao.deleteTemplatesByIds(listOf("builtin_gemini_nano")) }
+    }
+
+    @Test
     fun testBuiltInTemplatesCoverage() {
         val repository = ButtonTemplateRepositoryImpl(mockk())
         val templates = repository.generateBuiltInTemplatesList()
@@ -48,6 +58,7 @@ class ButtonTemplateCoverageTest {
         assertTrue("Sealed subclasses of ButtonAction should not be empty", sealedSubclasses.isNotEmpty())
 
         for (subclass in sealedSubclasses) {
+            if (subclass.annotations.any { it is Deprecated }) continue
             if (subclass == ControlDeviceButtonAction::class) {
                 // Assert that for every DeviceActionType there is a template
                 for (deviceActionType in DeviceActionType.entries) {

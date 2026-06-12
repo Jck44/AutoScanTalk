@@ -100,41 +100,10 @@ private fun ToolItem(tool: com.andreas_kratzer.ghosttalk.core.ai.domain.AiTool) 
 }
 
 @Composable
-fun GeminiNanoActionFields(
-    prompt: String,
-    onPromptChanged: (String) -> Unit,
-    onAutoSave: () -> Unit = {}
-) {
-    val dimensions = LocalDimensions.current
-    Column(verticalArrangement = Arrangement.spacedBy(dimensions.paddingSmall)) {
-        OutlinedTextField(
-            value = prompt,
-            onValueChange = onPromptChanged,
-            label = { Text(stringResource(R.string.button_gemini_prompt_field)) },
-            placeholder = { Text(stringResource(R.string.button_gemini_prompt_hint)) },
-            shape = MaterialTheme.shapes.large,
-            modifier = Modifier.fillMaxWidth().onFocusChanged { 
-                if (!it.isFocused) onAutoSave()
-            }
-        )
-
-        Text(
-            text = "Gemini Nano arbeitet offline direkt auf dem Gerät und aktuell ohne externe Tools.",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.outline,
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp)
-        )
-    }
-}
-
-@Composable
 fun GeminiVisionActionFields(
     prompt: String,
-    useCloud: Boolean,
-    isCloudEnabled: Boolean = true,
     playShutterSound: Boolean = true,
     onPromptChanged: (String) -> Unit,
-    onUseCloudChanged: (Boolean) -> Unit,
     onPlayShutterSoundChanged: (Boolean) -> Unit,
     onAutoSave: () -> Unit = {}
 ) {
@@ -166,14 +135,6 @@ fun GeminiVisionActionFields(
             }
         )
 
-        com.andreas_kratzer.ghosttalk.core.ui.components.SettingsToggleItem(
-            label = stringResource(R.string.button_gemini_vision_use_cloud_label),
-            checked = useCloud,
-            enabled = isCloudEnabled,
-            onCheckedChange = onUseCloudChanged,
-            onValueChangeFinished = onAutoSave
-        )
-        
         com.andreas_kratzer.ghosttalk.core.ui.components.SettingsToggleItem(
             label = stringResource(R.string.button_gemini_vision_shutter_sound_label),
             checked = playShutterSound,

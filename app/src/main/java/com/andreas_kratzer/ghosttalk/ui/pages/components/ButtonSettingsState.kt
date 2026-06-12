@@ -91,7 +91,6 @@ class ActionTypeResolver(context: Context) {
             ActionTypeId.FREQUENT -> actionTypeFrequent
             ActionTypeId.PREVIOUS -> actionTypePrevious
             ActionTypeId.SMART -> actionTypeSmart
-            ActionTypeId.GEMINI_NANO -> actionTypeGemini
         }
     }
 }

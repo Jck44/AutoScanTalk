@@ -103,8 +103,7 @@ class GeminiActionHandler @Inject constructor(
 
                     val response = visionUseCase.describeImage(
                         bitmap = finalBitmap,
-                        prompt = action.prompt,
-                        useCloud = action.useCloud
+                        prompt = action.prompt
                     )
                     speakResponse(response, targetDeviceAddress, executionId, buttonConfig.label, action, onFinish)
                     return@launch

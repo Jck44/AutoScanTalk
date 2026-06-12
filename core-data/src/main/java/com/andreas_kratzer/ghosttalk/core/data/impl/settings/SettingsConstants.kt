@@ -23,7 +23,6 @@ object SettingsConstants {
     const val KEY_HOLDING_TIME_MILLIS = "holding_time_millis"
     const val KEY_CLOUD_SYNC_ENABLED = "cloud_sync_enabled"
     const val KEY_GEMINI_ENABLED = "gemini_enabled"
-    const val KEY_USE_LOCAL_GENERATIVE_AI = "use_local_generative_ai"
     const val KEY_APP_LANGUAGE = "app_language"
     const val KEY_SYNC_INTERVAL_MINUTES = "sync_interval_minutes"
     const val KEY_SYNC_MODE = "sync_mode"

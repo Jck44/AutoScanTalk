@@ -81,7 +81,7 @@ class SettingsRoundTripTest {
             "switchActivationKey", "volumeKeysActivate", "defaultScanPattern",
             "staticRowEnabled",
             "isSmartPredictionEnabled", "geminiRedoPrediction", "geminiTimeout",
-            "isGeminiEnabled", "useLocalGenerativeAi",
+            "isGeminiEnabled",
             // Note: isDataCloudSyncEnabled, syncIntervalMinutes, syncMode are intentionally
             // excluded from import (device-specific cloud sync settings)
             "ttsLanguage", "ttsVoiceName",

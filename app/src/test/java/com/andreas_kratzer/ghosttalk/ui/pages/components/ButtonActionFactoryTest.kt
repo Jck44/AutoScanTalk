@@ -16,7 +16,7 @@ class ButtonActionFactoryTest {
         assertEquals(ActionTypeId.GEMINI, ButtonActionFactory.actionTypeIdOf(GeminiButtonAction("prompt")))
         assertEquals(ActionTypeId.GEMINI_SEARCH, ButtonActionFactory.actionTypeIdOf(GeminiSearchButtonAction("prompt")))
         @Suppress("DEPRECATION")
-        assertEquals(ActionTypeId.GEMINI_NANO, ButtonActionFactory.actionTypeIdOf(GeminiNanoButtonAction("intent")))
+        assertEquals(ActionTypeId.GEMINI, ButtonActionFactory.actionTypeIdOf(GeminiNanoButtonAction("intent")))
         assertEquals(ActionTypeId.GEMINI_VISION, ButtonActionFactory.actionTypeIdOf(GeminiVisionButtonAction("prompt")))
         assertEquals(ActionTypeId.WEATHER, ButtonActionFactory.actionTypeIdOf(WeatherButtonAction()))
 
@@ -60,10 +60,6 @@ class ButtonActionFactoryTest {
         assertTrue(gemini is GeminiButtonAction)
         assertEquals("testPrompt", (gemini as GeminiButtonAction).prompt)
 
-        @Suppress("DEPRECATION")
-        val nano = ButtonActionFactory.buildAction(ActionTypeId.GEMINI_NANO, params)
-        assertTrue(nano is GeminiNanoButtonAction)
-        assertEquals("testPrompt", (nano as GeminiNanoButtonAction).intent)
 
         val deviceMsg = ButtonActionFactory.buildAction(ActionTypeId.SEND_MESSAGE, params)
         assertTrue(deviceMsg is ControlDeviceButtonAction)

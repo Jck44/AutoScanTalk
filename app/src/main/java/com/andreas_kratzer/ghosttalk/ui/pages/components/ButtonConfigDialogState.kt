@@ -41,7 +41,6 @@ class ButtonConfigDialogState(
             else -> ""
         }
     )
-    var geminiVisionUseCloud by mutableStateOf((buttonConfig.buttonAction as? com.andreas_kratzer.ghosttalk.core.model.GeminiVisionButtonAction)?.useCloud ?: false)
     var geminiVisionPlayShutterSound by mutableStateOf((buttonConfig.buttonAction as? com.andreas_kratzer.ghosttalk.core.model.GeminiVisionButtonAction)?.playShutterSound ?: true)
     
     var rank by mutableIntStateOf(
@@ -86,7 +85,6 @@ class ButtonConfigDialogState(
         val params = ActionParams(
             targetPageId = targetPageId,
             geminiPrompt = geminiPrompt,
-            geminiVisionUseCloud = geminiVisionUseCloud,
             geminiVisionPlayShutterSound = geminiVisionPlayShutterSound,
             rank = rank,
             predictionType = predictionType,

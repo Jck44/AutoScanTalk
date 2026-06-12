@@ -51,7 +51,6 @@ data class ProfileConfig(
     val isSmartPredictionEnabled: Boolean = false,
     val smartPredictionDelay: Long = 2000,
     val isGeminiEnabled: Boolean = false,
-    val useLocalGenerativeAi: Boolean = true,
     val geminiRedoPrediction: Boolean = false,
     val geminiTimeout: Long = 10000,
 

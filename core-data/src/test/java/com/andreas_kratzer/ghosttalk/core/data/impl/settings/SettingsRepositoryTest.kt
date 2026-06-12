@@ -47,35 +47,47 @@ class SettingsRepositoryTest {
         every { mockPrefs.getString(any(), any()) } answers {
             val key = args[0] as String
             val default = args[1] as String?
-            mockedPrefsStore.getOrDefault(key, default)
+            synchronized(mockedPrefsStore) {
+                mockedPrefsStore.getOrDefault(key, default)
+            }
         }
         every { mockPrefs.getLong(any(), any()) } answers {
             val key = args[0] as String
             val default = args[1] as Long
-            mockedPrefsStore.getOrDefault(key, default.toString())?.toLongOrNull() ?: default
+            synchronized(mockedPrefsStore) {
+                mockedPrefsStore.getOrDefault(key, default.toString())?.toLongOrNull() ?: default
+            }
         }
         every { mockPrefs.getBoolean(any(), any()) } answers {
             val key = args[0] as String
             val default = args[1] as Boolean
-            mockedPrefsStore.getOrDefault(key, default.toString())?.toBooleanStrictOrNull() ?: default
+            synchronized(mockedPrefsStore) {
+                mockedPrefsStore.getOrDefault(key, default.toString())?.toBooleanStrictOrNull() ?: default
+            }
         }
         every { mockPrefs.getStringSet(any(), any()) } answers {
             val key = args[0] as String
             @Suppress("UNCHECKED_CAST")
             val default = args[1] as Set<String>?
-            mockedPrefsStore[key]?.split(",")?.toSet() ?: default
+            synchronized(mockedPrefsStore) {
+                mockedPrefsStore[key]?.split(",")?.toSet() ?: default
+            }
         }
         every { mockPrefs.getFloat(any(), any()) } answers {
             val key = args[0] as String
             val default = args[1] as Float
-            mockedPrefsStore.getOrDefault(key, default.toString())?.toFloatOrNull() ?: default
+            synchronized(mockedPrefsStore) {
+                mockedPrefsStore.getOrDefault(key, default.toString())?.toFloatOrNull() ?: default
+            }
         }
         
         // Mock putString
         every { mockEditor.putString(any(), any()) } answers {
             val key = args[0] as String
             val value = args[1] as String?
-            mockedPrefsStore[key] = value
+            synchronized(mockedPrefsStore) {
+                mockedPrefsStore[key] = value
+            }
             mockEditor
         }
         
@@ -83,7 +95,9 @@ class SettingsRepositoryTest {
         every { mockEditor.putBoolean(any(), any()) } answers {
             val key = args[0] as String
             val value = args[1] as Boolean
-            mockedPrefsStore[key] = value.toString()
+            synchronized(mockedPrefsStore) {
+                mockedPrefsStore[key] = value.toString()
+            }
             mockEditor
         }
         
@@ -91,7 +105,9 @@ class SettingsRepositoryTest {
         every { mockEditor.putLong(any(), any()) } answers {
             val key = args[0] as String
             val value = args[1] as Long
-            mockedPrefsStore[key] = value.toString()
+            synchronized(mockedPrefsStore) {
+                mockedPrefsStore[key] = value.toString()
+            }
             mockEditor
         }
         
@@ -99,7 +115,9 @@ class SettingsRepositoryTest {
         every { mockEditor.putFloat(any(), any()) } answers {
             val key = args[0] as String
             val value = args[1] as Float
-            mockedPrefsStore[key] = value.toString()
+            synchronized(mockedPrefsStore) {
+                mockedPrefsStore[key] = value.toString()
+            }
             mockEditor
         }
         
@@ -108,23 +126,29 @@ class SettingsRepositoryTest {
             val key = args[0] as String
             @Suppress("UNCHECKED_CAST")
             val value = args[1] as Set<String>?
-            mockedPrefsStore[key] = value?.joinToString(",")
+            synchronized(mockedPrefsStore) {
+                mockedPrefsStore[key] = value?.joinToString(",")
+            }
             mockEditor
         }
         
         // Mock remove
         every { mockEditor.remove(any()) } answers {
             val key = args[0] as String
-            mockedPrefsStore.remove(key)
+            synchronized(mockedPrefsStore) {
+                mockedPrefsStore.remove(key)
+            }
             mockEditor
         }
         
         // Mock contains
         every { mockPrefs.contains(any()) } answers {
             val key = args[0] as String
-            mockedPrefsStore.containsKey(key)
+            synchronized(mockedPrefsStore) {
+                mockedPrefsStore.containsKey(key)
+            }
         }
-
+ 
         // Mock all
         every { mockPrefs.all } answers {
             synchronized(mockedPrefsStore) {
@@ -322,18 +346,7 @@ class SettingsRepositoryTest {
         assertEquals(100L, repository.bluetoothDelayFlow.first())
     }
 
-    @Test
-    fun useLocalGenerativeAi_initializesTrue() = runBlocking {
-        every { mockPrefs.getBoolean("use_local_generative_ai", true) } returns true
-        assertEquals(true, repository.useLocalGenerativeAi)
-        assertEquals(true, repository.useLocalGenerativeAiFlow.first())
-    }
 
-    @Test
-    fun useLocalGenerativeAi_savesAndEmitsValue() = runBlocking {
-        repository.useLocalGenerativeAi = false
-        assertEquals("false", mockedPrefsStore["book-default_use_local_generative_ai"])
-    }
 
     @Test
     fun audioDeviceNamesCache_savesAndLoadsNames() = runBlocking {

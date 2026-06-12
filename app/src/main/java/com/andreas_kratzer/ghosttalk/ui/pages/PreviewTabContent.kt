@@ -43,7 +43,6 @@ fun PreviewTabContent(
     actionTypeSpeak: String = stringResource(R.string.button_action_speak_text),
     actionTypeNavigate: String = stringResource(R.string.button_action_navigate_page),
     actionTypeGemini: String = stringResource(R.string.button_action_gemini),
-    actionTypeGeminiNano: String = stringResource(R.string.button_action_gemini_nano),
     actionTypeGeminiVision: String = stringResource(R.string.button_action_gemini_vision),
     actionTypeWeather: String = stringResource(R.string.button_action_weather),
     actionTypeDevice: String = stringResource(R.string.button_action_control_device),
@@ -85,7 +84,6 @@ fun PreviewTabContent(
     val navigateWithFeedbackFormat = stringResource(R.string.button_preview_navigate_with_feedback)
     val navigateOnlyFormat = stringResource(R.string.button_preview_navigate_only)
     val geminiCloudFormat = stringResource(R.string.button_preview_gemini_cloud)
-    val geminiNanoFormat = stringResource(R.string.button_preview_gemini_nano)
     val geminiVision = stringResource(R.string.button_preview_gemini_vision)
     val weatherAnnounce = stringResource(R.string.button_preview_weather)
     val smartHomeFormat = stringResource(R.string.button_preview_smart_home)
@@ -137,7 +135,7 @@ fun PreviewTabContent(
         frequentActionSpeak, previousActionSpeak, smartPredictionSpeak,
         speakCustomFormat, speakFallbackFormat, mediaDelayReturnFormat, mediaDelayStay,
         playMediaFormat, navigateWithFeedbackFormat, navigateOnlyFormat, geminiCloudFormat,
-        geminiNanoFormat, geminiVision, weatherAnnounce, smartHomeFormat, dynamicAction,
+        geminiVision, weatherAnnounce, smartHomeFormat, dynamicAction,
         spokenTextFormat, calendarFormat, batteryFormat, smsFormat, smsLastSpokenFormat, callFormat,
         deviceFunctionFormat, deviceActionReadTime, deviceActionReadDate, deviceActionReadBattery,
         deviceActionReadCalendar, deviceActionSendMessage, deviceActionSendLastSpokenSms, deviceActionStartCall,
@@ -173,7 +171,6 @@ fun PreviewTabContent(
                         }
                     }
                     actionTypeGemini -> geminiCloudFormat.format(geminiPrompt)
-                    actionTypeGeminiNano -> geminiNanoFormat.format(geminiPrompt)
                     actionTypeGeminiVision -> geminiVision
                     actionTypeDevice -> {
                         val actionName = when (deviceActionType) {

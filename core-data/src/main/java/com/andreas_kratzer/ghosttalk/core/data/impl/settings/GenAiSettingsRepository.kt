@@ -8,7 +8,6 @@ import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.K
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_GEMINI_VERIFIED
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_HAS_ACCEPTED_PAGE_SPLIT_OPT_IN
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_USE_GEMINI_API_KEY
-import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_USE_LOCAL_GENERATIVE_AI
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -36,7 +35,6 @@ class GenAiSettingsRepository @Inject constructor(
         get() = advancedSettings.showPageIdInLogFlow
 
     private val _isGeminiEnabled = BooleanSetting(KEY_GEMINI_ENABLED, false)
-    private val _useLocalGenerativeAi = BooleanSetting(KEY_USE_LOCAL_GENERATIVE_AI, true)
     private val _geminiRedoPrediction = BooleanSetting(KEY_GEMINI_REDO_PREDICTION, false)
     private val _geminiTimeout = LongSetting(KEY_GEMINI_TIMEOUT, 6000L)
     private val _geminiApiKey = StringSetting(
@@ -49,7 +47,6 @@ class GenAiSettingsRepository @Inject constructor(
     private val _hasAcceptedPageSplitOptIn = BooleanSetting(KEY_HAS_ACCEPTED_PAGE_SPLIT_OPT_IN, false)
 
     override val isGeminiEnabledFlow = _isGeminiEnabled.flow
-    override val useLocalGenerativeAiFlow = _useLocalGenerativeAi.flow
     override val geminiRedoPredictionFlow = _geminiRedoPrediction.flow
     override val geminiTimeoutFlow = _geminiTimeout.flow
     override val geminiApiKeyFlow = _geminiApiKey.flow
@@ -58,7 +55,6 @@ class GenAiSettingsRepository @Inject constructor(
     override val hasAcceptedPageSplitOptInFlow = _hasAcceptedPageSplitOptIn.flow
 
     override var isGeminiEnabled: Boolean by _isGeminiEnabled
-    override var useLocalGenerativeAi: Boolean by _useLocalGenerativeAi
     override var geminiRedoPrediction: Boolean by _geminiRedoPrediction
     override var geminiTimeout: Long by _geminiTimeout
     override var geminiApiKey: String? by _geminiApiKey
@@ -68,7 +64,6 @@ class GenAiSettingsRepository @Inject constructor(
 
     override fun refresh() {
         _isGeminiEnabled.refresh()
-        _useLocalGenerativeAi.refresh()
         _geminiRedoPrediction.refresh()
         _geminiTimeout.refresh()
         _geminiApiKey.refresh()

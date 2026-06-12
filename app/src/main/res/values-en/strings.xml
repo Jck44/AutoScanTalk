@@ -102,7 +102,6 @@
     <string name="button_action_navigate_to_start_page">Start Page</string>
     <string name="button_action_gemini">Use Gemini (API)</string>
     <string name="button_action_gemini_search">Use Gemini Search (API)</string>
-    <string name="button_action_gemini_nano">Use Gemini Nano (Offline)</string>
     <string name="button_action_frequent_action">Most Frequent Action</string>
     <string name="button_action_smart_prediction">Smart Prediction</string>
     <string name="button_action_notification">Read Notifications</string>
@@ -511,7 +510,6 @@
     <string name="button_preview_navigate_with_feedback">🗣️ Read feedback out loud:\n\"%1$s\"\n\n➡️ Navigation:\nThen opens page \"%2$s\"</string>
     <string name="button_preview_navigate_only">➡️ Navigation:\nOpens page \"%1$s\"</string>
     <string name="button_preview_gemini_cloud">✨ AI (Gemini Cloud):\nSends prompt \"%1$s\" to Gemini and reads the response out loud.</string>
-    <string name="button_preview_gemini_nano">📱 AI Nano (Offline):\nProcesses intent \"%1$s\" locally on the device.</string>
     <string name="button_preview_gemini_vision">📷 AI Vision (Eye):\nAnalyzes camera image and reads description out loud.</string>
     <string name="button_preview_weather">🌤️ Weather announcement:\nFetches current weather report and reads it out loud.</string>
     <string name="button_preview_smart_home">🏠 Smart Home:\nSwitches device \"%1$s\".</string>

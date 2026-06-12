@@ -82,10 +82,7 @@ fun ActionConfigFields(
     onDismissDialog: () -> Unit,
     availableGeminiTools: List<com.andreas_kratzer.ghosttalk.core.ai.domain.AiTool> = emptyList(),
     // Vision specific
-    useCloud: Boolean = false,
-    isCloudEnabled: Boolean = true,
     playShutterSound: Boolean = true,
-    onUseCloudChange: (Boolean) -> Unit = {},
     onPlayShutterSoundChange: (Boolean) -> Unit = {},
     // Play Media specific
     mediaProvider: MediaProvider = MediaProvider.SPOTIFY,
@@ -176,14 +173,8 @@ fun ActionConfigFields(
             actionTypeGeminiVision -> {
                 GeminiVisionActionFields(
                     prompt = geminiPrompt,
-                    useCloud = useCloud,
-                    isCloudEnabled = isCloudEnabled,
                     playShutterSound = playShutterSound,
                     onPromptChanged = onGeminiPromptChange,
-                    onUseCloudChanged = { 
-                        onUseCloudChange(it)
-                        onAutoSave()
-                    },
                     onPlayShutterSoundChanged = { 
                         onPlayShutterSoundChange(it)
                         onAutoSave()

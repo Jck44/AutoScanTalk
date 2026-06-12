@@ -45,7 +45,7 @@ class ActionMapper @Inject constructor() {
             is FrequentActionButtonAction -> ImportAction(type = "SMART_PREDICTION", rank = action.rank)
             is GeminiButtonAction -> ImportAction(type = "GEMINI", prompt = action.prompt)
             is GeminiSearchButtonAction -> ImportAction(type = "GEMINI_SEARCH", prompt = action.prompt)
-            is GeminiNanoButtonAction -> ImportAction(type = "GEMINI_NANO", intent = action.intent)
+            is GeminiNanoButtonAction -> ImportAction(type = "GEMINI", prompt = action.intent)
             is SmartPredictionButtonAction -> ImportAction(
                 type = "SMART_PREDICTION",
                 rank = action.rank,
@@ -108,7 +108,7 @@ class ActionMapper @Inject constructor() {
             "NAVIGATE_TO_START_PAGE" -> NavigateToStartPageButtonAction()
             "GEMINI" -> GeminiButtonAction(importAction.prompt ?: "")
             "GEMINI_SEARCH" -> GeminiSearchButtonAction(importAction.prompt ?: "")
-            "GEMINI_NANO" -> GeminiNanoButtonAction(importAction.intent ?: "")
+            "GEMINI_NANO" -> GeminiButtonAction(importAction.intent ?: importAction.prompt ?: "")
             "GEMINI_VISION" -> GeminiVisionButtonAction(importAction.prompt ?: "", importAction.useCloud ?: false)
             "SMART_PREDICTION" -> {
                 val predType = importAction.predictionType?.let {

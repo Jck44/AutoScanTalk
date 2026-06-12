@@ -95,42 +95,18 @@ fun ButtonConfigDialog(
     val context = LocalContext.current
     val state = rememberButtonConfigDialogState(buttonConfig)
 
-    val audioRecorder = remember(context) { com.andreas_kratzer.ghosttalk.core.audio.AudioRecorder(context) }
-
-    val activity = remember(context) { context.findActivity() }
-    val view = LocalView.current
-    DisposableEffect(state.isRecording) {
-        if (state.isRecording) {
-            activity?.window?.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-            view.keepScreenOn = true
-        }
-        onDispose {
-            activity?.window?.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-            view.keepScreenOn = false
+    val handleAutoSave: () -> Unit = {
+        if (state.label.isNotBlank()) {
+            onSave(state.buildConfig())
         }
     }
-    var mediaPlayer by remember { mutableStateOf<android.media.MediaPlayer?>(null) }
 
-    val micPermissionLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { isGranted ->
-        if (isGranted) {
-            try {
-                val dir = context.filesDir.resolve("audio_recordings")
-                if (!dir.exists()) {
-                    dir.mkdirs()
-                }
-                val recordingFile = File(dir, "audio_${buttonConfig.id}.ogg")
-                audioRecorder.startRecording(recordingFile)
-                state.isRecording = true
-            } catch (e: Exception) {
-                Toast.makeText(context, "Fehler bei der Aufnahme: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
-            }
-        } else {
-            Toast.makeText(context, R.string.error_microphone_permission_missing, Toast.LENGTH_LONG).show()
-        }
-    }
-    
+    val audioRecordingController = com.andreas_kratzer.ghosttalk.ui.pages.components.rememberAudioRecordingController(
+        buttonConfigId = buttonConfig.id,
+        state = state,
+        onAutoSave = handleAutoSave
+    )
+
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { permissions ->
@@ -145,8 +121,6 @@ fun ButtonConfigDialog(
     DisposableEffect(Unit) {
         onDispose {
             onStopTts?.invoke()
-            audioRecorder.stopRecording()
-            mediaPlayer?.release()
         }
     }
 
@@ -191,70 +165,10 @@ fun ButtonConfigDialog(
         }
     }
 
-    val handleAutoSave: () -> Unit = {
-        if (state.label.isNotBlank()) {
-            onSave(state.buildConfig())
-        }
-    }
-
     val saveWithAction: (ButtonAction) -> Unit = { action ->
         if (state.label.isNotBlank()) {
             val config = state.buildConfig().copy(buttonAction = action)
             onSave(config)
-        }
-    }
-
-    fun startVoiceRecording() {
-        try {
-            val dir = context.filesDir.resolve("audio_recordings")
-            if (!dir.exists()) {
-                dir.mkdirs()
-            }
-            val recordingFile = File(dir, "audio_${buttonConfig.id}.ogg")
-            audioRecorder.startRecording(recordingFile)
-            state.isRecording = true
-        } catch (e: Exception) {
-            Toast.makeText(context, "Fehler bei der Aufnahme: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
-        }
-    }
-
-    fun stopVoiceRecording() {
-        try {
-            audioRecorder.stopRecording()
-            state.isRecording = false
-            state.audioFileName = "audio_${buttonConfig.id}.ogg"
-            handleAutoSave()
-            Toast.makeText(context, R.string.button_audio_saved, Toast.LENGTH_SHORT).show()
-        } catch (e: Exception) {
-            Toast.makeText(context, "Fehler beim Stoppen: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
-        }
-    }
-
-    fun playRecording(file: File) {
-        if (state.isPlayingAudio) {
-            mediaPlayer?.stop()
-            mediaPlayer?.release()
-            mediaPlayer = null
-            state.isPlayingAudio = false
-            return
-        }
-
-        try {
-            val player = android.media.MediaPlayer().apply {
-                setDataSource(file.absolutePath)
-                prepare()
-                setOnCompletionListener {
-                    state.isPlayingAudio = false
-                    it.release()
-                    mediaPlayer = null
-                }
-                start()
-            }
-            mediaPlayer = player
-            state.isPlayingAudio = true
-        } catch (e: Exception) {
-            android.util.Log.e("ButtonConfigDialog", "Error playing recording", e)
-            Toast.makeText(context, "Fehler beim Abspielen: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
         }
     }
     AlertDialog(
@@ -266,7 +180,7 @@ fun ButtonConfigDialog(
         title = {
             val actionBadgeText = when (state.selectedActionType) {
                 ActionTypeId.NAVIGATE, ActionTypeId.NAVIGATE_BACK, ActionTypeId.NAVIGATE_TO_START_PAGE -> "Nav"
-                ActionTypeId.GEMINI, ActionTypeId.GEMINI_SEARCH, ActionTypeId.GEMINI_VISION, ActionTypeId.GEMINI_NANO -> "KI"
+                ActionTypeId.GEMINI, ActionTypeId.GEMINI_SEARCH, ActionTypeId.GEMINI_VISION -> "KI"
                 ActionTypeId.FREQUENT, ActionTypeId.PREVIOUS, ActionTypeId.SMART -> "Verlauf"
                 ActionTypeId.WEATHER -> "Wetter"
                 ActionTypeId.READ_NOTIFICATIONS, ActionTypeId.CLEAR_NOTIFICATIONS, ActionTypeId.SEND_MESSAGE, ActionTypeId.START_CALL, ActionTypeId.TOGGLE_AUTO_READ -> "Komm."
@@ -317,7 +231,7 @@ fun ButtonConfigDialog(
                                 spotifyPlaylists = spotifyPlaylists,
                                 availableHomeDevices = availableHomeDevices,
                                 permissionLauncher = permissionLauncher,
-                                micPermissionLauncher = micPermissionLauncher,
+                                audioRecordingController = audioRecordingController,
                                 onNavigateToPage = onNavigateToPage,
                                 onCreatePage = onCreatePage,
                                 onDismiss = onDismiss,
@@ -334,9 +248,6 @@ fun ButtonConfigDialog(
                                 onConnectSpotify = onConnectSpotify,
                                 onDisconnectSpotify = onDisconnectSpotify,
                                 onLoadSpotifyPlaylists = onLoadSpotifyPlaylists,
-                                onStartVoiceRecording = { startVoiceRecording() },
-                                onStopVoiceRecording = { stopVoiceRecording() },
-                                onPlayRecording = { file -> playRecording(file) },
                                 onAutoSave = handleAutoSave,
                                 saveWithAction = saveWithAction
                             )

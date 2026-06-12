@@ -172,7 +172,7 @@ class GeminiActionHandlerTest {
         val bitmap = mockk<android.graphics.Bitmap>(relaxed = true)
         every { bitmap.compress(any(), any(), any()) } returns true
         coEvery { cameraProvider.captureImage() } returns bitmap
-        coEvery { visionUseCase.describeImage(any(), any(), any()) } returns "A photo"
+        coEvery { visionUseCase.describeImage(any(), any()) } returns "A photo"
         
         val onFinish = mockk<(Int) -> Unit>(relaxed = true)
         
@@ -182,7 +182,7 @@ class GeminiActionHandlerTest {
         
         // THEN
         coVerify { cameraProvider.captureImage() }
-        coVerify { visionUseCase.describeImage(bitmap, "Describe", true) }
+        coVerify { visionUseCase.describeImage(bitmap, "Describe") }
         coVerify { buttonUsageRepository.updateLastEventImage(any()) }
         
         val ttsCallback = slot<() -> Unit>()

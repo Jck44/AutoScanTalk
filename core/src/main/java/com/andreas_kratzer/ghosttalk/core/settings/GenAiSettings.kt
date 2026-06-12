@@ -9,8 +9,6 @@ interface GenAiSettings {
     var isSmartPredictionEnabled: Boolean
     val isSmartPredictionEnabledFlow: StateFlow<Boolean>
     
-    var useLocalGenerativeAi: Boolean
-    val useLocalGenerativeAiFlow: StateFlow<Boolean>
 
     var showPageIdInLog: Boolean
     val showPageIdInLogFlow: StateFlow<Boolean>

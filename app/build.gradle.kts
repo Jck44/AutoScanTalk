@@ -179,6 +179,7 @@ dependencies {
     implementation(libs.kotlinx.coroutines.play.services)
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.fragment)
+    implementation(libs.androidx.appcompat)
     
     // Room
     implementation(libs.androidx.room.runtime)
@@ -196,7 +197,6 @@ dependencies {
     implementation(libs.google.api.services.drive)
     implementation(libs.google.http.client.gson)
     implementation(libs.play.app.update.ktx)
-    implementation(libs.google.generativeai.mlkit)
     implementation(libs.gms.play.services.auth)
     implementation(libs.gms.play.services.location)
     

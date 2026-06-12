@@ -10,7 +10,6 @@ import com.andreas_kratzer.ghosttalk.core.model.ControlDeviceButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.DeviceActionType
 import com.andreas_kratzer.ghosttalk.core.model.FrequentActionButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.GeminiButtonAction
-import com.andreas_kratzer.ghosttalk.core.model.GeminiNanoButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.GeminiSearchButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.GeminiVisionButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.MarkAccidentalButtonAction
@@ -56,6 +55,9 @@ class ButtonTemplateRepositoryImpl @Inject constructor(
     }
 
     override suspend fun ensureBuiltInTemplates() {
+        val retiredBuiltInIds = listOf("builtin_gemini_nano")
+        buttonTemplateDao.deleteTemplatesByIds(retiredBuiltInIds)
+
         val existingTemplates = buttonTemplateDao.getAllTemplates()
         val existingIds = existingTemplates.map { it.id }.toSet()
 
@@ -160,19 +162,7 @@ class ButtonTemplateRepositoryImpl @Inject constructor(
             )
         )
 
-        // 5. GeminiNanoButtonAction
-        list.add(
-            ButtonTemplate(
-                id = "builtin_gemini_nano",
-                name = "Gemini Nano (Lokal)",
-                isBuiltIn = true,
-                buttonConfig = ButtonConfig(
-                    id = UUID.randomUUID().toString(),
-                    label = "Nano",
-                    buttonAction = GeminiNanoButtonAction("Zusammenfassung")
-                )
-            )
-        )
+
 
         // 6. GeminiVisionButtonAction
         list.add(

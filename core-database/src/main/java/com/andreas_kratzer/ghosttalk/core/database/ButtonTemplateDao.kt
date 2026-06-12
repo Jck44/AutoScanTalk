@@ -21,6 +21,9 @@ interface ButtonTemplateDao {
     @Delete
     suspend fun deleteTemplate(template: ButtonTemplateEntity)
 
+    @Query("DELETE FROM button_templates WHERE id IN (:ids)")
+    suspend fun deleteTemplatesByIds(ids: List<String>)
+
     @Query("SELECT COUNT(*) FROM button_templates")
     suspend fun getTemplateCount(): Int
 

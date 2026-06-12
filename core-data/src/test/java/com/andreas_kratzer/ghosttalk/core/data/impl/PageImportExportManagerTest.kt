@@ -654,8 +654,8 @@ class PageImportExportManagerTest {
         val b5 = importedPage.buttonConfigs[4]?.buttonAction as GeminiSearchButtonAction
         assertEquals("Search Query", b5.prompt)
 
-        val b6 = importedPage.buttonConfigs[5]?.buttonAction as GeminiNanoButtonAction
-        assertEquals("Intent A", b6.intent)
+        val b6 = importedPage.buttonConfigs[5]?.buttonAction as GeminiButtonAction
+        assertEquals("Intent A", b6.prompt)
     }
 
     @Test

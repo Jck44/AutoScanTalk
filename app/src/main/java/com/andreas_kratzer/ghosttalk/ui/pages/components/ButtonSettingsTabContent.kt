@@ -38,7 +38,7 @@ fun ButtonSettingsTabContent(
     spotifyPlaylists: List<SpotifyPlaylist>,
     availableHomeDevices: List<HomeDevice>,
     permissionLauncher: ManagedActivityResultLauncher<Array<String>, Map<String, Boolean>>,
-    micPermissionLauncher: ManagedActivityResultLauncher<String, Boolean>,
+    audioRecordingController: AudioRecordingController,
     onNavigateToPage: ((String) -> Unit)?,
     onCreatePage: ((String, Int, Int, String?, (String) -> Unit) -> Unit)?,
     onDismiss: () -> Unit,
@@ -56,9 +56,6 @@ fun ButtonSettingsTabContent(
     onConnectSpotify: () -> Unit,
     onDisconnectSpotify: () -> Unit,
     onLoadSpotifyPlaylists: () -> Unit,
-    onStartVoiceRecording: () -> Unit,
-    onStopVoiceRecording: () -> Unit,
-    onPlayRecording: (File) -> Unit,
     onAutoSave: () -> Unit,
     saveWithAction: (ButtonAction) -> Unit
 ) {
@@ -74,7 +71,8 @@ fun ButtonSettingsTabContent(
         onStopTts = onStopTts,
         onPlayTts = onPlayTts,
         getPlayingField = { playingField },
-        setPlayingField = { playingField = it }
+        setPlayingField = { playingField = it },
+        currentText = state.label
     )
     val spokenTextPlayback = rememberTtsFieldPlayback(
         fieldName = "spokenText",
@@ -84,7 +82,8 @@ fun ButtonSettingsTabContent(
         onStopTts = onStopTts,
         onPlayTts = onPlayTts,
         getPlayingField = { playingField },
-        setPlayingField = { playingField = it }
+        setPlayingField = { playingField = it },
+        currentText = state.spokenText
     )
     val auditoryCueTextPlayback = rememberTtsFieldPlayback(
         fieldName = "auditoryCueText",
@@ -94,12 +93,9 @@ fun ButtonSettingsTabContent(
         onStopTts = onStopTts,
         onPlayTts = onPlayTts,
         getPlayingField = { playingField },
-        setPlayingField = { playingField = it }
+        setPlayingField = { playingField = it },
+        currentText = state.auditoryCueText
     )
-
-    labelPlayback.updateCachedState(state.label)
-    spokenTextPlayback.updateCachedState(state.spokenText)
-    auditoryCueTextPlayback.updateCachedState(state.auditoryCueText)
 
     ActionTypeDropdownSection(
         state = state,
@@ -134,10 +130,7 @@ fun ButtonSettingsTabContent(
         spokenTextPlayback = spokenTextPlayback,
         playingField = playingField,
         onPlayTts = onPlayTts,
-        micPermissionLauncher = micPermissionLauncher,
-        onStartVoiceRecording = onStartVoiceRecording,
-        onStopVoiceRecording = onStopVoiceRecording,
-        onPlayRecording = onPlayRecording,
+        audioRecordingController = audioRecordingController,
         onAutoSave = onAutoSave
     )
 
@@ -280,12 +273,6 @@ fun ButtonSettingsTabContent(
         onNavigateToPage = onNavigateToPage,
         onCreatePage = onCreatePage,
         onDismissDialog = onDismiss,
-        useCloud = state.geminiVisionUseCloud,
-        onUseCloudChange = { 
-            state.geminiVisionUseCloud = it
-            onAutoSave()
-        },
-        isCloudEnabled = featureGuard?.isActionEnabled(GeminiButtonAction()) ?: true,
         playShutterSound = state.geminiVisionPlayShutterSound,
         onPlayShutterSoundChange = { 
             state.geminiVisionPlayShutterSound = it

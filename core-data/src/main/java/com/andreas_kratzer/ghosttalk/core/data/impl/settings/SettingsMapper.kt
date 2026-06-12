@@ -36,7 +36,6 @@ class SettingsMapper @Inject constructor(
             geminiRedoPrediction = settingsRepository.geminiRedoPrediction,
             geminiTimeout = settingsRepository.geminiTimeout,
             isGeminiEnabled = settingsRepository.isGeminiEnabled,
-            useLocalGenerativeAi = settingsRepository.useLocalGenerativeAi,
             isDataCloudSyncEnabled = settingsRepository.isDataCloudSyncEnabled,
             syncIntervalMinutes = settingsRepository.syncIntervalMinutes,
             syncModeBook = settingsRepository.syncModeBook,
@@ -115,7 +114,6 @@ class SettingsMapper @Inject constructor(
         data.geminiRedoPrediction?.let { settingsRepository.geminiRedoPrediction = it }
         data.geminiTimeout?.let { settingsRepository.geminiTimeout = it }
         data.isGeminiEnabled?.let { settingsRepository.isGeminiEnabled = it }
-        data.useLocalGenerativeAi?.let { settingsRepository.useLocalGenerativeAi = it }
         // Cloud sync settings are now imported to allow remote control.
         data.isDataCloudSyncEnabled?.let { settingsRepository.isDataCloudSyncEnabled = it }
         data.syncIntervalMinutes?.let { settingsRepository.syncIntervalMinutes = it }
