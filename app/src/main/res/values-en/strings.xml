@@ -608,5 +608,13 @@
     <string name="suggest_label_gemini_search">Gemini Search</string>
     <string name="suggest_label_gemini_vision">Gemini Vision</string>
     <string name="local_suggestion_action">Suggestion</string>
+
+    <!-- Shared Import Strings -->
+    <string name="shared_import_invalid_zip">Invalid ZIP archive. No book data or voice cache found.</string>
+    <string name="shared_import_read_error">Error reading ZIP file: %s</string>
+    <string name="shared_import_book_success">Book successfully imported and activated!</string>
+    <string name="shared_import_book_error">Error importing book: %s</string>
+    <string name="shared_import_tts_success">TTS voice cache successfully imported!</string>
+    <string name="shared_import_tts_error">Error importing TTS cache: %s</string>
 </resources>
 

@@ -20,8 +20,8 @@ Jeder Schritt ist so konzipiert, dass die App danach vollständig kompilierbar, 
 | 7 | Law of Demeter | ✅ umgesetzt (Delegates `private`/`internal`) |
 | 8 | Button-Konfig-UI | ✅ umgesetzt + reviewt, Must-Fixes behoben, abnahmereif |
 | 8B | Gemini Nano entfernen (inkl. lokaler Vision) | ✅ umgesetzt + reviewt, Must-Fix behoben, abnahmereif |
-| 9 | Analytics-Tabs | 🔧 umgesetzt, Review: 1 Must-Fix offen (Scroll/Padding) |
-| 10 | MainActivity | 📋 Detailplan fertig |
+| 9 | Analytics-Tabs | ✅ fertig + committet (`924b6f72`) |
+| 10 | MainActivity | ✅ umgesetzt + reviewt, abnahmereif (416 Z., 2 optionale Kleinigkeiten) |
 | 11 | SystemCallManager | 📋 Detailplan fertig |
 | 12 | PageSplitDialogs / GridEditor / DeviceActionFields | 📋 Detailplan fertig (3 Mini-Phasen) |
 
@@ -574,6 +574,26 @@ Der alte Tab emittierte seine Sektionen **direkt** in die Dashboard-Column, die 
 * Zielgröße: MainActivity < 300 Z. (Lifecycle, Launcher, dispatchKeyEvent, dünne Verdrahtung).
 
 **Smoke-Test**: App-Kaltstart (Setup abgeschlossen + nicht abgeschlossen), Buch-ZIP + TTS-Cache-ZIP über „Teilen" importieren, App minimieren (Sync-Trigger im Log), User-Mode + Update-Banner, eingehender simulierter Anruf (Overlay + Lockscreen-Flags), Black-Mode.
+
+#### Review-Befund Phase 10 (Claude, 2026-06-12) — Phase unvollständig, bitte nach Plan fertigstellen
+
+Was da ist, ist verhaltensgleich verschoben und kompiliert (Tests grün): `ScreenStateObserver` (sauber), `SharedArchiveManager`, `SyncTriggerManager`. **Aber nur ~40 % des Plans sind umgesetzt** — MainActivity hat noch 554 Z. (Ziel < 300):
+
+1. **Schritt 10.1 verfehlt seinen Zweck**: `SyncTriggerManager` enthält weiterhin **beide Methoden als 1:1-Duplikate** — der Plan verlangte genau eine Methode `enqueueOneTimeSync(policy: ExistingWorkPolicy)` mit gemeinsamer Constraints-Logik, plus Unit-Test der SAF-Entscheidung. Bitte deduplizieren: gemeinsame private Builder-Funktion, zwei dünne Aufrufer oder Policy-Parameter.
+2. **Schritt 10.2 unvollständig**: ZIP-Typ-Erkennung nicht als pure Funktion (`detectZipType(stream)`) extrahiert, **kein Unit-Test**, deutsche Toast-Strings nicht in `strings.xml`. Die `PageViewModel`-Abhängigkeit der Klasse ist zudem unnötig — Plan sah Ergebnis-Callback an die Activity vor (`onBookImported(bookId)`), die Activity ruft `pageViewModel.setActiveBookId` selbst.
+3. **Schritt 10.3 fehlt komplett**: `AppStartupInitializer` (onCreate Z. 221–267: Setup-Migration, SampleData, Active-Book-Fallback, Scheduler, Purge) + Unit-Test des Book-Fallbacks.
+4. **Schritt 10.4 fehlt komplett**: `MainAppContent`-Composable (setContent Z. 342–458 inkl. Call-Overlays/Black-Overlay).
+5. **Schritt 10.5 fehlt**: leeres `onResume()` (Z. 462) und `globalPageViewModel` (Z. 97/217/486–502, dieselbe Instanz wie `pageViewModel`) sind noch da.
+
+Die drei vorhandenen Klassen sind als Zwischenstand okay (Konstruktor-Übergabe statt Hilt ist für Activity-gebundene Helfer vertretbar). Bitte 10.1-Dedup + 10.2-Rest + 10.3 + 10.4 + 10.5 nachziehen, dann erneut Review.
+
+#### Review-Befund Phase 10, 2. Durchgang (Claude, 2026-06-12) — ✅ abnahmereif
+
+Alle 5 Punkte sauber nachgezogen: `SyncWorkRequester` (core-cloud, Hilt, dedupliziertes `enqueueOneTimeSync(policy)`, testbare `buildConstraints` + Test) ✅; `SharedZipImportHandler` (Hilt, `detectZipType` testbar + Test, sealed `ImportResult`-Callback, Toasts in der Activity mit `strings.xml` DE+EN) ✅; `AppStartupInitializer` + Test (IO-Dispatcher-Wechsel unbedenklich; `setActiveBookId` persistiert intern — Parität geprüft) ✅; `MainAppContent` + `CallOverlayHost` verhaltensgleich ✅; `onResume`/`globalPageViewModel` entfernt ✅. MainActivity 731→416 Z. — über dem 300er-Ziel, aber der Rest ist genuin Activity-gebunden (Launcher, Collector-Verdrahtung, dispatchKeyEvent, Intent-Handling); akzeptiert.
+
+**Kleinigkeiten (optional, kein Blocker)**:
+* `SharedZipImportHandler` injiziert `settingsRepository`, nutzt es aber nicht mehr — Konstruktor-Parameter entfernen.
+* Die Fehlertext-Unterscheidung in MainActivity (`result.message.contains("ZIP")`) ist eine Heuristik; sauberer wäre ein eigener `ImportResult.ReadError`-Typ.
 
 ---
 

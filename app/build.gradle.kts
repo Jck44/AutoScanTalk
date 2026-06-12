@@ -207,6 +207,7 @@ dependencies {
     implementation(libs.hilt.navigation.compose)
     testImplementation(libs.hilt.android.testing)
     testImplementation(libs.robolectric)
+    testImplementation(libs.mockk)
     kspTest(libs.hilt.compiler)
     androidTestImplementation(libs.hilt.android.testing)
     androidTestImplementation(libs.mockk.android)

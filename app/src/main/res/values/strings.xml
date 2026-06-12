@@ -613,5 +613,13 @@
     <string name="suggest_label_gemini_search">Gemini Suche</string>
     <string name="suggest_label_gemini_vision">Gemini Auge</string>
     <string name="local_suggestion_action">Vorschlag</string>
+
+    <!-- Shared Import Strings -->
+    <string name="shared_import_invalid_zip">Ungültiges ZIP-Archiv. Keine Buchdaten oder Sprach-Cache gefunden.</string>
+    <string name="shared_import_read_error">Fehler beim Lesen der ZIP-Datei: %s</string>
+    <string name="shared_import_book_success">Buch erfolgreich importiert und aktiviert!</string>
+    <string name="shared_import_book_error">Fehler beim Buch-Import: %s</string>
+    <string name="shared_import_tts_success">TTS Sprach-Cache erfolgreich importiert!</string>
+    <string name="shared_import_tts_error">Fehler beim TTS Cache Import: %s</string>
 </resources>
 

@@ -13,51 +13,35 @@ import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.core.content.edit
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.getValue
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
-import androidx.navigation.compose.rememberNavController
+import androidx.work.ExistingWorkPolicy
 import com.andreas_kratzer.ghosttalk.core.KeyEventCoordinator
 import com.andreas_kratzer.ghosttalk.core.SecurityManager
 import com.andreas_kratzer.ghosttalk.core.UpdateManager
 import com.andreas_kratzer.ghosttalk.core.cloud.SpotifyManager
+import com.andreas_kratzer.ghosttalk.core.cloud.SyncWorkRequester
 import com.andreas_kratzer.ghosttalk.core.cloud.domain.RescheduleProfileSyncUseCase
 import com.andreas_kratzer.ghosttalk.core.data.PageRepository
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.core.data.export.PageImportExportProvider
 import com.andreas_kratzer.ghosttalk.core.data.impl.SampleDataInitializer
 import com.andreas_kratzer.ghosttalk.core.data.impl.UserModeSessionTracker
-import com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkTheme
-import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalActiveBookId
-import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalCurrentPageId
-import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalIsUserModeActive
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.SettingsViewModel
 import com.andreas_kratzer.ghosttalk.ui.books.BookViewModel
-import com.andreas_kratzer.ghosttalk.ui.main.GhostTalkNavHost
+import com.andreas_kratzer.ghosttalk.ui.main.AppStartupInitializer
+import com.andreas_kratzer.ghosttalk.ui.main.ImportResult
+import com.andreas_kratzer.ghosttalk.ui.main.MainAppContent
+import com.andreas_kratzer.ghosttalk.ui.main.ScreenStateObserver
+import com.andreas_kratzer.ghosttalk.ui.main.SharedZipImportHandler
 import com.andreas_kratzer.ghosttalk.ui.pages.CallViewModel
 import com.andreas_kratzer.ghosttalk.ui.pages.PageViewModel
 import dagger.hilt.android.AndroidEntryPoint
@@ -91,8 +75,13 @@ class MainActivity : AppCompatActivity() {
 
     var navControllerForTesting: androidx.navigation.NavHostController? = null
 
-    private lateinit var globalPageViewModel: PageViewModel
     @Inject lateinit var updateManager: UpdateManager
+
+    @Inject lateinit var sharedZipImportHandler: SharedZipImportHandler
+    @Inject lateinit var syncWorkRequester: SyncWorkRequester
+    @Inject lateinit var appStartupInitializer: AppStartupInitializer
+    
+    private lateinit var screenStateObserver: ScreenStateObserver
 
     private val screenOffReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
@@ -124,6 +113,12 @@ class MainActivity : AppCompatActivity() {
     }
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        screenStateObserver = ScreenStateObserver(
+            activity = this,
+            pageViewModel = pageViewModel,
+            callViewModel = callViewModel
+        )
 
         // Restore app language preference
         val savedLang = settingsRepository.appLanguage
@@ -190,53 +185,10 @@ class MainActivity : AppCompatActivity() {
             RECEIVER_NOT_EXPORTED
         )
 
-        globalPageViewModel = pageViewModel
-
-        val defaultBookId = "book-default"
-
         lifecycleScope.launch {
-            val migrationPrefs = getSharedPreferences("setup_migration_prefs", MODE_PRIVATE)
-            val migrationDone = migrationPrefs.getBoolean("setup_completed_migration_done", false)
-            Log.d("MainActivity", "DEBUG_SETUP: migrationDone = $migrationDone, isSetupCompleted = ${settingsRepository.isSetupCompleted}")
-            if (!migrationDone) {
-                val hasExistingData = withContext(Dispatchers.IO) {
-                    val books = bookRepository.getAllBooksList()
-                    books.any { it.id != "book-default" }
-                }
-                Log.d("MainActivity", "DEBUG_SETUP: hasExistingData = $hasExistingData")
-                if (hasExistingData && !settingsRepository.isSetupCompleted) {
-                    settingsRepository.isSetupCompleted = true
-                }
-                migrationPrefs.edit { putBoolean("setup_completed_migration_done", true) }
-            }
-
-            if (settingsRepository.isSetupCompleted) {
-                // 1. Ensure at least one book exists. returns either default or first existing.
-                val initializedBookId = sampleDataInitializer.initializeIfNeeded(defaultBookId)
-                
-                // 2. Load the user's last active book preference
-                val persistedActiveBookId = settingsRepository.activeBookId
-                
-                // 3. Verify it still exists in the DB
-                val finalActiveBookId = if (bookRepository.getBookById(persistedActiveBookId) != null) {
-                    persistedActiveBookId
-                } else {
-                    // Fallback to the one guaranteed to exist by SampleDataInitializer
-                    initializedBookId
-                }
-
-                // 4. Set the final active book
-                settingsRepository.activeBookId = finalActiveBookId
-                pageViewModel.setActiveBookId(finalActiveBookId)
-                backgroundScheduler.scheduleLocationUpdate()
-                backgroundScheduler.scheduleWeatherUpdate()
-                rescheduleProfileSyncUseCase.reschedule()
-                rescheduleProfileSyncUseCase.runOnceImmediately()
-                withContext(Dispatchers.IO) {
-                    pageRepository.purgeInstallUpdateButtons()
-                }
-            } else {
-                Log.d("MainActivity", "Setup is not completed yet, skipping database initialization on startup.")
+            val activeBookId = appStartupInitializer.run()
+            if (activeBookId != null) {
+                pageViewModel.setActiveBookId(activeBookId)
             }
             isDbInitialized = true
             handleIntent(intent)
@@ -283,33 +235,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         // --- Screen Behavior Management ---
-        // We only "apply" the state here. The logic (decision making) resides in the ScreenManagementDelegate.
-        lifecycleScope.launch {
-            repeatOnLifecycle(Lifecycle.State.STARTED) {
-                pageViewModel.screenState.collect { state ->
-                    if (state.keepScreenOn) {
-                        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-                    } else {
-                        window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-                    }
-
-                    val params = window.attributes
-                    params.screenBrightness = state.dimAmount ?: WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE
-                    window.attributes = params
-                }
-            }
-        }
-
-        // --- Lockscreen Wake Management for Calls ---
-        lifecycleScope.launch {
-            repeatOnLifecycle(Lifecycle.State.STARTED) {
-                callViewModel.callState.collect { callState ->
-                    val isInCall = callState != com.andreas_kratzer.ghosttalk.core.call.CallState.NONE
-                    setShowWhenLocked(isInCall)
-                    setTurnScreenOn(isInCall)
-                }
-            }
-        }
+        screenStateObserver.startObserving()
 
         // Timeout check loop
         lifecycleScope.launch {
@@ -332,14 +258,12 @@ class MainActivity : AppCompatActivity() {
                         val now = System.currentTimeMillis()
                         if (now - lastSync >= intervalMs) {
                             Log.d("MainActivity", "Foreground periodic sync check triggered: ${now - lastSync}ms elapsed since last sync (interval: ${intervalMs}ms)")
-                            triggerForegroundSyncSilently()
+                            syncWorkRequester.enqueueOneTimeSync(ExistingWorkPolicy.KEEP)
                         }
                     }
                 }
             }
         }
-
-
 
         setContent {
             if (!isDbInitialized) {
@@ -349,184 +273,29 @@ class MainActivity : AppCompatActivity() {
                 ) {}
                 return@setContent
             }
-            val themeMode by settingsViewModel.themeMode.collectAsState()
-            val screenState by pageViewModel.screenState.collectAsState()
-            val isUserModeActive by pageViewModel.isUserModeActive.collectAsState()
-            val activeBookId by pageViewModel.activeBookId.collectAsState()
-            val currentPageId by pageViewModel.currentPageId.collectAsState()
-
-            val callState by callViewModel.callState.collectAsState()
-            val callerName by callViewModel.callerName.collectAsState()
-            val callerPhone by callViewModel.callerPhone.collectAsState()
-            val callDurationSeconds by callViewModel.callDurationSeconds.collectAsState()
-            val isOutgoing by callViewModel.isOutgoing.collectAsState()
-            val isHangUpButtonFocused by callViewModel.isHangUpButtonFocused.collectAsState()
-            val focusedCallScreenButton by callViewModel.focusedCallScreenButton.collectAsState()
-            val isSimulatedCall by callViewModel.isSimulatedCall.collectAsState()
-            
-            GhostTalkTheme(themeMode = themeMode) {
-                CompositionLocalProvider(
-                    LocalIsUserModeActive provides isUserModeActive,
-                    LocalActiveBookId provides activeBookId,
-                    LocalCurrentPageId provides currentPageId
-                ) {
-                    androidx.activity.compose.BackHandler(enabled = callState != com.andreas_kratzer.ghosttalk.core.call.CallState.NONE) {
-                        // Block back key action during call
-                    }
-
-                    Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
-                ) {
-                    val navController = rememberNavController()
+            MainAppContent(
+                bookViewModel = bookViewModel,
+                pageViewModel = pageViewModel,
+                settingsViewModel = settingsViewModel,
+                callViewModel = callViewModel,
+                settingsRepository = settingsRepository,
+                pageRepository = pageRepository,
+                bookRepository = bookRepository,
+                sampleDataInitializer = sampleDataInitializer,
+                securityManager = securityManager,
+                onNavControllerCreated = { navController ->
                     navControllerForTesting = navController
-
-                    Box(modifier = Modifier.fillMaxSize()) {
-                        GhostTalkNavHost(
-                            navController = navController,
-                            bookViewModel = bookViewModel,
-                            pageViewModel = pageViewModel,
-                            settingsViewModel = settingsViewModel,
-                            settingsRepository = settingsRepository,
-                            pageRepository = pageRepository,
-                            bookRepository = bookRepository,
-                            sampleDataInitializer = sampleDataInitializer,
-                            securityManager = securityManager
-                        )
-
-                        if (callState != com.andreas_kratzer.ghosttalk.core.call.CallState.NONE) {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .background(MaterialTheme.colorScheme.background)
-                            ) {
-                                when (callState) {
-                                    com.andreas_kratzer.ghosttalk.core.call.CallState.RINGING -> {
-                                        com.andreas_kratzer.ghosttalk.ui.pages.sections.IncomingCallOverlay(
-                                            callerName = callerName,
-                                            callerPhone = callerPhone,
-                                            focusedButton = focusedCallScreenButton,
-                                            onAnswer = { callViewModel.answerCall() },
-                                            onReject = { callViewModel.hangUp() },
-                                            isSimulated = isSimulatedCall
-                                        )
-                                    }
-                                    com.andreas_kratzer.ghosttalk.core.call.CallState.DIALING, 
-                                    com.andreas_kratzer.ghosttalk.core.call.CallState.ACTIVE -> {
-                                        com.andreas_kratzer.ghosttalk.ui.pages.sections.ActiveCallOverlay(
-                                            callerName = callerName,
-                                            callerPhone = callerPhone,
-                                            durationSeconds = callDurationSeconds,
-                                            isDialing = callState == com.andreas_kratzer.ghosttalk.core.call.CallState.DIALING,
-                                            isOutgoing = isOutgoing,
-                                            isHangUpFocused = isHangUpButtonFocused,
-                                            onHangUp = { callViewModel.hangUp() },
-                                            isSimulated = isSimulatedCall
-                                        )
-                                    }
-                                    else -> {}
-                                }
-                            }
-                        }
-
-                        // The "Black Mode" overlay. 
-                        // It stays interactive in terms of hardware/switch events because dispatchKeyEvent 
-                        // is handled at the Activity level.
-                        AnimatedVisibility(
-                            visible = screenState.isBlackOverlayVisible,
-                            enter = fadeIn(animationSpec = tween(3000)),
-                            exit = fadeOut(animationSpec = tween(500))
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .background(Color.Black),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    text = stringResource(R.string.settings_screen_black_overlay_text),
-                                    color = Color.White.copy(alpha = 0.15f), // Dimly visible
-                                    textAlign = TextAlign.Center,
-                                    fontSize = 14.sp,
-                                    modifier = Modifier.padding(32.dp)
-                                )
-                            }
-                        }
-                    }
                 }
-            }
+            )
         }
         
         handleDeepLink(intent)
-    }
-    }
-
-    override fun onResume() {
-        super.onResume()
     }
 
     override fun onStop() {
         super.onStop()
         if (settingsRepository.isDataCloudSyncEnabled) {
-            triggerBackgroundSync()
-        }
-    }
-
-    private fun triggerBackgroundSync() {
-        try {
-            val workManager = androidx.work.WorkManager.getInstance(applicationContext)
-            val targetType = settingsRepository.syncTargetType
-            val isSaf = targetType == "LOCAL_FOLDER_SAF"
-
-            val constraintsBuilder = androidx.work.Constraints.Builder()
-            if (!isSaf) {
-                constraintsBuilder.setRequiredNetworkType(androidx.work.NetworkType.CONNECTED)
-            }
-            val constraints = constraintsBuilder.build()
-
-            val workRequest = androidx.work.OneTimeWorkRequest.Builder(
-                com.andreas_kratzer.ghosttalk.core.cloud.CloudSyncWorker::class.java
-            )
-                .setConstraints(constraints)
-                .build()
-
-            workManager.enqueueUniqueWork(
-                "CloudSyncWorker_OneTime",
-                androidx.work.ExistingWorkPolicy.REPLACE,
-                workRequest
-            )
-            Log.d("MainActivity", "Triggered background one-time sync because app was minimized (isSaf: $isSaf)")
-        } catch (e: Exception) {
-            Log.e("MainActivity", "Failed to trigger background sync on stop: ${e.message}", e)
-        }
-    }
-
-    private fun triggerForegroundSyncSilently() {
-        try {
-            val workManager = androidx.work.WorkManager.getInstance(applicationContext)
-            val targetType = settingsRepository.syncTargetType
-            val isSaf = targetType == "LOCAL_FOLDER_SAF"
-
-            val constraintsBuilder = androidx.work.Constraints.Builder()
-            if (!isSaf) {
-                constraintsBuilder.setRequiredNetworkType(androidx.work.NetworkType.CONNECTED)
-            }
-            val constraints = constraintsBuilder.build()
-
-            val workRequest = androidx.work.OneTimeWorkRequest.Builder(
-                com.andreas_kratzer.ghosttalk.core.cloud.CloudSyncWorker::class.java
-            )
-                .setConstraints(constraints)
-                .build()
-
-            workManager.enqueueUniqueWork(
-                "CloudSyncWorker_OneTime",
-                androidx.work.ExistingWorkPolicy.KEEP,
-                workRequest
-            )
-            Log.d("MainActivity", "Triggered foreground silent sync check (isSaf: $isSaf)")
-        } catch (e: Exception) {
-            Log.e("MainActivity", "Failed to trigger foreground sync: ${e.message}", e)
+            syncWorkRequester.enqueueOneTimeSync(ExistingWorkPolicy.REPLACE)
         }
     }
 
@@ -543,11 +312,7 @@ class MainActivity : AppCompatActivity() {
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
         securityManager.updateActivity()
         val isCallActive = callViewModel.callState.value != com.andreas_kratzer.ghosttalk.core.call.CallState.NONE
-        val isUserMode = if (::globalPageViewModel.isInitialized) {
-            globalPageViewModel.isUserModeActive.value || isCallActive
-        } else {
-            false
-        }
+        val isUserMode = pageViewModel.isUserModeActive.value || isCallActive
 
         if (settingsRepository.blockVolumeKeys && isUserMode) {
             if (event.keyCode == KeyEvent.KEYCODE_VOLUME_UP || event.keyCode == KeyEvent.KEYCODE_VOLUME_DOWN) {
@@ -559,7 +324,7 @@ class MainActivity : AppCompatActivity() {
             if (isCallActive) {
                 callViewModel.handleCallButtonPress()
             } else {
-                globalPageViewModel.activateFocusedButton()
+                pageViewModel.activateFocusedButton()
             }
             return true
         }
@@ -607,123 +372,45 @@ class MainActivity : AppCompatActivity() {
         if (Intent.ACTION_SEND == action && type != null) {
             val uri = intent.getParcelableExtra(Intent.EXTRA_STREAM, android.net.Uri::class.java)
             if (uri != null) {
-                processSharedZip(uri)
-            }
-        }
-    }
-
-    private fun processSharedZip(uri: android.net.Uri) {
-        lifecycleScope.launch(Dispatchers.IO) {
-            try {
-                var isBookZip = false
-                var isTtsCacheZip = false
-                
-                contentResolver.openInputStream(uri)?.use { inputStream ->
-                    java.util.zip.ZipInputStream(inputStream).use { zipIn ->
-                        var entry = zipIn.nextEntry
-                        while (entry != null) {
-                            if (entry.name == "backup.json") {
-                                isBookZip = true
-                                break
-                            } else if (entry.name.startsWith("tts_cache/")) {
-                                isTtsCacheZip = true
-                            }
-                            zipIn.closeEntry()
-                            entry = zipIn.nextEntry
-                        }
-                    }
-                }
-                
-                withContext(Dispatchers.Main) {
-                    if (isBookZip) {
-                        importBookZip(uri)
-                    } else if (isTtsCacheZip) {
-                        importTtsCacheZip(uri)
-                    } else {
-                        android.widget.Toast.makeText(
-                            this@MainActivity, 
-                            "Ungültiges ZIP-Archiv. Keine Buchdaten oder Sprach-Cache gefunden.", 
-                            android.widget.Toast.LENGTH_LONG
-                        ).show()
-                    }
-                }
-            } catch (e: Exception) {
-                Log.e("MainActivity", "Error parsing shared ZIP", e)
-                withContext(Dispatchers.Main) {
-                    android.widget.Toast.makeText(
-                        this@MainActivity, 
-                        "Fehler beim Lesen der ZIP-Datei: ${e.message}", 
-                        android.widget.Toast.LENGTH_LONG
-                    ).show()
-                }
-            }
-        }
-    }
-
-    private fun importBookZip(uri: android.net.Uri) {
-        lifecycleScope.launch(Dispatchers.IO) {
-            try {
-                contentResolver.openInputStream(uri)?.use { inputStream ->
-                    val result = importExportManager.importCloudBackupFromZip(inputStream, null) { progress, status ->
-                        Log.d("MainActivity", "Import Book ZIP: progress = $progress, status = $status")
-                    }
-                    
-                    withContext(Dispatchers.Main) {
-                        result.onSuccess { bookId ->
-                            settingsRepository.activeBookId = bookId
-                            pageViewModel.setActiveBookId(bookId)
-                            
+                sharedZipImportHandler.processSharedZip(uri, contentResolver, lifecycleScope) { result ->
+                    when (result) {
+                        is ImportResult.BookImported -> {
+                            pageViewModel.setActiveBookId(result.bookId)
                             android.widget.Toast.makeText(
-                                this@MainActivity, 
-                                "Buch erfolgreich importiert und aktiviert!", 
+                                this,
+                                getString(R.string.shared_import_book_success),
                                 android.widget.Toast.LENGTH_LONG
                             ).show()
-                        }.onFailure { error ->
+                        }
+                        ImportResult.TtsCacheImported -> {
                             android.widget.Toast.makeText(
-                                this@MainActivity, 
-                                "Fehler beim Buch-Import: ${error.message}", 
+                                this,
+                                getString(R.string.shared_import_tts_success),
+                                android.widget.Toast.LENGTH_LONG
+                            ).show()
+                        }
+                        ImportResult.InvalidZip -> {
+                            android.widget.Toast.makeText(
+                                this,
+                                getString(R.string.shared_import_invalid_zip),
+                                android.widget.Toast.LENGTH_LONG
+                            ).show()
+                        }
+                        is ImportResult.ReadError -> {
+                            android.widget.Toast.makeText(
+                                this,
+                                getString(R.string.shared_import_read_error, result.message),
+                                android.widget.Toast.LENGTH_LONG
+                            ).show()
+                        }
+                        is ImportResult.Error -> {
+                            android.widget.Toast.makeText(
+                                this,
+                                getString(R.string.shared_import_book_error, result.message),
                                 android.widget.Toast.LENGTH_LONG
                             ).show()
                         }
                     }
-                }
-            } catch (e: Exception) {
-                Log.e("MainActivity", "Error importing book ZIP", e)
-                withContext(Dispatchers.Main) {
-                    android.widget.Toast.makeText(
-                        this@MainActivity, 
-                        "Fehler beim Buch-Import: ${e.message}", 
-                        android.widget.Toast.LENGTH_LONG
-                    ).show()
-                }
-            }
-        }
-    }
-
-    private fun importTtsCacheZip(uri: android.net.Uri) {
-        lifecycleScope.launch(Dispatchers.IO) {
-            try {
-                contentResolver.openInputStream(uri)?.use { inputStream ->
-                    importExportManager.importTtsCacheFromZip(inputStream) { progress, status ->
-                        Log.d("MainActivity", "Import TTS Cache ZIP: progress = $progress, status = $status")
-                    }
-                    
-                    withContext(Dispatchers.Main) {
-                        android.widget.Toast.makeText(
-                            this@MainActivity, 
-                            "TTS Sprach-Cache erfolgreich importiert!", 
-                            android.widget.Toast.LENGTH_LONG
-                        ).show()
-                    }
-                }
-            } catch (e: Exception) {
-                Log.e("MainActivity", "Error importing TTS Cache ZIP", e)
-                withContext(Dispatchers.Main) {
-                    android.widget.Toast.makeText(
-                        this@MainActivity, 
-                        "Fehler beim TTS Cache Import: ${e.message}", 
-                        android.widget.Toast.LENGTH_LONG
-                    ).show()
                 }
             }
         }
