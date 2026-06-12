@@ -21,7 +21,7 @@ class RowByRowScanStrategy @Inject constructor() : ScanStrategy {
 
         // 1. Static Row Steps
         if (context.hasStaticRow) {
-            val staticRowActiveButtons = context.buttonConfigs.take(49).mapIndexedNotNull { index, config ->
+            val staticRowActiveButtons = context.buttonConfigs.take(ScanGrid.STATIC_ROW_SLOT_COUNT).mapIndexedNotNull { index, config ->
                 if (config != null && 
                     config.isActive && 
                     context.featureGuard.isButtonVisible(config)) {
@@ -42,7 +42,7 @@ class RowByRowScanStrategy @Inject constructor() : ScanStrategy {
 
         // 2. Main Page Steps
         val startRowIndexOffset = if (context.hasStaticRow) 1 else 0
-        val shiftOffset = if (context.hasStaticRow) 49 else 0
+        val shiftOffset = if (context.hasStaticRow) ScanGrid.STATIC_ROW_SLOT_COUNT else 0
         
         if (context.pagePattern == "row_by_row") {
             for (r in 0 until context.mainRows) {
@@ -61,7 +61,7 @@ class RowByRowScanStrategy @Inject constructor() : ScanStrategy {
             // Buttons liegen sparse im 7x7-Raster (lokaler Index = r*7+c), daher ueber die
             // volle Hauptseiten-Liste iterieren und mit dem Hauptseiten-Raster filtern –
             // nicht 0 until (rows*cols), das wuerde Zeilen ab der 3. verfehlen.
-            for (localIndex in 0 until 49) {
+            for (localIndex in 0 until ScanGrid.STATIC_ROW_SLOT_COUNT) {
                 val globalIdx = shiftOffset + localIndex
                 val config = context.buttonConfigs.getOrNull(globalIdx)
                 if (config != null && config.isActive &&
@@ -82,11 +82,12 @@ class RowByRowScanStrategy @Inject constructor() : ScanStrategy {
         delay(100)
 
         var currentStepPos = 0
-        if (context.startIndex > 0) {
+        val resume = context.resumePoint
+        if (resume != null) {
             val found = steps.indexOfFirst { step ->
-                when (step) {
-                    is ScanStep.Button -> step.index >= context.startIndex
-                    is ScanStep.Row -> step.rowIndex >= context.startIndex
+                when (resume) {
+                    is ResumePoint.AtButton -> step is ScanStep.Button && step.index >= resume.combinedIndex
+                    is ResumePoint.AtRow -> step is ScanStep.Row && step.rowIndex >= resume.rowIndex
                 }
             }
             if (found != -1) {
@@ -131,7 +132,7 @@ class RowByRowScanStrategy @Inject constructor() : ScanStrategy {
                     }
                 }
                 
-                delay(context.delayMillis)
+                delay(context.delayMillis())
             }
             context.onCycleCompleted()
             currentStepPos = 0
@@ -143,7 +144,7 @@ class RowByRowScanStrategy @Inject constructor() : ScanStrategy {
         rowIndex: Int
     ) {
         val rowButtons = if (context.hasStaticRow && rowIndex == 0) {
-            (0 until 49).mapNotNull { c ->
+            (0 until ScanGrid.STATIC_ROW_SLOT_COUNT).mapNotNull { c ->
                 val config = context.buttonConfigs.getOrNull(c)
                 if (config != null && config.isActive && context.featureGuard.isButtonVisible(config)) {
                     Pair(c, config)
@@ -152,7 +153,7 @@ class RowByRowScanStrategy @Inject constructor() : ScanStrategy {
         } else {
             (0 until context.mainColumns).mapNotNull { c ->
                 val globalIndex = if (context.hasStaticRow) {
-                    49 + com.andreas_kratzer.ghosttalk.core.util.GridUtils.getGlobalIndex(rowIndex - 1, c)
+                    ScanGrid.STATIC_ROW_SLOT_COUNT + com.andreas_kratzer.ghosttalk.core.util.GridUtils.getGlobalIndex(rowIndex - 1, c)
                 } else {
                     com.andreas_kratzer.ghosttalk.core.util.GridUtils.getGlobalIndex(rowIndex, c)
                 }
@@ -185,7 +186,7 @@ class RowByRowScanStrategy @Inject constructor() : ScanStrategy {
                 }
                 
                 context.onSpeakCue(cueText)
-                delay(context.delayMillis)
+                delay(context.delayMillis())
             }
             context.onCycleCompleted()
         }

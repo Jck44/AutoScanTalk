@@ -56,10 +56,10 @@ class ScannerEngine @Inject constructor(
         }
 
     private fun getButtonConfigByIndex(index: Int): ButtonConfig? {
-        return if (index < 49) {
+        return if (index < ScanGrid.STATIC_ROW_SLOT_COUNT) {
             currentStaticRowPage?.buttonConfigs?.getOrNull(index)
         } else {
-            currentButtonConfigs.getOrNull(index - 49)
+            currentButtonConfigs.getOrNull(index - ScanGrid.STATIC_ROW_SLOT_COUNT)
         }
     }
 
@@ -109,12 +109,12 @@ class ScannerEngine @Inject constructor(
                 val combinedButtonConfigs = mutableListOf<ButtonConfig?>()
                 var staticRowOffset = 0
                 if (staticRowPage != null) {
-                    // Prepend static row buttons up to 49
+                    // Prepend static row buttons up to STATIC_ROW_SLOT_COUNT
                     combinedButtonConfigs.addAll(staticRowPage.buttonConfigs)
-                    while (combinedButtonConfigs.size < 49) {
+                    while (combinedButtonConfigs.size < ScanGrid.STATIC_ROW_SLOT_COUNT) {
                         combinedButtonConfigs.add(null)
                     }
-                    staticRowOffset = 49
+                    staticRowOffset = ScanGrid.STATIC_ROW_SLOT_COUNT
                 }
                 combinedButtonConfigs.addAll(buttonConfigs)
 
@@ -137,27 +137,38 @@ class ScannerEngine @Inject constructor(
                     linearStrategy
                 }
 
+                val resume = if (startIndex > 0) {
+                    val btnIndex = stateManager.focusedButtonIndex.value
+                    val rowIndex = stateManager.focusedRowIndex.value
+                    if (btnIndex != null) {
+                        ResumePoint.AtButton(btnIndex)
+                    } else if (rowIndex != null) {
+                        ResumePoint.AtRow(rowIndex)
+                    } else {
+                        ResumePoint.AtButton(startIndex)
+                    }
+                } else null
+
                 val context = ScanContext(
                     scope = scope,
                     buttonConfigs = combinedButtonConfigs,
                     rows = totalRows,
                     columns = totalCols,
                     rowNames = combinedRowNames,
-                    startIndex = if (staticRowPage != null && startIndex > 0 && pattern == "linear") {
-                        startIndex + staticRowOffset
-                    } else startIndex,
+                    startIndex = startIndex,
                     focusedButtonIndex = stateManager.focusedButtonIndex,
                     focusedRowIndex = stateManager.focusedRowIndex,
                     onSpeakCue = { handleSpeakCue(it) },
                     onPrefetchCue = { handlePrefetchCue(it) },
                     onCycleCompleted = { _onCycleCompleted.emit(Unit) },
-                    delayMillis = scanTimer.scanDelayMillis,
+                    delayMillis = { scanTimer.scanDelayMillis },
                     featureGuard = featureGuard,
                     hasStaticRow = staticRowPage != null,
                     staticRowPattern = staticRowPattern,
                     pagePattern = pattern,
                     mainRows = rows,
-                    mainColumns = columns
+                    mainColumns = columns,
+                    resumePoint = resume
                 )
 
                 strategy.executeScan(context)
@@ -201,7 +212,7 @@ class ScannerEngine @Inject constructor(
                 val combinedButtonConfigs = mutableListOf<ButtonConfig?>()
                 if (staticRowPage != null) {
                     combinedButtonConfigs.addAll(staticRowPage.buttonConfigs)
-                    while (combinedButtonConfigs.size < 49) {
+                    while (combinedButtonConfigs.size < ScanGrid.STATIC_ROW_SLOT_COUNT) {
                         combinedButtonConfigs.add(null)
                     }
                 }
@@ -221,7 +232,7 @@ class ScannerEngine @Inject constructor(
                     onSpeakCue = { handleSpeakCue(it) },
                     onPrefetchCue = { handlePrefetchCue(it) },
                     onCycleCompleted = { _onCycleCompleted.emit(Unit) },
-                    delayMillis = scanTimer.scanDelayMillis,
+                    delayMillis = { scanTimer.scanDelayMillis },
                     featureGuard = featureGuard,
                     hasStaticRow = staticRowPage != null,
                     staticRowPattern = staticRowPatternSnapshot,

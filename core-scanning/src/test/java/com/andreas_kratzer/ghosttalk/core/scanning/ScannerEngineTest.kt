@@ -376,4 +376,75 @@ class ScannerEngineTest {
         assertNull("focusedRowIndex should be null", engine.focusedRowIndex.value)
         assertNull("focusedButtonIndex should be null", engine.focusedButtonIndex.value)
     }
+
+    @Test
+    fun `startScanning with static row and combined startIndex resumes at that button`() = runTest {
+        every { featureGuard.isButtonVisible(any()) } returns true
+        val engine = createEngine(this, delayMs = 100L)
+
+        val staticRowPage = com.andreas_kratzer.ghosttalk.core.model.Page(
+            id = "static_row_book1",
+            bookId = "book1",
+            name = "Statische Zeile",
+            rows = 1,
+            columns = 4,
+            scanPattern = "linear",
+            buttonConfigs = List(4) { ButtonConfig(id = "s$it", label = "S$it", isActive = true) }
+        )
+        val mainPageConfigs = (0..2).map { i ->
+            ButtonConfig(id = "m$i", label = "M$i", isActive = true)
+        }
+
+        engine.setFocusedIndex(50)
+
+        engine.startScanning(
+            buttonConfigs = mainPageConfigs,
+            startIndex = 50,
+            pattern = "linear",
+            columns = 4,
+            pageId = "page1",
+            staticRowPage = staticRowPage,
+            staticRowPattern = "linear"
+        )
+
+        advanceTimeBy(110)
+        assertEquals(50, engine.focusedButtonIndex.value)
+        engine.stopScanning()
+    }
+
+    @Test
+    fun `startScanning with static row and startIndex inside static row resumes there`() = runTest {
+        every { featureGuard.isButtonVisible(any()) } returns true
+        val engine = createEngine(this, delayMs = 100L)
+
+        val staticRowPage = com.andreas_kratzer.ghosttalk.core.model.Page(
+            id = "static_row_book1",
+            bookId = "book1",
+            name = "Statische Zeile",
+            rows = 1,
+            columns = 4,
+            scanPattern = "linear",
+            buttonConfigs = List(4) { ButtonConfig(id = "s$it", label = "S$it", isActive = true) }
+        )
+        val mainPageConfigs = (0..2).map { i ->
+            ButtonConfig(id = "m$i", label = "M$i", isActive = true)
+        }
+
+        engine.setFocusedIndex(2)
+
+        engine.startScanning(
+            buttonConfigs = mainPageConfigs,
+            startIndex = 2,
+            pattern = "linear",
+            columns = 4,
+            pageId = "page1",
+            staticRowPage = staticRowPage,
+            staticRowPattern = "linear"
+        )
+
+        advanceTimeBy(110)
+        assertEquals(2, engine.focusedButtonIndex.value)
+        engine.stopScanning()
+    }
 }
+

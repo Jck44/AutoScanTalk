@@ -47,7 +47,7 @@ class RowByRowScanStrategyTest {
         onSpeakCue: suspend (String) -> Unit = {},
         onPrefetchCue: suspend (String) -> Unit = {},
         onCycleCompleted: suspend () -> Unit = {},
-        delayMillis: Long = 1000L
+        delayMillis: () -> Long = { 1000L }
     ) = ScanContext(
         scope = scope,
         buttonConfigs = buttonConfigs,
@@ -209,7 +209,7 @@ class RowByRowScanStrategyTest {
                     onSpeakCue = { speakCount.value++ },
                     onPrefetchCue = {},
                     onCycleCompleted = {},
-                    delayMillis = 500,
+                    delayMillis = { 500 },
                     featureGuard = customFeatureGuard
                 )
             )
@@ -227,4 +227,124 @@ class RowByRowScanStrategyTest {
         runCurrent()
         assertEquals("Should have spoken after 100ms settle delay (at T=101)", 1, speakCount.value)
     }
+
+    @Test
+    fun `resume at row skips static row buttons and starts at matching row step`() = runTest {
+        val configs = MutableList<ButtonConfig?>(98) { null }
+        configs[0] = ButtonConfig(id = "s0", label = "S0", isActive = true)
+        configs[49] = ButtonConfig(id = "m0", label = "M0", isActive = true)
+        configs[56] = ButtonConfig(id = "m7", label = "M7", isActive = true)
+        every { featureGuard.isButtonVisible(any()) } returns true
+
+        val cues = mutableListOf<String>()
+        val job = launch {
+            strategy.executeScan(
+                ScanContext(
+                    scope = this,
+                    buttonConfigs = configs,
+                    rows = 2,
+                    columns = 2,
+                    rowNames = listOf("Static Row", "Main Row 1", "Main Row 2"),
+                    startIndex = 0,
+                    focusedButtonIndex = focusedButtonIndex,
+                    focusedRowIndex = focusedRowIndex,
+                    onSpeakCue = { cues.add(it) },
+                    onPrefetchCue = {},
+                    onCycleCompleted = {},
+                    delayMillis = { 1000L },
+                    featureGuard = featureGuard,
+                    hasStaticRow = true,
+                    staticRowPattern = "row_by_row",
+                    pagePattern = "row_by_row",
+                    mainRows = 2,
+                    mainColumns = 2,
+                    resumePoint = ResumePoint.AtRow(1)
+                )
+            )
+        }
+
+        advanceTimeBy(150)
+        assertEquals(1, focusedRowIndex.value)
+        assertEquals("Main Row 1", cues.last())
+        job.cancel()
+    }
+
+    @Test
+    fun `resume at button with static row does not match row steps`() = runTest {
+        val configs = MutableList<ButtonConfig?>(98) { null }
+        configs[0] = ButtonConfig(id = "s0", label = "S0", isActive = true)
+        configs[1] = ButtonConfig(id = "s1", label = "S1", isActive = true)
+        configs[49] = ButtonConfig(id = "m0", label = "M0", isActive = true)
+        every { featureGuard.isButtonVisible(any()) } returns true
+
+        val cues = mutableListOf<String>()
+        val job = launch {
+            strategy.executeScan(
+                ScanContext(
+                    scope = this,
+                    buttonConfigs = configs,
+                    rows = 2,
+                    columns = 2,
+                    rowNames = listOf("Static Row", "Main Row 1", "Main Row 2"),
+                    startIndex = 0,
+                    focusedButtonIndex = focusedButtonIndex,
+                    focusedRowIndex = focusedRowIndex,
+                    onSpeakCue = { cues.add(it) },
+                    onPrefetchCue = {},
+                    onCycleCompleted = {},
+                    delayMillis = { 1000L },
+                    featureGuard = featureGuard,
+                    hasStaticRow = true,
+                    staticRowPattern = "linear",
+                    pagePattern = "row_by_row",
+                    mainRows = 2,
+                    mainColumns = 2,
+                    resumePoint = ResumePoint.AtButton(1)
+                )
+            )
+        }
+
+        advanceTimeBy(150)
+        assertEquals(1, focusedButtonIndex.value)
+        assertEquals("S1", cues.last())
+        job.cancel()
+    }
+
+    @Test
+    fun `resume falls back to first step when resume point not found`() = runTest {
+        val configs = createConfigs(5)
+        every { featureGuard.isButtonVisible(any()) } returns true
+
+        val cues = mutableListOf<String>()
+        val job = launch {
+            strategy.executeScan(
+                ScanContext(
+                    scope = this,
+                    buttonConfigs = configs,
+                    rows = 2,
+                    columns = 2,
+                    rowNames = listOf("Main Row 1", "Main Row 2"),
+                    startIndex = 0,
+                    focusedButtonIndex = focusedButtonIndex,
+                    focusedRowIndex = focusedRowIndex,
+                    onSpeakCue = { cues.add(it) },
+                    onPrefetchCue = {},
+                    onCycleCompleted = {},
+                    delayMillis = { 1000L },
+                    featureGuard = featureGuard,
+                    hasStaticRow = false,
+                    pagePattern = "row_by_row",
+                    mainRows = 2,
+                    mainColumns = 2,
+                    resumePoint = ResumePoint.AtButton(999)
+                )
+            )
+        }
+
+        advanceTimeBy(150)
+        assertEquals(0, focusedRowIndex.value)
+        assertEquals("Main Row 1", cues.last())
+        job.cancel()
+    }
 }
+

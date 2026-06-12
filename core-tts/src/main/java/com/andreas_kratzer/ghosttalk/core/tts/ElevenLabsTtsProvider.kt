@@ -54,7 +54,9 @@ open class ElevenLabsTtsProvider @Inject constructor(
     private val VOICES_TAG = "elevenlabs_voices"
 
     private var isInitialized = false
-    override val isReady: Boolean get() = isInitialized
+    private val _isReadyFlow = MutableStateFlow(false)
+    override val isReadyFlow: StateFlow<Boolean> = _isReadyFlow.asStateFlow()
+    override val isReady: Boolean get() = _isReadyFlow.value
 
     override fun speak(text: String, queueMode: Int, onDone: (() -> Unit)?, onError: ((String) -> Unit)?) {
         speakRouted(text, null, queueMode, false, onDone, onError)
@@ -292,7 +294,7 @@ open class ElevenLabsTtsProvider @Inject constructor(
         if (base64Text.length > 100) {
             val digest = java.security.MessageDigest.getInstance("MD5")
             val hash = digest.digest(textBytes).joinToString("") { "%02x".format(it) }.take(8)
-            base64Text = "${base64Text.take(100)}-$hash"
+            base64Text = "${base64Text.take(100)}~$hash"
         }
         
         val safeVoiceId = voiceId.replace(Regex("[^a-zA-Z0-9_-]"), "")
@@ -545,6 +547,7 @@ open class ElevenLabsTtsProvider @Inject constructor(
                 currentVoiceId = DEFAULT_VOICE_ID
             }
             isInitialized = true
+            _isReadyFlow.value = true
             Log.i("ElevenLabsTtsProvider", "Voice set to: $currentVoiceId (Initialized: $isInitialized)")
         }
     }

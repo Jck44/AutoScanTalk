@@ -19,16 +19,16 @@ class LinearScanStrategy @Inject constructor() : ScanStrategy {
             // isVisibleInGrid ueber den kombinierten Index wirft die Hauptseite faelschlich raus.
             val result = mutableListOf<Pair<Int, ButtonConfig>>()
             // 1. Statische Zeile (nur Zeile 0 belegt) – active + featureGuard genuegt.
-            context.buttonConfigs.take(49).forEachIndexed { index, buttonConfig ->
+            context.buttonConfigs.take(ScanGrid.STATIC_ROW_SLOT_COUNT).forEachIndexed { index, buttonConfig ->
                 if (buttonConfig != null &&
                     buttonConfig.isActive &&
                     context.featureGuard.isButtonVisible(buttonConfig)) {
                     result.add(index to buttonConfig)
                 }
             }
-            // 2. Hauptseite: lokaler Index relativ zu Slot 49, gefiltert mit Hauptseiten-Raster.
-            for (localIndex in 0 until 49) {
-                val globalIndex = 49 + localIndex
+            // 2. Hauptseite: lokaler Index relativ zu Slot STATIC_ROW_SLOT_COUNT, gefiltert mit Hauptseiten-Raster.
+            for (localIndex in 0 until ScanGrid.STATIC_ROW_SLOT_COUNT) {
+                val globalIndex = ScanGrid.STATIC_ROW_SLOT_COUNT + localIndex
                 val buttonConfig = context.buttonConfigs.getOrNull(globalIndex)
                 if (buttonConfig != null &&
                     buttonConfig.isActive &&
@@ -55,7 +55,11 @@ class LinearScanStrategy @Inject constructor() : ScanStrategy {
             return
         }
 
-        val startingPosition = activeButtonsWithGlobalIndices.indexOfFirst { it.first >= context.startIndex }
+        val startingIndex = when (val resume = context.resumePoint) {
+            is ResumePoint.AtButton -> resume.combinedIndex
+            else -> context.startIndex
+        }
+        val startingPosition = activeButtonsWithGlobalIndices.indexOfFirst { it.first >= startingIndex }
             .coerceAtLeast(0)
 
         var currentPos = startingPosition
@@ -83,7 +87,7 @@ class LinearScanStrategy @Inject constructor() : ScanStrategy {
 
                 context.onSpeakCue(cueText)
                 
-                delay(context.delayMillis)
+                delay(context.delayMillis())
             }
             context.onCycleCompleted()
             currentPos = 0

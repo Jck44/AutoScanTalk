@@ -1,17 +1,25 @@
 package com.andreas_kratzer.ghosttalk.core.tts
 
 import android.util.Log
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.stateIn
 import java.util.Locale
 
 class FallbackTtsProvider(
     private val primary: TtsProvider,
     private val fallback: TtsProvider,
+    private val scope: CoroutineScope,
     private val onFallbackTriggered: (String) -> Unit
 ) : CacheableTtsProvider {
 
     override val isReady: Boolean
         get() = primary.isReady || fallback.isReady
+
+    override val isReadyFlow: StateFlow<Boolean> = combine(primary.isReadyFlow, fallback.isReadyFlow) { p, f -> p || f }
+        .stateIn(scope, SharingStarted.Eagerly, primary.isReady || fallback.isReady)
 
     override val availableVoicesFlow: StateFlow<List<TtsVoice>>
         get() = primary.availableVoicesFlow

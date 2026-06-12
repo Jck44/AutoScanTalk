@@ -149,6 +149,12 @@ class CloudSyncUseCase @Inject constructor(
                         }
                     }
 
+                    // Clock skew detection
+                    if (remoteMasterFile != null && remoteMasterFile.modifiedTime > System.currentTimeMillis() + 5 * 60 * 1000L) {
+                        logger.w(TAG, "Clock skew detected: Remote file modified time is in the future relative to local clock: remote=${remoteMasterFile.modifiedTime}, local=${System.currentTimeMillis()}")
+                        syncLogProvider.addLogEntry("Uhrzeit-Abweichung erkannt: Die Cloud-Datei liegt in der Zukunft", bookId, book.name)
+                    }
+
                     val remoteConflictFiles = remoteFiles.filter {
                         it.name.startsWith("merged_") && (it.name.contains(zipFileName) || it.name.contains(masterFileName))
                     }
@@ -167,19 +173,7 @@ class CloudSyncUseCase @Inject constructor(
                         syncLogProvider.addLogEntry("Inhalte sind identisch (NO_OP)", bookId, book.name)
                         syncAnchorStore.setAnchor(bookId, localStructMd5)
                         
-                        /*
-                        val configModeStr = settingsRepository.syncModeSettings
-                        if (configModeStr != "OFF") {
-                            val configMode = if (syncMode == SyncMode.TWO_WAY) {
-                                try { SyncMode.valueOf(configModeStr) } catch (_: Exception) { SyncMode.TWO_WAY }
-                            } else syncMode
-                            try {
-                                configSyncHelper.syncBookConfig(storageProvider, remoteFiles, configMode, bookId, book.name)
-                            } catch (e: Exception) {
-                                logger.e(TAG, "Config sync failed (non-fatal)", e)
-                            }
-                        }
-                        */
+
 
                         try {
                             audioSyncHelper.syncAudioRecordings(storageProvider, remoteFiles, audioSyncMode, bookId)
@@ -438,20 +432,7 @@ class CloudSyncUseCase @Inject constructor(
                     }
                 }
 
-                /*
-                // Sync settings/config config files before other resources
-                val configModeStr = settingsRepository.syncModeSettings
-                if (success && configModeStr != "OFF") {
-                    val configMode = if (syncMode == SyncMode.TWO_WAY) {
-                        try { SyncMode.valueOf(configModeStr) } catch (_: Exception) { SyncMode.TWO_WAY }
-                    } else syncMode
-                    try {
-                        configSyncHelper.syncBookConfig(storageProvider, remoteFiles, configMode, bookId, book.name)
-                    } catch (e: Exception) {
-                        logger.e(TAG, "Config sync failed (non-fatal)", e)
-                    }
-                }
-                */
+
 
                 // Sync audio recordings after successful book sync
                 if (success && !audioSynced) {

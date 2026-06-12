@@ -34,9 +34,18 @@ class AudioCacheRepository @Inject constructor(
                 val parts = name.split("#")
                 if (parts.size < 4) return@mapNotNull null
 
-                val encodedText = parts[1].substringBefore("-") // remove hash suffix if present
-                val decodedBytes = Base64.decode(encodedText, Base64.URL_SAFE or Base64.NO_WRAP or Base64.NO_PADDING)
-                val text = String(decodedBytes, Charsets.UTF_8).let { if (parts[1].contains("-")) "$it..." else it }
+                val text = if (parts[1].contains("~")) {
+                    val encodedText = parts[1].substringBefore("~")
+                    val decodedBytes = Base64.decode(encodedText, Base64.URL_SAFE or Base64.NO_WRAP or Base64.NO_PADDING)
+                    String(decodedBytes, Charsets.UTF_8) + "..."
+                } else if (parts[1].length == 109 && parts[1][100] == '-') {
+                    val encodedText = parts[1].substring(0, 100)
+                    val decodedBytes = Base64.decode(encodedText, Base64.URL_SAFE or Base64.NO_WRAP or Base64.NO_PADDING)
+                    String(decodedBytes, Charsets.UTF_8) + "..."
+                } else {
+                    val decodedBytes = Base64.decode(parts[1], Base64.URL_SAFE or Base64.NO_WRAP or Base64.NO_PADDING)
+                    String(decodedBytes, Charsets.UTF_8)
+                }
 
                 CachedAudioItem(
                     file = file,

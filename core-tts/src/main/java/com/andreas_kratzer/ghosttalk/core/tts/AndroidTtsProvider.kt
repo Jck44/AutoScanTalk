@@ -35,7 +35,9 @@ open class AndroidTtsProvider @Inject constructor(
     private val _availableVoicesFlow = MutableStateFlow<List<TtsVoice>>(emptyList())
     override val availableVoicesFlow: StateFlow<List<TtsVoice>> = _availableVoicesFlow.asStateFlow()
 
-    override val isReady: Boolean get() = true
+    private val _isReadyFlow = MutableStateFlow(false)
+    override val isReadyFlow: StateFlow<Boolean> = _isReadyFlow.asStateFlow()
+    override val isReady: Boolean get() = _isReadyFlow.value
     private val handler = Handler(Looper.getMainLooper())
     private var pendingLanguageTag: String? = null
     private var pendingVoiceName: String? = null
@@ -79,6 +81,7 @@ open class AndroidTtsProvider @Inject constructor(
     override fun onInit(status: Int) {
         if (status == TextToSpeech.SUCCESS) {
             initialized = true
+            _isReadyFlow.value = true
             tts?.setOnUtteranceProgressListener(object : android.speech.tts.UtteranceProgressListener() {
                 override fun onStart(utteranceId: String?) {}
 
@@ -133,6 +136,7 @@ open class AndroidTtsProvider @Inject constructor(
         } else {
             Log.e("AndroidTtsProvider", "TTS init failed! Status code: $status")
             initialized = false
+            _isReadyFlow.value = false
             tts = null
             val requests = synchronized(pendingRequests) {
                 val copy = ArrayList(pendingRequests)
@@ -382,6 +386,7 @@ open class AndroidTtsProvider @Inject constructor(
     override fun shutdown() {
         tts?.shutdown()
         initialized = false
+        _isReadyFlow.value = false
     }
 
     override fun isSpeaking(): Boolean {

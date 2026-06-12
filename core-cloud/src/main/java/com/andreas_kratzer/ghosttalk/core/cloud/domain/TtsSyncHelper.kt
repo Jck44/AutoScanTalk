@@ -39,7 +39,7 @@ class TtsSyncHelper(
     ) = withContext(Dispatchers.IO) {
         val remoteFile = remoteFiles.find { it.name == TTS_CACHE_FILE_NAME }
 
-        val localLastModified = importExportManager.getTtsCacheLastModified()
+        var localLastModified = importExportManager.getTtsCacheLastModified()
         val remoteLastModified = remoteFile?.modifiedTime ?: 0L
 
         val prefs = context.getSharedPreferences("ghosttalk_settings", Context.MODE_PRIVATE)
@@ -53,8 +53,28 @@ class TtsSyncHelper(
             return@withContext
         }
 
-        val hasLocalChanged = localLastModified > lastSyncedLocalTime + 2000 && localLastModified > 0L
-        val hasRemoteChanged = remoteFile != null && remoteLastModified > lastSyncedRemoteTime + 2000
+        var hasLocalChanged = localLastModified > lastSyncedLocalTime + 2000 && localLastModified > 0L
+        var hasRemoteChanged = remoteFile != null && remoteLastModified > lastSyncedRemoteTime + 2000
+
+        if (syncMode == SyncMode.TWO_WAY && hasLocalChanged && hasRemoteChanged && remoteFile != null) {
+            com.andreas_kratzer.ghosttalk.core.cloud.SyncLogger.logAction(logger, TAG, TTS_CACHE_FILE_NAME, "TTS conflict detected", "Performing two-way TTS merge")
+            val tempDownloadFile = File(context.cacheDir, "download_merge_$TTS_CACHE_FILE_NAME")
+            try {
+                val downloadSuccess = storageProvider.downloadFile(remoteFile.id, tempDownloadFile) { _ -> }
+                if (downloadSuccess) {
+                    tempDownloadFile.inputStream().use { isStream ->
+                        importExportManager.importTtsCacheFromZip(isStream) { _, _ -> }
+                    }
+                    localLastModified = importExportManager.getTtsCacheLastModified()
+                    hasRemoteChanged = false
+                    hasLocalChanged = true
+                }
+            } catch (e: Exception) {
+                logger.e(TAG, "TTS merge download/extract failed for $TTS_CACHE_FILE_NAME", e)
+            } finally {
+                if (tempDownloadFile.exists()) tempDownloadFile.delete()
+            }
+        }
 
         val shouldUpload = when (syncMode) {
             SyncMode.RESTORE_ONLY -> false

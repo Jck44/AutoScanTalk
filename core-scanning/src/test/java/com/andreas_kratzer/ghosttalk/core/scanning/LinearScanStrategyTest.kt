@@ -9,6 +9,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.advanceTimeBy
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -42,7 +43,7 @@ class LinearScanStrategyTest {
         onSpeakCue: suspend (String) -> Unit = {},
         onPrefetchCue: suspend (String) -> Unit = {},
         onCycleCompleted: suspend () -> Unit = {},
-        delayMillis: Long = 1000L
+        delayMillis: () -> Long = { 1000L }
     ) = ScanContext(
         scope = scope,
         buttonConfigs = buttonConfigs,
@@ -138,7 +139,7 @@ class LinearScanStrategyTest {
                     onSpeakCue = {},
                     onPrefetchCue = {},
                     onCycleCompleted = {},
-                    delayMillis = 1000L,
+                    delayMillis = { 1000L },
                     featureGuard = featureGuard,
                     hasStaticRow = true,
                     staticRowPattern = "linear",
@@ -235,7 +236,7 @@ class LinearScanStrategyTest {
                     rows = 1,
                     columns = 1,
                     onCycleCompleted = { cycleCount++ },
-                    delayMillis = 100
+                    delayMillis = { 100 }
                 )
             )
         }
@@ -248,4 +249,43 @@ class LinearScanStrategyTest {
 
         job.cancel()
     }
+
+    @Test
+    fun `strategy uses updated delay on next tick`() = runTest {
+        val configs = (0..2).map { i ->
+            ButtonConfig(id = "$i", label = "B$i", isActive = true, buttonAction = SpeakTextButtonAction())
+        }
+        every { featureGuard.isButtonVisible(any()) } returns true
+
+        var currentDelay = 1000L
+        val delayLambda = { currentDelay }
+
+        val job = launch {
+            strategy.executeScan(
+                createContext(
+                    scope = this,
+                    buttonConfigs = configs,
+                    rows = 1,
+                    columns = 3,
+                    delayMillis = delayLambda
+                )
+            )
+        }
+
+        advanceTimeBy(150) // Initial delay(100)
+        assertEquals(0, focusedButtonIndex.value)
+
+        currentDelay = 200L
+
+        advanceTimeBy(950) // Reaches T=1100 (ends first tick)
+        runCurrent()
+        assertEquals(1, focusedButtonIndex.value)
+
+        advanceTimeBy(200) // Reaches T=1300 (ends second tick with 200ms delay)
+        runCurrent()
+        assertEquals("Should advance to index 2 after 200ms using updated delay", 2, focusedButtonIndex.value)
+
+        job.cancel()
+    }
 }
+

@@ -5,6 +5,7 @@ import java.util.Locale
 
 interface TtsProvider {
     val isReady: Boolean
+    val isReadyFlow: StateFlow<Boolean>
     val availableVoicesFlow: StateFlow<List<TtsVoice>>
     
     /**

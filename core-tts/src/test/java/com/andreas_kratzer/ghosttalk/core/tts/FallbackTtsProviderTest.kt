@@ -9,6 +9,8 @@ import java.util.Locale
 
 class FallbackTtsProviderTest {
 
+    private val scope = kotlinx.coroutines.CoroutineScope(kotlin.coroutines.EmptyCoroutineContext)
+
     @Test
     fun `onDone fires exactly once when primary fails and fallback succeeds`() {
         val primary = FakeTtsProvider()
@@ -16,7 +18,7 @@ class FallbackTtsProviderTest {
         var fallbackTriggeredCount = 0
         var onFallbackError: String? = null
 
-        val provider = FallbackTtsProvider(primary, fallback) { error ->
+        val provider = FallbackTtsProvider(primary, fallback, scope) { error ->
             fallbackTriggeredCount++
             onFallbackError = error
         }
@@ -66,7 +68,7 @@ class FallbackTtsProviderTest {
     fun `onDone is not fired before fallback completes`() {
         val primary = FakeTtsProvider()
         val fallback = FakeTtsProvider()
-        val provider = FallbackTtsProvider(primary, fallback) {}
+        val provider = FallbackTtsProvider(primary, fallback, scope) {}
 
         var callerDone = false
         primary.onSpeakRoutedCalled = { _, onError ->
@@ -88,7 +90,7 @@ class FallbackTtsProviderTest {
         val primary = FakeTtsProvider()
         val fallback = FakeTtsProvider()
         var fallbackTriggered = false
-        val provider = FallbackTtsProvider(primary, fallback) { fallbackTriggered = true }
+        val provider = FallbackTtsProvider(primary, fallback, scope) { fallbackTriggered = true }
 
         var callerDoneCount = 0
         primary.onSpeakRoutedCalled = { onDone, _ ->
@@ -110,7 +112,7 @@ class FallbackTtsProviderTest {
         val primary = FakeTtsProvider()
         val fallback = FakeTtsProvider()
         var fallbackTriggeredCount = 0
-        val provider = FallbackTtsProvider(primary, fallback) { fallbackTriggeredCount++ }
+        val provider = FallbackTtsProvider(primary, fallback, scope) { fallbackTriggeredCount++ }
 
         primary.onSpeakRoutedCalled = { _, onError ->
             onError?.invoke("error1")
@@ -128,7 +130,7 @@ class FallbackTtsProviderTest {
         val primary = FakeTtsProvider()
         val fallback = FakeTtsProvider()
         var fallbackTriggered = false
-        val provider = FallbackTtsProvider(primary, fallback) { fallbackTriggered = true }
+        val provider = FallbackTtsProvider(primary, fallback, scope) { fallbackTriggered = true }
 
         var callerDoneCount = 0
         var callerErrorCount = 0
@@ -156,7 +158,7 @@ class FallbackTtsProviderTest {
     fun `caller onError fires once when both providers fail`() {
         val primary = FakeTtsProvider()
         val fallback = FakeTtsProvider()
-        val provider = FallbackTtsProvider(primary, fallback) {}
+        val provider = FallbackTtsProvider(primary, fallback, scope) {}
 
         var callerDoneCount = 0
         var callerErrorCount = 0
@@ -182,7 +184,7 @@ class FallbackTtsProviderTest {
         val primary = FakeTtsProvider()
         val fallback = FakeTtsProvider()
         var fallbackTriggeredCount = 0
-        val provider = FallbackTtsProvider(primary, fallback) { fallbackTriggeredCount++ }
+        val provider = FallbackTtsProvider(primary, fallback, scope) { fallbackTriggeredCount++ }
 
         var callerDoneCount = 0
         var callerErrorCount = 0
@@ -210,7 +212,7 @@ class FallbackTtsProviderTest {
         val primary = FakeTtsProvider()
         val fallback = FakeTtsProvider()
         var fallbackTriggered = false
-        val provider = FallbackTtsProvider(primary, fallback) { fallbackTriggered = true }
+        val provider = FallbackTtsProvider(primary, fallback, scope) { fallbackTriggered = true }
 
         var callerDoneCount = 0
         var callerErrorCount = 0
@@ -234,6 +236,7 @@ class FallbackTtsProviderTest {
 
 class FakeTtsProvider : TtsProvider {
     override val isReady: Boolean = true
+    override val isReadyFlow: StateFlow<Boolean> = kotlinx.coroutines.flow.MutableStateFlow(true)
     override val availableVoicesFlow: StateFlow<List<TtsVoice>> = kotlinx.coroutines.flow.MutableStateFlow(emptyList())
 
     var lastText: String? = null

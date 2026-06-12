@@ -48,19 +48,12 @@ open class TextToSpeechHelper @Inject constructor(
 
     open val isReady: Boolean 
         get() = synchronized(lock) {
-            currentProvider.isReady || androidTtsProvider.get().isReady
+            currentProvider.isReady
         }
 
     @OptIn(ExperimentalCoroutinesApi::class)
     val isReadyFlow: StateFlow<Boolean> = currentProviderFlow
-        .flatMapLatest { provider ->
-            flow {
-                while (true) {
-                    emit(synchronized(lock) { provider.isReady || androidTtsProvider.get().isReady })
-                    kotlinx.coroutines.delay(100)
-                }
-            }
-        }
+        .flatMapLatest { provider -> provider.isReadyFlow }
         .distinctUntilChanged()
         .stateIn(scope, SharingStarted.Eagerly, false)
 
@@ -114,6 +107,7 @@ open class TextToSpeechHelper @Inject constructor(
                 FallbackTtsProvider(
                     primary = baseProvider,
                     fallback = androidTtsProvider.get(),
+                    scope = scope,
                     onFallbackTriggered = { error ->
                         _isFallbackActiveFlow.value = true
                     }
