@@ -16,7 +16,9 @@ import com.andreas_kratzer.ghosttalk.core.settings.CloudSettings
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.StateFlow
 import javax.inject.Inject
+import javax.inject.Singleton
 
+@Singleton
 class CloudSettingsRepository @Inject constructor(
     prefs: SharedPreferences,
     activeBookIdManager: ActiveBookIdManager,

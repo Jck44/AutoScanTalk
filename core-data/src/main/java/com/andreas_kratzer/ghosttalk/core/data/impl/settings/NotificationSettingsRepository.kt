@@ -12,11 +12,14 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 import javax.inject.Inject
+import javax.inject.Singleton
+import com.andreas_kratzer.ghosttalk.core.settings.NotificationSettings
 
+@Singleton
 class NotificationSettingsRepository @Inject constructor(
     prefs: SharedPreferences,
     activeBookIdManager: ActiveBookIdManager
-) : BaseSettingsRepository(prefs, activeBookIdManager.activeBookIdFlow) {
+) : BaseSettingsRepository(prefs, activeBookIdManager.activeBookIdFlow), NotificationSettings {
 
     private val _isNotificationReadingEnabled = BooleanSetting(KEY_NOTIFICATION_READING_ENABLED, false, isScoped = false)
     private val _monitoredNotificationApps = StringSetSetting(KEY_MONITORED_NOTIFICATION_APPS, isScoped = false)
@@ -24,27 +27,27 @@ class NotificationSettingsRepository @Inject constructor(
     private val _autoReadOnlyInUserMode = BooleanSetting(KEY_AUTO_READ_ONLY_IN_USER_MODE, true, isScoped = false)
     private val _autoReadInStandby = BooleanSetting(KEY_AUTO_READ_IN_STANDBY, false, isScoped = false)
 
-    val isNotificationReadingEnabledFlow = _isNotificationReadingEnabled.flow
-    val monitoredNotificationAppsFlow = _monitoredNotificationApps.flow
+    override val isNotificationReadingEnabledFlow = _isNotificationReadingEnabled.flow
+    override val monitoredNotificationAppsFlow = _monitoredNotificationApps.flow
 
     private val _autoReadModeFlow = MutableStateFlow(getAutoReadModeEnum(_autoReadModeStr.value))
-    val autoReadModeFlow: StateFlow<AutoReadMode> = _autoReadModeFlow.asStateFlow()
+    override val autoReadModeFlow: StateFlow<AutoReadMode> = _autoReadModeFlow.asStateFlow()
 
-    val autoReadOnlyInUserModeFlow = _autoReadOnlyInUserMode.flow
-    val autoReadInStandbyFlow = _autoReadInStandby.flow
+    override val autoReadOnlyInUserModeFlow = _autoReadOnlyInUserMode.flow
+    override val autoReadInStandbyFlow = _autoReadInStandby.flow
 
-    var isNotificationReadingEnabled: Boolean by _isNotificationReadingEnabled
-    var monitoredNotificationApps: Set<String> by _monitoredNotificationApps
+    override var isNotificationReadingEnabled: Boolean by _isNotificationReadingEnabled
+    override var monitoredNotificationApps: Set<String> by _monitoredNotificationApps
 
-    var autoReadMode: AutoReadMode
+    override var autoReadMode: AutoReadMode
         get() = getAutoReadModeEnum(_autoReadModeStr.value)
         set(value) {
             _autoReadModeStr.value = value.name
             _autoReadModeFlow.value = value
         }
 
-    var autoReadOnlyInUserMode: Boolean by _autoReadOnlyInUserMode
-    var autoReadInStandby: Boolean by _autoReadInStandby
+    override var autoReadOnlyInUserMode: Boolean by _autoReadOnlyInUserMode
+    override var autoReadInStandby: Boolean by _autoReadInStandby
 
     private fun getAutoReadModeEnum(name: String): AutoReadMode {
         return try {

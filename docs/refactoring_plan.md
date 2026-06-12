@@ -14,7 +14,7 @@ Jeder Schritt ist so konzipiert, dass die App danach vollständig kompilierbar, 
 | 2 | FallbackTtsProvider (Decorator) | ✅ umgesetzt |
 | 3 | CacheableTtsProvider (ISP) | ✅ umgesetzt |
 | 4.1 | SettingsMigrationManager | ✅ umgesetzt |
-| **4.2** | **Direktbinding Sub-Interfaces** | ❌ **offen → Detailplan unten** |
+| 4.2 | Direktbinding Sub-Interfaces | ✅ umgesetzt + reviewt (inkl. Must-Fix Book-Sync), abnahmereif |
 | 5 | Konstruktor-Injektion Sub-Repos | ✅ umgesetzt |
 | 6 | PageViewModel-Aufteilung | ✅ umgesetzt (Call-/GridEditor-/PageSplit-/BookRestructure-VM) |
 | 7 | Law of Demeter | ✅ umgesetzt (Delegates `private`/`internal`) |
@@ -219,6 +219,33 @@ Empfohlene Reihenfolge (steigende Verflechtung): `UserSettings` → `Notificatio
 * Die Fassade bleibt als `@Singleton` an `SettingsRepository` gebunden und wird weiterhin früh instanziiert (u. a. von `GhosTTalkApplication`) — sonst laufen Migration und Profil-Write-Back-Listener nie an.
 * Es darf **keine zweite Instanz** eines Sub-Repos entstehen (Hilt-Graph nach 4.2.3 prüfen: ein Knoten pro Repo).
 * Verhalten bleibt identisch; das Refactoring ist rein strukturell.
+
+#### Review-Befund 4.2 (Claude, 2026-06-12) — 1 Must-Fix vor Commit
+
+Umsetzung weitgehend sauber: alle 11 Sub-Repos `@Singleton` ✅, Interfaces deklariert ✅, 11 Direktbindings in `DataModule` ✅ (inkl. 5 vorher gar nicht gebundener Interfaces), `by`-Delegation ✅, PIN-Logik korrekt in `SecuritySettingsRepository` umgezogen ✅, Listener/Migration/`refreshFlows()` intakt ✅, Tests grün ✅. Interface-Überlappungen (`appLanguage` in `TtsSettings`, `cuesAudioDeviceAddress` in `ScanningSettings`, `isSmartPredictionEnabled` in `GenAiSettings`) wurden per `Provider`-Querdelegation gelöst — vertretbar, die ISP-Bereinigung der Interfaces selbst ist Folgearbeit.
+
+**🐛 Must-Fix: `syncBookSettings()` ist toter Code geworden.**
+* **Vorher**: Die Fassaden-Setter für `limitScanCycles`, `scanCycleLimit`, `actionLogLimit`, `logIgnoredActions`, `logStopActions` riefen zusätzlich `syncBookSettings()` auf, das diese 5 Werte in die `Book`-Entität der DB spiegelt.
+* **Jetzt**: Durch die `by`-Delegation gehen die Setter direkt ins Sub-Repo; `syncBookSettings()` (Fassade, ~Zeile 441) hat **keinen Aufrufer mehr**. Die Book-Spiegelfelder veralten.
+* **Auswirkung (tragend!)**: `PageViewModel` liest die Scan-Limits aus dem Book (`scanCoordinator.setScanLimitSettings(book.limitScanCycles, …)`), `ActivateButtonUseCase`/`NavigationDelegate`/`InteractionDelegate` lesen die Log-Flags bzw. das Log-Limit aus dem Book, `BookMergeEngine` (Cloud) merged diese Felder.
+* **Fix (im Fassaden-`init`-Listener, NICHT per Setter-Override)**: Der `changeListener` der Sub-Repos wird bei jedem Schreibpfad aufgerufen (auch bei direkt gebundenen Sub-Repos) und erhält den ungescopten Basis-Key. In der Listener-Lambda der Fassade ergänzen:
+  ```kotlin
+  val bookMirroredKeys = setOf(
+      SettingsConstants.KEY_LIMIT_SCAN_CYCLES,
+      SettingsConstants.KEY_SCAN_CYCLE_LIMIT,
+      SettingsConstants.KEY_ACTION_LOG_LIMIT,
+      SettingsConstants.KEY_LOG_IGNORED_ACTIONS,
+      SettingsConstants.KEY_LOG_STOP_ACTIONS
+  )
+  // im listener:
+  if (key in bookMirroredKeys) syncBookSettings()
+  ```
+  Ein Setter-Override in der Fassade wäre falsch, weil direkt injizierte `ScanningSettings`/`AdvancedSettings`-Konsumenten die Fassade umgehen.
+* **Test dazu**: Unit-Test, der über das direkt gebundene Sub-Repo (nicht die Fassade) `limitScanCycles` setzt und prüft, dass `bookRepository.updateBook` mit dem gespiegelten Wert aufgerufen wird.
+
+**Kleinkram (optional, kein Blocker)**:
+* Doppelte `activeBookIdFlow.collect { refreshFlows() }`-Collection im `init` (Zeile ~80 und ~223) — war schon vor 4.2 so, eine reicht.
+* `elevenLabsTtsLanguage`/`elevenLabsModel` & Co. sind doppelt deklariert (`TtsSettings` **und** `CloudSettings`, gleicher Pref-Key, zwei StateFlows). Der Dual-Write in der Fassade hält die Flows synchron; richtige Lösung (Deklaration nur in `TtsSettings`) gehört zur ISP-Folgearbeit.
 
 ---
 

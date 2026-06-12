@@ -44,6 +44,22 @@ import com.andreas_kratzer.ghosttalk.core.settings.ImportExportSettings
 import com.andreas_kratzer.ghosttalk.core.settings.ScanningSettings
 import com.andreas_kratzer.ghosttalk.core.settings.SmartHomeSettings
 import com.andreas_kratzer.ghosttalk.core.settings.TtsSettings
+import com.andreas_kratzer.ghosttalk.core.settings.GeneralSettings
+import com.andreas_kratzer.ghosttalk.core.settings.UserSettings
+import com.andreas_kratzer.ghosttalk.core.settings.AdvancedSettings
+import com.andreas_kratzer.ghosttalk.core.settings.NotificationSettings
+import com.andreas_kratzer.ghosttalk.core.settings.CallSettings
+import com.andreas_kratzer.ghosttalk.core.data.impl.settings.VoiceSettingsRepository
+import com.andreas_kratzer.ghosttalk.core.data.impl.settings.ScanningSettingsRepository
+import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SecuritySettingsRepository
+import com.andreas_kratzer.ghosttalk.core.data.impl.settings.GenAiSettingsRepository
+import com.andreas_kratzer.ghosttalk.core.data.impl.settings.GeneralSettingsRepository
+import com.andreas_kratzer.ghosttalk.core.data.impl.settings.NotificationSettingsRepository
+import com.andreas_kratzer.ghosttalk.core.data.impl.settings.UserSettingsRepository
+import com.andreas_kratzer.ghosttalk.core.data.impl.settings.CallSettingsRepository
+import com.andreas_kratzer.ghosttalk.core.data.impl.settings.CloudSettingsRepository
+import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SmartHomeSettingsRepository
+import com.andreas_kratzer.ghosttalk.core.data.impl.settings.AdvancedSettingsRepository
 import dagger.Binds
 import dagger.Module
 import dagger.Provides
@@ -149,7 +165,7 @@ abstract class DataModule {
 
         @Provides
         @Singleton
-        fun provideScanningSettings(impl: SettingsRepositoryImpl): ScanningSettings = impl
+        fun provideScanningSettings(impl: ScanningSettingsRepository): ScanningSettings = impl
 
         @Provides
         @Singleton
@@ -157,19 +173,19 @@ abstract class DataModule {
 
         @Provides
         @Singleton
-        fun provideTtsSettings(impl: SettingsRepositoryImpl): TtsSettings = impl
+        fun provideTtsSettings(impl: VoiceSettingsRepository): TtsSettings = impl
 
         @Provides
         @Singleton
-        fun provideGenAiSettings(impl: SettingsRepositoryImpl): GenAiSettings = impl
+        fun provideGenAiSettings(impl: GenAiSettingsRepository): GenAiSettings = impl
 
         @Provides
         @Singleton
-        fun provideCloudSettings(impl: SettingsRepositoryImpl): CloudSettings = impl
+        fun provideCloudSettings(impl: CloudSettingsRepository): CloudSettings = impl
 
         @Provides
         @Singleton
-        fun provideSmartHomeSettings(impl: SettingsRepositoryImpl): SmartHomeSettings = impl
+        fun provideSmartHomeSettings(impl: SmartHomeSettingsRepository): SmartHomeSettings = impl
 
         @Provides
         @Singleton
@@ -177,7 +193,7 @@ abstract class DataModule {
 
         @Provides
         @Singleton
-        fun provideSecuritySettings(impl: SettingsRepositoryImpl): SecuritySettings = impl
+        fun provideSecuritySettings(impl: SecuritySettingsRepository): SecuritySettings = impl
 
         @Provides
         @Singleton
@@ -194,6 +210,26 @@ abstract class DataModule {
         @Provides
         @Singleton
         fun provideControlDeviceSettings(impl: SettingsRepositoryImpl): ControlDeviceSettings = impl
+
+        @Provides
+        @Singleton
+        fun provideGeneralSettings(impl: GeneralSettingsRepository): GeneralSettings = impl
+
+        @Provides
+        @Singleton
+        fun provideUserSettings(impl: UserSettingsRepository): UserSettings = impl
+
+        @Provides
+        @Singleton
+        fun provideAdvancedSettings(impl: AdvancedSettingsRepository): AdvancedSettings = impl
+
+        @Provides
+        @Singleton
+        fun provideNotificationSettings(impl: NotificationSettingsRepository): NotificationSettings = impl
+
+        @Provides
+        @Singleton
+        fun provideCallSettings(impl: CallSettingsRepository): CallSettings = impl
 
         @Provides
         @Singleton

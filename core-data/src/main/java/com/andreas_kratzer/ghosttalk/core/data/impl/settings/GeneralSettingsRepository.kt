@@ -12,11 +12,14 @@ import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.K
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_TEMPLATE_SORT_ORDER
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_THEME_MODE
 import javax.inject.Inject
+import javax.inject.Singleton
+import com.andreas_kratzer.ghosttalk.core.settings.GeneralSettings
 
+@Singleton
 class GeneralSettingsRepository @Inject constructor(
     prefs: SharedPreferences,
     activeBookIdManager: ActiveBookIdManager
-) : BaseSettingsRepository(prefs, activeBookIdManager.activeBookIdFlow) {
+) : BaseSettingsRepository(prefs, activeBookIdManager.activeBookIdFlow), GeneralSettings {
 
     private val _themeMode = NonNullStringSetting(KEY_THEME_MODE, "LIGHT", isScoped = false)
     private val _pageSortOrder = NonNullStringSetting(KEY_PAGE_SORT_ORDER, "MANUAL")
@@ -31,29 +34,29 @@ class GeneralSettingsRepository @Inject constructor(
     private val _isCaregiverDevice = BooleanSetting("is_caregiver_device", default = false, isScoped = false)
     private val _activeProfileId = StringSetting("local_active_profile_id", default = "profile-default", isScoped = false)
 
-    val themeModeFlow = _themeMode.flow
-    val pageSortOrderFlow = _pageSortOrder.flow
-    val templateSortOrderFlow = _templateSortOrder.flow
+    override val themeModeFlow = _themeMode.flow
+    override val pageSortOrderFlow = _pageSortOrder.flow
+    override val templateSortOrderFlow = _templateSortOrder.flow
     val syncLogsStorageFlow = _syncLogsStorage.flow
-    val appLanguageFlow = _appLanguage.flow
-    val defaultStartPageIdFlow = _defaultStartPageId.flow
-    val favoriteBookIdFlow = _favoriteBookId.flow
-    val startupBehaviorFlow = _startupBehavior.flow
-    val forceSoftKeyboardFlow = _forceSoftKeyboard.flow
-    val isSetupCompletedFlow = _isSetupCompleted.flow
+    override val appLanguageFlow = _appLanguage.flow
+    override val defaultStartPageIdFlow = _defaultStartPageId.flow
+    override val favoriteBookIdFlow = _favoriteBookId.flow
+    override val startupBehaviorFlow = _startupBehavior.flow
+    override val forceSoftKeyboardFlow = _forceSoftKeyboard.flow
+    override val isSetupCompletedFlow = _isSetupCompleted.flow
     val isCaregiverDeviceFlow = _isCaregiverDevice.flow
     val activeProfileIdFlow = _activeProfileId.flow
 
-    var themeMode: String by _themeMode
-    var pageSortOrder: String by _pageSortOrder
-    var templateSortOrder: String by _templateSortOrder
-    var appLanguage: String? by _appLanguage
-    var defaultStartPageId: String? by _defaultStartPageId
-    var favoriteBookId: String? by _favoriteBookId
-    var startupBehavior: String by _startupBehavior
-    var forceSoftKeyboard: Boolean by _forceSoftKeyboard
+    override var themeMode: String by _themeMode
+    override var pageSortOrder: String by _pageSortOrder
+    override var templateSortOrder: String by _templateSortOrder
+    override var appLanguage: String? by _appLanguage
+    override var defaultStartPageId: String? by _defaultStartPageId
+    override var favoriteBookId: String? by _favoriteBookId
+    override var startupBehavior: String by _startupBehavior
+    override var forceSoftKeyboard: Boolean by _forceSoftKeyboard
     var syncLogsStorage: String? by _syncLogsStorage
-    var isSetupCompleted: Boolean by _isSetupCompleted
+    override var isSetupCompleted: Boolean by _isSetupCompleted
     var isCaregiverDevice: Boolean by _isCaregiverDevice
     var activeProfileId: String
         get() = _activeProfileId.value ?: "profile-default"

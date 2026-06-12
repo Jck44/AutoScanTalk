@@ -4,11 +4,14 @@ import android.content.SharedPreferences
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_KEEP_SCREEN_ON_USER_MODE
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_USER_MODE_SCREEN_BEHAVIOR
 import javax.inject.Inject
+import javax.inject.Singleton
+import com.andreas_kratzer.ghosttalk.core.settings.UserSettings
 
+@Singleton
 class UserSettingsRepository @Inject constructor(
     prefs: SharedPreferences,
     activeBookIdManager: ActiveBookIdManager
-) : BaseSettingsRepository(prefs, activeBookIdManager.activeBookIdFlow) {
+) : BaseSettingsRepository(prefs, activeBookIdManager.activeBookIdFlow), UserSettings {
 
     private val _keepScreenOnUserMode = BooleanSetting(KEY_KEEP_SCREEN_ON_USER_MODE, true)
     private val _userModeScreenBehavior = NonNullStringSetting(KEY_USER_MODE_SCREEN_BEHAVIOR, "NORMAL")
@@ -17,19 +20,19 @@ class UserSettingsRepository @Inject constructor(
     private val _onlyRecordHardwareStats = BooleanSetting(SettingsConstants.KEY_ONLY_RECORD_HARDWARE_STATS, false)
     private val _firebaseAnalyticsEnabled = BooleanSetting(SettingsConstants.KEY_FIREBASE_ANALYTICS_ENABLED, true, isScoped = false)
 
-    val keepScreenOnUserModeFlow = _keepScreenOnUserMode.flow
-    val userModeScreenBehaviorFlow = _userModeScreenBehavior.flow
-    val statsRetentionDaysFlow = _statsRetentionDays.flow
-    val statsAggregationHoursFlow = _statsAggregationHours.flow
-    val onlyRecordHardwareStatsFlow = _onlyRecordHardwareStats.flow
-    val firebaseAnalyticsEnabledFlow = _firebaseAnalyticsEnabled.flow
+    override val keepScreenOnUserModeFlow = _keepScreenOnUserMode.flow
+    override val userModeScreenBehaviorFlow = _userModeScreenBehavior.flow
+    override val statsRetentionDaysFlow = _statsRetentionDays.flow
+    override val statsAggregationHoursFlow = _statsAggregationHours.flow
+    override val onlyRecordHardwareStatsFlow = _onlyRecordHardwareStats.flow
+    override val firebaseAnalyticsEnabledFlow = _firebaseAnalyticsEnabled.flow
 
-    var keepScreenOnUserMode: Boolean by _keepScreenOnUserMode
-    var userModeScreenBehavior: String by _userModeScreenBehavior
-    var statsRetentionDays: Int by _statsRetentionDays
-    var statsAggregationHours: Int by _statsAggregationHours
-    var onlyRecordHardwareStats: Boolean by _onlyRecordHardwareStats
-    var firebaseAnalyticsEnabled: Boolean by _firebaseAnalyticsEnabled
+    override var keepScreenOnUserMode: Boolean by _keepScreenOnUserMode
+    override var userModeScreenBehavior: String by _userModeScreenBehavior
+    override var statsRetentionDays: Int by _statsRetentionDays
+    override var statsAggregationHours: Int by _statsAggregationHours
+    override var onlyRecordHardwareStats: Boolean by _onlyRecordHardwareStats
+    override var firebaseAnalyticsEnabled: Boolean by _firebaseAnalyticsEnabled
 
 
     override fun refresh() {

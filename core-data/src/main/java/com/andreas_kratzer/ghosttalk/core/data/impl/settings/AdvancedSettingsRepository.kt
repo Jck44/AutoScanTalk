@@ -15,7 +15,9 @@ import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.K
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_WEATHER_CACHE_TIMEOUT
 import com.andreas_kratzer.ghosttalk.core.settings.AdvancedSettings
 import javax.inject.Inject
+import javax.inject.Singleton
 
+@Singleton
 class AdvancedSettingsRepository @Inject constructor(
     prefs: SharedPreferences,
     activeBookIdManager: ActiveBookIdManager

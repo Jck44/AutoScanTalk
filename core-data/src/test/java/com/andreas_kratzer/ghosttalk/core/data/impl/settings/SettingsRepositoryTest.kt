@@ -3,7 +3,9 @@ package com.andreas_kratzer.ghosttalk.core.data.impl.settings
 import android.content.Context
 import android.content.SharedPreferences
 import com.andreas_kratzer.ghosttalk.core.data.BookRepository
+import com.andreas_kratzer.ghosttalk.core.model.Book
 import io.mockk.every
+import io.mockk.coEvery
 import io.mockk.mockk
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.first
@@ -22,6 +24,8 @@ class SettingsRepositoryTest {
     private lateinit var mockEditor: SharedPreferences.Editor
     private lateinit var mockBookRepository: BookRepository
     private lateinit var testScope: CoroutineScope
+    private lateinit var scanningSettings: ScanningSettingsRepository
+    private lateinit var advancedSettings: AdvancedSettingsRepository
 
     private val mockedPrefsStore = mutableMapOf<String, String?>()
 
@@ -143,21 +147,27 @@ class SettingsRepositoryTest {
         scope: CoroutineScope = testScope
     ): SettingsRepositoryImpl {
         val activeBookIdManager = ActiveBookIdManager(mockPrefs)
+        val generalSettings = GeneralSettingsRepository(mockPrefs, activeBookIdManager)
+        val voiceSettings = VoiceSettingsRepository(mockPrefs, activeBookIdManager, { generalSettings })
+        scanningSettings = ScanningSettingsRepository(mockPrefs, activeBookIdManager, { voiceSettings })
+        advancedSettings = AdvancedSettingsRepository(mockPrefs, activeBookIdManager)
+        val genAiSettings = GenAiSettingsRepository(mockPrefs, activeBookIdManager, context, advancedSettings)
+        
         return SettingsRepositoryImpl(
             context = context,
             bookRepository = bookRepo,
             settingsProfileDao = profileDao,
             scope = scope,
             activeBookIdManager = activeBookIdManager,
-            voiceSettings = VoiceSettingsRepository(mockPrefs, activeBookIdManager),
-            scanningSettings = ScanningSettingsRepository(mockPrefs, activeBookIdManager),
+            voiceSettings = voiceSettings,
+            scanningSettings = scanningSettings,
             securitySettings = SecuritySettingsRepository(mockPrefs, activeBookIdManager),
             cloudSettings = CloudSettingsRepository(mockPrefs, activeBookIdManager, context),
             smartHomeSettings = SmartHomeSettingsRepository(mockPrefs, activeBookIdManager, context),
-            genAiSettings = GenAiSettingsRepository(mockPrefs, activeBookIdManager, context),
-            generalSettings = GeneralSettingsRepository(mockPrefs, activeBookIdManager),
+            genAiSettings = genAiSettings,
+            generalSettings = generalSettings,
             notificationSettings = NotificationSettingsRepository(mockPrefs, activeBookIdManager),
-            advancedSettings = AdvancedSettingsRepository(mockPrefs, activeBookIdManager),
+            advancedSettings = advancedSettings,
             userSettings = UserSettingsRepository(mockPrefs, activeBookIdManager),
             callSettings = CallSettingsRepository(mockPrefs, activeBookIdManager)
         )
@@ -406,5 +416,31 @@ class SettingsRepositoryTest {
         assertEquals("false", mockedPrefsStore["firebase_analytics_enabled"])
         assertEquals(false, repository.firebaseAnalyticsEnabled)
         assertEquals(false, repository.firebaseAnalyticsEnabledFlow.first())
+    }
+
+    @Test
+    fun testBookSettingsSyncOnSubRepoWrite() = runBlocking {
+        // Setup mock book
+        val testBookId = "book-default"
+        val mockBook = Book(
+            id = testBookId,
+            name = "Test Book",
+            limitScanCycles = false,
+            scanCycleLimit = 2,
+            actionLogLimit = 100,
+            logIgnoredActions = false,
+            logStopActions = false
+        )
+        coEvery { mockBookRepository.getBookById(testBookId) } returns mockBook
+        
+        // Write to sub-repo directly
+        scanningSettings.limitScanCycles = true
+        
+        // Verify that updateBook was called with updated book config
+        io.mockk.coVerify(timeout = 1000) {
+            mockBookRepository.updateBook(withArg {
+                assertEquals(true, it.limitScanCycles)
+            })
+        }
     }
 }

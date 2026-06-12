@@ -5,7 +5,9 @@ import android.content.SharedPreferences
 import com.andreas_kratzer.ghosttalk.core.settings.SmartHomeSettings
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
+import javax.inject.Singleton
 
+@Singleton
 class SmartHomeSettingsRepository @Inject constructor(
     prefs: SharedPreferences,
     activeBookIdManager: ActiveBookIdManager,

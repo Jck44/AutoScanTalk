@@ -8,11 +8,23 @@ import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.K
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_TTS_LANGUAGE
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_TTS_VOICE_NAME
 import javax.inject.Inject
+import javax.inject.Singleton
+import javax.inject.Provider
+import com.andreas_kratzer.ghosttalk.core.settings.TtsSettings
+import kotlinx.coroutines.flow.StateFlow
 
+@Singleton
 class VoiceSettingsRepository @Inject constructor(
     prefs: SharedPreferences,
-    activeBookIdManager: ActiveBookIdManager
-) : BaseSettingsRepository(prefs, activeBookIdManager.activeBookIdFlow) {
+    activeBookIdManager: ActiveBookIdManager,
+    private val generalSettingsRepository: Provider<GeneralSettingsRepository>
+) : BaseSettingsRepository(prefs, activeBookIdManager.activeBookIdFlow), TtsSettings {
+
+    override var appLanguage: String?
+        get() = generalSettingsRepository.get().appLanguage
+        set(value) { generalSettingsRepository.get().appLanguage = value }
+    override val appLanguageFlow: StateFlow<String?>
+        get() = generalSettingsRepository.get().appLanguageFlow
 
     private val _ttsLanguage = StringSetting(KEY_TTS_LANGUAGE)
     private val _ttsVoiceName = StringSetting(KEY_TTS_VOICE_NAME)
@@ -28,31 +40,31 @@ class VoiceSettingsRepository @Inject constructor(
     private val _preferredMainSpeakerName = StringSetting("preferred_main_speaker_name", isScoped = false)
     private val _preferredCueSpeakerName = StringSetting("preferred_cue_speaker_name", isScoped = false)
 
-    val ttsLanguageFlow = _ttsLanguage.flow
-    val ttsVoiceNameFlow = _ttsVoiceName.flow
+    override val ttsLanguageFlow = _ttsLanguage.flow
+    override val ttsVoiceNameFlow = _ttsVoiceName.flow
     val ttsAudioDeviceAddressFlow = _ttsAudioDeviceAddress.flow
     val cuesAudioDeviceAddressFlow = _cuesAudioDeviceAddress.flow
-    val ttsEngineFlow = _ttsEngine.flow
-    val googleTtsLanguageFlow = _googleTtsLanguage.flow
-    val googleTtsVoiceNameFlow = _googleTtsVoiceName.flow
-    val elevenLabsTtsLanguageFlow = _elevenLabsTtsLanguage.flow
-    val elevenLabsTtsVoiceNameFlow = _elevenLabsTtsVoiceName.flow
+    override val ttsEngineFlow = _ttsEngine.flow
+    override val googleTtsLanguageFlow = _googleTtsLanguage.flow
+    override val googleTtsVoiceNameFlow = _googleTtsVoiceName.flow
+    override val elevenLabsTtsLanguageFlow = _elevenLabsTtsLanguage.flow
+    override val elevenLabsTtsVoiceNameFlow = _elevenLabsTtsVoiceName.flow
     val recordingAudioSourceFlow = _recordingAudioSource.flow
-    val ttsPlaybackSpeedFlow = _ttsPlaybackSpeed.flow
+    override val ttsPlaybackSpeedFlow = _ttsPlaybackSpeed.flow
     val preferredMainSpeakerNameFlow = _preferredMainSpeakerName.flow
     val preferredCueSpeakerNameFlow = _preferredCueSpeakerName.flow
 
-    var ttsLanguage: String? by _ttsLanguage
-    var ttsVoiceName: String? by _ttsVoiceName
+    override var ttsLanguage: String? by _ttsLanguage
+    override var ttsVoiceName: String? by _ttsVoiceName
     var ttsAudioDeviceAddress: String? by _ttsAudioDeviceAddress
     var cuesAudioDeviceAddress: String? by _cuesAudioDeviceAddress
-    var ttsEngine: String? by _ttsEngine
-    var googleTtsLanguage: String? by _googleTtsLanguage
-    var googleTtsVoiceName: String? by _googleTtsVoiceName
-    var elevenLabsTtsLanguage: String? by _elevenLabsTtsLanguage
-    var elevenLabsTtsVoiceName: String? by _elevenLabsTtsVoiceName
+    override var ttsEngine: String? by _ttsEngine
+    override var googleTtsLanguage: String? by _googleTtsLanguage
+    override var googleTtsVoiceName: String? by _googleTtsVoiceName
+    override var elevenLabsTtsLanguage: String? by _elevenLabsTtsLanguage
+    override var elevenLabsTtsVoiceName: String? by _elevenLabsTtsVoiceName
     var recordingAudioSource: Int by _recordingAudioSource
-    var ttsPlaybackSpeed: Float by _ttsPlaybackSpeed
+    override var ttsPlaybackSpeed: Float by _ttsPlaybackSpeed
     var preferredMainSpeakerName: String? by _preferredMainSpeakerName
     var preferredCueSpeakerName: String? by _preferredCueSpeakerName
 

@@ -11,12 +11,29 @@ import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.K
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_USE_LOCAL_GENERATIVE_AI
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
+import javax.inject.Singleton
+import com.andreas_kratzer.ghosttalk.core.settings.GenAiSettings
+import kotlinx.coroutines.flow.StateFlow
 
+@Singleton
 class GenAiSettingsRepository @Inject constructor(
     prefs: SharedPreferences,
     activeBookIdManager: ActiveBookIdManager,
-    @ApplicationContext private val context: android.content.Context
-) : BaseSettingsRepository(prefs, activeBookIdManager.activeBookIdFlow) {
+    @ApplicationContext private val context: android.content.Context,
+    private val advancedSettings: AdvancedSettingsRepository
+) : BaseSettingsRepository(prefs, activeBookIdManager.activeBookIdFlow), GenAiSettings {
+
+    override var isSmartPredictionEnabled: Boolean
+        get() = advancedSettings.isSmartPredictionEnabled
+        set(value) { advancedSettings.isSmartPredictionEnabled = value }
+    override val isSmartPredictionEnabledFlow: StateFlow<Boolean>
+        get() = advancedSettings.isSmartPredictionEnabledFlow
+
+    override var showPageIdInLog: Boolean
+        get() = advancedSettings.showPageIdInLog
+        set(value) { advancedSettings.showPageIdInLog = value }
+    override val showPageIdInLogFlow: StateFlow<Boolean>
+        get() = advancedSettings.showPageIdInLogFlow
 
     private val _isGeminiEnabled = BooleanSetting(KEY_GEMINI_ENABLED, false)
     private val _useLocalGenerativeAi = BooleanSetting(KEY_USE_LOCAL_GENERATIVE_AI, true)
@@ -31,23 +48,23 @@ class GenAiSettingsRepository @Inject constructor(
     private val _isGeminiVerified = BooleanSetting(KEY_GEMINI_VERIFIED, false)
     private val _hasAcceptedPageSplitOptIn = BooleanSetting(KEY_HAS_ACCEPTED_PAGE_SPLIT_OPT_IN, false)
 
-    val isGeminiEnabledFlow = _isGeminiEnabled.flow
-    val useLocalGenerativeAiFlow = _useLocalGenerativeAi.flow
-    val geminiRedoPredictionFlow = _geminiRedoPrediction.flow
-    val geminiTimeoutFlow = _geminiTimeout.flow
-    val geminiApiKeyFlow = _geminiApiKey.flow
-    val useGeminiApiKeyFlow = _useGeminiApiKey.flow
-    val isGeminiVerifiedFlow = _isGeminiVerified.flow
-    val hasAcceptedPageSplitOptInFlow = _hasAcceptedPageSplitOptIn.flow
+    override val isGeminiEnabledFlow = _isGeminiEnabled.flow
+    override val useLocalGenerativeAiFlow = _useLocalGenerativeAi.flow
+    override val geminiRedoPredictionFlow = _geminiRedoPrediction.flow
+    override val geminiTimeoutFlow = _geminiTimeout.flow
+    override val geminiApiKeyFlow = _geminiApiKey.flow
+    override val useGeminiApiKeyFlow = _useGeminiApiKey.flow
+    override val isGeminiVerifiedFlow = _isGeminiVerified.flow
+    override val hasAcceptedPageSplitOptInFlow = _hasAcceptedPageSplitOptIn.flow
 
-    var isGeminiEnabled: Boolean by _isGeminiEnabled
-    var useLocalGenerativeAi: Boolean by _useLocalGenerativeAi
-    var geminiRedoPrediction: Boolean by _geminiRedoPrediction
-    var geminiTimeout: Long by _geminiTimeout
-    var geminiApiKey: String? by _geminiApiKey
-    var useGeminiApiKey: Boolean by _useGeminiApiKey
-    var isGeminiVerified: Boolean by _isGeminiVerified
-    var hasAcceptedPageSplitOptIn: Boolean by _hasAcceptedPageSplitOptIn
+    override var isGeminiEnabled: Boolean by _isGeminiEnabled
+    override var useLocalGenerativeAi: Boolean by _useLocalGenerativeAi
+    override var geminiRedoPrediction: Boolean by _geminiRedoPrediction
+    override var geminiTimeout: Long by _geminiTimeout
+    override var geminiApiKey: String? by _geminiApiKey
+    override var useGeminiApiKey: Boolean by _useGeminiApiKey
+    override var isGeminiVerified: Boolean by _isGeminiVerified
+    override var hasAcceptedPageSplitOptIn: Boolean by _hasAcceptedPageSplitOptIn
 
     override fun refresh() {
         _isGeminiEnabled.refresh()

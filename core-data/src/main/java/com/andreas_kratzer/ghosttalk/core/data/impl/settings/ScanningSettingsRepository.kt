@@ -12,11 +12,23 @@ import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.K
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_VOCAL_SWITCH_ENABLED
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_VOLUME_KEYS_ACTIVATE
 import javax.inject.Inject
+import javax.inject.Singleton
+import javax.inject.Provider
+import com.andreas_kratzer.ghosttalk.core.settings.ScanningSettings
+import kotlinx.coroutines.flow.StateFlow
 
+@Singleton
 class ScanningSettingsRepository @Inject constructor(
     prefs: SharedPreferences,
-    activeBookIdManager: ActiveBookIdManager
-) : BaseSettingsRepository(prefs, activeBookIdManager.activeBookIdFlow) {
+    activeBookIdManager: ActiveBookIdManager,
+    private val voiceSettingsRepository: Provider<VoiceSettingsRepository>
+) : BaseSettingsRepository(prefs, activeBookIdManager.activeBookIdFlow), ScanningSettings {
+
+    override var cuesAudioDeviceAddress: String?
+        get() = voiceSettingsRepository.get().cuesAudioDeviceAddress
+        set(value) { voiceSettingsRepository.get().cuesAudioDeviceAddress = value }
+    override val cuesAudioDeviceAddressFlow: StateFlow<String?>
+        get() = voiceSettingsRepository.get().cuesAudioDeviceAddressFlow
 
     init {
         // Migration/Cleanup: remove the deprecated static_row_scan_pattern key if it exists
@@ -50,38 +62,38 @@ class ScanningSettingsRepository @Inject constructor(
     private val _lateClickThreshold = LongSetting(SettingsConstants.KEY_LATE_CLICK_THRESHOLD_MILLIS, 250L)
     private val _vocalSwitchEnabled = BooleanSetting(KEY_VOCAL_SWITCH_ENABLED, false)
 
-    val autoStartScanningFlow = _autoStartScanning.flow
-    val scanDelayFlow = _scanDelay.flow
-    val resumeScanningFromStartFlow = _resumeScanningFromStart.flow
-    val holdingTimeMillisFlow = _holdingTimeMillis.flow
-    val switchActivationKeyFlow = _switchActivationKey.flow
-    val volumeKeysActivateFlow = _volumeKeysActivate.flow
-    val defaultScanPatternFlow = _defaultScanPattern.flow
-    val bluetoothDelayFlow = _bluetoothDelay.flow
-    val limitScanCyclesFlow = _limitScanCycles.flow
-    val scanCycleLimitFlow = _scanCycleLimit.flow
+    override val autoStartScanningFlow = _autoStartScanning.flow
+    override val scanDelayFlow = _scanDelay.flow
+    override val resumeScanningFromStartFlow = _resumeScanningFromStart.flow
+    override val holdingTimeMillisFlow = _holdingTimeMillis.flow
+    override val switchActivationKeyFlow = _switchActivationKey.flow
+    override val volumeKeysActivateFlow = _volumeKeysActivate.flow
+    override val defaultScanPatternFlow = _defaultScanPattern.flow
+    override val bluetoothDelayFlow = _bluetoothDelay.flow
+    override val limitScanCyclesFlow = _limitScanCycles.flow
+    override val scanCycleLimitFlow = _scanCycleLimit.flow
     val blockVolumeKeysFlow = _blockVolumeKeys.flow
     val speakerVolumeFlow = _speakerVolume.flow
     val headphoneVolumeFlow = _headphoneVolume.flow
-    val staticRowEnabledFlow = _staticRowEnabled.flow
-    val lateClickThresholdFlow = _lateClickThreshold.flow
+    override val staticRowEnabledFlow = _staticRowEnabled.flow
+    override val lateClickThresholdFlow = _lateClickThreshold.flow
     val vocalSwitchEnabledFlow = _vocalSwitchEnabled.flow
 
-    var autoStartScanning: Boolean by _autoStartScanning
-    var scanDelayMillis: Long by _scanDelay
-    var resumeScanningFromStart: Boolean by _resumeScanningFromStart
-    var holdingTimeMillis: Long by _holdingTimeMillis
-    var switchActivationKey: String by _switchActivationKey
-    var volumeKeysActivate: Boolean by _volumeKeysActivate
-    var defaultScanPattern: String by _defaultScanPattern
-    var bluetoothDelay: Long by _bluetoothDelay
-    var limitScanCycles: Boolean by _limitScanCycles
-    var scanCycleLimit: Int by _scanCycleLimit
+    override var autoStartScanning: Boolean by _autoStartScanning
+    override var scanDelayMillis: Long by _scanDelay
+    override var resumeScanningFromStart: Boolean by _resumeScanningFromStart
+    override var holdingTimeMillis: Long by _holdingTimeMillis
+    override var switchActivationKey: String by _switchActivationKey
+    override var volumeKeysActivate: Boolean by _volumeKeysActivate
+    override var defaultScanPattern: String by _defaultScanPattern
+    override var bluetoothDelay: Long by _bluetoothDelay
+    override var limitScanCycles: Boolean by _limitScanCycles
+    override var scanCycleLimit: Int by _scanCycleLimit
     var blockVolumeKeys: Boolean by _blockVolumeKeys
     var speakerVolume: Int by _speakerVolume
     var headphoneVolume: Int by _headphoneVolume
-    var staticRowEnabled: Boolean by _staticRowEnabled
-    var lateClickThresholdMillis: Long by _lateClickThreshold
+    override var staticRowEnabled: Boolean by _staticRowEnabled
+    override var lateClickThresholdMillis: Long by _lateClickThreshold
     var vocalSwitchEnabled: Boolean by _vocalSwitchEnabled
 
 
