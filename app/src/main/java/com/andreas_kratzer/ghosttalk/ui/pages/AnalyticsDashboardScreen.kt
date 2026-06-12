@@ -44,6 +44,12 @@ import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
 import com.andreas_kratzer.ghosttalk.ui.pages.analytics.AnalyticsDetailsTab
 import com.andreas_kratzer.ghosttalk.ui.pages.analytics.AnalyticsOverviewTab
 import com.andreas_kratzer.ghosttalk.ui.pages.analytics.AnalyticsRecommendationsTab
+import com.andreas_kratzer.ghosttalk.ui.pages.analytics.recommendations.ShortcutWizardState
+import com.andreas_kratzer.ghosttalk.ui.pages.analytics.recommendations.ShortcutWizardActions
+import com.andreas_kratzer.ghosttalk.ui.pages.analytics.recommendations.LayoutProposalsState
+import com.andreas_kratzer.ghosttalk.ui.pages.analytics.recommendations.LayoutProposalsActions
+import com.andreas_kratzer.ghosttalk.ui.pages.analytics.recommendations.AiRestructureState
+import com.andreas_kratzer.ghosttalk.ui.pages.analytics.recommendations.AiRestructureActions
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -394,48 +400,77 @@ fun AnalyticsDashboardScreen(
                         )
                     }
                     1 -> {
+                        val shortcutWizardState = remember(isCalculatingRecommendations, recommendations) {
+                            ShortcutWizardState(isCalculatingRecommendations, recommendations)
+                        }
+                        val shortcutWizardActions = remember {
+                            ShortcutWizardActions(
+                                onApplyRecommendation = { rec, onRes ->
+                                    pageViewModel.applyShortcutRecommendation(rec, onRes)
+                                }
+                            )
+                        }
+                        val layoutProposalsState = remember(layoutProposals, currentFilter, currentSort) {
+                            LayoutProposalsState(layoutProposals, currentFilter, currentSort)
+                        }
+                        val layoutProposalsActions = remember {
+                            LayoutProposalsActions(
+                                onSetFilter = { pageSplitViewModel.setProposalFilter(it) },
+                                onSetSort = { pageSplitViewModel.setProposalSort(it) },
+                                onGeneratePageSplitProposal = { pageSplitViewModel.generatePageSplitProposal(it) },
+                                onChangePageScanPattern = { id, pat -> pageSplitViewModel.changePageScanPattern(id, pat) },
+                                onChangeScanDelay = { pageSplitViewModel.changeScanDelay(it) },
+                                onApplySpacerRelocate = { pageId, b1, b2 -> pageSplitViewModel.applySpacerRelocate(pageId, b1, b2) }
+                            )
+                        }
+                        val aiRestructureState = remember(
+                            aiProposal, isAiLoading, aiHierarchy, isAiHierarchyLoading,
+                            aiPageLayouts, isLoadingPageLayout, unfilteredPages,
+                            selectedPageIds, activeTargetPageIds, aiRestructureScope,
+                            aiRestructureError, isGeminiEnabled, aiToastApplied
+                        ) {
+                            AiRestructureState(
+                                proposal = aiProposal,
+                                isLoading = isAiLoading,
+                                hierarchy = aiHierarchy,
+                                isHierarchyLoading = isAiHierarchyLoading,
+                                pageLayouts = aiPageLayouts,
+                                isLoadingPageLayout = isLoadingPageLayout,
+                                unfilteredPages = unfilteredPages,
+                                selectedPageIds = selectedPageIds,
+                                activeTargetPageIds = activeTargetPageIds,
+                                restructureScope = aiRestructureScope,
+                                error = aiRestructureError,
+                                isGeminiEnabled = isGeminiEnabled,
+                                toastApplied = aiToastApplied
+                            )
+                        }
+                        val aiRestructureActions = remember {
+                            AiRestructureActions(
+                                onSelectActivePagesOnly = { bookRestructureViewModel.selectActivePagesOnly() },
+                                onSelectAllPages = { bookRestructureViewModel.selectAllPages() },
+                                onTogglePageSelection = { bookRestructureViewModel.togglePageSelection(it) },
+                                onSetScope = { bookRestructureViewModel.setAiRestructureScope(it) },
+                                onClearError = { bookRestructureViewModel.clearAiRestructureError() },
+                                onClearProposal = { bookRestructureViewModel.clearAiRestructureProposal() },
+                                onGenerateHierarchyProposal = { bookRestructureViewModel.generateAiHierarchyProposal(it) },
+                                onUpdateHierarchyManualEdit = { bookRestructureViewModel.updateHierarchyManualEdit(it) },
+                                onLoadPageLayoutProposal = { bookRestructureViewModel.loadPageLayoutProposal(it) },
+                                onLoadAllPageLayoutProposals = { bookRestructureViewModel.loadAllPageLayoutProposals(it) },
+                                onApplyHierarchyProposal = { bookRestructureViewModel.applyHierarchyProposal(it) }
+                            )
+                        }
+
                         AnalyticsRecommendationsTab(
                             context = context,
                             coroutineScope = coroutineScope,
-                            isCalculatingRecommendations = isCalculatingRecommendations,
-                            recommendations = recommendations,
-                            layoutProposals = layoutProposals,
-                            currentFilter = currentFilter,
-                            currentSort = currentSort,
-                            aiProposal = aiProposal,
-                            isAiLoading = isAiLoading,
-                            aiHierarchy = aiHierarchy,
-                            isAiHierarchyLoading = isAiHierarchyLoading,
-                            aiPageLayouts = aiPageLayouts,
-                            isLoadingPageLayout = isLoadingPageLayout,
-                            unfilteredPages = unfilteredPages,
-                            selectedPageIds = selectedPageIds,
-                            activeTargetPageIds = activeTargetPageIds,
-                            aiRestructureScope = aiRestructureScope,
-                            aiRestructureError = aiRestructureError,
-                            isGeminiEnabled = isGeminiEnabled,
-                            aiToastApplied = aiToastApplied,
-                            onNavigateBack = onNavigateBack,
-                            onApplyShortcutRecommendation = { rec, onRes ->
-                                pageViewModel.applyShortcutRecommendation(rec, onRes)
-                            },
-                            onSetProposalFilter = { pageSplitViewModel.setProposalFilter(it) },
-                            onSetProposalSort = { pageSplitViewModel.setProposalSort(it) },
-                            onGeneratePageSplitProposal = { pageSplitViewModel.generatePageSplitProposal(it) },
-                            onChangePageScanPattern = { id, pat -> pageSplitViewModel.changePageScanPattern(id, pat) },
-                            onChangeScanDelay = { pageSplitViewModel.changeScanDelay(it) },
-                            onApplySpacerRelocate = { pageId, b1, b2 -> pageSplitViewModel.applySpacerRelocate(pageId, b1, b2) },
-                            onSelectActivePagesOnly = { bookRestructureViewModel.selectActivePagesOnly() },
-                            onSelectAllPages = { bookRestructureViewModel.selectAllPages() },
-                            onTogglePageSelection = { bookRestructureViewModel.togglePageSelection(it) },
-                            onSetAiRestructureScope = { bookRestructureViewModel.setAiRestructureScope(it) },
-                            onClearAiRestructureError = { bookRestructureViewModel.clearAiRestructureError() },
-                            onClearAiRestructureProposal = { bookRestructureViewModel.clearAiRestructureProposal() },
-                            onGenerateAiHierarchyProposal = { bookRestructureViewModel.generateAiHierarchyProposal(it) },
-                            onUpdateHierarchyManualEdit = { bookRestructureViewModel.updateHierarchyManualEdit(it) },
-                            onLoadPageLayoutProposal = { bookRestructureViewModel.loadPageLayoutProposal(it) },
-                            onLoadAllPageLayoutProposals = { bookRestructureViewModel.loadAllPageLayoutProposals(it) },
-                            onApplyHierarchyProposal = { bookRestructureViewModel.applyHierarchyProposal(it) }
+                            shortcutWizardState = shortcutWizardState,
+                            shortcutWizardActions = shortcutWizardActions,
+                            layoutProposalsState = layoutProposalsState,
+                            layoutProposalsActions = layoutProposalsActions,
+                            aiRestructureState = aiRestructureState,
+                            aiRestructureActions = aiRestructureActions,
+                            onNavigateBack = onNavigateBack
                         )
                     }
                     2 -> {

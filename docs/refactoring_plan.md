@@ -19,9 +19,11 @@ Jeder Schritt ist so konzipiert, dass die App danach vollständig kompilierbar, 
 | 6 | PageViewModel-Aufteilung | ✅ umgesetzt (Call-/GridEditor-/PageSplit-/BookRestructure-VM) |
 | 7 | Law of Demeter | ✅ umgesetzt (Delegates `private`/`internal`) |
 | 8 | Button-Konfig-UI | ✅ umgesetzt + reviewt, Must-Fixes behoben, abnahmereif |
-| 8B | Gemini Nano entfernen (inkl. lokaler Vision) | 📋 Detailplan fertig — nach Phase-8-Commit |
-| 9 | Analytics-Tabs | 📋 Detailplan fertig |
-| 10–12 | MainActivity, SystemCallManager, Rest | 🆕 siehe Ende des Dokuments |
+| 8B | Gemini Nano entfernen (inkl. lokaler Vision) | ✅ umgesetzt + reviewt, Must-Fix behoben, abnahmereif |
+| 9 | Analytics-Tabs | 🔧 umgesetzt, Review: 1 Must-Fix offen (Scroll/Padding) |
+| 10 | MainActivity | 📋 Detailplan fertig |
+| 11 | SystemCallManager | 📋 Detailplan fertig |
+| 12 | PageSplitDialogs / GridEditor / DeviceActionFields | 📋 Detailplan fertig (3 Mini-Phasen) |
 
 ---
 
@@ -463,6 +465,22 @@ Fix: Verhaltensparität wiederherstellen — diese Callbacks wieder als reine Se
 
 **Smoke-Test**: Bestehenden Nano-Button öffnen → erscheint als Gemini (Cloud), Speichern konvertiert; Vision-Button ausführen → Cloud-Beschreibung; Profil laden/exportieren/importieren → keine Fehler; Template-Liste zeigt kein „Gemini Nano (Lokal)" mehr.
 
+#### Review-Befund 8B (Claude, 2026-06-12) — 1 Must-Fix
+
+Umsetzung fast vollständig sauber: Nano-Action/UI/Settings/Strings/Dependency restlos entfernt ✅ (Grep über `src/` ist sauber); Tombstone-Klasse erhalten ✅; Konvertierung Nano→Gemini an allen Grenzen (UI-Mapping, `ActionMapper`-Import/Export, `ActionCategoryRegistry`-Fallback, `GridButton`-Icon) ✅; Vision Cloud-only (`useCloud` wird ignoriert, `buildAction` setzt `true`, Handler übergibt nichts mehr) ✅; `useLocalGenerativeAi` komplett raus inkl. ProfileConfig/Mapper/Tests ✅; `appcompat` explizit ergänzt (war vorher transitiv über die entfernte ML-Kit-Dependency) ✅; Tests grün ✅. Bonus: Kleinigkeiten aus Phase 8 nachgezogen (`AudioRecordingController.kt` extrahiert, Dialog jetzt 330 Z.; `updateCachedState` in `LaunchedEffect`).
+
+**🐛 Must-Fix: Bestandsgeräte behalten das Nano-Template — und die Cloud kann es zurücksyncen.**
+`ensureBuiltInTemplates()` seedet nur **additiv** (insert missing). Das Entfernen aus `generateBuiltInTemplatesList()` löscht die vorhandene `builtin_gemini_nano`-Zeile auf Bestandsgeräten nicht — sie bietet dort weiter Nano-Buttons an. Zusätzlich sind `buttonTemplates` Teil des Cloud-Book-Payloads (`BookMergeEngine.kt:118`), eine einmalige Löschung könnte also per Sync von einem anderen Gerät zurückkommen.
+* **Fix (selbstheilend, nicht einmalig)**: In `ensureBuiltInTemplates()` eine Liste stillgelegter Built-in-Ids pflegen und bei jedem Start löschen:
+  ```kotlin
+  private val retiredBuiltInIds = setOf("builtin_gemini_nano")
+  // in ensureBuiltInTemplates(), nach dem Laden der existierenden Templates:
+  existing.filter { it.id in retiredBuiltInIds }
+      .forEach { buttonTemplateDao.deleteTemplate(it) }
+  ```
+  Da `ensureBuiltInTemplates()` bei jedem App-Start läuft, heilt das auch Sync-Resurrection.
+* **Test**: Unit-Test — DB enthält `builtin_gemini_nano`, `ensureBuiltInTemplates()` ausführen, Template ist weg; reguläre Built-ins bleiben.
+
 ---
 
 ### Phase 9: Analytics-Bereich — Detailplan (Rev. 1, 2026-06-12)
@@ -508,11 +526,104 @@ Fix: Verhaltensparität wiederherstellen — diese Callbacks wieder als reine Se
 4. KI-Restrukturierung: Seiten auswählen → Hierarchie generieren → Knoten bearbeiten → Layouts laden → anwenden; Token-Warnung und Fehlerfall (Gemini deaktiviert) prüfen.
 5. Button-Statistik-Tab im ButtonConfigDialog (KPIs, Verlauf, Empfehlung anwenden).
 
-### Phase 10: MainActivity entschlacken (731 Zeilen)
-* Lifecycle-, Permission-, Locale- und Screen-State-Logik in eigene Klassen/Manager herauslösen.
+#### Review-Befund Phase 9 (Claude, 2026-06-12) — 1 Must-Fix
 
-### Phase 11: SystemCallManager (637 Zeilen)
-* Review (Telefonie ist sicherheitskritisch), danach Aufteilung z. B. in Call-State-Tracking, Audio-Routing und Intent-Handling.
+Struktur wie geplant: RecommendationsTab 1251→72 Z. (Orchestrierung), ButtonStatistics 752→81 Z. + 5 Sektionen unter `analytics/buttonstats/`, 3 State/Actions-Bündel mit korrekten `remember`-Keys im Dashboard, `ButtonStatsCalculations` extrahiert + getestet, lokale States in die richtigen Sektionen gewandert, Aufrufer aktualisiert, Tests grün. Der Reflection-Hack in `computeContextStats` ist Altbestand (1:1 verschoben, ok).
 
-### Phase 12: Restliche Kandidaten
-* `ui/pages/PageSplitDialogs.kt` (614), `ui/components/GridEditorContent.kt` (591), `ui/pages/actions/DeviceActionFields.kt` (578).
+**🐛 Must-Fix: Doppeltes Scroll + Padding im RecommendationsTab.**
+Der alte Tab emittierte seine Sektionen **direkt** in die Dashboard-Column, die bereits `verticalScroll` + `padding(screenPadding…)` + `spacedBy(sectionSpacing)` hat (unverändert). Der neue Tab-Root bringt zusätzlich `Modifier.verticalScroll(rememberScrollState()).padding(16.dp)` mit → verschachtelte gleichgerichtete Scroll-Container und doppeltes Padding (sichtbare Layout-Änderung, Gesten-Risiko).
+* Fix: Im Root-`Column` von `AnalyticsRecommendationsTab` `verticalScroll` **und** `padding(16.dp)` entfernen; `Arrangement.spacedBy(LocalDimensions.current.sectionSpacing)` statt fixer 16.dp, damit der Sektionsabstand dem alten Dashboard-Abstand entspricht.
+
+### Phase 10: MainActivity entschlacken — Detailplan (Rev. 1, 2026-06-12)
+
+**Datei**: `app/src/main/java/com/andreas_kratzer/ghosttalk/MainActivity.kt` (731 Z., aktuell 11 `@Inject`-Felder, 4 ViewModels, ~10 Coroutine-Blöcke im `onCreate`).
+
+**Ist-Analyse (Claude, im Code verifiziert)** — `onCreate` ist eine God-Methode mit klar trennbaren Blöcken:
+1. Locale-Restore (Z. 128–135), VoiceDebugger, SessionTracker
+2. Update-Verdrahtung: Launcher-Registrierung, Auto-Install-Collector, Manual-Check-Collector (Z. 141–159, 259–283)
+3. VocalSwitchService-Lifecycle (Z. 161–184)
+4. **Startup-Initialisierung** (Z. 197–243): Setup-Migration, SampleData, Active-Book-Auflösung mit DB-Verifikation, Scheduler-Kickoffs, `purgeInstallUpdateButtons`
+5. Auth-/Permission-Collector (Z. 245–257)
+6. Screen-State- & Call-Lockscreen-Anwendung (Z. 285–312)
+7. Security-Timeout-Loop + **Foreground-Sync-Loop** (Z. 314–340)
+8. `setContent`-Block (~115 Z. inkl. Call-Overlays + Black-Overlay)
+9. Share-Import: `processSharedZip`/`importBookZip`/`importTtsCacheZip` (Z. 615–730, ~115 Z., hartkodierte deutsche Toasts)
+10. `triggerBackgroundSync`/`triggerForegroundSyncSilently` (Z. 475–531) sind **Duplikate** — einziger Unterschied ist die `ExistingWorkPolicy`.
+
+**Vorgehen** (jeder Schritt kompilierbar + committen; Verifikation: `assembleDebug` + `testDebugUnitTest` + Smoke unten):
+
+#### Schritt 10.1: Sync-Trigger deduplizieren
+* Neue Klasse `core-cloud/.../SyncWorkRequester` (oder app-Modul `domain/`): eine Methode `enqueueOneTimeSync(policy: ExistingWorkPolicy)` mit der gemeinsamen Constraints-Logik (SAF → kein Netzwerk-Constraint). MainActivity ruft sie aus `onStop` (REPLACE) und der Periodik-Loop (KEEP).
+* **Unit-Test**: Constraints-Entscheidung (SAF vs. Cloud) als pure Funktion testen.
+
+#### Schritt 10.2: Share-Import extrahieren
+* Neue Klasse `SharedZipImportHandler` (app-Modul, `@Inject`-Konstruktor: `PageImportExportProvider`, `SettingsRepository`): `processSharedZip(uri, contentResolver, onResult: (ImportResult) -> Unit)`. ZIP-Typ-Erkennung (`backup.json` vs. `tts_cache/`) als pure Funktion `detectZipType(stream)` → **Unit-Test**.
+* Toast-Anzeige bleibt in der Activity (Ergebnis-Callback); deutsche Strings dabei in `strings.xml` überführen (kleine Ausnahme von der i18n-Nicht-Ziel-Regel, da sowieso angefasst).
+
+#### Schritt 10.3: Startup-Initialisierung extrahieren
+* Neue Klasse `AppStartupInitializer` (app-Modul): kapselt Block 4 (Migration-Prefs, `initializeIfNeeded`, Active-Book-Verifikation/-Fallback, Scheduler, Purge). Rückgabe `suspend fun run(): String` (finale Book-Id); MainActivity setzt danach nur noch `pageViewModel.setActiveBookId(...)` + `isDbInitialized = true`.
+* **Unit-Test**: Active-Book-Fallback (persistierte Id existiert nicht mehr → initialisierte Id).
+
+#### Schritt 10.4: UI-Inhalt als eigenes Composable
+* `setContent`-Inhalt nach `ui/main/MainAppContent.kt` verschieben (Theme, CompositionLocals, NavHost, Call-Overlays, Black-Overlay). Activity übergibt ViewModels + `navControllerForTesting`-Setter.
+* Call-Overlay-`when` dabei als eigenes `CallOverlayHost`-Composable in `ui/pages/sections/`.
+
+#### Schritt 10.5: Kleinkram (mit 10.4 committen)
+* Leeres `onResume()` entfernen; `globalPageViewModel` durch direkte `pageViewModel`-Nutzung ersetzen (ist dieselbe Instanz, `lateinit`-Check in `dispatchKeyEvent` entfällt); FQN-Imports aufräumen.
+* **Beobachtung dokumentieren (nicht fixen)**: `onNewIntent` ruft `handleIntent` sofort auf, `onCreate` erst nach DB-Init — Import vor DB-Init wäre theoretisch möglich.
+* Zielgröße: MainActivity < 300 Z. (Lifecycle, Launcher, dispatchKeyEvent, dünne Verdrahtung).
+
+**Smoke-Test**: App-Kaltstart (Setup abgeschlossen + nicht abgeschlossen), Buch-ZIP + TTS-Cache-ZIP über „Teilen" importieren, App minimieren (Sync-Trigger im Log), User-Mode + Update-Banner, eingehender simulierter Anruf (Overlay + Lockscreen-Flags), Black-Mode.
+
+---
+
+### Phase 11: SystemCallManager aufteilen — Detailplan (Rev. 1, 2026-06-12)
+
+**Datei**: `app/src/main/java/com/andreas_kratzer/ghosttalk/core/call/SystemCallManager.kt` (637 Z., `@Singleton`, implementiert `CallActionProxy`). **Keine Tests vorhanden** — Telefonie ist für AAC-Nutzer sicherheitskritisch, daher: erst Logik testbar herausziehen, dann umbauen, Verhalten strikt beibehalten.
+
+**Ist-Analyse — fünf vermischte Verantwortungen**:
+1. Call-State-Maschine: Telecom-Callback, `updateCallState`-Mapping, Simulation (RINGING/DIALING/ACTIVE-Zweige)
+2. Auto-Aktionen: `setupRingingTimers` (Inaktiv-Timer), `incrementScanCycle` (Scan-Zyklen-Limit), `stopAutoActions`
+3. Audio-Routing: `configureAudioForConnectedCall` (mit Retry-Kaskade), `revertAudioMode`, `setSpeakerphoneEnabled` (SDK-S-Sonderpfad + Legacy-Fallback)
+4. TTS-Ansagen: `announceCaller`, `playIntroSpeech`, Dauer-Feedback im `durationRunnable` mit **~70 Zeilen hartkodierter DE/EN-Textlogik**
+5. Kontakt-Lookup: `getContactName` (2-stufig, Enterprise-URIs, ~55 Z.)
+
+**Vorgehen**:
+
+#### Schritt 11.1: Pure Logik herausziehen + Tests (kein Verhalten ändern)
+* `CallDurationAnnouncer.kt`: `fun formatDurationAnnouncement(seconds: Int, isEnglish: Boolean): String?` (gibt nur bei Intervall-Treffer Text zurück) + `fun maxDurationReachedText(isEnglish: Boolean)` — **erschöpfender Unit-Test** (Sekunden/Minuten/Singular/Plural/Intervall, DE+EN).
+* `CallAutoActionPolicy.kt`: pure Entscheidungsfunktionen `shouldAutoActOnScanCycle(cycles, limit, action)` / Timer-Parameter — **Unit-Test**.
+* `SystemCallManager` ruft beide auf; Verhalten identisch.
+
+#### Schritt 11.2: `CallContactResolver` extrahieren
+* `getContactName` in eigene `@Singleton`-Klasse `CallContactResolver` (Context-injiziert). Wird auch vom Contacts-Filter in `onCallAdded` genutzt.
+
+#### Schritt 11.3: `CallAudioController` extrahieren
+* `configureAudioForConnectedCall`, `revertAudioMode`, `setSpeakerphoneEnabled` + `inCallService`-Referenz in `CallAudioController` (`@Singleton`; `setInCallService` wandert mit, `GhostTalkInCallService` entsprechend anpassen).
+* Settings-Abhängigkeit: nur `autoEnableSpeakerphone` — als Parameter übergeben oder `CallSettings` injizieren.
+
+#### Schritt 11.4: `CallAutoActionController` extrahieren
+* Ring-Timer + Scan-Zyklen-Zählung als eigene Klasse; `answer`/`reject` als Konstruktor-Lambdas oder schmales Interface, damit kein Zirkel zu `SystemCallManager` entsteht.
+* `incrementScanCycle()`-Aufrufer (ScanCoordinator/Delegate) umverdrahten.
+
+#### Schritt 11.5: Restklasse + Abschluss
+* `SystemCallManager` behält: StateFlows, Telecom-Lifecycle (`onCallAdded`/`onCallRemoved`/`updateCallState`), Simulation, `startCall`/`answerCall`/`hangUp`, Dauer-Timer-Gerüst. Zielgröße < 300 Z.
+* Optional (empfohlen, da Texte sowieso angefasst): DE/EN-Ansagetexte nach `strings.xml` (Context-Locale statt eigener `isEn`-Logik).
+
+**Smoke-Test (Pflicht, mit Simulation)**: simulierter eingehender Anruf → Ansage, Annehmen, Dauer-Feedback nach Intervall, Auflegen; simulierter ausgehender Anruf → Auto-Connect nach 3 s, Intro-Speech; Auto-Antwort/-Ablehnung (User-Mode-Scan-Limit und Inaktiv-Timer); Speakerphone-Auto; max. Anrufdauer → Ansage + Auto-Hangup; echter Anruf wenn möglich (Default-Dialer).
+
+---
+
+### Phase 12: Restliche Kandidaten (drei unabhängige Mini-Phasen)
+
+#### 12a: `ui/pages/PageSplitDialogs.kt` (614 Z.)
+* Enthält bereits 4 Composables; nur `PageSplitWizardDialog` (Z. 230–559, ~330 Z.) ist zu groß.
+* Aufteilen: Datei in `pagesplit/`-Unterordner; Wizard-Schritte als eigene Composables (`PageSplitPreviewStep`, `PageSplitAssignStep`, …, je nach innerer Struktur), `DraggableChip` nach `ui/components/`.
+
+#### 12b: `ui/components/GridEditorContent.kt` (591 Z.)
+* Ein Composable (Z. 77–591) + Drag&Drop-Datenklassen. **Vorsicht**: Drag-State ist eng verflochten — beim Aufteilen Drag-Quelle/-Ziel-Logik zuerst als eigener State-Holder (`rememberGridDragState`) kapseln, dann Render-Teile (Zellen, Insert-Targets, Drag-Overlay) als Sektions-Composables.
+* Smoke: Button verschieben (Swap + Insert), Zeile verschieben, Drag abbrechen.
+
+#### 12c: `ui/pages/actions/DeviceActionFields.kt` (578 Z.)
+* Ein Composable (Z. 92–578) mit Feldgruppen je `DeviceActionType`. Aufteilen nach dem Muster der bestehenden Nachbarn (`CallFields`, `MessagingFields`): `VolumeActionFields`, `DateTimeReadFields` (Präfix/Suffix/Offset/Wochentag), `NotificationActionFields`; `getDeviceActionIcon` ggf. mit dem Icon-Mapping aus `ActionTypeDropdownSection` zusammenführen.
+* Smoke: je Aktionstyp einmal die Felder durchschalten (Lautstärke, Datum/Zeit, Nachricht, Kontakt).
