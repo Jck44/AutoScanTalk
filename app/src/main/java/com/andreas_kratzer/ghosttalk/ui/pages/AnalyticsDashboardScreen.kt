@@ -44,12 +44,12 @@ import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
 import com.andreas_kratzer.ghosttalk.ui.pages.analytics.AnalyticsDetailsTab
 import com.andreas_kratzer.ghosttalk.ui.pages.analytics.AnalyticsOverviewTab
 import com.andreas_kratzer.ghosttalk.ui.pages.analytics.AnalyticsRecommendationsTab
-import com.andreas_kratzer.ghosttalk.ui.pages.analytics.recommendations.ShortcutWizardState
-import com.andreas_kratzer.ghosttalk.ui.pages.analytics.recommendations.ShortcutWizardActions
-import com.andreas_kratzer.ghosttalk.ui.pages.analytics.recommendations.LayoutProposalsState
-import com.andreas_kratzer.ghosttalk.ui.pages.analytics.recommendations.LayoutProposalsActions
-import com.andreas_kratzer.ghosttalk.ui.pages.analytics.recommendations.AiRestructureState
 import com.andreas_kratzer.ghosttalk.ui.pages.analytics.recommendations.AiRestructureActions
+import com.andreas_kratzer.ghosttalk.ui.pages.analytics.recommendations.AiRestructureState
+import com.andreas_kratzer.ghosttalk.ui.pages.analytics.recommendations.LayoutProposalsActions
+import com.andreas_kratzer.ghosttalk.ui.pages.analytics.recommendations.LayoutProposalsState
+import com.andreas_kratzer.ghosttalk.ui.pages.analytics.recommendations.ShortcutWizardActions
+import com.andreas_kratzer.ghosttalk.ui.pages.analytics.recommendations.ShortcutWizardState
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date

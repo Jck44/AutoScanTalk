@@ -8,11 +8,11 @@ import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.K
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_GEMINI_VERIFIED
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_HAS_ACCEPTED_PAGE_SPLIT_OPT_IN
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_USE_GEMINI_API_KEY
+import com.andreas_kratzer.ghosttalk.core.settings.GenAiSettings
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.flow.StateFlow
 import javax.inject.Inject
 import javax.inject.Singleton
-import com.andreas_kratzer.ghosttalk.core.settings.GenAiSettings
-import kotlinx.coroutines.flow.StateFlow
 
 @Singleton
 class GenAiSettingsRepository @Inject constructor(

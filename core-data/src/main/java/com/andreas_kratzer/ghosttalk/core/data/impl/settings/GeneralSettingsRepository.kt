@@ -11,9 +11,9 @@ import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.K
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_SYNC_LOGS_STORAGE
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_TEMPLATE_SORT_ORDER
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_THEME_MODE
+import com.andreas_kratzer.ghosttalk.core.settings.GeneralSettings
 import javax.inject.Inject
 import javax.inject.Singleton
-import com.andreas_kratzer.ghosttalk.core.settings.GeneralSettings
 
 @Singleton
 class GeneralSettingsRepository @Inject constructor(

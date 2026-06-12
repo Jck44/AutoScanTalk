@@ -1,6 +1,5 @@
 package com.andreas_kratzer.ghosttalk.core.tts
 
-import android.util.Log
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow

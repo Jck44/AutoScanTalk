@@ -25,7 +25,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.andreas_kratzer.ghosttalk.R
-import com.andreas_kratzer.ghosttalk.core.model.*
+import com.andreas_kratzer.ghosttalk.core.model.ControlDeviceButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.DeviceActionType
+import com.andreas_kratzer.ghosttalk.core.model.FrequentActionButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.GeminiButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.GeminiSearchButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.SmartHomeButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.SmartPredictionButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.WeatherButtonAction
 import com.andreas_kratzer.ghosttalk.core.ui.components.SettingsEditTextItem
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
 import com.andreas_kratzer.ghosttalk.feature.settings.domain.FeatureGuard

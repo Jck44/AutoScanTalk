@@ -11,8 +11,8 @@ import com.andreas_kratzer.ghosttalk.core.domain.BackgroundScheduler
 import com.andreas_kratzer.ghosttalk.core.model.Book
 import io.mockk.coEvery
 import io.mockk.every
-import io.mockk.mockk
 import io.mockk.just
+import io.mockk.mockk
 import io.mockk.runs
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals

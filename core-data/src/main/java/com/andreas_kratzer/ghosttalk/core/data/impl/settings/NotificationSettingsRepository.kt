@@ -7,13 +7,12 @@ import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.K
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_MONITORED_NOTIFICATION_APPS
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_NOTIFICATION_READING_ENABLED
 import com.andreas_kratzer.ghosttalk.core.settings.AutoReadMode
+import com.andreas_kratzer.ghosttalk.core.settings.NotificationSettings
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-
 import javax.inject.Inject
 import javax.inject.Singleton
-import com.andreas_kratzer.ghosttalk.core.settings.NotificationSettings
 
 @Singleton
 class NotificationSettingsRepository @Inject constructor(

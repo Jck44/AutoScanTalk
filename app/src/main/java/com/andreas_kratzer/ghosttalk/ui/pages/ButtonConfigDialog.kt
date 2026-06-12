@@ -1,8 +1,6 @@
 @file:Suppress("DEPRECATION", "UNUSED_PARAMETER")
 package com.andreas_kratzer.ghosttalk.ui.pages
 
-import android.content.Context
-import android.view.WindowManager
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -29,7 +27,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
 import com.andreas_kratzer.ghosttalk.R
@@ -43,12 +40,10 @@ import com.andreas_kratzer.ghosttalk.core.model.Page
 import com.andreas_kratzer.ghosttalk.core.model.PageTemplate
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
 import com.andreas_kratzer.ghosttalk.feature.settings.domain.FeatureGuard
+import com.andreas_kratzer.ghosttalk.ui.pages.analytics.buttonstats.ButtonStatisticsTabContent
 import com.andreas_kratzer.ghosttalk.ui.pages.components.ActionTypeId
 import com.andreas_kratzer.ghosttalk.ui.pages.components.ActionTypeResolver
-import com.andreas_kratzer.ghosttalk.ui.pages.components.ButtonConfigDialogState
 import com.andreas_kratzer.ghosttalk.ui.pages.components.rememberButtonConfigDialogState
-import com.andreas_kratzer.ghosttalk.ui.pages.analytics.buttonstats.ButtonStatisticsTabContent
-import java.io.File
 
 @Composable
 fun ButtonConfigDialog(

@@ -39,7 +39,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.andreas_kratzer.ghosttalk.R
-import com.andreas_kratzer.ghosttalk.core.model.BookHierarchyProposal
 import com.andreas_kratzer.ghosttalk.core.model.HierarchyPageNode
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch

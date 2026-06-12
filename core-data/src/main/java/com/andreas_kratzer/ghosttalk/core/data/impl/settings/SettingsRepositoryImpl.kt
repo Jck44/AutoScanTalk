@@ -3,12 +3,12 @@ package com.andreas_kratzer.ghosttalk.core.data.impl.settings
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.SharedPreferences
+import com.andreas_kratzer.ghosttalk.core.SecuritySettings
 import com.andreas_kratzer.ghosttalk.core.data.BookRepository
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.core.database.toDomain
 import com.andreas_kratzer.ghosttalk.core.database.toEntity
 import com.andreas_kratzer.ghosttalk.core.di.ApplicationScope
-import com.andreas_kratzer.ghosttalk.core.model.CloudAuthType
 import com.andreas_kratzer.ghosttalk.core.model.ProfileConfig
 import com.andreas_kratzer.ghosttalk.core.model.SettingsProfile
 import com.andreas_kratzer.ghosttalk.core.settings.AdvancedSettings
@@ -21,7 +21,6 @@ import com.andreas_kratzer.ghosttalk.core.settings.ScanningSettings
 import com.andreas_kratzer.ghosttalk.core.settings.SmartHomeSettings
 import com.andreas_kratzer.ghosttalk.core.settings.TtsSettings
 import com.andreas_kratzer.ghosttalk.core.settings.UserSettings
-import com.andreas_kratzer.ghosttalk.core.SecuritySettings
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow

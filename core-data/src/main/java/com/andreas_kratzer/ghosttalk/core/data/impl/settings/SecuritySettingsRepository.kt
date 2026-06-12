@@ -1,6 +1,7 @@
 package com.andreas_kratzer.ghosttalk.core.data.impl.settings
 
 import android.content.SharedPreferences
+import com.andreas_kratzer.ghosttalk.core.SecuritySettings
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_BIOMETRIC_ENABLED
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_IS_PIN_REQUIRED_FOR_DELETION
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_SECURITY_PIN
@@ -12,7 +13,6 @@ import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.K
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_SECURITY_REQUIRED_FOR_SETTINGS
 import javax.inject.Inject
 import javax.inject.Singleton
-import com.andreas_kratzer.ghosttalk.core.SecuritySettings
 
 @Singleton
 class SecuritySettingsRepository @Inject constructor(

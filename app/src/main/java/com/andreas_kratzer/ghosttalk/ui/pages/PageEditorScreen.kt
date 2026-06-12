@@ -31,8 +31,8 @@ import com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkScaffold
 import com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons
 import com.andreas_kratzer.ghosttalk.ui.components.GridEditorContent
 import com.andreas_kratzer.ghosttalk.ui.components.ValidatedTextField
-import com.andreas_kratzer.ghosttalk.ui.pages.pagesplit.PageSplitOptInDialog
 import com.andreas_kratzer.ghosttalk.ui.pages.pagesplit.PageSplitManualPromptDialog
+import com.andreas_kratzer.ghosttalk.ui.pages.pagesplit.PageSplitOptInDialog
 import com.andreas_kratzer.ghosttalk.ui.pages.pagesplit.PageSplitWizardDialog
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch

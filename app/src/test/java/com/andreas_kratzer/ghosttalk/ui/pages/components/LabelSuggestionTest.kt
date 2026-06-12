@@ -2,7 +2,11 @@ package com.andreas_kratzer.ghosttalk.ui.pages.components
 
 import android.content.Context
 import com.andreas_kratzer.ghosttalk.R
-import com.andreas_kratzer.ghosttalk.core.model.*
+import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
+import com.andreas_kratzer.ghosttalk.core.model.NavigateToPageButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.Page
+import com.andreas_kratzer.ghosttalk.core.model.SpeakTextButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.SpokenTextMode
 import io.mockk.every
 import io.mockk.mockk
 import org.junit.Assert.assertEquals

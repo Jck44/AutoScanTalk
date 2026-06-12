@@ -3,9 +3,9 @@ package com.andreas_kratzer.ghosttalk.core.data.impl.settings
 import android.content.SharedPreferences
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_KEEP_SCREEN_ON_USER_MODE
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_USER_MODE_SCREEN_BEHAVIOR
+import com.andreas_kratzer.ghosttalk.core.settings.UserSettings
 import javax.inject.Inject
 import javax.inject.Singleton
-import com.andreas_kratzer.ghosttalk.core.settings.UserSettings
 
 @Singleton
 class UserSettingsRepository @Inject constructor(

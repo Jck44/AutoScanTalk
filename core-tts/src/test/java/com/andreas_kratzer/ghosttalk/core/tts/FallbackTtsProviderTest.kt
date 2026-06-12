@@ -1,10 +1,10 @@
 package com.andreas_kratzer.ghosttalk.core.tts
 
+import kotlinx.coroutines.flow.StateFlow
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import kotlinx.coroutines.flow.StateFlow
 import java.util.Locale
 
 class FallbackTtsProviderTest {

@@ -202,7 +202,7 @@ Empfohlene Reihenfolge (steigende Verflechtung): `UserSettings` → `Notificatio
 
 #### Schritt 4.2.4: Fassade per Interface-Delegation schrumpfen
 * In `SettingsRepositoryImpl` die ~265 Delegations-Einzeiler durch Kotlin-`by`-Delegation ersetzen:
-  ```kotlin
+  ```text
   class SettingsRepositoryImpl @Inject constructor(…) :
       SettingsRepository,
       TtsSettings by voiceSettings,
@@ -404,7 +404,7 @@ In `ButtonSettingsTabContent` wurde an **alle** `ActionConfigFields`-Callbacks `
 Fix: Verhaltensparität wiederherstellen — diese Callbacks wieder als reine Setter (`{ state.x = it }`); `onAutoSave()` nur dort behalten, wo es der alte Code hatte: onRankChange, onPredictionTypeChange, onIncludeWeekdayChange, onIgnoreEmojisChange, onUseCloudChange, onPlayShutterSoundChange, alle 5 media*-Callbacks, onTargetPageIdChange via `NavigationActionFields.onPageSelected` (dort war es schon), onContactSelected→saveWithAction.
 
 **Must-Fix-Test (ersetzt die Stichproben-Tests)**: `ButtonActionFactoryTest` erschöpfend machen — hätte Must-Fix 1 gefangen:
-```kotlin
+```text
 @Test fun roundtripAllDeviceActionTypes() {
     for (type in DeviceActionType.entries) {
         val id = ButtonActionFactory.actionTypeIdOf(ControlDeviceButtonAction(type))
@@ -472,7 +472,7 @@ Umsetzung fast vollständig sauber: Nano-Action/UI/Settings/Strings/Dependency r
 **🐛 Must-Fix: Bestandsgeräte behalten das Nano-Template — und die Cloud kann es zurücksyncen.**
 `ensureBuiltInTemplates()` seedet nur **additiv** (insert missing). Das Entfernen aus `generateBuiltInTemplatesList()` löscht die vorhandene `builtin_gemini_nano`-Zeile auf Bestandsgeräten nicht — sie bietet dort weiter Nano-Buttons an. Zusätzlich sind `buttonTemplates` Teil des Cloud-Book-Payloads (`BookMergeEngine.kt:118`), eine einmalige Löschung könnte also per Sync von einem anderen Gerät zurückkommen.
 * **Fix (selbstheilend, nicht einmalig)**: In `ensureBuiltInTemplates()` eine Liste stillgelegter Built-in-Ids pflegen und bei jedem Start löschen:
-  ```kotlin
+  ```text
   private val retiredBuiltInIds = setOf("builtin_gemini_nano")
   // in ensureBuiltInTemplates(), nach dem Laden der existierenden Templates:
   existing.filter { it.id in retiredBuiltInIds }

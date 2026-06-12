@@ -11,11 +11,11 @@ import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.K
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_SWITCH_ACTIVATION_KEY
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_VOCAL_SWITCH_ENABLED
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_VOLUME_KEYS_ACTIVATE
-import javax.inject.Inject
-import javax.inject.Singleton
-import javax.inject.Provider
 import com.andreas_kratzer.ghosttalk.core.settings.ScanningSettings
 import kotlinx.coroutines.flow.StateFlow
+import javax.inject.Inject
+import javax.inject.Provider
+import javax.inject.Singleton
 
 @Singleton
 class ScanningSettingsRepository @Inject constructor(
