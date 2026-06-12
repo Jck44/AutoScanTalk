@@ -140,7 +140,11 @@ open class TextToSpeechHelper @Inject constructor(
             if (currentProvider is FallbackTtsProvider) {
                 _isFallbackActiveFlow.value = false
             }
-            currentProvider.speak(text, queueMode, onDone, onError)
+            val resolvedOnError: (String) -> Unit = onError ?: { error ->
+                Log.w("TextToSpeechHelper", "No onError provided, completing via onDone: $error")
+                onDone?.invoke()
+            }
+            currentProvider.speak(text, queueMode, onDone, resolvedOnError)
         }
     }
 
@@ -159,7 +163,11 @@ open class TextToSpeechHelper @Inject constructor(
             if (provider is FallbackTtsProvider) {
                 _isFallbackActiveFlow.value = false
             }
-            provider.speakRouted(text, deviceAddress, queueMode, isForCues, onDone, onError)
+            val resolvedOnError: (String) -> Unit = onError ?: { error ->
+                Log.w("TextToSpeechHelper", "No onError provided, completing via onDone: $error")
+                onDone?.invoke()
+            }
+            provider.speakRouted(text, deviceAddress, queueMode, isForCues, onDone, resolvedOnError)
         }
     }
 

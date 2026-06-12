@@ -10,6 +10,7 @@ interface PageRepository {
     suspend fun getAllPages(): List<Page>
     suspend fun getPagesForBook(bookId: String): List<Page>
     suspend fun insertPage(page: Page)
+    suspend fun insertPageRaw(page: Page)
     suspend fun updatePage(page: Page)
     suspend fun updatePageSettingsOnly(page: Page)
     suspend fun movePages(fromPage: Page, toPage: Page)

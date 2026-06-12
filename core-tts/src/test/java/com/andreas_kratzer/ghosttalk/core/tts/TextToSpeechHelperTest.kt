@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import org.junit.After
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -184,5 +185,43 @@ class TextToSpeechHelperTest {
         }
         threads.forEach { it.start() }
         threads.forEach { it.join() }
+    }
+
+    @Test
+    fun `speakRouted with elevenlabs engine and failing primary advances caller exactly once`() {
+        ttsEngineFlow.value = "elevenlabs"
+
+        val errorSlot = io.mockk.slot<(String) -> Unit>()
+        every {
+            mockElevenLabsProvider.speakRouted(any(), any(), any(), any(), any(), capture(errorSlot))
+        } answers {
+            errorSlot.captured.invoke("API Error")
+        }
+
+        var doneCount = 0
+        helper.speakRouted("Test text", null, onDone = { doneCount++ })
+
+        val androidDoneSlot = io.mockk.slot<() -> Unit>()
+        verify {
+            mockAndroidProvider.speakRouted("Test text", null, any(), any(), capture(androidDoneSlot), any())
+        }
+        androidDoneSlot.captured.invoke()
+
+        assertEquals(1, doneCount)
+    }
+
+    @Test
+    fun `speakRouted without onError completes via onDone when provider fails`() {
+        val errorSlot = io.mockk.slot<(String) -> Unit>()
+        every {
+            mockAndroidProvider.speakRouted(any(), any(), any(), any(), any(), capture(errorSlot))
+        } answers {
+            errorSlot.captured.invoke("Test Error")
+        }
+
+        var doneCount = 0
+        helper.speakRouted("Test text", null, onDone = { doneCount++ })
+
+        assertEquals(1, doneCount)
     }
 }

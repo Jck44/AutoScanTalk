@@ -102,7 +102,8 @@ class PageImportExportManagerTest {
         """.trimIndent()
 
         val pageSlot = slot<Page>()
-        coEvery { pageRepository.insertPage(capture(pageSlot)) } returns Unit
+        coEvery { pageRepository.insertPage(any()) } returns Unit
+        coEvery { pageRepository.insertPageRaw(capture(pageSlot)) } returns Unit
 
         val result = manager.importFromJson(jsonString, "test_book")
 
@@ -149,7 +150,8 @@ class PageImportExportManagerTest {
         """.trimIndent()
 
         val pageSlot = slot<Page>()
-        coEvery { pageRepository.insertPage(capture(pageSlot)) } returns Unit
+        coEvery { pageRepository.insertPage(any()) } returns Unit
+        coEvery { pageRepository.insertPageRaw(capture(pageSlot)) } returns Unit
         
         // Mock holdingTimeMillis setter (actually mockk relaxed handles it, but let's be explicit if needed)
         // In this case, we just check if it was called via the verify below.
@@ -204,7 +206,8 @@ class PageImportExportManagerTest {
         """.trimIndent()
 
         val pageSlot = slot<Page>()
-        coEvery { pageRepository.insertPage(capture(pageSlot)) } returns Unit
+        coEvery { pageRepository.insertPage(any()) } returns Unit
+        coEvery { pageRepository.insertPageRaw(capture(pageSlot)) } returns Unit
 
         manager.importFromJson(jsonString, "book1")
 
@@ -257,7 +260,8 @@ class PageImportExportManagerTest {
         """.trimIndent()
 
         val pageSlot = slot<Page>()
-        coEvery { pageRepository.insertPage(capture(pageSlot)) } returns Unit
+        coEvery { pageRepository.insertPage(any()) } returns Unit
+        coEvery { pageRepository.insertPageRaw(capture(pageSlot)) } returns Unit
 
         manager.importFromJson(jsonString, "book1")
 
@@ -319,7 +323,8 @@ class PageImportExportManagerTest {
         
         coEvery { bookRepository.getBookById("book1") } returns com.andreas_kratzer.ghosttalk.core.model.Book("book1", "Old Name")
         coEvery { bookRepository.updateBook(capture(bookSlot)) } returns Unit
-        coEvery { pageRepository.insertPage(capture(pageSlot)) } returns Unit
+        coEvery { pageRepository.insertPage(any()) } returns Unit
+        coEvery { pageRepository.insertPageRaw(capture(pageSlot)) } returns Unit
 
         manager.importFromJson(jsonString, "book1")
 
@@ -352,6 +357,7 @@ class PageImportExportManagerTest {
 
         val capturedPages = mutableListOf<Page>()
         coEvery { pageRepository.insertPage(capture(capturedPages)) } returns Unit
+        coEvery { pageRepository.insertPageRaw(capture(capturedPages)) } returns Unit
 
         // First import
         manager.importFromJson(jsonString, "book1")
@@ -368,8 +374,9 @@ class PageImportExportManagerTest {
         assertEquals(pageId, secondPage!!.id)
         assertEquals(buttonId, secondPage.buttonConfigs[0]?.id)
         
-        // Verify insertPage was called 4 times (2 pages per import: P1 and repaired static row)
-        coVerify(exactly = 4) { pageRepository.insertPage(any()) }
+        // Verify pages were inserted (P1 via insertPageRaw, and repaired static row via insertPage)
+        coVerify(exactly = 2) { pageRepository.insertPageRaw(any()) }
+        coVerify(exactly = 2) { pageRepository.insertPage(any()) }
     }
 
     @Test
@@ -405,7 +412,8 @@ class PageImportExportManagerTest {
         """.trimIndent()
 
         val pageSlot = slot<Page>()
-        coEvery { pageRepository.insertPage(capture(pageSlot)) } returns Unit
+        coEvery { pageRepository.insertPage(any()) } returns Unit
+        coEvery { pageRepository.insertPageRaw(capture(pageSlot)) } returns Unit
 
         // Import into a DIFFERENT book (test_book)
         manager.importFromJson(jsonString, "test_book")
@@ -442,7 +450,8 @@ class PageImportExportManagerTest {
         """.trimIndent()
 
         val capturedPages = mutableListOf<Page>()
-        coEvery { pageRepository.insertPage(capture(capturedPages)) } returns Unit
+        coEvery { pageRepository.insertPage(any()) } returns Unit
+        coEvery { pageRepository.insertPageRaw(capture(capturedPages)) } returns Unit
 
         // Import into another book (triggers regeneration)
         manager.importFromJson(jsonString, "target-book")
@@ -487,7 +496,8 @@ class PageImportExportManagerTest {
         coEvery { pageRepository.getPageById(pageId) } returns existingPage
 
         val pageSlot = slot<Page>()
-        coEvery { pageRepository.insertPage(capture(pageSlot)) } returns Unit
+        coEvery { pageRepository.insertPage(any()) } returns Unit
+        coEvery { pageRepository.insertPageRaw(capture(pageSlot)) } returns Unit
 
         // Import into target-book. regenerateIds is false by default if bookId matches (both "target-book").
         manager.importFromJson(jsonString, "target-book")
@@ -525,7 +535,8 @@ class PageImportExportManagerTest {
         coEvery { bookRepository.insertBook(capture(bookSlot)) } returns Unit
         
         val pageSlot = slot<Page>()
-        coEvery { pageRepository.insertPage(capture(pageSlot)) } returns Unit
+        coEvery { pageRepository.insertPage(any()) } returns Unit
+        coEvery { pageRepository.insertPageRaw(capture(pageSlot)) } returns Unit
         
         val result = manager.importCloudBackup(jsonString, null)
 
@@ -559,6 +570,7 @@ class PageImportExportManagerTest {
         coEvery { bookRepository.insertBook(any()) } returns Unit
         coEvery { pageRepository.getPageById(any()) } returns null
         coEvery { pageRepository.insertPage(any()) } returns Unit
+        coEvery { pageRepository.insertPageRaw(any()) } returns Unit
 
         val result = manager.importCloudBackup(jsonString, null)
 
@@ -617,7 +629,8 @@ class PageImportExportManagerTest {
 
         // 2. Import
         val pageSlot = mutableListOf<Page>()
-        coEvery { pageRepository.insertPage(capture(pageSlot)) } returns Unit
+        coEvery { pageRepository.insertPage(any()) } returns Unit
+        coEvery { pageRepository.insertPageRaw(capture(pageSlot)) } returns Unit
         coEvery { pageRepository.getPageById(any()) } returns null
 
         val result = manager.importFromJson(jsonString, bookId, regenerateIds = false)
@@ -680,7 +693,8 @@ class PageImportExportManagerTest {
 
         // 2. Import
         val capturedPages = mutableListOf<Page>()
-        coEvery { pageRepository.insertPage(capture(capturedPages)) } returns Unit
+        coEvery { pageRepository.insertPage(any()) } returns Unit
+        coEvery { pageRepository.insertPageRaw(capture(capturedPages)) } returns Unit
         coEvery { pageRepository.getPageById(any()) } returns null
 
         manager.importFromJson(json, bookId, regenerateIds = false)
@@ -725,7 +739,8 @@ class PageImportExportManagerTest {
         """.trimIndent()
 
         val pageSlot = slot<Page>()
-        coEvery { pageRepository.insertPage(capture(pageSlot)) } returns Unit
+        coEvery { pageRepository.insertPage(any()) } returns Unit
+        coEvery { pageRepository.insertPageRaw(capture(pageSlot)) } returns Unit
 
         manager.importFromJson(json, "book1")
 
@@ -912,6 +927,7 @@ class PageImportExportManagerTest {
         coEvery { bookRepository.getBookById(any()) } returns mockk(relaxed = true)
         coEvery { pageRepository.getPageById(any()) } returns null 
         coEvery { pageRepository.insertPage(any()) } returns Unit
+        coEvery { pageRepository.insertPageRaw(any()) } returns Unit
         
         every { settingsRepository.defaultStartPageId = any() } returns Unit
 
@@ -932,7 +948,7 @@ class PageImportExportManagerTest {
         assertNotEquals(oldPageId, capturedNewId.captured)
         
         // Verify it was inserted (at least one page)
-        coVerify { pageRepository.insertPage(any()) }
+        coVerify { pageRepository.insertPageRaw(any()) }
     }
 
     @Test
@@ -1263,6 +1279,7 @@ class PageImportExportManagerTest {
 
         val capturedPages = mutableListOf<Page>()
         coEvery { pageRepository.insertPage(capture(capturedPages)) } returns Unit
+        coEvery { pageRepository.insertPageRaw(capture(capturedPages)) } returns Unit
         
         // Mock that static row doesn't exist
         coEvery { pageRepository.getPageById("static_row_$bookId") } returns null
@@ -1295,8 +1312,8 @@ class PageImportExportManagerTest {
         """.trimIndent()
 
         // Zweite Seite schlägt beim Insert fehl -> die gesamte Transaktion muss scheitern.
-        coEvery { pageRepository.insertPage(match { it.name == "Page 1" }) } returns Unit
-        coEvery { pageRepository.insertPage(match { it.name == "Page 2" }) } throws RuntimeException("DB voll")
+        coEvery { pageRepository.insertPageRaw(match { it.name == "Page 1" }) } returns Unit
+        coEvery { pageRepository.insertPageRaw(match { it.name == "Page 2" }) } throws RuntimeException("DB voll")
 
         val result = manager.importFromJson(jsonString, "book-atomic")
 
@@ -1320,6 +1337,7 @@ class PageImportExportManagerTest {
         """.trimIndent()
 
         coEvery { pageRepository.insertPage(any()) } returns Unit
+        coEvery { pageRepository.insertPageRaw(any()) } returns Unit
 
         val result = manager.importFromJson(jsonString, "book-warn")
 
@@ -1431,7 +1449,8 @@ class PageImportExportManagerTest {
         """.trimIndent()
 
         val capturedPages = mutableListOf<Page>()
-        coEvery { pageRepository.insertPage(capture(capturedPages)) } returns Unit
+        coEvery { pageRepository.insertPage(any()) } returns Unit
+        coEvery { pageRepository.insertPageRaw(capture(capturedPages)) } returns Unit
         coEvery { pageRepository.getPageById(any()) } returns null
 
         val result = manager.importFromJson(jsonString, bookId, regenerateIds = false)

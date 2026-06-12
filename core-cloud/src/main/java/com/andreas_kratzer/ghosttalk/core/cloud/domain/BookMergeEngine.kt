@@ -69,11 +69,25 @@ class BookMergeEngine(private val logger: Logger) {
                     val remoteButton = remoteButtonsMap[key]
 
                     if (localButton == null && remoteButton != null) {
-                        val remoteTime = remoteButton.updatedAt ?: 0L
-                        if (localPageTime >= remoteTime) null else remoteButton
+                        val tombstone = remoteButton.id?.let { localTombstones[it] }?.takeIf { it.entityType == "BUTTON" }
+                        if (tombstone != null) {
+                            val remoteTime = remoteButton.updatedAt ?: 0L
+                            if (tombstone.deletedAt >= remoteTime) null else remoteButton
+                        } else if (remoteButton.id == null) {
+                            if (localPageTime >= (remoteButton.updatedAt ?: 0L)) null else remoteButton
+                        } else {
+                            remoteButton
+                        }
                     } else if (remoteButton == null && localButton != null) {
-                        val localTime = localButton.updatedAt ?: 0L
-                        if (remotePageTime >= localTime) null else localButton
+                        val tombstone = localButton.id?.let { remoteTombstones[it] }?.takeIf { it.entityType == "BUTTON" }
+                        if (tombstone != null) {
+                            val localTime = localButton.updatedAt ?: 0L
+                            if (tombstone.deletedAt >= localTime) null else localButton
+                        } else if (localButton.id == null) {
+                            if (remotePageTime >= (localButton.updatedAt ?: 0L)) null else localButton
+                        } else {
+                            localButton
+                        }
                     } else if (localButton != null && remoteButton != null) {
                         val localButtonTime = localButton.updatedAt ?: 0L
                         val remoteButtonTime = remoteButton.updatedAt ?: 0L
@@ -126,11 +140,18 @@ class BookMergeEngine(private val logger: Logger) {
             null
         } else {
             val cutoff = System.currentTimeMillis() - 90L * 24 * 60 * 60 * 1000 // 90 days
+            val mergedButtonIds = mergedPages.flatMap { it.buttons.mapNotNull { b -> b.id } }.toSet()
             (local.deletedEntities.orEmpty() + remote.deletedEntities.orEmpty())
                 .associateBy { it.entityId }
-                .filterKeys { pageId -> mergedPages.none { it.importId == pageId } }
                 .values
-                .filter { it.deletedAt >= cutoff }
+                .filter { tombstone ->
+                    val survives = when (tombstone.entityType) {
+                        "PAGE" -> mergedPages.none { it.importId == tombstone.entityId }
+                        "BUTTON" -> !mergedButtonIds.contains(tombstone.entityId)
+                        else -> true
+                    }
+                    survives && tombstone.deletedAt >= cutoff
+                }
                 .toList()
         }
 

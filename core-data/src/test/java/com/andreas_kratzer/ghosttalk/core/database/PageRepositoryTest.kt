@@ -104,9 +104,99 @@ class PageRepositoryTest {
     }
 
     @Test
+    fun `updatePage writes button tombstones when buttons are removed`() = runTest {
+        val pageId = "1"
+        val bookId = "book1"
+        
+        val existingButtons = listOf(
+            ButtonEntity(id = "button1", pageId = pageId, globalIndex = 0, label = "B1", buttonAction = com.andreas_kratzer.ghosttalk.core.model.SpeakTextButtonAction()),
+            ButtonEntity(id = "button2", pageId = pageId, globalIndex = 1, label = "B2", buttonAction = com.andreas_kratzer.ghosttalk.core.model.SpeakTextButtonAction())
+        )
+        
+        coEvery { mockButtonDao.getButtonsForPage(pageId) } returns existingButtons
+        
+        val updatedPage = Page(
+            id = pageId,
+            name = "Page 1",
+            bookId = bookId,
+            buttonConfigs = listOf(
+                com.andreas_kratzer.ghosttalk.core.model.ButtonConfig(id = "button1", label = "B1", buttonAction = com.andreas_kratzer.ghosttalk.core.model.SpeakTextButtonAction())
+            )
+        )
+        
+        val mockDeletedEntityDao = mockk<DeletedEntityDao>(relaxed = true)
+        every { mockDatabase.deletedEntityDao() } returns mockDeletedEntityDao
+        
+        pageRepository.updatePage(updatedPage)
+        
+        coVerify(exactly = 1) {
+            mockDeletedEntityDao.insertDeletedEntity(
+                match {
+                    it.entityId == "button2" && it.entityType == "BUTTON" && it.bookId == bookId
+                }
+            )
+        }
+    }
+    @Test
     fun `deletePage calls dao deletePageEntity`() = runTest {
         val page = Page(id = "1", name = "Page 1", bookId = "book1", buttonConfigs = emptyList())
         pageRepository.deletePage(page)
         coVerify { mockPageDao.deletePageEntity(any()) }
+    }
+
+    @Test
+    fun `updatePage writes no tombstone when button set is unchanged or grows`() = runTest {
+        val pageId = "1"
+        val bookId = "book1"
+        
+        val existingButtons = listOf(
+            ButtonEntity(id = "button1", pageId = pageId, globalIndex = 0, label = "B1", buttonAction = com.andreas_kratzer.ghosttalk.core.model.SpeakTextButtonAction())
+        )
+        coEvery { mockButtonDao.getButtonsForPage(pageId) } returns existingButtons
+        
+        val updatedPage = Page(
+            id = pageId,
+            name = "Page 1",
+            bookId = bookId,
+            buttonConfigs = listOf(
+                com.andreas_kratzer.ghosttalk.core.model.ButtonConfig(id = "button1", label = "B1", buttonAction = com.andreas_kratzer.ghosttalk.core.model.SpeakTextButtonAction()),
+                com.andreas_kratzer.ghosttalk.core.model.ButtonConfig(id = "button2", label = "B2", buttonAction = com.andreas_kratzer.ghosttalk.core.model.SpeakTextButtonAction())
+            )
+        )
+        
+        val mockDeletedEntityDao = mockk<DeletedEntityDao>(relaxed = true)
+        every { mockDatabase.deletedEntityDao() } returns mockDeletedEntityDao
+        
+        pageRepository.updatePage(updatedPage)
+        
+        coVerify(exactly = 0) {
+            mockDeletedEntityDao.insertDeletedEntity(any())
+        }
+    }
+
+    @Test
+    fun `insertPage overwrites timestamps with current time`() = runTest {
+        val button = com.andreas_kratzer.ghosttalk.core.model.ButtonConfig(id = "button1", label = "B1", updatedAt = 1000L)
+        val page = Page(id = "page1", bookId = "book1", name = "Page 1", updatedAt = 1000L, buttonConfigs = listOf(button))
+
+        val capturedPage = io.mockk.slot<Page>()
+        coEvery { mockPageDao.insertPageEntity(capture(capturedPage)) } returns Unit
+
+        pageRepository.insertPage(page)
+
+        org.junit.Assert.assertTrue(capturedPage.captured.updatedAt > 1000L)
+    }
+
+    @Test
+    fun `insertPageRaw preserves original page and button timestamps`() = runTest {
+        val button = com.andreas_kratzer.ghosttalk.core.model.ButtonConfig(id = "button1", label = "B1", updatedAt = 1000L)
+        val page = Page(id = "page1", bookId = "book1", name = "Page 1", updatedAt = 1000L, buttonConfigs = listOf(button))
+
+        val capturedPage = io.mockk.slot<Page>()
+        coEvery { mockPageDao.insertPageEntity(capture(capturedPage)) } returns Unit
+
+        pageRepository.insertPageRaw(page)
+
+        assertEquals(1000L, capturedPage.captured.updatedAt)
     }
 }

@@ -410,7 +410,7 @@ class PageImportExportManager @Inject constructor(
                     createdAt = importPage.createdAt ?: System.currentTimeMillis(),
                     updatedAt = importPage.updatedAt ?: importPage.createdAt ?: System.currentTimeMillis()
                 )
-                pageRepository.insertPage(page)
+                pageRepository.insertPageRaw(page)
             }
             
             // 3. Import Button Templates (if syncing settings, since they are global)

@@ -50,6 +50,13 @@ class PageRepositoryImpl(
         }
     }
 
+    override suspend fun insertPageRaw(page: Page) {
+        appDatabase.withTransaction {
+            pageDao.insertPageEntity(page)
+            buttonDao.insertButtons(page.toButtonEntities())
+        }
+    }
+
     override suspend fun updatePage(page: Page) {
         val now = System.currentTimeMillis()
         val finalUpdatedAt = maxOf(now, page.updatedAt)
@@ -57,6 +64,18 @@ class PageRepositoryImpl(
             updatedAt = finalUpdatedAt
         )
         appDatabase.withTransaction {
+            // Diff: welche Button-IDs verschwinden mit diesem Update?
+            val oldButtonIds = buttonDao.getButtonsForPage(updatedPage.id).map { it.id }.toSet()
+            val newButtonIds = updatedPage.buttonConfigs.mapNotNull { it?.id }.toSet()
+            (oldButtonIds - newButtonIds).forEach { deletedId ->
+                appDatabase.deletedEntityDao().insertDeletedEntity(
+                    com.andreas_kratzer.ghosttalk.core.database.DeletedEntity(
+                        entityId = deletedId,
+                        entityType = "BUTTON",
+                        bookId = updatedPage.bookId
+                    )
+                )
+            }
             pageDao.updatePageEntity(updatedPage)
             // Refresh buttons: delete old and insert new
             buttonDao.deleteButtonsForPage(updatedPage.id)
@@ -131,6 +150,8 @@ class PageRepositoryImpl(
     }
 
     override suspend fun deleteEmptyButtons(): Int {
+        // Maintenance: empty buttons (label == "") do not require tombstones as they carry no configuration
+        // and resurrecting them empty in concurrent scenarios is harmless/acceptable.
         return buttonDao.deleteEmptyButtons()
     }
 
