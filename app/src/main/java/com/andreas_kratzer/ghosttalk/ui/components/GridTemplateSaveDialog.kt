@@ -12,12 +12,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import com.andreas_kratzer.ghosttalk.R
-import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
 
 @Composable
 fun GridTemplateSaveDialog(
-    buttonConfig: ButtonConfig,
     templateName: String,
     onTemplateNameChange: (String) -> Unit,
     onConfirm: () -> Unit,

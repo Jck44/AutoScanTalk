@@ -3,7 +3,6 @@ package com.andreas_kratzer.ghosttalk.ui.main
 import android.content.ContentResolver
 import android.net.Uri
 import android.util.Log
-import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.core.data.export.PageImportExportProvider
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers

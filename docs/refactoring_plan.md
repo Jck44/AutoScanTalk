@@ -234,7 +234,7 @@ Umsetzung weitgehend sauber: alle 11 Sub-Repos `@Singleton` ✅, Interfaces dekl
 * **Jetzt**: Durch die `by`-Delegation gehen die Setter direkt ins Sub-Repo; `syncBookSettings()` (Fassade, ~Zeile 441) hat **keinen Aufrufer mehr**. Die Book-Spiegelfelder veralten.
 * **Auswirkung (tragend!)**: `PageViewModel` liest die Scan-Limits aus dem Book (`scanCoordinator.setScanLimitSettings(book.limitScanCycles, …)`), `ActivateButtonUseCase`/`NavigationDelegate`/`InteractionDelegate` lesen die Log-Flags bzw. das Log-Limit aus dem Book, `BookMergeEngine` (Cloud) merged diese Felder.
 * **Fix (im Fassaden-`init`-Listener, NICHT per Setter-Override)**: Der `changeListener` der Sub-Repos wird bei jedem Schreibpfad aufgerufen (auch bei direkt gebundenen Sub-Repos) und erhält den ungescopten Basis-Key. In der Listener-Lambda der Fassade ergänzen:
-  ```kotlin
+  ```text
   val bookMirroredKeys = setOf(
       SettingsConstants.KEY_LIMIT_SCAN_CYCLES,
       SettingsConstants.KEY_SCAN_CYCLE_LIMIT,
@@ -656,6 +656,43 @@ Plan eingehalten, Verhalten strikt paritätisch verschoben: `CallDurationAnnounc
 #### 12c: `ui/pages/actions/DeviceActionFields.kt` (578 Z.)
 * Ein Composable (Z. 92–578) mit Feldgruppen je `DeviceActionType`. Aufteilen nach dem Muster der bestehenden Nachbarn (`CallFields`, `MessagingFields`): `VolumeActionFields`, `DateTimeReadFields` (Präfix/Suffix/Offset/Wochentag), `NotificationActionFields`; `getDeviceActionIcon` ggf. mit dem Icon-Mapping aus `ActionTypeDropdownSection` zusammenführen.
 * Smoke: je Aktionstyp einmal die Felder durchschalten (Lautstärke, Datum/Zeit, Nachricht, Kontakt).
+
+### Phase 13: Code-Analysis-Bereinigung (Android Studio Inspections, 2026-06-12)
+
+**Quelle**: IDE-Inspektionsliste von Andreas nach Phase 12. Ein Commit, Verifikation: `./gradlew :app:compileDebugKotlin testDebugUnitTest` + danach Inspektion in Android Studio erneut laufen lassen (Ziel: alle gelisteten Punkte weg).
+
+#### Schritt 13.1: Triviale Bereinigungen (reines Löschen/Umbenennen, kein Verhalten)
+* `pagesplit/PageSplitWizardDialog.kt:8`: ungenutzten Import `androidx.compose.foundation.layout.Row` entfernen (die `Row(`-Treffer in der Datei sind `SingleChoiceSegmentedButtonRow`).
+* `components/GridEditorContent.kt:42`: ungenutzten Import `androidx.compose.ui.res.stringResource` entfernen.
+* `pages/PageEditorScreen.kt:57`: ungenutzte Variable `val dimensions = LocalDimensions.current` entfernen (nach 12a verwaist); falls der `LocalDimensions`-Import dadurch ungenutzt wird, mit entfernen.
+* `components/DraggableChip.kt:57`: `onDragStart = { offset -> … }` → `onDragStart = { _ -> … }`.
+* `pagesplit/PageSplitManualPromptDialog.kt:110`: `catch (e: Exception)` → `catch (_: Exception)`.
+
+#### Schritt 13.2: Ungenutzte Parameter entfernen (mit Aufrufer-Anpassung)
+* `components/GridTemplateSaveDialog.kt:20`: Parameter `buttonConfig: ButtonConfig` entfernen (im Dialog nie verwendet) + Aufrufstelle `GridEditorContent.kt:407` anpassen (`buttonConfig = config` weglassen; der `ButtonConfig`-Import im Dialog entfällt dann auch).
+* Gleiche Kategorie, aus dem Phase-10-Review noch offen: `ui/main/SharedZipImportHandler.kt`: ungenutzten Konstruktor-Parameter `settingsRepository` entfernen (Hilt löst den Rest auf, keine weiteren Aufrufer-Änderungen nötig).
+
+#### Schritt 13.3: `DateTimeReadFields` — Ressourcen-Zugriff Compose-konform (die 10 „Errors")
+* **Problem**: In den `SuggestionChip`-`onClick`-Lambdas wird `context.getString(R.string.…)` aufgerufen (`context = LocalContext.current`, Z. 45). Die Compose-Lint-Regel verlangt `stringResource` — das geht aber nicht direkt im `onClick` (nicht-@Composable-Kontext).
+* **Fix**: Die 8 betroffenen Strings **zur Composition-Zeit** in lokale `val`s auflösen und in den Lambdas verwenden:
+  ```
+  val timePrefixStd = stringResource(R.string.device_control_time_prefix_std)
+  val timeSuffixStd = stringResource(R.string.device_control_time_suffix_std)
+  val timePrefixPlus5 = stringResource(R.string.device_control_time_prefix_plus5)
+  val timePrefixMinus5 = stringResource(R.string.device_control_time_prefix_minus5)
+  val datePrefixWeekdayDate = stringResource(R.string.device_control_date_prefix_weekday_date)
+  val datePrefixOnlyDate = stringResource(R.string.device_control_date_prefix_only_date)
+  val datePrefixTomorrow = stringResource(R.string.device_control_date_prefix_tomorrow)
+  val datePrefixYesterday = stringResource(R.string.device_control_date_prefix_yesterday)
+  ```
+  In den `onClick`s dann `onPrefixTextChange(timePrefixStd)` usw. — Verhalten identisch (Nebeneffekt sogar besser: reagiert auf Sprachwechsel). Danach prüfen, ob `val context` (Z. 45) noch gebraucht wird; wenn nicht, mit Import entfernen.
+
+#### Schritt 13.4: `docs/refactoring_plan.md`-„Errors" — False Positive, keine Code-Änderung
+* Die IDE versucht, die Kotlin-Codefences im Markdown zu parsen (Snippet im 4.2-Review-Abschnitt enthält den Kommentar `// in listener:` mitten im Block). **Kein echtes Problem.** Optional zum Stummschalten: die Sprach-Kennung der betroffenen Fence von ```` ```kotlin ```` auf ```` ```text ```` ändern. Keine Quellcode-Änderung.
+
+**Explizit NICHT in Phase 13**: `ImportResult.ReadError`-Typ (Phase-10-Kleinigkeit Nr. 2) — größerer Eingriff, bleibt als separates Ticket notiert.
+
+---
 
 #### Review-Befund Phase 12 (Claude, 2026-06-12) — ✅ abnahmereif, Roadmap damit komplett
 

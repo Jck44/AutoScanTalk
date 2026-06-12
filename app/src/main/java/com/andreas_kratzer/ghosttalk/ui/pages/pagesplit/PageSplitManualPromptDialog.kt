@@ -107,7 +107,7 @@ fun PageSplitManualPromptDialog(
                 onClick = {
                     try {
                         onEvaluateResponse(pastedJson)
-                    } catch (e: Exception) {
+                    } catch (_: Exception) {
                         parseError.value = "Ungültiges JSON-Format. Bitte stelle sicher, dass die Struktur genau dem Prompt entspricht."
                     }
                 },

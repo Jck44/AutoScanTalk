@@ -54,7 +54,7 @@ fun DraggableChip(
             }
             .pointerInput(Unit) {
                 detectDragGesturesAfterLongPress(
-                    onDragStart = { offset -> currentOnDragStart(globalPos, chipSize) },
+                    onDragStart = { _ -> currentOnDragStart(globalPos, chipSize) },
                     onDrag = { change, dragAmount ->
                         change.consume()
                         currentOnDrag(dragAmount)

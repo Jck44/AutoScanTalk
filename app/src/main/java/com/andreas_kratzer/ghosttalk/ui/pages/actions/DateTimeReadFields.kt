@@ -21,7 +21,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
@@ -42,9 +41,17 @@ fun DateTimeReadFields(
     onOffsetValueChange: (String) -> Unit,
     onAutoSave: () -> Unit
 ) {
-    val context = LocalContext.current
     val dimensions = LocalDimensions.current
     val scrollState = rememberScrollState()
+
+    val timePrefixStd = stringResource(R.string.device_control_time_prefix_std)
+    val timeSuffixStd = stringResource(R.string.device_control_time_suffix_std)
+    val timePrefixPlus5 = stringResource(R.string.device_control_time_prefix_plus5)
+    val timePrefixMinus5 = stringResource(R.string.device_control_time_prefix_minus5)
+    val datePrefixWeekdayDate = stringResource(R.string.device_control_date_prefix_weekday_date)
+    val datePrefixOnlyDate = stringResource(R.string.device_control_date_prefix_only_date)
+    val datePrefixTomorrow = stringResource(R.string.device_control_date_prefix_tomorrow)
+    val datePrefixYesterday = stringResource(R.string.device_control_date_prefix_yesterday)
 
     Column(verticalArrangement = Arrangement.spacedBy(dimensions.paddingSmall)) {
         // Preset Suggestion Chips
@@ -58,8 +65,8 @@ fun DateTimeReadFields(
             if (selectedType == DeviceActionType.READ_TIME) {
                 SuggestionChip(
                     onClick = {
-                        onPrefixTextChange(context.getString(R.string.device_control_time_prefix_std))
-                        onSuffixTextChange(context.getString(R.string.device_control_time_suffix_std))
+                        onPrefixTextChange(timePrefixStd)
+                        onSuffixTextChange(timeSuffixStd)
                         onOffsetValueChange("0")
                         onAutoSave()
                     },
@@ -76,8 +83,8 @@ fun DateTimeReadFields(
                 )
                 SuggestionChip(
                     onClick = {
-                        onPrefixTextChange(context.getString(R.string.device_control_time_prefix_plus5))
-                        onSuffixTextChange(context.getString(R.string.device_control_time_suffix_std))
+                        onPrefixTextChange(timePrefixPlus5)
+                        onSuffixTextChange(timeSuffixStd)
                         onOffsetValueChange("5")
                         onAutoSave()
                     },
@@ -85,8 +92,8 @@ fun DateTimeReadFields(
                 )
                 SuggestionChip(
                     onClick = {
-                        onPrefixTextChange(context.getString(R.string.device_control_time_prefix_minus5))
-                        onSuffixTextChange(context.getString(R.string.device_control_time_suffix_std))
+                        onPrefixTextChange(timePrefixMinus5)
+                        onSuffixTextChange(timeSuffixStd)
                         onOffsetValueChange("-5")
                         onAutoSave()
                     },
@@ -95,7 +102,7 @@ fun DateTimeReadFields(
             } else if (selectedType == DeviceActionType.READ_DATE) {
                 SuggestionChip(
                     onClick = {
-                        onPrefixTextChange(context.getString(R.string.device_control_date_prefix_weekday_date))
+                        onPrefixTextChange(datePrefixWeekdayDate)
                         onSuffixTextChange("")
                         onIncludeWeekdayChange(true)
                         onOffsetValueChange("0")
@@ -105,7 +112,7 @@ fun DateTimeReadFields(
                 )
                 SuggestionChip(
                     onClick = {
-                        onPrefixTextChange(context.getString(R.string.device_control_date_prefix_only_date))
+                        onPrefixTextChange(datePrefixOnlyDate)
                         onSuffixTextChange("")
                         onIncludeWeekdayChange(false)
                         onOffsetValueChange("0")
@@ -115,7 +122,7 @@ fun DateTimeReadFields(
                 )
                 SuggestionChip(
                     onClick = {
-                        onPrefixTextChange(context.getString(R.string.device_control_date_prefix_tomorrow))
+                        onPrefixTextChange(datePrefixTomorrow)
                         onSuffixTextChange("")
                         onIncludeWeekdayChange(true)
                         onOffsetValueChange("1")
@@ -125,7 +132,7 @@ fun DateTimeReadFields(
                 )
                 SuggestionChip(
                     onClick = {
-                        onPrefixTextChange(context.getString(R.string.device_control_date_prefix_yesterday))
+                        onPrefixTextChange(datePrefixYesterday)
                         onSuffixTextChange("")
                         onIncludeWeekdayChange(true)
                         onOffsetValueChange("-1")

@@ -29,7 +29,6 @@ import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.core.model.GridSettingsUpdate
 import com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkScaffold
 import com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons
-import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
 import com.andreas_kratzer.ghosttalk.ui.components.GridEditorContent
 import com.andreas_kratzer.ghosttalk.ui.components.ValidatedTextField
 import com.andreas_kratzer.ghosttalk.ui.pages.pagesplit.PageSplitOptInDialog
@@ -54,7 +53,6 @@ fun PageEditorScreen(
     val unfilteredPages by pageViewModel.unfilteredPages.collectAsState()
     val bookDefaultScanPattern by pageViewModel.defaultScanPattern.collectAsState()
     val page = allPages.find { it.id == pageId }
-    val dimensions = LocalDimensions.current
 
     LaunchedEffect(page) {
         if (page != null) {
