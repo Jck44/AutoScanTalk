@@ -1,4 +1,4 @@
-@file:Suppress("UNUSED_VALUE")
+@file:Suppress("UNUSED_VALUE", "ASSIGNED_BUT_NEVER_ACCESSED_VARIABLE", "UNUSED_ASSIGNMENT", "unused", "AssignedValueIsNeverRead")
 package com.andreas_kratzer.ghosttalk.ui.pages.analytics.recommendations
 
 import android.content.Context
@@ -44,6 +44,7 @@ import com.andreas_kratzer.ghosttalk.core.model.HierarchyPageNode
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
+@Suppress("AssignedValueIsNeverRead")
 @Composable
 fun AiRestructureSection(
     context: Context,
