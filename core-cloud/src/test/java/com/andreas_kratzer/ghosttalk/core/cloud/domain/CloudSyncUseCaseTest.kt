@@ -41,6 +41,8 @@ class CloudSyncUseCaseTest {
     private lateinit var mockSyncLogProvider: SyncLogProvider
     private lateinit var mockSettingsRepository: com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
     private lateinit var spyStorageResolver: SyncStorageResolver
+    private lateinit var mockSyncAnchorStore: SyncAnchorStore
+    private lateinit var spyBookMergeService: BookMergeService
 
     @Before
     fun setup() {
@@ -57,6 +59,10 @@ class CloudSyncUseCaseTest {
         every { Log.d(any(), any()) } returns 0
         every { Log.w(any(), any<String>()) } returns 0
         every { Log.e(any(), any()) } returns 0
+        
+        io.mockk.mockkObject(VersionSafetyGuard)
+        every { VersionSafetyGuard.checkCompatibility(any(), any()) } returns Result.success(Unit)
+        every { VersionSafetyGuard.checkJsonCompatibility(any(), any(), any()) } returns Result.success(Unit)
         
         mockkConstructor(com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper::class)
         val tempDir = File(System.getProperty("java.io.tmpdir") ?: "/tmp")
@@ -84,12 +90,14 @@ class CloudSyncUseCaseTest {
         coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().findFolder(any(), any()) } returns null
         coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().createFolder(any(), any()) } returns "folder_1"
 
+        mockSyncAnchorStore = mockk(relaxed = true)
+        every { mockSyncAnchorStore.getAnchorMd5(any()) } returns null
         spyStorageResolver = spyk(SyncStorageResolver(mockContext, mockSettingsRepository, mockLogger))
         val decisionEngine = SyncDecisionEngine()
-        val bookMergeService = BookMergeService(mockContext, mockBookRepository, mockImportExportManager, mockSyncLogProvider, mockLogger, spyStorageResolver)
+        spyBookMergeService = spyk(BookMergeService(mockContext, mockBookRepository, mockImportExportManager, mockSyncLogProvider, mockLogger, spyStorageResolver, mockSyncAnchorStore))
         val profileSyncOrchestrator = ProfileSyncOrchestrator(mockContext, mockSettingsRepository, mockImportExportManager, mockSyncLogProvider, mockLogger, spyStorageResolver)
-        val importCloudBackupUseCase = ImportCloudBackupUseCase(mockContext, mockBookRepository, mockImportExportManager, mockSyncLogProvider, spyStorageResolver, mockLogger)
-        useCase = CloudSyncUseCase(mockContext, mockBookRepository, mockImportExportManager, mockSettingsRepository, mockSyncLogProvider, mockLogger, spyStorageResolver, decisionEngine, bookMergeService, profileSyncOrchestrator, importCloudBackupUseCase)
+        val importCloudBackupUseCase = ImportCloudBackupUseCase(mockContext, mockBookRepository, mockImportExportManager, mockSyncLogProvider, spyStorageResolver, mockLogger, mockSyncAnchorStore)
+        useCase = CloudSyncUseCase(mockContext, mockBookRepository, mockImportExportManager, mockSettingsRepository, mockSyncLogProvider, mockLogger, spyStorageResolver, decisionEngine, spyBookMergeService, profileSyncOrchestrator, importCloudBackupUseCase, mockSyncAnchorStore)
     }
 
     @After
@@ -250,6 +258,10 @@ class CloudSyncUseCaseTest {
             name = "book_$bookId.json"
             modifiedTime = com.google.api.client.util.DateTime(now - 100000L) // Remote is older
             version = 1L
+            properties = mapOf(
+                "app_version_code" to "100",
+                "ghosttalk_import_version" to "1"
+            )
         }
         coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().listFiles("folder_1") } returns listOf(remoteFile)
         
@@ -262,7 +274,14 @@ class CloudSyncUseCaseTest {
         val mockBook = Book(id = bookId, name = "Test", updatedAt = now, versionSequence = 2L)
         coEvery { mockBookRepository.getBookById(bookId) } returns mockBook
 
-        coEvery { mockImportExportManager.exportBookToJson(bookId) } returns "{\"versionSequence\": 2, \"bookUpdatedAt\": $now}"
+        // Set up anchor matching remote file so remote has not changed, local changed -> UPLOAD
+        val remoteJson = "{\"versionSequence\": 1, \"bookUpdatedAt\": ${now - 100000L}, \"pages\": []}"
+        val remoteStructMd5 = BookMergeEngine(mockLogger).calculateStructuralMd5FromJson(remoteJson)
+        every { mockSyncAnchorStore.getAnchorMd5(bookId) } returns remoteStructMd5
+
+        // Local has a page, so localStructMd5 differs from remoteStructMd5/anchorMd5!
+        val localJson = "{\"versionSequence\": 2, \"bookUpdatedAt\": $now, \"pages\": [{\"importId\": \"page1\", \"name\": \"Page 1\", \"buttons\": []}]}"
+        coEvery { mockImportExportManager.exportBookToJson(bookId) } returns localJson
         coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().uploadWithOptimisticLock(any(), any(), any(), any(), any(), any()) } returns true
 
         useCase.syncBook(mockDrive, bookId, SyncMode.TWO_WAY)
@@ -283,18 +302,26 @@ class CloudSyncUseCaseTest {
             id = "file_1"
             name = "book_$bookId.json"
             modifiedTime = com.google.api.client.util.DateTime(now + 100000L) // Remote is newer
+            properties = mapOf(
+                "app_version_code" to "100",
+                "ghosttalk_import_version" to "1"
+            )
         }
         coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().listFiles("folder_1") } returns listOf(remoteFile)
         coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().downloadFile(any(), any(), any()) } answers {
             val file = args[1] as File
-            file.writeText("{\"versionSequence\": 2, \"bookUpdatedAt\": ${now + 100000L}}")
+            file.writeText("{\"versionSequence\": 2, \"bookUpdatedAt\": ${now + 100000L}, \"pages\": [{\"importId\": \"page1\", \"name\": \"Page 1\", \"buttons\": []}]}")
             true
         }
         
         val mockBook = Book(id = bookId, name = "Test", updatedAt = now, versionSequence = 1L)
         coEvery { mockBookRepository.getBookById(bookId) } returns mockBook
 
-        coEvery { mockImportExportManager.exportBookToJson(bookId) } returns "{\"versionSequence\": 1, \"bookUpdatedAt\": $now}"
+        val localJson = "{\"versionSequence\": 1, \"bookUpdatedAt\": $now, \"pages\": []}"
+        val localStructMd5 = BookMergeEngine(mockLogger).calculateStructuralMd5FromJson(localJson)
+        every { mockSyncAnchorStore.getAnchorMd5(bookId) } returns localStructMd5
+
+        coEvery { mockImportExportManager.exportBookToJson(bookId) } returns localJson
         coEvery { mockImportExportManager.importFromJson(any(), any(), any()) } returns Result.success(ImportResult(5))
 
         useCase.syncBook(mockDrive, bookId, SyncMode.TWO_WAY)
@@ -612,27 +639,7 @@ class CloudSyncUseCaseTest {
     }
 
     private fun calculateStructuralMd5FromJson(jsonStr: String): String {
-        return try {
-            val jsonParser = kotlinx.serialization.json.Json { ignoreUnknownKeys = true; encodeDefaults = true }
-            val data = jsonParser.decodeFromString<com.andreas_kratzer.ghosttalk.core.model.importexport.ImportExportData>(jsonStr)
-            val cleanData = data.copy(
-                bookUpdatedAt = 0L,
-                versionSequence = 0L,
-                sourceDevice = null,
-                isDataCloudSyncEnabled = null,
-                syncIntervalMinutes = null,
-                syncModeBook = null,
-                syncModeTts = null,
-                syncModeStats = null,
-                syncMode = null
-            )
-            val cleanJson = jsonParser.encodeToString(com.andreas_kratzer.ghosttalk.core.model.importexport.ImportExportData.serializer(), cleanData)
-            val messageDigest = java.security.MessageDigest.getInstance("MD5")
-            val hashBytes = messageDigest.digest(cleanJson.toByteArray(Charsets.UTF_8))
-            hashBytes.joinToString("") { "%02x".format(it) }
-        } catch (_: Exception) {
-            ""
-        }
+        return BookMergeEngine(mockLogger).calculateStructuralMd5FromJson(jsonStr)
     }
 
     @Test
@@ -642,28 +649,43 @@ class CloudSyncUseCaseTest {
 
         coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().findFolder(any()) } returns "folder_1"
 
-        val localJson = "{\"bookUpdatedAt\":1000,\"versionSequence\":1,\"pages\":[]}"
+        val mockBook = Book(id = bookId, name = "Test", updatedAt = 2000L, versionSequence = 2L)
+        coEvery { mockBookRepository.getBookById(bookId) } returns mockBook
+
+        val baseJson = "{\"bookUpdatedAt\":1000,\"versionSequence\":1,\"pages\":[]}"
+        val anchorMd5 = calculateStructuralMd5FromJson(baseJson)
+        every { mockSyncAnchorStore.getAnchorMd5(bookId) } returns anchorMd5
+
+        // Local added page 1
+        val localJson = "{\"bookId\":\"test-book\",\"bookName\":\"Test\",\"bookUpdatedAt\":2000,\"versionSequence\":2,\"pages\":[{\"importId\": \"page1\", \"name\": \"Page 1\", \"updatedAt\": 0, \"buttons\": []}]}"
         coEvery { mockImportExportManager.exportBookToJson(bookId) } returns localJson
 
-        val expectedMd5 = calculateStructuralMd5FromJson(localJson)
+        // Remote added page 1 and page 2
+        val remoteJson = "{\"bookId\":\"test-book\",\"bookName\":\"Test\",\"bookUpdatedAt\":3000,\"versionSequence\":3,\"pages\":[{\"importId\": \"page1\", \"name\": \"Page 1\", \"updatedAt\": 0, \"buttons\": []}, {\"importId\": \"page2\", \"name\": \"Page 2\", \"updatedAt\": 0, \"buttons\": []}]}"
+        val remoteStructMd5 = calculateStructuralMd5FromJson(remoteJson)
 
         val remoteFile = com.google.api.services.drive.model.File().apply {
             id = "file_1"
             name = "book_$bookId.json"
             modifiedTime = com.google.api.client.util.DateTime(now)
-            properties = mapOf("version_sequence" to "3", "structure_md5" to expectedMd5)
+            properties = mapOf(
+                "version_sequence" to "3",
+                "structure_md5" to remoteStructMd5,
+                "app_version_code" to "100",
+                "ghosttalk_import_version" to "1"
+            )
         }
         coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().listFiles("folder_1") } returns listOf(remoteFile)
 
         // Mock download during conflict evaluation
-        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().downloadFile("file_1", any()) } answers {
+        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().downloadFile("file_1", any(), any()) } answers {
             val file = secondArg<File>()
-            file.writeText("{\"bookUpdatedAt\":2000,\"versionSequence\":3,\"pages\":[]}")
+            file.writeText(remoteJson)
             true
         }
 
         // Import mock
-        coEvery { mockImportExportManager.importFromJson(any(), any(), any()) } returns Result.success(ImportResult(1))
+        coEvery { mockImportExportManager.importFromJson(any(), eq(bookId), eq(false)) } returns Result.success(ImportResult(1))
 
         val result = useCase.syncBook(mockDrive, bookId, SyncMode.TWO_WAY)
         advanceUntilIdle()
@@ -993,5 +1015,244 @@ class CloudSyncUseCaseTest {
         coVerify(exactly = 1) { mockProfilesProvider.updateFile("profile_file_1", any(), "application/json", any(), any(), any()) }
 
         baseBackupFile.delete()
+    }
+
+    @Test
+    fun `syncBook merges instead of uploading when both devices changed since last sync`() = runTest {
+        val bookId = "test-book"
+        val now = System.currentTimeMillis()
+
+        val mockBook = Book(id = bookId, name = "Test", updatedAt = now, versionSequence = 8L)
+        coEvery { mockBookRepository.getBookById(bookId) } returns mockBook
+
+        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().findFolder(any()) } returns "folder_1"
+
+        val remoteFile = com.google.api.services.drive.model.File().apply {
+            id = "file_1"
+            name = "book_$bookId.json"
+            modifiedTime = com.google.api.client.util.DateTime(now - 10000L)
+            properties = mapOf(
+                "version_sequence" to "6",
+                "structure_md5" to "R",
+                "app_version_code" to "100",
+                "ghosttalk_import_version" to "1"
+            )
+        }
+        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().listFiles("folder_1") } returns listOf(remoteFile)
+
+        val anchorMd5 = "anchor-md5-different-from-both"
+        every { mockSyncAnchorStore.getAnchorMd5(bookId) } returns anchorMd5
+
+        val localJson = "{\"versionSequence\": 8, \"bookUpdatedAt\": $now, \"pages\":[]}"
+        coEvery { mockImportExportManager.exportBookToJson(bookId) } returns localJson
+
+        val remoteJson = "{\"versionSequence\": 6, \"bookUpdatedAt\": ${now - 10000L}, \"pages\":[]}"
+        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().downloadFile("file_1", any(), any()) } answers {
+            val file = secondArg<File>()
+            file.writeText(remoteJson)
+            true
+        }
+
+        coEvery { mockImportExportManager.importFromJson(any(), any(), any()) } returns Result.success(ImportResult(1))
+        coEvery { spyBookMergeService.performMergeConflict(any(), any(), eq(bookId), any(), any(), any(), any(), any(), any(), any(), any(), any()) } returns MergeResult(MergeStatus.MERGED_LOCALLY_UPLOAD_PENDING, true)
+        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().updateFile(any(), any(), any(), any(), any(), any()) } returns true
+
+        useCase.syncBook(mockDrive, bookId, SyncMode.TWO_WAY)
+        advanceUntilIdle()
+
+        coVerify(exactly = 1) { spyBookMergeService.performMergeConflict(any(), any(), eq(bookId), any(), any(), any(), any(), any(), any(), any(), any(), any()) }
+        coVerify(exactly = 0) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().uploadWithOptimisticLock(any(), any(), any(), any(), any(), any()) }
+    }
+
+    @Test
+    fun `syncBook does not early-exit as NO_OP when sequences are equal but content differs`() = runTest {
+        val bookId = "test-book"
+        val now = System.currentTimeMillis()
+
+        val mockBook = Book(id = bookId, name = "Test", updatedAt = now, versionSequence = 6L)
+        coEvery { mockBookRepository.getBookById(bookId) } returns mockBook
+
+        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().findFolder(any()) } returns "folder_1"
+
+        val remoteFile = com.google.api.services.drive.model.File().apply {
+            id = "file_1"
+            name = "book_$bookId.json"
+            modifiedTime = com.google.api.client.util.DateTime(now)
+            properties = mapOf("version_sequence" to "6", "structure_md5" to "different-struct-md5")
+        }
+        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().listFiles("folder_1") } returns listOf(remoteFile)
+
+        every { mockSyncAnchorStore.getAnchorMd5(bookId) } returns "A"
+
+        coEvery { mockImportExportManager.exportBookToJson(bookId) } returns "{\"versionSequence\": 6, \"bookUpdatedAt\": $now, \"pages\":[]}"
+
+        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().downloadFile("file_1", any()) } answers {
+            val file = secondArg<File>()
+            file.writeText("{\"versionSequence\": 6, \"bookUpdatedAt\": $now, \"pages\":[]}")
+            true
+        }
+
+        coEvery { mockImportExportManager.importFromJson(any(), any(), any()) } returns Result.success(ImportResult(1))
+
+        useCase.syncBook(mockDrive, bookId, SyncMode.TWO_WAY)
+        advanceUntilIdle()
+
+        coVerify(exactly = 1) { spyBookMergeService.performMergeConflict(any(), any(), eq(bookId), any(), any(), any(), any(), any(), any(), any(), any(), any()) }
+    }
+
+    @Test
+    fun `syncBook sets sync anchor after successful upload`() = runTest {
+        val bookId = "test-book"
+        val now = System.currentTimeMillis()
+
+        val mockBook = Book(id = bookId, name = "Test", updatedAt = now, versionSequence = 8L)
+        coEvery { mockBookRepository.getBookById(bookId) } returns mockBook
+
+        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().findFolder(any()) } returns "folder_1"
+
+        val remoteFile = com.google.api.services.drive.model.File().apply {
+            id = "file_1"
+            name = "book_$bookId.json"
+            modifiedTime = com.google.api.client.util.DateTime(now - 10000L)
+            properties = mapOf("version_sequence" to "6", "structure_md5" to "A")
+            version = 1L
+        }
+        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().listFiles("folder_1") } returns listOf(remoteFile)
+
+        every { mockSyncAnchorStore.getAnchorMd5(bookId) } returns "A"
+
+        val localJson = "{\"versionSequence\": 8, \"bookUpdatedAt\": $now, \"pages\":[]}"
+        coEvery { mockImportExportManager.exportBookToJson(bookId) } returns localJson
+
+        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().uploadWithOptimisticLock(any(), any(), any(), any(), any(), any()) } returns true
+        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().getFileMetadata(any()) } returns remoteFile
+
+        useCase.syncBook(mockDrive, bookId, SyncMode.TWO_WAY)
+        advanceUntilIdle()
+
+        coVerify(exactly = 1) { mockSyncAnchorStore.setAnchor(bookId, any()) }
+    }
+
+    @Test
+    fun `syncBook does not set anchor when merge upload is pending`() = runTest {
+        val bookId = "test-book"
+        val now = System.currentTimeMillis()
+
+        val mockBook = Book(id = bookId, name = "Test", updatedAt = now, versionSequence = 8L)
+        coEvery { mockBookRepository.getBookById(bookId) } returns mockBook
+
+        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().findFolder(any()) } returns "folder_1"
+
+        val remoteFile = com.google.api.services.drive.model.File().apply {
+            id = "file_1"
+            name = "book_$bookId.json"
+            modifiedTime = com.google.api.client.util.DateTime(now - 10000L)
+            properties = mapOf("version_sequence" to "6", "structure_md5" to "R")
+        }
+        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().listFiles("folder_1") } returns listOf(remoteFile)
+
+        every { mockSyncAnchorStore.getAnchorMd5(bookId) } returns "A"
+
+        coEvery { mockImportExportManager.exportBookToJson(bookId) } returns "{\"versionSequence\": 8, \"bookUpdatedAt\": $now, \"pages\":[]}"
+
+        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().downloadFile("file_1", any()) } answers {
+            val file = secondArg<File>()
+            file.writeText("{\"versionSequence\": 6, \"bookUpdatedAt\": ${now - 10000L}, \"pages\":[]}")
+            true
+        }
+
+        coEvery { mockImportExportManager.importFromJson(any(), any(), any()) } returns Result.success(ImportResult(1))
+        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().updateFile(any(), any(), any(), any(), any(), any()) } returns false // Upload fails!
+
+        useCase.syncBook(mockDrive, bookId, SyncMode.TWO_WAY)
+        advanceUntilIdle()
+
+        coVerify(exactly = 0) { mockSyncAnchorStore.setAnchor(bookId, any()) }
+    }
+
+    @Test
+    fun `second sync after pending merge uploads without re-merging`() = runTest {
+        val bookId = "test-book"
+        val now = System.currentTimeMillis()
+
+        val mockBook = Book(id = bookId, name = "Test", updatedAt = now, versionSequence = 8L)
+        coEvery { mockBookRepository.getBookById(bookId) } returns mockBook
+
+        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().findFolder(any()) } returns "folder_1"
+
+        val remoteFile = com.google.api.services.drive.model.File().apply {
+            id = "file_1"
+            name = "book_$bookId.json"
+            modifiedTime = com.google.api.client.util.DateTime(now - 10000L)
+            properties = mapOf("version_sequence" to "6", "structure_md5" to "A")
+            version = 1L
+        }
+        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().listFiles("folder_1") } returns listOf(remoteFile)
+
+        // anchor is pre-merge state ("A"), local is merged state ("L"), remote is unchanged ("R")
+        every { mockSyncAnchorStore.getAnchorMd5(bookId) } returns "A"
+
+        val localJson = "{\"versionSequence\": 8, \"bookUpdatedAt\": $now, \"pages\":[]}"
+        coEvery { mockImportExportManager.exportBookToJson(bookId) } returns localJson
+
+        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().uploadWithOptimisticLock(any(), any(), any(), any(), any(), any()) } returns true
+        coEvery { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().getFileMetadata(any()) } returns remoteFile
+
+        useCase.syncBook(mockDrive, bookId, SyncMode.TWO_WAY)
+        advanceUntilIdle()
+
+        // Verifies action was UPLOAD, meaning we call uploadWithOptimisticLock directly instead of performMergeConflict again
+        coVerify(exactly = 1) { anyConstructed<com.andreas_kratzer.ghosttalk.core.cloud.DriveServiceHelper>().uploadWithOptimisticLock("file_1", any(), "application/json", 1L, any(), any()) }
+        coVerify(exactly = 0) { spyBookMergeService.performMergeConflict(any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any()) }
+    }
+
+    @Test
+    fun `syncBook uses anchor path with SAF provider without properties`() = runTest {
+        val bookId = "test-book"
+        val now = System.currentTimeMillis()
+
+        val mockBook = Book(id = bookId, name = "Test", updatedAt = now, versionSequence = 8L)
+        coEvery { mockBookRepository.getBookById(bookId) } returns mockBook
+
+        // Set Local Folder SAF
+        every { mockSettingsRepository.syncTargetType } returns "LOCAL_FOLDER_SAF"
+        every { mockSettingsRepository.localFolderSafUri } returns "content://com.android.externalstorage.documents/tree/primary%3AGhosTTalk_Sync"
+
+        val localJson = "{\"versionSequence\": 8, \"bookUpdatedAt\": $now, \"pages\":[{\"importId\": \"page1\", \"name\": \"Page 1\", \"buttons\": []}]}"
+        coEvery { mockImportExportManager.exportBookToJson(bookId) } returns localJson
+
+        val remoteJson = "{\"versionSequence\": 6, \"bookUpdatedAt\": ${now - 10000L}, \"pages\":[]}"
+        // Mock download to return remoteJson which evaluates to struct MD5 "A"
+        // Wait, SAF download uses the storage provider downloadFile
+        // In this test, let's spy/mock the returned DocumentFolderSyncStorageProvider or storageResolver
+        val mockStorageProvider = mockk<SyncStorageProvider>(relaxed = true)
+        coEvery { spyStorageResolver.getStorageProvider(any(), any()) } returns mockStorageProvider
+
+        val remoteFile = RemoteSyncFile(
+            id = "file_1_saf",
+            name = "book_$bookId.json",
+            description = "Master JSON",
+            modifiedTime = now - 10000L,
+            mimeType = "application/json",
+            properties = null // SAF has no properties!
+        )
+        coEvery { mockStorageProvider.listFiles() } returns listOf(remoteFile)
+        coEvery { mockStorageProvider.downloadFile(any(), any(), any()) } answers {
+            val file = secondArg<File>()
+            file.writeText(remoteJson)
+            true
+        }
+        coEvery { mockStorageProvider.updateFile(any(), any(), any(), any(), any(), any()) } returns true
+
+        val remoteStructMd5 = BookMergeEngine(mockLogger).calculateStructuralMd5FromJson(remoteJson)
+        // anchor is matching the remote struct MD5, local is "L" (changed) -> UPLOAD
+        every { mockSyncAnchorStore.getAnchorMd5(bookId) } returns remoteStructMd5
+
+        useCase.syncBook(null, bookId, SyncMode.TWO_WAY)
+        advanceUntilIdle()
+
+        // Verifies action was UPLOAD (calls updateFile) and not MERGE
+        coVerify(exactly = 1) { mockStorageProvider.updateFile("file_1_saf", any(), "application/json", any(), any(), any()) }
+        coVerify(exactly = 0) { spyBookMergeService.performMergeConflict(any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any()) }
     }
 }

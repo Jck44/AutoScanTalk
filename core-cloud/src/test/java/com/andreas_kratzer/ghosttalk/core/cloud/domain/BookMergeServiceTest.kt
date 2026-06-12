@@ -15,6 +15,7 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.mockkStatic
 import io.mockk.unmockkAll
+import io.mockk.verify
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -34,6 +35,7 @@ class BookMergeServiceTest {
     private lateinit var mockStorageResolver: SyncStorageResolver
     private lateinit var mockStorageProvider: SyncStorageProvider
     private lateinit var mockDrive: Drive
+    private lateinit var mockSyncAnchorStore: SyncAnchorStore
 
     @Before
     fun setup() {
@@ -45,6 +47,7 @@ class BookMergeServiceTest {
         mockStorageResolver = mockk(relaxed = true)
         mockStorageProvider = mockk(relaxed = true)
         mockDrive = mockk(relaxed = true)
+        mockSyncAnchorStore = mockk(relaxed = true)
 
         mockkStatic(Log::class)
         every { Log.d(any(), any()) } returns 0
@@ -61,7 +64,8 @@ class BookMergeServiceTest {
             importExportManager = mockImportExportManager,
             syncLogProvider = mockSyncLogProvider,
             logger = mockLogger,
-            storageResolver = mockStorageResolver
+            storageResolver = mockStorageResolver,
+            syncAnchorStore = mockSyncAnchorStore
         )
     }
 
@@ -79,13 +83,16 @@ class BookMergeServiceTest {
         coEvery { mockImportExportManager.exportBookToJson(bookId) } returns localJson
         coEvery { mockImportExportManager.importFromJson(any(), any(), any()) } returns Result.success(ImportResult(1))
 
+        val engine = BookMergeEngine(mockLogger)
+        val expectedMd5 = engine.calculateStructuralMd5FromJson(localJson)
+
         val remoteMasterFile = RemoteSyncFile(
             id = "master_1",
             name = "book_$bookId.json",
             description = "Master JSON",
             modifiedTime = System.currentTimeMillis(),
             mimeType = "application/json",
-            properties = mapOf("version_sequence" to "3", "structure_md5" to "d41d8cd98f00b204e9800998ecf8427e")
+            properties = mapOf("version_sequence" to "3", "structure_md5" to expectedMd5)
         )
 
         coEvery { mockStorageProvider.downloadFile("master_1", any()) } answers {
@@ -112,6 +119,52 @@ class BookMergeServiceTest {
         assertTrue(result.success)
         coVerify(exactly = 1) { mockImportExportManager.importFromJson(any(), eq(bookId), any()) }
         coVerify(exactly = 0) { mockStorageProvider.uploadFile(any(), any(), any(), any(), any()) }
+        // Verify setAnchor is called on trivial merge success
+        verify(exactly = 1) { mockSyncAnchorStore.setAnchor(bookId, expectedMd5) }
+    }
+
+    @Test
+    fun `performMergeConflict sets anchor to merged struct md5 on full success`() = runTest {
+        val bookId = "test-book"
+        val book = Book(id = bookId, name = "Test Book", updatedAt = System.currentTimeMillis())
+
+        val localJson = "{\"bookUpdatedAt\":1000,\"versionSequence\":2,\"pages\":[]}"
+        coEvery { mockImportExportManager.exportBookToJson(bookId) } returns localJson
+        coEvery { mockImportExportManager.importFromJson(any(), any(), any()) } returns Result.success(ImportResult(1))
+
+        val remoteMasterFile = RemoteSyncFile(
+            id = "master_1",
+            name = "book_$bookId.json",
+            description = "Master JSON",
+            modifiedTime = System.currentTimeMillis(),
+            mimeType = "application/json",
+            properties = mapOf("version_sequence" to "3", "structure_md5" to "definitely-different-md5")
+        )
+
+        coEvery { mockStorageProvider.downloadFile(any(), any()) } answers {
+            val file = secondArg<File>()
+            file.writeText("{\"bookUpdatedAt\":2000,\"versionSequence\":3,\"pages\":[]}")
+            true
+        }
+        coEvery { mockStorageProvider.updateFile(any(), any(), any(), any(), any(), any()) } returns true
+
+        val result = service.performMergeConflict(
+            drive = null,
+            storageProvider = mockStorageProvider,
+            bookId = bookId,
+            book = book,
+            remoteMasterFile = remoteMasterFile,
+            effectiveMasterFile = remoteMasterFile,
+            remoteConflictFiles = emptyList(),
+            legacyZipFile = null,
+            localSeq = 2L,
+            remoteFiles = listOf(remoteMasterFile),
+            audioSyncMode = SyncMode.TWO_WAY,
+            masterFileName = "book_$bookId.json"
+        )
+
+        assertEquals(MergeStatus.SUCCESS, result.status)
+        verify(exactly = 1) { mockSyncAnchorStore.setAnchor(bookId, any()) }
     }
 
     @Test
@@ -123,7 +176,6 @@ class BookMergeServiceTest {
         coEvery { mockImportExportManager.exportBookToJson(bookId) } returns localJson
         coEvery { mockImportExportManager.importFromJson(any(), any(), any()) } returns Result.success(ImportResult(1))
 
-        // structure_md5 absichtlich anders als der Merge -> NICHT-trivialer Merge -> Upload-Pfad
         val remoteMasterFile = RemoteSyncFile(
             id = "master_1",
             name = "book_$bookId.json",
@@ -139,7 +191,6 @@ class BookMergeServiceTest {
             file.writeText("{\"bookUpdatedAt\":2000,\"versionSequence\":3,\"pages\":[]}")
             true
         }
-        // Upload wird abgewiesen (Optimistic Lock / Netzwerk)
         coEvery { mockStorageProvider.updateFile(any(), any(), any(), any(), any(), any()) } returns false
 
         val result = service.performMergeConflict(
@@ -157,11 +208,11 @@ class BookMergeServiceTest {
             masterFileName = "book_$bookId.json"
         )
 
-        // Lokale Daten konsistent, aber Lauf NICHT abgeschlossen -> Retry-Signal
         assertEquals(MergeStatus.MERGED_LOCALLY_UPLOAD_PENDING, result.status)
         assertTrue(result.success)
-        // Konfliktdateien duerfen bei ausstehendem Upload NICHT geloescht werden
         coVerify(exactly = 0) { mockStorageProvider.deleteFile(any()) }
+        // Verify setAnchor is NOT called when merge upload is pending
+        verify(exactly = 0) { mockSyncAnchorStore.setAnchor(any(), any()) }
     }
 
     @Test
@@ -169,7 +220,6 @@ class BookMergeServiceTest {
         val workDir = java.nio.file.Files.createTempDirectory("merge_audio_test").toFile()
         every { mockContext.filesDir } returns workDir
 
-        // ZIP mit gutem Eintrag + Zip-Slip-Versuch bauen
         val zipFile = File(workDir, "sync.zip")
         java.util.zip.ZipOutputStream(zipFile.outputStream()).use { zos ->
             zos.putNextEntry(java.util.zip.ZipEntry("audio_recordings/good.mp3"))
@@ -186,9 +236,7 @@ class BookMergeServiceTest {
         val good = File(audioDir, "good.mp3")
         assertTrue("Gueltige Audio-Datei muss extrahiert sein", good.exists())
         assertEquals("AUDIO", good.readText())
-        // Zip-Slip-Eintrag darf NICHT ausserhalb des Zielverzeichnisses landen
         assertTrue("Zip-Slip-Datei darf nicht geschrieben werden", !File(workDir, "evil.mp3").exists())
-        // Keine .part-Leichen nach erfolgreichem Lauf
         val leftovers = audioDir.listFiles()?.filter { it.name.endsWith(".part") } ?: emptyList()
         assertTrue("Keine .part-Tempdateien erwartet", leftovers.isEmpty())
 

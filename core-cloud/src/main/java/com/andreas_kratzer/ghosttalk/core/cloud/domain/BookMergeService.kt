@@ -46,7 +46,8 @@ class BookMergeService @Inject constructor(
     private val importExportManager: PageImportExportManager,
     private val syncLogProvider: SyncLogProvider,
     private val logger: Logger,
-    private val storageResolver: SyncStorageResolver
+    private val storageResolver: SyncStorageResolver,
+    private val syncAnchorStore: SyncAnchorStore
 ) {
     private val TAG = "BookMergeService"
     private val bookMergeEngine = BookMergeEngine(logger)
@@ -129,6 +130,7 @@ class BookMergeService @Inject constructor(
                 if (driveTime > 0L) {
                     bookRepository.updateLastModified(bookId, driveTime, incrementSequence = false)
                 }
+                syncAnchorStore.setAnchor(bookId, mergedStructMd5)
                 // Clean up remote conflict files
                 for (conflictFile in remoteConflictFiles) {
                     try {
@@ -217,6 +219,7 @@ class BookMergeService @Inject constructor(
                     if (uploadSuccess) {
                         Log.d(TAG, "[COMMIT-SEQ] Phase 3: Cloud-Upload vom Server BESTÄTIGT. Schließe Sync-Lauf ab.")
                         syncLogProvider.addLogEntry("Zwei-Wege-Merge erfolgreich abgeschlossen (Sequence: $newSeq)", bookId, book.name)
+                        syncAnchorStore.setAnchor(bookId, mergedStructMd5Upload)
 
                         try {
                             audioSyncHelper.syncAudioRecordings(storageProvider, remoteFiles, audioSyncMode, bookId)

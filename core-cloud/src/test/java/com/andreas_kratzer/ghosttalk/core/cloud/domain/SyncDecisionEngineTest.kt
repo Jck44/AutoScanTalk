@@ -21,15 +21,56 @@ class SyncDecisionEngineTest {
     }
 
     @Test
-    fun `TWO_WAY mode and local sequence newer returns UPLOAD`() {
+    fun `both sides changed since anchor returns MERGE_CONFLICT even if local seq is higher`() {
+        val file = createTempFileWithContent("local_content")
+        val action = engine.determineSyncAction(
+            localFile = file,
+            localSeq = 8L,
+            localLastModified = 1000L,
+            localStructMd5 = "L",
+            remoteFileMd5 = "different_md5",
+            remoteSeq = 6L,
+            remoteStructMd5 = "R",
+            remoteLastModified = 500L,
+            anchorMd5 = "A",
+            resolvedBookMode = SyncMode.TWO_WAY,
+            remoteConflictFilesNotEmpty = false
+        )
+        assertEquals(SyncAction.MERGE_CONFLICT, action)
+    }
+
+    @Test
+    fun `both sides changed since anchor returns MERGE_CONFLICT even if remote seq is higher`() {
+        val file = createTempFileWithContent("local_content")
+        val action = engine.determineSyncAction(
+            localFile = file,
+            localSeq = 6L,
+            localLastModified = 1000L,
+            localStructMd5 = "L",
+            remoteFileMd5 = "different_md5",
+            remoteSeq = 8L,
+            remoteStructMd5 = "R",
+            remoteLastModified = 2000L,
+            anchorMd5 = "A",
+            resolvedBookMode = SyncMode.TWO_WAY,
+            remoteConflictFilesNotEmpty = false
+        )
+        assertEquals(SyncAction.MERGE_CONFLICT, action)
+    }
+
+    @Test
+    fun `only local changed since anchor returns UPLOAD`() {
         val file = createTempFileWithContent("local_content")
         val action = engine.determineSyncAction(
             localFile = file,
             localSeq = 5L,
             localLastModified = 1000L,
+            localStructMd5 = "L",
             remoteFileMd5 = "different_md5",
             remoteSeq = 3L,
+            remoteStructMd5 = "A",
             remoteLastModified = 500L,
+            anchorMd5 = "A",
             resolvedBookMode = SyncMode.TWO_WAY,
             remoteConflictFilesNotEmpty = false
         )
@@ -37,19 +78,117 @@ class SyncDecisionEngineTest {
     }
 
     @Test
-    fun `TWO_WAY mode and remote sequence newer returns DOWNLOAD`() {
+    fun `only remote changed since anchor returns DOWNLOAD`() {
         val file = createTempFileWithContent("local_content")
         val action = engine.determineSyncAction(
             localFile = file,
             localSeq = 2L,
             localLastModified = 1000L,
+            localStructMd5 = "A",
             remoteFileMd5 = "different_md5",
             remoteSeq = 5L,
+            remoteStructMd5 = "R",
             remoteLastModified = 2000L,
+            anchorMd5 = "A",
             resolvedBookMode = SyncMode.TWO_WAY,
             remoteConflictFilesNotEmpty = false
         )
         assertEquals(SyncAction.DOWNLOAD, action)
+    }
+
+    @Test
+    fun `nothing changed since anchor returns NO_OP`() {
+        val file = createTempFileWithContent("local_content")
+        val action = engine.determineSyncAction(
+            localFile = file,
+            localSeq = 2L,
+            localLastModified = 1000L,
+            localStructMd5 = "A",
+            remoteFileMd5 = "different_md5", // differs e.g. due to whitespace / minor format differences
+            remoteSeq = 2L,
+            remoteStructMd5 = "A",
+            remoteLastModified = 1000L,
+            anchorMd5 = "A",
+            resolvedBookMode = SyncMode.TWO_WAY,
+            remoteConflictFilesNotEmpty = false
+        )
+        assertEquals(SyncAction.NO_OP, action)
+    }
+
+    @Test
+    fun `missing anchor with differing content returns MERGE_CONFLICT in TWO_WAY`() {
+        val file = createTempFileWithContent("local_content")
+        val action = engine.determineSyncAction(
+            localFile = file,
+            localSeq = 8L,
+            localLastModified = 1000L,
+            localStructMd5 = "L",
+            remoteFileMd5 = "different_md5",
+            remoteSeq = 6L,
+            remoteStructMd5 = "R",
+            remoteLastModified = 500L,
+            anchorMd5 = null,
+            resolvedBookMode = SyncMode.TWO_WAY,
+            remoteConflictFilesNotEmpty = false
+        )
+        assertEquals(SyncAction.MERGE_CONFLICT, action)
+    }
+
+    @Test
+    fun `missing anchor keeps BACKUP_ONLY upload semantics`() {
+        val file = createTempFileWithContent("local_content")
+        val action = engine.determineSyncAction(
+            localFile = file,
+            localSeq = 5L,
+            localLastModified = 2000L,
+            localStructMd5 = "L",
+            remoteFileMd5 = "different_md5",
+            remoteSeq = 2L,
+            remoteStructMd5 = "R",
+            remoteLastModified = 1000L,
+            anchorMd5 = null,
+            resolvedBookMode = SyncMode.BACKUP_ONLY,
+            remoteConflictFilesNotEmpty = false
+        )
+        assertEquals(SyncAction.UPLOAD, action)
+    }
+
+    @Test
+    fun `anchor path respects RESTORE_ONLY by translating upload to DOWNLOAD`() {
+        val file = createTempFileWithContent("local_content")
+        val action = engine.determineSyncAction(
+            localFile = file,
+            localSeq = 5L,
+            localLastModified = 2000L,
+            localStructMd5 = "L",
+            remoteFileMd5 = "different_md5",
+            remoteSeq = 2L,
+            remoteStructMd5 = "A",
+            remoteLastModified = 1000L,
+            anchorMd5 = "A",
+            resolvedBookMode = SyncMode.RESTORE_ONLY,
+            remoteConflictFilesNotEmpty = false
+        )
+        assertEquals(SyncAction.DOWNLOAD, action)
+    }
+
+    @Test
+    fun `BACKUP_ONLY uploads when both sides changed`() {
+        val file = createTempFileWithContent("local_content")
+        val action = engine.determineSyncAction(
+            localFile = file,
+            localSeq = 2L,
+            localLastModified = 1000L,
+            localStructMd5 = "L",
+            remoteFileMd5 = "different_md5",
+            remoteSeq = 2L,
+            remoteStructMd5 = "R",
+            remoteLastModified = 1000L,
+            anchorMd5 = "A",
+            resolvedBookMode = SyncMode.BACKUP_ONLY,
+            remoteConflictFilesNotEmpty = false
+        )
+        assertEquals(SyncAction.UPLOAD, action)
     }
 
     @Test
@@ -59,9 +198,12 @@ class SyncDecisionEngineTest {
             localFile = file,
             localSeq = 2L,
             localLastModified = 1000L,
+            localStructMd5 = "L",
             remoteFileMd5 = "different_md5",
             remoteSeq = 2L,
+            remoteStructMd5 = "R",
             remoteLastModified = 1000L,
+            anchorMd5 = "A",
             resolvedBookMode = SyncMode.TWO_WAY,
             remoteConflictFilesNotEmpty = true
         )
@@ -76,9 +218,12 @@ class SyncDecisionEngineTest {
             localFile = file,
             localSeq = 2L,
             localLastModified = 1000L,
+            localStructMd5 = "L",
             remoteFileMd5 = md5,
             remoteSeq = 5L,
+            remoteStructMd5 = "R",
             remoteLastModified = 2000L,
+            anchorMd5 = "A",
             resolvedBookMode = SyncMode.TWO_WAY,
             remoteConflictFilesNotEmpty = false
         )
@@ -92,29 +237,16 @@ class SyncDecisionEngineTest {
             localFile = file,
             localSeq = 2L,
             localLastModified = 1000L,
+            localStructMd5 = "L",
             remoteFileMd5 = "different_md5",
             remoteSeq = 5L,
+            remoteStructMd5 = "R",
             remoteLastModified = 2000L,
+            anchorMd5 = null,
             resolvedBookMode = SyncMode.BACKUP_ONLY,
             remoteConflictFilesNotEmpty = false
         )
         assertEquals(SyncAction.NO_OP, action)
-    }
-
-    @Test
-    fun `BACKUP_ONLY mode allows upload when local is newer`() {
-        val file = createTempFileWithContent("local_content")
-        val action = engine.determineSyncAction(
-            localFile = file,
-            localSeq = 5L,
-            localLastModified = 2000L,
-            remoteFileMd5 = "different_md5",
-            remoteSeq = 2L,
-            remoteLastModified = 1000L,
-            resolvedBookMode = SyncMode.BACKUP_ONLY,
-            remoteConflictFilesNotEmpty = false
-        )
-        assertEquals(SyncAction.UPLOAD, action)
     }
 
     @Test
@@ -124,25 +256,12 @@ class SyncDecisionEngineTest {
             localFile = file,
             localSeq = 2L,
             localLastModified = 1000L,
+            localStructMd5 = "L",
             remoteFileMd5 = "different_md5",
             remoteSeq = 5L,
+            remoteStructMd5 = "R",
             remoteLastModified = 2000L,
-            resolvedBookMode = SyncMode.RESTORE_ONLY,
-            remoteConflictFilesNotEmpty = false
-        )
-        assertEquals(SyncAction.DOWNLOAD, action)
-    }
-
-    @Test
-    fun `RESTORE_ONLY mode downloads when local is newer but not in sync`() {
-        val file = createTempFileWithContent("local_content")
-        val action = engine.determineSyncAction(
-            localFile = file,
-            localSeq = 5L,
-            localLastModified = 2000L,
-            remoteFileMd5 = "different_md5",
-            remoteSeq = 2L,
-            remoteLastModified = 1000L,
+            anchorMd5 = null,
             resolvedBookMode = SyncMode.RESTORE_ONLY,
             remoteConflictFilesNotEmpty = false
         )
@@ -156,9 +275,12 @@ class SyncDecisionEngineTest {
             localFile = file,
             localSeq = 0L,
             localLastModified = 5000L,
+            localStructMd5 = "L",
             remoteFileMd5 = "different_md5",
             remoteSeq = 0L,
             remoteLastModified = 1000L,
+            remoteStructMd5 = "R",
+            anchorMd5 = null,
             resolvedBookMode = SyncMode.BACKUP_ONLY,
             remoteConflictFilesNotEmpty = false
         )

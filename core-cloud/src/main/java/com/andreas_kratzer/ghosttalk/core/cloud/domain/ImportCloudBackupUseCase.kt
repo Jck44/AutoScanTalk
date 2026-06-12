@@ -11,7 +11,6 @@ import com.google.api.services.drive.Drive
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import kotlinx.serialization.json.Json
 import java.io.File
 import javax.inject.Inject
 
@@ -21,13 +20,33 @@ class ImportCloudBackupUseCase @Inject constructor(
     private val importExportManager: PageImportExportManager,
     private val syncLogProvider: SyncLogProvider,
     private val storageResolver: SyncStorageResolver,
-    private val logger: Logger
+    private val logger: Logger,
+    private val syncAnchorStore: SyncAnchorStore
 ) {
     private val TAG = "ImportCloudBackupUseCase"
 
     private val audioSyncHelper = AudioSyncHelper(context, importExportManager, logger)
     private val ttsSyncHelper = TtsSyncHelper(context, importExportManager, syncLogProvider, logger)
     private val statisticsSyncHelper = StatisticsSyncHelper(context, importExportManager, syncLogProvider, logger)
+    private val bookMergeEngine = BookMergeEngine(logger)
+
+    private fun getJsonFromBackupFile(file: File): String {
+        return if (file.name.endsWith(".zip")) {
+            java.util.zip.ZipInputStream(file.inputStream()).use { zip ->
+                var entry = zip.nextEntry
+                while (entry != null) {
+                    if (entry.name == "backup.json") {
+                        return String(zip.readBytes(), Charsets.UTF_8)
+                    }
+                    zip.closeEntry()
+                    entry = zip.nextEntry
+                }
+            }
+            throw Exception("No backup.json found in ZIP")
+        } else {
+            file.readText()
+        }
+    }
 
     suspend fun execute(
         drive: Drive?,
@@ -87,6 +106,14 @@ class ImportCloudBackupUseCase @Inject constructor(
                     } catch (_: Exception) {}
                     importExportManager.importCloudBackup(json, fileId)
                 }
+
+                val structMd5 = try {
+                    val jsonContent = getJsonFromBackupFile(tempFile)
+                    bookMergeEngine.calculateStructuralMd5FromJson(jsonContent)
+                } catch (e: Exception) {
+                    ""
+                }
+
                 tempFile.delete()
 
                 if (result.isSuccess) {
@@ -119,6 +146,11 @@ class ImportCloudBackupUseCase @Inject constructor(
                             logger.e(TAG, "Failed to align book timestamp after import (non-fatal)", e)
                         }
                     }
+
+                    if (bookId.isNotEmpty() && structMd5.isNotEmpty()) {
+                        syncAnchorStore.setAnchor(bookId, structMd5)
+                    }
+
                     try {
                         val storageProvider = if (isSafUri) {
                             val treeUri = extractTreeUriFromDocumentUri(fileId)
@@ -191,6 +223,13 @@ class ImportCloudBackupUseCase @Inject constructor(
         return if (downloadSuccess) {
             logger.d(TAG, "Download successful. File size: ${downloadFile.length()}.")
 
+            val structMd5 = try {
+                val jsonContent = getJsonFromBackupFile(downloadFile)
+                bookMergeEngine.calculateStructuralMd5FromJson(jsonContent)
+            } catch (e: Exception) {
+                ""
+            }
+
             val result = if (fileName.endsWith(".zip")) {
                 downloadFile.inputStream().use { inputStream ->
                     importExportManager.importFromZip(
@@ -240,6 +279,11 @@ class ImportCloudBackupUseCase @Inject constructor(
                 bookRepository.updateLastModified(book.id, remoteLastModified, incrementSequence = false)
                 saveToLocalBackupFolder(fileName, downloadFile)
                 downloadFile.delete()
+
+                if (structMd5.isNotEmpty()) {
+                    syncAnchorStore.setAnchor(book.id, structMd5)
+                }
+
                 if (!fileName.endsWith(".zip")) {
                     try {
                         val remoteFiles = storageProvider.listFiles()

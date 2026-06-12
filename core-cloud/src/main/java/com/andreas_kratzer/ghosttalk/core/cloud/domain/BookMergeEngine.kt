@@ -101,20 +101,24 @@ class BookMergeEngine(private val logger: Logger) {
             }
         }
 
-        val localTemplatesMap = (local.buttonTemplates ?: emptyList()).associateBy { it.id }
-        val remoteTemplatesMap = (remote.buttonTemplates ?: emptyList()).associateBy { it.id }
-        val allTemplateIds = localTemplatesMap.keys + remoteTemplatesMap.keys
-        val mergedButtonTemplates = allTemplateIds.map { id ->
-            val localT = localTemplatesMap[id]
-            val remoteT = remoteTemplatesMap[id]
-            if (localT == null) {
-                remoteT!!
-            } else if (remoteT == null) {
-                localT
-            } else {
-                val localTime = localT.button?.updatedAt ?: 0L
-                val remoteTime = remoteT.button?.updatedAt ?: 0L
-                if (localTime >= remoteTime) localT else remoteT
+        val mergedButtonTemplates = if (local.buttonTemplates == null && remote.buttonTemplates == null) {
+            null
+        } else {
+            val localTemplatesMap = (local.buttonTemplates ?: emptyList()).associateBy { it.id }
+            val remoteTemplatesMap = (remote.buttonTemplates ?: emptyList()).associateBy { it.id }
+            val allTemplateIds = localTemplatesMap.keys + remoteTemplatesMap.keys
+            allTemplateIds.map { id ->
+                val localT = localTemplatesMap[id]
+                val remoteT = remoteTemplatesMap[id]
+                if (localT == null) {
+                    remoteT!!
+                } else if (remoteT == null) {
+                    localT
+                } else {
+                    val localTime = localT.button?.updatedAt ?: 0L
+                    val remoteTime = remoteT.button?.updatedAt ?: 0L
+                    if (localTime >= remoteTime) localT else remoteT
+                }
             }
         }
 
@@ -160,7 +164,9 @@ class BookMergeEngine(private val logger: Logger) {
                 syncModeBook = null,
                 syncModeTts = null,
                 syncModeStats = null,
-                syncMode = null
+                syncMode = null,
+                app_version_code = null,
+                ghosttalk_import_version = null
             )
             val cleanJson = jsonParser.encodeToString(ImportExportData.serializer(), cleanData)
             val messageDigest = java.security.MessageDigest.getInstance("MD5")

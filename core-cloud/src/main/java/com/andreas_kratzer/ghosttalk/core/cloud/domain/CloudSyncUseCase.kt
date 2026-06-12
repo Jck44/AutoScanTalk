@@ -41,7 +41,8 @@ class CloudSyncUseCase @Inject constructor(
     private val decisionEngine: SyncDecisionEngine,
     private val bookMergeService: BookMergeService,
     private val profileSyncOrchestrator: ProfileSyncOrchestrator,
-    private val importCloudBackupUseCase: ImportCloudBackupUseCase
+    private val importCloudBackupUseCase: ImportCloudBackupUseCase,
+    private val syncAnchorStore: SyncAnchorStore
 ) {
     private val TAG = "CloudSyncUseCase"
     private val TTS_CACHE_FILE_NAME = "tts_cache.zip"
@@ -158,13 +159,13 @@ class CloudSyncUseCase @Inject constructor(
                     val remoteStructMd5 = remoteMasterFile?.properties?.get("structure_md5")
                     val remoteSeqFromProps = remoteMasterFile?.properties?.get("version_sequence")?.toLongOrNull()
 
-                    if ((remoteSeqFromProps != null && localSeq == remoteSeqFromProps) ||
-                        (remoteStructMd5 != null && localStructMd5 == remoteStructMd5 && localSeq >= (remoteSeqFromProps ?: 0L))) {
-                        com.andreas_kratzer.ghosttalk.core.cloud.SyncLogger.logSkipped(logger, TAG, masterFileName, "Sequences are identical or structural MD5 matches", "seq $localSeq vs $remoteSeqFromProps, struct MD5 $localStructMd5 vs $remoteStructMd5")
+                    if (localStructMd5.isNotEmpty() && remoteStructMd5 != null && localStructMd5 == remoteStructMd5 && remoteConflictFiles.isEmpty()) {
+                        com.andreas_kratzer.ghosttalk.core.cloud.SyncLogger.logSkipped(logger, TAG, masterFileName, "Structural MD5 matches", "struct MD5 $localStructMd5 vs $remoteStructMd5")
                         if (effectiveMasterFile != null) {
                             bookRepository.updateLastModified(bookId, effectiveMasterFile.modifiedTime, incrementSequence = false)
                         }
                         syncLogProvider.addLogEntry("Inhalte sind identisch (NO_OP)", bookId, book.name)
+                        syncAnchorStore.setAnchor(bookId, localStructMd5)
                         
                         /*
                         val configModeStr = settingsRepository.syncModeSettings
@@ -229,6 +230,7 @@ class CloudSyncUseCase @Inject constructor(
                         }
                         if (newFileId != null) {
                             syncLogProvider.addLogEntry("Erster Upload in die Cloud (JSON)", bookId, book.name)
+                            syncAnchorStore.setAnchor(bookId, localStructMd5)
                             val metadata = storageProvider.getFileMetadata(newFileId)
                             val driveTime = metadata?.modifiedTime ?: 0L
                             if (driveTime > 0L) {
@@ -241,13 +243,14 @@ class CloudSyncUseCase @Inject constructor(
                         }
                     } else {
                         // 2. We have remote master or conflict files. Determine what action to take.
-                        val remoteSeqFromProps = remoteMasterFile?.properties?.get("version_sequence")?.toLongOrNull()
                         var remoteSeq = remoteSeqFromProps ?: 0L
+                        var resolvedRemoteStructMd5 = remoteStructMd5
 
                         val isIdentical = remoteMasterFile != null && remoteConflictFiles.isEmpty() && localMd5 == remoteMasterFile.md5Checksum
                         if (isIdentical) {
                             logger.d(TAG, "NO_OP: Local and remote files are identical (MD5 match). Skipping evaluation download.")
                             syncLogProvider.addLogEntry("Inhalte sind identisch (NO_OP)", bookId, book.name)
+                            syncAnchorStore.setAnchor(bookId, localStructMd5)
                             bookRepository.updateLastModified(bookId, remoteMasterFile.modifiedTime, incrementSequence = false)
                             success = true
                         } else {
@@ -272,6 +275,7 @@ class CloudSyncUseCase @Inject constructor(
                                             return@withContext false
                                         }
                                         remoteSeq = remoteData.versionSequence ?: 0L
+                                        resolvedRemoteStructMd5 = bookMergeEngine.calculateStructuralMd5FromJson(remoteJson)
                                     } else {
                                         logger.e(TAG, "Failed to download remote master file for evaluation.")
                                         syncLogProvider.addLogEntry("Download der remote Master-Datei fehlgeschlagen", bookId, book.name, isError = true)
@@ -287,9 +291,12 @@ class CloudSyncUseCase @Inject constructor(
                                 localFile = tempFile,
                                 localSeq = localSeq,
                                 localLastModified = book.updatedAt,
+                                localStructMd5 = localStructMd5,
                                 remoteFileMd5 = remoteMasterFile?.md5Checksum,
                                 remoteSeq = remoteSeq,
+                                remoteStructMd5 = resolvedRemoteStructMd5,
                                 remoteLastModified = remoteMasterFile?.modifiedTime ?: 0L,
+                                anchorMd5 = syncAnchorStore.getAnchorMd5(bookId),
                                 resolvedBookMode = resolvedBookMode,
                                 remoteConflictFilesNotEmpty = remoteConflictFiles.isNotEmpty()
                             )
@@ -301,6 +308,7 @@ class CloudSyncUseCase @Inject constructor(
                                 val isIdenticalCheck = CloudSyncOptimizer().calculateMD5(tempFile) == effectiveMasterFile?.md5Checksum
                                 if (isIdenticalCheck) {
                                     syncLogProvider.addLogEntry("Inhalte sind identisch (NO_OP)", bookId, book.name)
+                                    syncAnchorStore.setAnchor(bookId, localStructMd5)
                                 } else if (resolvedBookMode == SyncMode.BACKUP_ONLY) {
                                     syncLogProvider.addLogEntry("BACKUP_ONLY: Sicherung übersprungen (Cloud-Version ist aktueller)", bookId, book.name)
                                 } else {
@@ -378,6 +386,7 @@ class CloudSyncUseCase @Inject constructor(
 
                                     if (uploadSuccess) {
                                         syncLogProvider.addLogEntry("Sicherung in der Cloud aktualisiert (Sequence: $localSeq)", bookId, book.name)
+                                        syncAnchorStore.setAnchor(bookId, localStructMd5)
                                         val finalMasterId = remoteMasterFile?.id ?: storageProvider.listFiles().find { it.name == masterFileName }?.id ?: effectiveMasterFile.id
                                         val metadata = storageProvider.getFileMetadata(finalMasterId)
                                         val driveTime = metadata?.modifiedTime ?: 0L
