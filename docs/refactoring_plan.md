@@ -21,8 +21,8 @@ Jeder Schritt ist so konzipiert, dass die App danach vollständig kompilierbar, 
 | 8 | Button-Konfig-UI | ✅ umgesetzt + reviewt, Must-Fixes behoben, abnahmereif |
 | 8B | Gemini Nano entfernen (inkl. lokaler Vision) | ✅ umgesetzt + reviewt, Must-Fix behoben, abnahmereif |
 | 9 | Analytics-Tabs | ✅ fertig + committet (`924b6f72`) |
-| 10 | MainActivity | ✅ umgesetzt + reviewt, abnahmereif (416 Z., 2 optionale Kleinigkeiten) |
-| 11 | SystemCallManager | 📋 Detailplan fertig |
+| 10 | MainActivity | ✅ fertig + committet (`bf88f9d1`) |
+| 11 | SystemCallManager | ✅ umgesetzt + reviewt, abnahmereif — Geräte-Smoke (Simulation) vor Commit Pflicht |
 | 12 | PageSplitDialogs / GridEditor / DeviceActionFields | 📋 Detailplan fertig (3 Mini-Phasen) |
 
 ---
@@ -631,6 +631,15 @@ Alle 5 Punkte sauber nachgezogen: `SyncWorkRequester` (core-cloud, Hilt, dedupli
 * Optional (empfohlen, da Texte sowieso angefasst): DE/EN-Ansagetexte nach `strings.xml` (Context-Locale statt eigener `isEn`-Logik).
 
 **Smoke-Test (Pflicht, mit Simulation)**: simulierter eingehender Anruf → Ansage, Annehmen, Dauer-Feedback nach Intervall, Auflegen; simulierter ausgehender Anruf → Auto-Connect nach 3 s, Intro-Speech; Auto-Antwort/-Ablehnung (User-Mode-Scan-Limit und Inaktiv-Timer); Speakerphone-Auto; max. Anrufdauer → Ansage + Auto-Hangup; echter Anruf wenn möglich (Default-Dialer).
+
+#### Review-Befund Phase 11 (Claude, 2026-06-12) — ✅ abnahmereif (Geräte-Smoke-Test vor Commit Pflicht)
+
+Plan eingehalten, Verhalten strikt paritätisch verschoben: `CallDurationAnnouncer` (Texte 1:1, erschöpfender DE/EN-Test) ✅; `CallAutoActionPolicy` + Test ✅; `CallContactResolver` (beide Lookup-Stufen 1:1) ✅; `CallAudioController` (Retry-Kaskade + SDK-S-Pfad wörtlich, Service als Parameter) ✅; `CallAutoActionController` mit Live-Lambdas (`isRinging` wird zum Auslösezeitpunkt geprüft — korrekt) ✅. Restklasse 637→454 Z. — über dem 300er-Ziel, aber der Rest ist genuin State-Maschine + Simulation; akzeptiert. Toter Code entfernt (ungenutzter `java.util.Timer`). Tests grün.
+
+**Dokumentierte, akzeptierte Verhaltensdeltas**:
+* `shouldTriggerActiveScanLimit` verlangt jetzt `limit > 0`. Alt hätte Limit 0 sofort beim ersten Zyklus ausgelöst; neu ist 0 = nie. „0 = deaktiviert" ist die sinnvollere Semantik (Default ist 2, primärer Aus-Schalter ist die Auto-Action „NONE"). Bei Gelegenheit prüfen, dass die Settings-UI 0 gar nicht anbietet.
+* `setInCallService` blieb im Manager statt im AudioController (Service wird als Parameter durchgereicht) — sauberer als geplant, ok.
+* Optionaler Schritt (Ansagetexte nach `strings.xml`) nicht umgesetzt — bleibt notiert.
 
 ---
 
