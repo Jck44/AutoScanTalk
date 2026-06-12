@@ -8,6 +8,11 @@ import com.andreas_kratzer.ghosttalk.core.data.PageRepository
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.core.data.UserModeSessionRepository
 import com.andreas_kratzer.ghosttalk.core.data.VocalProfileRepository
+import com.andreas_kratzer.ghosttalk.core.data.impl.importexport.BookConfigImportExport
+import com.andreas_kratzer.ghosttalk.core.data.impl.importexport.BookJsonExporter
+import com.andreas_kratzer.ghosttalk.core.data.impl.importexport.BookJsonImporter
+import com.andreas_kratzer.ghosttalk.core.data.impl.importexport.MediaArchiveSync
+import com.andreas_kratzer.ghosttalk.core.data.impl.importexport.StatisticsImportExport
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsMapper
 import com.andreas_kratzer.ghosttalk.core.model.AuditoryCue
@@ -23,6 +28,7 @@ import com.andreas_kratzer.ghosttalk.core.model.SmartPredictionButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.SpeakTextButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.UserModeSession
 import com.andreas_kratzer.ghosttalk.core.model.WeatherButtonAction
+import com.andreas_kratzer.ghosttalk.core.util.Logger
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -54,21 +60,64 @@ class PageImportExportManagerTest {
     private val buttonTemplateRepository: com.andreas_kratzer.ghosttalk.core.data.ButtonTemplateRepository = mockk(relaxed = true)
     private val userModeSessionRepository: UserModeSessionRepository = mockk(relaxed = true)
     private val vocalProfileRepository: VocalProfileRepository = mockk(relaxed = true)
+    private val zipArchiver = ZipArchiver()
+    private val logger = mockk<Logger>(relaxed = true)
+    private val buttonUsageDao = mockk<com.andreas_kratzer.ghosttalk.core.database.ButtonUsageDao>(relaxed = true)
+    private val deletedEntityDao = mockk<com.andreas_kratzer.ghosttalk.core.database.DeletedEntityDao>(relaxed = true)
+    private val bookJsonExporter = BookJsonExporter(context, pageRepository, bookRepository, settingsRepository, settingsMapper, actionMapper, buttonTemplateRepository, deletedEntityDao, logger)
+    private val bookJsonImporter = BookJsonImporter(context, pageRepository, bookRepository, settingsRepository, settingsMapper, actionMapper, buttonTemplateRepository, deletedEntityDao, logger)
+    private val mediaArchiveSync = MediaArchiveSync(context, zipArchiver, logger)
+    private val statisticsImportExport = StatisticsImportExport(context, buttonUsageDao, userModeSessionRepository, settingsRepository, zipArchiver, logger)
+    private val bookConfigImportExport = BookConfigImportExport(context, settingsRepository, settingsMapper)
+
     private val manager = PageImportExportManager(
         context = context,
-        pageRepository = pageRepository,
         bookRepository = bookRepository,
         settingsRepository = settingsRepository,
-        settingsMapper = settingsMapper,
-        actionMapper = actionMapper,
-        buttonTemplateRepository = buttonTemplateRepository,
-        buttonUsageDao = mockk(relaxed = true),
-        userModeSessionRepository = userModeSessionRepository,
         vocalProfileRepository = vocalProfileRepository,
-        deletedEntityDao = mockk(relaxed = true),
-        zipArchiver = ZipArchiver(),
-        logger = mockk(relaxed = true)
+        zipArchiver = zipArchiver,
+        mediaArchiveSync = mediaArchiveSync,
+        statisticsImportExport = statisticsImportExport,
+        bookConfigImportExport = bookConfigImportExport,
+        bookJsonExporter = bookJsonExporter,
+        bookJsonImporter = bookJsonImporter,
+        logger = logger
     )
+
+    private fun createManager(
+        context: Context = this.context,
+        pageRepository: PageRepository = this.pageRepository,
+        bookRepository: BookRepository = this.bookRepository,
+        settingsRepository: SettingsRepository = this.settingsRepository,
+        settingsMapper: SettingsMapper = this.settingsMapper,
+        actionMapper: ActionMapper = this.actionMapper,
+        buttonTemplateRepository: com.andreas_kratzer.ghosttalk.core.data.ButtonTemplateRepository = this.buttonTemplateRepository,
+        buttonUsageDao: com.andreas_kratzer.ghosttalk.core.database.ButtonUsageDao = this.buttonUsageDao,
+        userModeSessionRepository: UserModeSessionRepository = this.userModeSessionRepository,
+        logger: Logger = this.logger,
+        vocalProfileRepository: VocalProfileRepository = this.vocalProfileRepository,
+        deletedEntityDao: com.andreas_kratzer.ghosttalk.core.database.DeletedEntityDao = this.deletedEntityDao,
+        zipArchiver: ZipArchiver = this.zipArchiver,
+        mediaArchiveSync: MediaArchiveSync = MediaArchiveSync(context, zipArchiver, logger),
+        statisticsImportExport: StatisticsImportExport = StatisticsImportExport(context, buttonUsageDao, userModeSessionRepository, settingsRepository, zipArchiver, logger),
+        bookConfigImportExport: BookConfigImportExport = BookConfigImportExport(context, settingsRepository, settingsMapper),
+        bookJsonExporter: BookJsonExporter = BookJsonExporter(context, pageRepository, bookRepository, settingsRepository, settingsMapper, actionMapper, buttonTemplateRepository, deletedEntityDao, logger),
+        bookJsonImporter: BookJsonImporter = BookJsonImporter(context, pageRepository, bookRepository, settingsRepository, settingsMapper, actionMapper, buttonTemplateRepository, deletedEntityDao, logger)
+    ): PageImportExportManager {
+        return PageImportExportManager(
+            context = context,
+            bookRepository = bookRepository,
+            settingsRepository = settingsRepository,
+            vocalProfileRepository = vocalProfileRepository,
+            zipArchiver = zipArchiver,
+            mediaArchiveSync = mediaArchiveSync,
+            statisticsImportExport = statisticsImportExport,
+            bookConfigImportExport = bookConfigImportExport,
+            bookJsonExporter = bookJsonExporter,
+            bookJsonImporter = bookJsonImporter,
+            logger = logger
+        )
+    }
 
     init {
         every { authManager.userEmail } returns kotlinx.coroutines.flow.MutableStateFlow("test@example.com")
@@ -1005,21 +1054,7 @@ class PageImportExportManagerTest {
         every { packageManager.getPackageInfo("com.andreas_kratzer.ghosttalk", 0) } returns packageInfo
 
         val buttonUsageDao: com.andreas_kratzer.ghosttalk.core.database.ButtonUsageDao = mockk(relaxed = true)
-        val managerWithStatsMock = PageImportExportManager(
-            context = context,
-            pageRepository = pageRepository,
-            bookRepository = bookRepository,
-            settingsRepository = settingsRepository,
-            settingsMapper = settingsMapper,
-            actionMapper = actionMapper,
-            buttonTemplateRepository = buttonTemplateRepository,
-            buttonUsageDao = buttonUsageDao,
-            userModeSessionRepository = userModeSessionRepository,
-            vocalProfileRepository = vocalProfileRepository,
-            deletedEntityDao = mockk(relaxed = true),
-            zipArchiver = ZipArchiver(),
-            logger = mockk(relaxed = true)
-        )
+        val managerWithStatsMock = createManager(buttonUsageDao = buttonUsageDao)
 
         coEvery { buttonUsageDao.getHistoryForBook("book-1") } returns kotlinx.coroutines.flow.flowOf(emptyList())
         coEvery { buttonUsageDao.getAllStatsForBook("book-1") } returns emptyList()
@@ -1096,21 +1131,7 @@ class PageImportExportManagerTest {
         coEvery { buttonUsageDao.getHistoryForBook("book-rt") } returns kotlinx.coroutines.flow.flowOf(listOf(historyEntity))
         coEvery { buttonUsageDao.getAllStatsForBook("book-rt") } returns listOf(statEntity)
 
-        val roundtripManager = PageImportExportManager(
-            context = context,
-            pageRepository = pageRepository,
-            bookRepository = bookRepository,
-            settingsRepository = settingsRepository,
-            settingsMapper = settingsMapper,
-            actionMapper = actionMapper,
-            buttonTemplateRepository = buttonTemplateRepository,
-            buttonUsageDao = buttonUsageDao,
-            userModeSessionRepository = userModeSessionRepository,
-            vocalProfileRepository = vocalProfileRepository,
-            deletedEntityDao = mockk(relaxed = true),
-            zipArchiver = ZipArchiver(),
-            logger = mockk(relaxed = true)
-        )
+        val roundtripManager = createManager(buttonUsageDao = buttonUsageDao)
 
         // 1. Export to ZIP
         val outputStream = java.io.ByteArrayOutputStream()
@@ -1143,21 +1164,7 @@ class PageImportExportManagerTest {
     @Test
     fun `importStatisticsFromZip with empty ZIP does not crash`() = runTest {
         val buttonUsageDao: com.andreas_kratzer.ghosttalk.core.database.ButtonUsageDao = mockk(relaxed = true)
-        val resilientManager = PageImportExportManager(
-            context = context,
-            pageRepository = pageRepository,
-            bookRepository = bookRepository,
-            settingsRepository = settingsRepository,
-            settingsMapper = settingsMapper,
-            actionMapper = actionMapper,
-            buttonTemplateRepository = buttonTemplateRepository,
-            buttonUsageDao = buttonUsageDao,
-            userModeSessionRepository = userModeSessionRepository,
-            vocalProfileRepository = vocalProfileRepository,
-            deletedEntityDao = mockk(relaxed = true),
-            zipArchiver = ZipArchiver(),
-            logger = mockk(relaxed = true)
-        )
+        val resilientManager = createManager(buttonUsageDao = buttonUsageDao)
 
         // Create a valid but empty ZIP
         val emptyZip = java.io.ByteArrayOutputStream()
@@ -1190,20 +1197,9 @@ class PageImportExportManagerTest {
         coEvery { buttonUsageDao.getAllStatsForBook("book-rt") } returns emptyList()
         coEvery { mockUserModeSessionRepository.getSessionsForBook("book-rt") } returns kotlinx.coroutines.flow.flowOf(listOf(session1, session2))
 
-        val managerWithStatsMock = PageImportExportManager(
-            context = context,
-            pageRepository = pageRepository,
-            bookRepository = bookRepository,
-            settingsRepository = settingsRepository,
-            settingsMapper = settingsMapper,
-            actionMapper = actionMapper,
-            buttonTemplateRepository = buttonTemplateRepository,
+        val managerWithStatsMock = createManager(
             buttonUsageDao = buttonUsageDao,
-            userModeSessionRepository = mockUserModeSessionRepository,
-            vocalProfileRepository = vocalProfileRepository,
-            deletedEntityDao = mockk(relaxed = true),
-            zipArchiver = ZipArchiver(),
-            logger = mockk(relaxed = true)
+            userModeSessionRepository = mockUserModeSessionRepository
         )
 
         // 1. Export to ZIP
@@ -1353,21 +1349,7 @@ class PageImportExportManagerTest {
     fun `exportBookToJson prunes old tombstones only after successful serialization`() = runTest {
         val bookId = "book-tombstone"
         val deletedDao: com.andreas_kratzer.ghosttalk.core.database.DeletedEntityDao = mockk(relaxed = true)
-        val managerWithDao = PageImportExportManager(
-            context = context,
-            pageRepository = pageRepository,
-            bookRepository = bookRepository,
-            settingsRepository = settingsRepository,
-            settingsMapper = settingsMapper,
-            actionMapper = actionMapper,
-            buttonTemplateRepository = buttonTemplateRepository,
-            buttonUsageDao = mockk(relaxed = true),
-            userModeSessionRepository = userModeSessionRepository,
-            vocalProfileRepository = vocalProfileRepository,
-            deletedEntityDao = deletedDao,
-            zipArchiver = ZipArchiver(),
-            logger = mockk(relaxed = true)
-        )
+        val managerWithDao = createManager(deletedEntityDao = deletedDao)
 
         coEvery { bookRepository.getBookById(bookId) } returns
             com.andreas_kratzer.ghosttalk.core.model.Book(id = bookId, name = "Tombstone Book")
@@ -1384,21 +1366,7 @@ class PageImportExportManagerTest {
     fun `exportBookToJson does not prune tombstones when export fails`() = runTest {
         val bookId = "book-fail"
         val deletedDao: com.andreas_kratzer.ghosttalk.core.database.DeletedEntityDao = mockk(relaxed = true)
-        val managerWithDao = PageImportExportManager(
-            context = context,
-            pageRepository = pageRepository,
-            bookRepository = bookRepository,
-            settingsRepository = settingsRepository,
-            settingsMapper = settingsMapper,
-            actionMapper = actionMapper,
-            buttonTemplateRepository = buttonTemplateRepository,
-            buttonUsageDao = mockk(relaxed = true),
-            userModeSessionRepository = userModeSessionRepository,
-            vocalProfileRepository = vocalProfileRepository,
-            deletedEntityDao = deletedDao,
-            zipArchiver = ZipArchiver(),
-            logger = mockk(relaxed = true)
-        )
+        val managerWithDao = createManager(deletedEntityDao = deletedDao)
 
         // getBookById liefert null -> exportBookToJson wirft "Book not found", bevor irgendetwas geschrieben wird.
         coEvery { bookRepository.getBookById(bookId) } returns null

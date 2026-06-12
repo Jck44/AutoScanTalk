@@ -4,6 +4,8 @@ import android.content.SharedPreferences
 import androidx.room.RoomDatabase
 import androidx.room.withTransaction
 import com.andreas_kratzer.ghosttalk.core.data.BookRepository
+import com.andreas_kratzer.ghosttalk.core.data.impl.clone.BookDataCloner
+import com.andreas_kratzer.ghosttalk.core.data.impl.clone.RestructureActionApplier
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants
 import com.andreas_kratzer.ghosttalk.core.database.AppDatabase
 import com.andreas_kratzer.ghosttalk.core.database.ButtonDao
@@ -75,10 +77,13 @@ class CloneBookUseCaseTest {
         every { mockPrefsEditor.putLong(any(), any()) } returns mockPrefsEditor
         every { mockPrefsEditor.putFloat(any(), any()) } returns mockPrefsEditor
 
+        val dataCloner = BookDataCloner(mockDatabase, mockPrefs)
+        val actionApplier = RestructureActionApplier()
         cloneBookUseCase = CloneBookUseCase(
             appDatabase = mockDatabase,
             bookRepository = mockBookRepository,
-            prefs = mockPrefs
+            dataCloner = dataCloner,
+            actionApplier = actionApplier
         )
     }
 

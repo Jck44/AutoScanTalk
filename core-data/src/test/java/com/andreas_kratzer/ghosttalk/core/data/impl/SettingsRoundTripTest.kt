@@ -4,6 +4,11 @@ import com.andreas_kratzer.ghosttalk.core.data.BookRepository
 import com.andreas_kratzer.ghosttalk.core.data.PageRepository
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.core.data.UserModeSessionRepository
+import com.andreas_kratzer.ghosttalk.core.data.impl.importexport.BookConfigImportExport
+import com.andreas_kratzer.ghosttalk.core.data.impl.importexport.BookJsonExporter
+import com.andreas_kratzer.ghosttalk.core.data.impl.importexport.BookJsonImporter
+import com.andreas_kratzer.ghosttalk.core.data.impl.importexport.MediaArchiveSync
+import com.andreas_kratzer.ghosttalk.core.data.impl.importexport.StatisticsImportExport
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsMapper
 import com.andreas_kratzer.ghosttalk.core.model.Book
 import io.mockk.coEvery
@@ -46,19 +51,23 @@ class SettingsRoundTripTest {
         val userModeSessionRepository = mockk<UserModeSessionRepository>(relaxed = true)
         val vocalProfileRepository = mockk<com.andreas_kratzer.ghosttalk.core.data.VocalProfileRepository>(relaxed = true)
         val deletedEntityDao = mockk<com.andreas_kratzer.ghosttalk.core.database.DeletedEntityDao>(relaxed = true)
+        val zipArchiver = ZipArchiver()
+        val mediaArchiveSync = MediaArchiveSync(context, zipArchiver, logger)
+        val statisticsImportExport = StatisticsImportExport(context, buttonUsageDao, userModeSessionRepository, settingsRepository, zipArchiver, logger)
+        val bookConfigImportExport = BookConfigImportExport(context, settingsRepository, settingsMapper)
+        val bookJsonExporter = BookJsonExporter(context, pageRepository, bookRepository, settingsRepository, settingsMapper, actionMapper, buttonTemplateRepository, deletedEntityDao, logger)
+        val bookJsonImporter = BookJsonImporter(context, pageRepository, bookRepository, settingsRepository, settingsMapper, actionMapper, buttonTemplateRepository, deletedEntityDao, logger)
         val manager = PageImportExportManager(
             context = context,
-            pageRepository = pageRepository,
             bookRepository = bookRepository,
             settingsRepository = settingsRepository,
-            settingsMapper = settingsMapper,
-            actionMapper = actionMapper,
-            buttonTemplateRepository = buttonTemplateRepository,
-            buttonUsageDao = buttonUsageDao,
-            userModeSessionRepository = userModeSessionRepository,
             vocalProfileRepository = vocalProfileRepository,
-            deletedEntityDao = deletedEntityDao,
-            zipArchiver = ZipArchiver(),
+            zipArchiver = zipArchiver,
+            mediaArchiveSync = mediaArchiveSync,
+            statisticsImportExport = statisticsImportExport,
+            bookConfigImportExport = bookConfigImportExport,
+            bookJsonExporter = bookJsonExporter,
+            bookJsonImporter = bookJsonImporter,
             logger = logger
         )
 
