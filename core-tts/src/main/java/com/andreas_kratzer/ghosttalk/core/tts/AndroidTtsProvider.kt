@@ -119,10 +119,13 @@ open class AndroidTtsProvider @Inject constructor(
                     }
                 }
             })
+            val requests = synchronized(pendingRequests) {
+                val copy = ArrayList(pendingRequests)
+                pendingRequests.clear()
+                copy
+            }
             handler.postDelayed({
                 applyPendingLanguageAndVoice()
-                val requests = ArrayList(pendingRequests)
-                pendingRequests.clear()
                 requests.forEach { req ->
                     speakRouted(req.text, req.deviceAddress, req.queueMode, req.isForCues, req.onDone, req.onError)
                 }
@@ -131,11 +134,13 @@ open class AndroidTtsProvider @Inject constructor(
             Log.e("AndroidTtsProvider", "TTS init failed! Status code: $status")
             initialized = false
             tts = null
-            val requests = ArrayList(pendingRequests)
-            pendingRequests.clear()
+            val requests = synchronized(pendingRequests) {
+                val copy = ArrayList(pendingRequests)
+                pendingRequests.clear()
+                copy
+            }
             requests.forEach { req ->
                 req.onError?.invoke("TTS initialization failed")
-                req.onDone?.invoke()
             }
         }
     }
@@ -170,7 +175,9 @@ open class AndroidTtsProvider @Inject constructor(
 
         if (!initialized || tts == null) {
             Log.i("AndroidTtsProvider", "TTS not initialized, queueing request: '${text.take(20)}...'")
-            pendingRequests.add(PendingSpeechRequest(text, resolvedDeviceAddress, queueMode, isForCues, onDone, onError))
+            synchronized(pendingRequests) {
+                pendingRequests.add(PendingSpeechRequest(text, resolvedDeviceAddress, queueMode, isForCues, onDone, onError))
+            }
             return
         }
 
@@ -181,7 +188,10 @@ open class AndroidTtsProvider @Inject constructor(
 
         if (queueMode == TextToSpeech.QUEUE_FLUSH) {
             routedAudioPlayer.stopAll()
-            playRequests.values.forEach { it.onDoneCallback?.let { cb -> handler.post { cb() } } }
+            playRequests.values.forEach { 
+                it.file.delete()
+                it.onDoneCallback?.let { cb -> handler.post { cb() } } 
+            }
             directCallbacks.values.forEach { handler.post { it() } }
             playRequests.clear()
             directCallbacks.clear()
@@ -202,8 +212,8 @@ open class AndroidTtsProvider @Inject constructor(
                 if (result == TextToSpeech.ERROR) {
                     Log.e("AndroidTtsProvider", "tts.speak returned ERROR for utteranceId: $utteranceId")
                     directCallbacks.remove(utteranceId)
-                    onDone?.let { callback ->
-                        handler.post { callback() }
+                    handler.post {
+                        onError?.invoke("tts.speak returned ERROR")
                     }
                 }
             } else {
@@ -219,8 +229,8 @@ open class AndroidTtsProvider @Inject constructor(
                     Log.e("AndroidTtsProvider", "tts.synthesizeToFile returned ERROR for utteranceId: $utteranceId")
                     playRequests.remove(utteranceId)
                     cacheFile.delete()
-                    onDone?.let { callback ->
-                        handler.post { callback() }
+                    handler.post {
+                        onError?.invoke("tts.synthesizeToFile returned ERROR")
                     }
                 }
             }

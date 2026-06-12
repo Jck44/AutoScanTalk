@@ -73,7 +73,6 @@ open class ElevenLabsTtsProvider @Inject constructor(
         if (apiKey.isNullOrEmpty()) {
             Log.e("ElevenLabsTtsProvider", "API Key missing")
             onError?.invoke("API Key missing")
-            onDone?.invoke()
             return
         }
 
@@ -106,7 +105,6 @@ open class ElevenLabsTtsProvider @Inject constructor(
                 Log.w("ElevenLabsTtsProvider", "Offline and no cache found for: ${text.take(20)}... - Triggering fallback")
                 handler.post {
                     onError?.invoke("Offline and not in cache")
-                    onDone?.invoke()
                 }
                 return
             }
@@ -139,10 +137,11 @@ open class ElevenLabsTtsProvider @Inject constructor(
                     }
                     
                     handler.post { 
-                        if (!isCanceled) {
+                        if (isCanceled) {
+                            onDone?.invoke()
+                        } else {
                             onError?.invoke(e.message ?: "Network error")
                         }
-                        onDone?.invoke() 
                     }
                 }
 
@@ -153,7 +152,6 @@ open class ElevenLabsTtsProvider @Inject constructor(
                             Log.e("ElevenLabsTtsProvider", errorMsg)
                             handler.post { 
                                 onError?.invoke(errorMsg)
-                                onDone?.invoke() 
                             }
                             return
                         }
@@ -178,7 +176,6 @@ open class ElevenLabsTtsProvider @Inject constructor(
                             Log.e("ElevenLabsTtsProvider", "Error saving/playing audio: ${e.message}")
                             handler.post { 
                                 onError?.invoke(e.message ?: "Playback error")
-                                onDone?.invoke() 
                             }
                         }
                     }

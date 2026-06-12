@@ -86,4 +86,24 @@ class TtsScannerFeedbackProviderTest {
         // Should wait exactly 2000ms (timeout)
         assertEquals(2000L, currentTime)
     }
+
+    @Test
+    fun testSpeakCue_waitsForSingleOnDone_andDoesNotResumeEarlyOnErrorThenDone() = runTest {
+        every { mockTtsHelper.isReady } returns true
+        
+        val doneCallbackSlot = io.mockk.slot<() -> Unit>()
+        every { 
+            mockTtsHelper.speakRouted(any(), any(), any(), any(), capture(doneCallbackSlot), any()) 
+        } answers {
+            // Simulate contract violation: trigger onDone twice
+            doneCallbackSlot.captured.invoke()
+            doneCallbackSlot.captured.invoke()
+        }
+
+        provider.speakCue("Test text")
+
+        verify(exactly = 1) {
+            mockTtsHelper.speakRouted("Test text", "mock_cues_device", any(), true, any(), any())
+        }
+    }
 }

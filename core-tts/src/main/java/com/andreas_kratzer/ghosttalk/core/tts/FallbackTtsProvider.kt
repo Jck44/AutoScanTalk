@@ -17,16 +17,20 @@ class FallbackTtsProvider(
         get() = primary.availableVoicesFlow
 
     override fun speak(text: String, queueMode: Int, onDone: (() -> Unit)?, onError: ((String) -> Unit)?) {
-        primary.speak(
-            text = text,
-            queueMode = queueMode,
-            onDone = onDone,
+        val fallbackTriggered = java.util.concurrent.atomic.AtomicBoolean(false)
+        val doneOnce = java.util.concurrent.atomic.AtomicBoolean(false)
+        fun safeDone() { if (doneOnce.compareAndSet(false, true)) onDone?.invoke() }
+        fun safeError(error: String) { if (doneOnce.compareAndSet(false, true)) onError?.invoke(error) }
+        
+        primary.speak(text, queueMode,
+            onDone = { if (!fallbackTriggered.get()) safeDone() },
             onError = { error ->
-                Log.w("FallbackTtsProvider", "Primary TTS failed: $error. Falling back to secondary provider.")
-                onFallbackTriggered(error)
-                fallback.speak(text, queueMode, onDone, onError)
-            }
-        )
+                if (!doneOnce.get() && fallbackTriggered.compareAndSet(false, true)) {
+                    onFallbackTriggered(error)
+                    fallback.speak(text, queueMode,
+                        onDone = { safeDone() }, onError = { e -> safeError(e) })
+                }
+            })
     }
 
     override fun speakRouted(
@@ -37,18 +41,20 @@ class FallbackTtsProvider(
         onDone: (() -> Unit)?,
         onError: ((String) -> Unit)?
     ) {
-        primary.speakRouted(
-            text = text,
-            deviceAddress = deviceAddress,
-            queueMode = queueMode,
-            isForCues = isForCues,
-            onDone = onDone,
+        val fallbackTriggered = java.util.concurrent.atomic.AtomicBoolean(false)
+        val doneOnce = java.util.concurrent.atomic.AtomicBoolean(false)
+        fun safeDone() { if (doneOnce.compareAndSet(false, true)) onDone?.invoke() }
+        fun safeError(error: String) { if (doneOnce.compareAndSet(false, true)) onError?.invoke(error) }
+        
+        primary.speakRouted(text, deviceAddress, queueMode, isForCues,
+            onDone = { if (!fallbackTriggered.get()) safeDone() },
             onError = { error ->
-                Log.w("FallbackTtsProvider", "Primary routed TTS failed: $error. Falling back to secondary provider.")
-                onFallbackTriggered(error)
-                fallback.speakRouted(text, deviceAddress, queueMode, isForCues, onDone, onError)
-            }
-        )
+                if (!doneOnce.get() && fallbackTriggered.compareAndSet(false, true)) {
+                    onFallbackTriggered(error)
+                    fallback.speakRouted(text, deviceAddress, queueMode, isForCues,
+                        onDone = { safeDone() }, onError = { e -> safeError(e) })
+                }
+            })
     }
 
     override suspend fun prefetch(text: String) {

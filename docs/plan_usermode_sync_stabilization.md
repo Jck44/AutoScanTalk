@@ -352,6 +352,29 @@ Kein Migrationscode: Für Löschungen, die **vor** diesem Update passierten, exi
 dort gilt einmalig weiter die alte Heuristik (Buttons können resurrecten, kein Verlust). Ab dem Update ist jede
 neue Löschung abgesichert.
 
+**Schritt 5 — PFLICHT: Sync-Import darf Timestamps nicht überstempeln (im Review 1B gefunden)**
+`PageRepositoryImpl.insertPage()` setzt `updatedAt = now` auf die Seite UND auf **alle** Buttons
+(`page.copy(updatedAt = now, buttonConfigs = …copy(updatedAt = now))`). `importFromJson` (PageImportExportManager,
+`pageRepository.insertPage(page)` bei Z. ~413) läuft durch genau diese Methode — obwohl das Page-Objekt dort
+korrekt mit den Remote-Timestamps gebaut wird (Z. ~411, Button-Mapping Z. ~369). Folgen:
+1. Nach jedem Download/Merge-Import tragen alle lokalen Seiten/Buttons `now` → im **nächsten** Merge gewinnt
+   ungeänderter lokaler Inhalt per LWW gegen echte, früher getätigte Edits des anderen Geräts → stiller
+   Datenverlust (genau die Klasse, die Phase 1B schließt). Auch der Tombstone-Vergleich
+   (`deletedAt >= updatedAt`) kippt: gelöschte Buttons resurrecten, weil der Import sie „frisch" stempelt.
+2. Anker-Churn: Der Re-Export nach einem Download hat andere Timestamps als das Remote-JSON →
+   `localStructMd5 != anchorMd5` → jeder Folge-Sync meldet „lokal geändert" und lädt die gestempelten
+   Timestamps in die Cloud.
+
+Fix: Neue Methode `insertPageRaw(page: Page)` in `PageRepository`/`PageRepositoryImpl` — identisch zu
+`insertPage`, aber **ohne** Timestamp-Stamping (Page und Buttons unverändert übernehmen). `importFromJson`
+(Z. ~413) auf `insertPageRaw` umstellen. Alle anderen `insertPage`-Aufrufer (UI-Flows, `defaultStaticRowPage`
+Z. ~478) bleiben auf der stempelnden Variante. KDoc an beide Methoden: wer wofür.
+
+Tests:
+- `PageRepositoryTest`: `insertPageRaw preserves page and button updatedAt` (Page mit `updatedAt = 1234`,
+  Button mit `updatedAt = 999` → an die DAOs unverändert durchgereicht, `coVerify` mit `match`).
+- Regression: `insertPage still stamps updatedAt` (Altverhalten der UI-Pfade bleibt).
+
 ### 1B.3 Unit-Tests Phase 1B
 
 **`BookMergeEngineTest.kt`:**
@@ -397,6 +420,13 @@ Gleiches Muster in `AndroidTtsProvider.onInit` Fehlerpfad (Z. ~136-138: `onError
 
 **Schritt 1 — `ElevenLabsTtsProvider`:** in allen fünf Fehlerpfaden den `onDone?.invoke()` entfernen, `onError`
 bleibt. Erfolgsfad unverändert (nur `onDone` nach Abspielende).
+**Ausnahme Cancel-Pfad (im Review Phase 2 gefunden):** Im `onFailure`-Callback gilt für `isCanceled == true`
+weder Fehler noch Erfolg-im-Sprechsinn — aber es muss trotzdem **genau ein** Callback feuern, sonst hängen
+Aufrufer, die auf den Abschluss einer geflushten Ansage warten (der Scanner stünde bis zu 5 s im Timeout statt
+sofort weiterzulaufen). Richtig: `if (isCanceled) onDone?.invoke() else onError?.invoke(...)` — Cancel beendet
+die Ansage ohne Fallback (onError würde fälschlich den Android-Fallback starten).
+Test (FallbackTtsProviderTest oder ElevenLabs-Ebene): „canceled call completes via onDone and does not trigger
+fallback".
 
 **Schritt 2 — `AndroidTtsProvider`:** im `onInit`-Fehlerpfad nur `onError` aufrufen. In den Pfaden, die heute
 bei `tts.speak == ERROR` / `synthesizeToFile == ERROR` nur `onDone` aufrufen (Z. ~205, ~222): auf `onError`
