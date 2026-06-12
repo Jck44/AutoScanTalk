@@ -18,7 +18,7 @@ import javax.inject.Singleton
 class GenAiSettingsRepository @Inject constructor(
     prefs: SharedPreferences,
     activeBookIdManager: ActiveBookIdManager,
-    @ApplicationContext private val context: android.content.Context,
+    @param:ApplicationContext private val context: android.content.Context,
     private val advancedSettings: AdvancedSettingsRepository
 ) : BaseSettingsRepository(prefs, activeBookIdManager.activeBookIdFlow), GenAiSettings {
 

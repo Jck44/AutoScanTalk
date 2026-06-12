@@ -1,3 +1,4 @@
+@file:Suppress("UNUSED_VALUE")
 package com.andreas_kratzer.ghosttalk.ui.pages.analytics.recommendations
 
 import android.content.Context
@@ -320,7 +321,7 @@ fun AiRestructureSection(
                         if (missingNodes.isNotEmpty()) {
                             isSavingAndLoadingLayouts = true
                             coroutineScope.launch {
-                                actions.onApplyHierarchyProposal { msg ->
+                                actions.onApplyHierarchyProposal { _ ->
                                     isSavingAndLoadingLayouts = false
                                     Toast.makeText(context, state.toastApplied, Toast.LENGTH_LONG).show()
                                     onNavigateBack()

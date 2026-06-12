@@ -40,7 +40,6 @@ fun TemplateEditorScreen(
     val unfilteredPages by pageViewModel.unfilteredPages.collectAsState()
     val bookDefaultScanPattern by pageViewModel.defaultScanPattern.collectAsState(initial = "linear")
     val template = templates.find { it.id == templateId }
-    val dimensions = LocalDimensions.current
 
     if (template == null) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {

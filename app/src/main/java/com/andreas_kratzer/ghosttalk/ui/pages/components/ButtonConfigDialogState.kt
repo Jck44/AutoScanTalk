@@ -1,3 +1,4 @@
+@file:Suppress("DEPRECATION")
 package com.andreas_kratzer.ghosttalk.ui.pages.components
 
 import androidx.compose.runtime.Composable

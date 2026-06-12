@@ -21,11 +21,11 @@ class SecuritySettingsRepository @Inject constructor(
 ) : BaseSettingsRepository(prefs, activeBookIdManager.activeBookIdFlow), SecuritySettings {
 
     override fun getSecurityPinForBook(bookId: String): String? {
-        val scopedKey = "${bookId}_${SettingsConstants.KEY_SECURITY_PIN}"
+        val scopedKey = "${bookId}_$KEY_SECURITY_PIN"
         if (prefs.contains(scopedKey)) {
             return prefs.getString(scopedKey, "")
         }
-        return prefs.getString(SettingsConstants.KEY_SECURITY_PIN, "")
+        return prefs.getString(KEY_SECURITY_PIN, "")
     }
 
     override fun isPinRequiredForDeletionForBook(bookId: String): Boolean {

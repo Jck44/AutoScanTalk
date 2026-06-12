@@ -112,8 +112,6 @@ fun ButtonConfigDialog(
         }
     }
 
-    val isElevenLabs = remember { isTtsElevenLabs() }
-
     DisposableEffect(Unit) {
         onDispose {
             onStopTts?.invoke()
@@ -238,7 +236,6 @@ fun ButtonConfigDialog(
                                 onPrefetchText = onPrefetchText,
                                 onSuggestLabel = onSuggestLabel,
                                 onRefreshHueCache = onRefreshHueCache,
-                                onAvailableHomeDevicesChange = { availableHomeDevices = it },
                                 isLoadingSpotifyPlaylists = isLoadingSpotifyPlaylists,
                                 spotifyUserDisplayName = spotifyUserDisplayName,
                                 onConnectSpotify = onConnectSpotify,

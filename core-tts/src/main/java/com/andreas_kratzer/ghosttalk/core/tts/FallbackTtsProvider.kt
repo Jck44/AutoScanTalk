@@ -10,7 +10,7 @@ import java.util.Locale
 class FallbackTtsProvider(
     private val primary: TtsProvider,
     private val fallback: TtsProvider,
-    private val scope: CoroutineScope,
+    scope: CoroutineScope,
     private val onFallbackTriggered: (String) -> Unit
 ) : CacheableTtsProvider {
 

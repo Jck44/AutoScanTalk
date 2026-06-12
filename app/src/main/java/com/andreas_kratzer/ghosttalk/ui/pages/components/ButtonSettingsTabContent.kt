@@ -46,7 +46,6 @@ fun ButtonSettingsTabContent(
     onPrefetchText: ((String, () -> Unit) -> Unit)?,
     onSuggestLabel: ((ButtonConfig, onResult: (String) -> Unit) -> Unit)?,
     onRefreshHueCache: ((silentOnFailure: Boolean, onResult: (Boolean) -> Unit) -> Unit)?,
-    onAvailableHomeDevicesChange: (List<HomeDevice>) -> Unit,
     // Spotify status
     isLoadingSpotifyPlaylists: Boolean,
     spotifyUserDisplayName: String?,
@@ -261,7 +260,7 @@ fun ButtonSettingsTabContent(
             if (state.smartHomeProvider == SmartHomeProvider.PHILIPS_HUE) {
                 if (onRefreshHueCache != null) {
                     state.isFetchingDevices = true
-                    onRefreshHueCache(false) { success ->
+                    onRefreshHueCache(false) { _ ->
                         state.isFetchingDevices = false
                     }
                 }

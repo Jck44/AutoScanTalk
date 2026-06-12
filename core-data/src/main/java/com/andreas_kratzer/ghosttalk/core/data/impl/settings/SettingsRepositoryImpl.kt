@@ -31,7 +31,7 @@ import javax.inject.Inject
 
 @SuppressLint("CommitPrefEdits", "ApplySharedPref", "UseKtx")
 class SettingsRepositoryImpl @Inject constructor(
-    @ApplicationContext private val context: Context,
+    @param:ApplicationContext private val context: Context,
     private val bookRepository: BookRepository,
     private val settingsProfileDao: com.andreas_kratzer.ghosttalk.core.database.SettingsProfileDao,
     @param:ApplicationScope private val scope: CoroutineScope,

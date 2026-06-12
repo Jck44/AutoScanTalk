@@ -107,7 +107,7 @@ open class TextToSpeechHelper @Inject constructor(
                     primary = baseProvider,
                     fallback = androidTtsProvider.get(),
                     scope = scope,
-                    onFallbackTriggered = { error ->
+                    onFallbackTriggered = { _ ->
                         _isFallbackActiveFlow.value = true
                     }
                 )
