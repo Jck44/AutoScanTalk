@@ -18,7 +18,10 @@ Jeder Schritt ist so konzipiert, dass die App danach vollständig kompilierbar, 
 | 5 | Konstruktor-Injektion Sub-Repos | ✅ umgesetzt |
 | 6 | PageViewModel-Aufteilung | ✅ umgesetzt (Call-/GridEditor-/PageSplit-/BookRestructure-VM) |
 | 7 | Law of Demeter | ✅ umgesetzt (Delegates `private`/`internal`) |
-| 8–12 | Monolith-Roadmap UI/Call | 🆕 siehe Ende des Dokuments |
+| 8 | Button-Konfig-UI | ✅ umgesetzt + reviewt, Must-Fixes behoben, abnahmereif |
+| 8B | Gemini Nano entfernen (inkl. lokaler Vision) | 📋 Detailplan fertig — nach Phase-8-Commit |
+| 9 | Analytics-Tabs | 📋 Detailplan fertig |
+| 10–12 | MainActivity, SystemCallManager, Rest | 🆕 siehe Ende des Dokuments |
 
 ---
 
@@ -316,13 +319,194 @@ Umsetzung weitgehend sauber: alle 11 Sub-Repos `@Singleton` ✅, Interfaces dekl
 
 Die größten verbliebenen Monolithen, je Phase: Code-Review (Bugs/Design) → Aufteilen → Tests → Commit. Detailpläne werden je Phase erstellt, wenn sie an der Reihe ist (analog zum 4.2-Detailplan oben).
 
-### Phase 8: Button-Konfig-UI (~2200 Zeilen, größter Brocken)
-* `ui/pages/ButtonConfigDialog.kt` (1077 Zeilen) und `ui/pages/components/ButtonSettingsTabContent.kt` (1120 Zeilen) hängen zusammen.
-* Ziel: Aufteilung in fokussierte Composables pro Tab/Sektion; State-Hoisting prüfen; gemeinsame Bausteine extrahieren.
+### Phase 8: Button-Konfig-UI — Detailplan (Rev. 1, 2026-06-12)
 
-### Phase 9: Analytics-Bereich
-* `ui/pages/analytics/AnalyticsRecommendationsTab.kt` (1251 Zeilen) und `ui/pages/ButtonStatisticsTabContent.kt` (752 Zeilen).
-* Ziel: Berechnungslogik (Empfehlungen, Aggregationen) aus den Composables in testbare Klassen/UseCases ziehen; UI in Sektions-Composables aufteilen. `ButtonStatisticsTabContent` gehört vermutlich nach `ui/pages/analytics/` verschoben.
+**Betroffene Dateien**: `ui/pages/ButtonConfigDialog.kt` (1077 Z.), `ui/pages/components/ButtonSettingsTabContent.kt` (1120 Z.). Bereits extrahiert und funktionsfähig: `DialogActionBar.kt` (234), `PreviewTabContent.kt` (347), `components/ButtonSettingsState.kt` (150, enthält `ButtonSettingsUiState`/`ButtonSettingsActions`/`ActionTypeResolver`), `ActionConfigFields.kt`, `actions/*ActionFields.kt`, `core/model/ActionCategoryRegistry.kt`. Aufrufer des Dialogs: `GridEditorContent.kt`, `GridEditorDialogs.kt`.
+
+**Ist-Analyse (Claude, im Code verifiziert)**:
+1. **Totes Duplikat im Dialog (~180 Zeilen)**: `handlePlayClick` (Z. 683), `handleFocusLost` (Z. 719) und `getLocalLabelSuggestion` (Z. 979) sind in `ButtonConfigDialog.kt` definiert, werden dort aber **nirgends aufgerufen** — die lebenden Kopien stecken wortgleich in `ButtonSettingsTabContent.kt`. Dazu: verwaistes `rememberCoroutineScope()` (Z. 459) und leere Kommentarblöcke (Z. 178–183).
+2. **~40 einzelne `remember`-States** im Dialog (ein Feld pro Action-Parameter), die per ~100 Zeilen Boilerplate in `ButtonSettingsUiState`/`ButtonSettingsActions` (40 Callbacks!) umkopiert werden.
+3. **Der `buttonConfig.copy(label = …, spokenText = …, …)`-Block existiert 4×**: `handleAutoSave`, `saveWithAction` (Dialog) sowie im KI-Vorschlag-Button und in `onRankChange` (TabContent).
+4. **Action-Identität ist der lokalisierte Anzeige-String** (`selectedActionType: String`): Der Dialog hat eine eigene Inline-Tabelle `actionTypeXxx` (Z. 196–247), die `ActionTypeResolver` dupliziert; `buildCurrentAction()` (Z. 461–593) und der Titel-Badge switchen auf Display-Strings. Teils hartkodiertes Deutsch (`"Spotify abspielen"`, `"Zu Startseite"`, Tab-Titel).
+5. **🐛 Echter Bug dabei**: `GeminiNanoButtonAction` wird beim Öffnen auf den Anzeige-String von `actionTypeGemini` gemappt (Z. 257), `buildCurrentAction()` baut daraus aber `GeminiButtonAction` — **beim ersten Auto-Save wird eine Nano-Action still in eine Cloud-Action konvertiert**.
+6. Audio-Aufnahme-Logik (AudioRecorder, MediaPlayer, Keep-Screen-On, Mic-Permission) liegt lose im Dialog; die zugehörige Aufnahme-UI (~250 Z.) in TabContent.
+7. `val isElevenLabs = remember { isTtsElevenLabs() }` wird einmalig gecached und reagiert nicht auf Engine-Wechsel bei offenem Dialog (vorbestehend, in beiden Dateien).
+
+**Vorgehen** (jeder Schritt einzeln kompilierbar, testbar, committen; Verifikation jeweils `./gradlew :app:compileDebugKotlin` + `./gradlew testDebugUnitTest` + Smoke-Test laut Checkliste unten):
+
+#### Schritt 8.1: Toten Code entfernen (reines Löschen)
+* In `ButtonConfigDialog.kt`: `handlePlayClick`, `handleFocusLost`, `getLocalLabelSuggestion`, `rememberCoroutineScope()`-Zeile, leere Kommentarblöcke entfernen. **Keine sonstige Änderung.** (~−180 Zeilen)
+
+#### Schritt 8.2: Geteilte Helfer in eigene Dateien
+* `getLocalLabelSuggestion` aus `ButtonSettingsTabContent.kt` nach `ui/pages/components/LabelSuggestion.kt` verschieben (top-level `internal fun`, pure Funktion).
+* `handlePlayClick`/`handleFocusLost` + die 3×2 Cache-States (`isXxxCached`/`isXxxPrefetching`) als wiederverwendbaren State-Holder `rememberTtsFieldPlayback(…)` nach `ui/pages/components/TtsFieldPlayback.kt` extrahieren; TabContent nutzt ihn für die 3 Felder (label, spokenText, auditoryCueText).
+* **Neuer Unit-Test**: `LabelSuggestionTest` (pure Funktion, alle Action-Typen einmal durchspielen; Context mit Robolectric oder via gemocktem `getString`).
+
+#### Schritt 8.3: `ButtonActionFactory` + stabile Action-IDs (Kern-Schritt, fixt Bug Nr. 5)
+* Neues `enum class ActionTypeId` (z. B. `SPEAK, NAVIGATE, NAVIGATE_BACK, …, GEMINI, GEMINI_NANO, …` — **eigener Eintrag für `GEMINI_NANO`!**) in `ui/pages/components/` oder `core/model/` neben `ActionCategoryRegistry`.
+* Neue pure Datei `ButtonActionFactory.kt` mit zwei Funktionen:
+  * `fun actionTypeIdOf(action: ButtonAction): ActionTypeId` (ersetzt das Mapping-`when` Z. 249–309)
+  * `fun buildAction(id: ActionTypeId, params: ActionParams): ButtonAction` (ersetzt `buildCurrentAction`, Z. 461–593; `ActionParams` = data class mit den Action-Feldern)
+* `selectedActionType` im Dialog/UiState wird `ActionTypeId` statt String; `ActionTypeResolver` liefert nur noch das Display-Label pro Id (eine Richtung: Id → String). Der Titel-Badge switcht auf die Id.
+* **Bugfix dabei dokumentieren**: `GEMINI_NANO` round-trippt jetzt korrekt (`buildAction(GEMINI_NANO, …) = GeminiNanoButtonAction(intent = geminiPrompt)`).
+* **Neuer Unit-Test** `ButtonActionFactoryTest`: Für jeden Action-Typ Roundtrip `action → actionTypeIdOf → buildAction → gleicher Typ + gleiche Felder` (deckt auch den Nano-Bug ab).
+
+#### Schritt 8.4: State-Holder statt 40 Einzelstates
+* Neue Klasse `ButtonConfigDialogState` (`@Stable`, Datei `ui/pages/components/ButtonConfigDialogState.kt`) mit `rememberButtonConfigDialogState(buttonConfig)`: kapselt alle Feld-States (mutableStateOf-Properties), plus genau **eine** Methode `buildConfig(): ButtonConfig` (ersetzt die 4 `copy()`-Blöcke) und `buildAction()` (delegiert an `ButtonActionFactory`).
+* `ButtonSettingsUiState`/`ButtonSettingsActions` (40-Callback-Objekt) entfallen: TabContent bekommt den State-Holder direkt + die wenigen externen Callbacks (`onSave`, `onDismiss`, TTS-/Spotify-/Hue-Lambdas).
+* `handleAutoSave`/`saveWithAction` werden Einzeiler im Dialog: `if (state.label.isNotBlank()) onSave(state.buildConfig())`.
+
+#### Schritt 8.5: Audio-Aufnahme kapseln
+* `rememberAudioRecordingController(context, buttonId)` in `ui/pages/components/AudioRecordingController.kt`: kapselt AudioRecorder, MediaPlayer, isRecording/isPlaying, Keep-Screen-On-Effekt, Start/Stop/Play/Delete (heute verteilt über Dialog Z. 122–159, 629–681 und TabContent).
+* Die Aufnahme-UI (TabContent Z. 567–736 inkl. Lösch-Dialog) wird eigenes Composable `SpokenTextAudioSection.kt`.
+
+#### Schritt 8.6: TabContent in Sektions-Composables aufteilen
+* Je eigene Datei unter `ui/pages/components/`:
+  * `ActionTypeDropdownSection.kt` (Gruppen-Dropdown + Icon-Mapping, heute Z. 209–351)
+  * `LabelFieldSection.kt` (Label-Feld + KI-/Lokal-Vorschlag, Z. 378–483)
+  * `SpokenTextSection.kt` (TTS/Audio-Karte, nutzt 8.5, Z. 485–739)
+  * `CueAndTogglesSection.kt` (Auditory-Cue-Feld + isActive/playAsCue-Karte + FeatureGuard-Warnung, Z. 741–862)
+* `ButtonSettingsTabContent` bleibt als Orchestrierung (< ~250 Zeilen) inkl. `ActionConfigFields`-Wiring.
+
+#### Schritt 8.7: Abschluss-Review
+* Zielgrößen: `ButtonConfigDialog.kt` < 300 Z., `ButtonSettingsTabContent.kt` < 250 Z., keine Datei der Phase > 400 Z.
+* Claude reviewt: Verhaltensgleichheit (außer dokumentiertem Nano-Bugfix), keine doppelte Logik mehr, keine String-basierte Action-Identität mehr.
+
+**Smoke-Test-Checkliste (nach jedem Schritt, mind. nach 8.3/8.4/8.5)**:
+1. Dialog im Grid-Editor öffnen, alle 3 Tabs durchklicken.
+2. Aktionstyp wechseln (Sprechen → Navigation → Gemini → Spotify → Hue) — Felder erscheinen passend, Label-Autovorschlag greift.
+3. Speichern + erneut öffnen — Werte bleiben erhalten; **Gemini-Nano-Button öffnen + schließen → bleibt Nano** (Bugfix 8.3).
+4. Audio: aufnehmen, abspielen, löschen; Mic-Permission-Fall.
+5. TTS-Vorhören der 3 Textfelder (mit ElevenLabs: Prefetch-Spinner, Cache-Färbung).
+
+**Explizit NICHT in Phase 8**: i18n der hartkodierten deutschen Strings (Tab-Titel, Toasts, „Zu Startseite" …) — nur sammeln und als eigenes Ticket notieren; `isElevenLabs`-Caching-Schwäche (Nr. 7) nur dokumentieren.
+
+#### Review-Befund Phase 8 (Claude, 2026-06-12) — 3 Must-Fixes vor Commit
+
+Struktur stimmt: Dialog 1077→443 Z., TabContent 1120→338 Z., 9 neue fokussierte Dateien, State-Holder + Factory wie geplant, Nano-Bug gefixt, `buildConfig()` existiert genau 1×, Tests grün. Abweichung: Schritt 8.5 (AudioRecordingController) wurde nicht extrahiert — Audio-Logik liegt weiter im Dialog (~70 Z.), akzeptiert, bleibt Folgearbeit.
+
+**🐛 Must-Fix 1: `INSTALL_UPDATE` wird zu `TOGGLE_SCANNING` korrumpiert.**
+[ButtonActionFactory.kt:89] mappt `DeviceActionType.INSTALL_UPDATE -> ActionTypeId.TOGGLE_SCANNING`; ein `INSTALL_UPDATE`-Eintrag fehlt im Enum komplett. Ein bestehender Update-Button wird beim Öffnen als „Scanning umschalten" angezeigt und beim ersten Auto-Save in `TOGGLE_SCANNING` umgeschrieben — exakt die Bug-Klasse, die Schritt 8.3 beseitigen sollte.
+* Fix: `ActionTypeId.INSTALL_UPDATE` ergänzen; Mapping in `actionTypeIdOf`, Case in `buildAction`, Label in `ActionTypeResolver.getLabel` (String `R.string.button_device_control_install_update` wieder aufnehmen). Im Dropdown war INSTALL_UPDATE auch vorher nicht — das bleibt so.
+* Test: siehe Must-Fix-Test unten.
+
+**🐛 Must-Fix 2: `TtsFieldPlaybackState` friert `text`/`playingField` ein.**
+`rememberTtsFieldPlayback` ist auf `text`/`playingField` gekeyt und die Klasse hält beide als Konstruktor-Snapshot. Folgen:
+* Nach Abspielende prüft der Completion-Callback `if (playingField == fieldName)` gegen den **eingefrorenen** Wert (beim Klick `null`) → Bedingung nie wahr → Play-Icon bleibt dauerhaft im „spielt"-Zustand.
+* Nach KI-Label-Vorschlag ruft `LabelFieldSection` `labelPlayback.handleFocusLost(...)` auf der **alten** Instanz auf → es wird der alte Text geprefetcht, nicht der Vorschlag (alter Code übergab den Text explizit).
+* Nebenwirkung: `isPrefetching` wird bei jedem Tastendruck zurückgesetzt (Instanz-Neubau).
+Fix: Instanz nur auf `fieldName` keyen; `text` als Methodenparameter übergeben (`handlePlayClick(text)`, `handleFocusLost(text, onAutoSave)`) und `playingField` als Live-Getter (`getPlayingField: () -> String?`). Aufrufstellen in den 3 Sektionen anpassen (beim Vorschlag den Vorschlagstext übergeben).
+
+**🐛 Must-Fix 3: Auto-Save bei jedem Tastendruck.**
+In `ButtonSettingsTabContent` wurde an **alle** `ActionConfigFields`-Callbacks `onAutoSave()` gehängt. Vorher waren 15 davon bewusst reine Setter — die Textfelder speichern selbst bei Focus-Verlust (`DeviceActionFields`: `if (!it.isFocused) onAutoSave()`, `onValueChangeFinished`). Jetzt feuert `onSave → updateButtonConfig → Room-Write + Sync-Timestamp` bei jedem Zeichen in: geminiPrompt, volumeValue, contactName, contactPhone, messageText, prefixText, suffixText, offsetValue, smartHomeDeviceId/-Name/-Intent/-Value.
+Fix: Verhaltensparität wiederherstellen — diese Callbacks wieder als reine Setter (`{ state.x = it }`); `onAutoSave()` nur dort behalten, wo es der alte Code hatte: onRankChange, onPredictionTypeChange, onIncludeWeekdayChange, onIgnoreEmojisChange, onUseCloudChange, onPlayShutterSoundChange, alle 5 media*-Callbacks, onTargetPageIdChange via `NavigationActionFields.onPageSelected` (dort war es schon), onContactSelected→saveWithAction.
+
+**Must-Fix-Test (ersetzt die Stichproben-Tests)**: `ButtonActionFactoryTest` erschöpfend machen — hätte Must-Fix 1 gefangen:
+```kotlin
+@Test fun roundtripAllDeviceActionTypes() {
+    for (type in DeviceActionType.entries) {
+        val id = ButtonActionFactory.actionTypeIdOf(ControlDeviceButtonAction(type))
+        val rebuilt = ButtonActionFactory.buildAction(id, ActionParams())
+        assertEquals(type, (rebuilt as ControlDeviceButtonAction).actionType)
+    }
+}
+@Test fun buildActionAllIdsRoundtrip() {
+    for (id in ActionTypeId.entries) {
+        assertEquals(id, ButtonActionFactory.actionTypeIdOf(ButtonActionFactory.buildAction(id, ActionParams())))
+    }
+}
+```
+(Achtung: zweiter Test deckt z. B. SPOTIFY↔PlayMedia korrekt ab, weil provider in params steckt — `ActionParams(mediaProvider=…)` je Id nicht nötig, da Id den Provider bestimmt.)
+
+**Kleinkram (kein Blocker)**:
+* Ungenutzte Imports in `ButtonConfigDialog.kt` (u. a. `rememberCoroutineScope`, diverse `core.model.*`, `Activity`/`ContextWrapper` — `findActivity` nutzt FQNs).
+* Feature-Warnung nutzt jetzt `state.buildAction()` (live) statt der gespeicherten Action — Verbesserung, bewusst so lassen.
+* Datei-Header-`@Suppress("UNUSED_VALUE", "ASSIGNED_VALUE_IS_NEVER_READ", …)` in TabContent stammt aus der alten Datei und kann weg.
+
+### Phase 8B: Gemini Nano komplett entfernen — Detailplan (Rev. 1, 2026-06-12)
+
+**Entscheidung (Andreas, 2026-06-12)**: Gemini Nano wird vollständig entfernt — zu wenige Geräte (v. a. im AAC-Bereich) unterstützen AICore. **Inklusive lokaler Bildbeschreibung**: Gemini-Vision nutzt künftig immer die Cloud.
+
+**Reihenfolge**: Erst nach Commit der Phase-8-Must-Fixes starten (dieselben Dateien betroffen: `ActionTypeId`, `ButtonActionFactory`, `ButtonConfigDialogState`, …).
+
+**Ist-Analyse (Claude, im Code verifiziert)**:
+* `GeminiNanoButtonAction` ist bereits `@Deprecated`-Tombstone („kept only for backup import compatibility") und hat **keinen Runtime-Handler** — als Action ist Nano schon tot.
+* Die Einstellung `useLocalGenerativeAi` wird **zur Laufzeit nirgends gelesen** — nur Settings-Plumbing (GenAiSettings, FeatureSettings, GenAiSettingsRepository, ProfileConfig, SettingsMapper, ProfileBootstrapper, GoTalkNowImportModels).
+* Einzige echte Nano-Ausführung: `VisionUseCase.describeImageLocally()` (`core-ai`) via ML Kit `genai-prompt` (`Generation.getClient()`), erreichbar über `GeminiVisionButtonAction(useCloud = false)`.
+* Built-in-Template `builtin_gemini_nano` in `ButtonTemplateRepositoryImpl` (Z. 163–175) erzeugt weiterhin Nano-Buttons!
+* Dependency `google-generativeai-mlkit` (genai-prompt) in `app/build.gradle.kts:199` **und** `core-ai/build.gradle.kts:55`; Version in `gradle/libs.versions.toml`.
+
+#### Schritt 8B.1: Nano-Action aus der UI entfernen
+* Entfernen: `ActionTypeId.GEMINI_NANO`, die Nano-Cases in `ButtonActionFactory` (`actionTypeIdOf`, `buildAction`), `ActionTypeResolver.getLabel`-Case, Nano-Zweig in `ButtonConfigDialogState.geminiPrompt`-Init, Badge-Case im Dialog, Icon-Case in `GridButton.kt:121`, Nano-Format in `PreviewTabContent.kt` (Param + `geminiNanoFormat`), `GeminiNanoActionFields` in `GeminiActionFields.kt`, Nano-Fälle in `ButtonActionFactoryTest`.
+* **Mapping-Regel für Bestandsdaten**: `actionTypeIdOf(GeminiNanoButtonAction)` → `ActionTypeId.GEMINI` (bewusste, jetzt gewollte Konvertierung Nano→Cloud beim nächsten Speichern; `intent` wird `prompt`). Dafür den `else`-Zweig nutzen oder expliziten Case mit Kommentar.
+* Strings `button_action_gemini_nano`, `button_preview_gemini_nano` (+ values-en) entfernen.
+
+#### Schritt 8B.2: Tombstone & Datenkompatibilität
+* `GeminiNanoButtonAction` in `ButtonAction.kt` **bleibt** als `@Deprecated`-Tombstone (Deserialisierung alter Backups/Cloud-Daten!).
+* `ActionMapper` (core-data): Nano beim Laden auf `GeminiButtonAction(prompt = intent)` mappen, falls dort ein Mapping-`when` existiert; sonst Konvertierung dem UI-Mapping aus 8B.1 überlassen.
+* Built-in-Template `builtin_gemini_nano` aus `ButtonTemplateRepositoryImpl` entfernen **und** prüfen, wie Built-ins auf Bestandsgeräten aktualisiert werden — falls sie nur additiv geseedet werden, expliziten Cleanup (Delete by id `builtin_gemini_nano`) ergänzen.
+* `ActionCategoryRegistry`: `ActionCategory.GEMINI_NANO` + zugehörige `when`-Zweige entfernen; `LocalIcons.kt:51` anpassen. Vorher grep: Kategorie darf nirgends persistiert sein.
+
+#### Schritt 8B.3: Lokale Vision entfernen
+* `VisionUseCase`: `describeImageLocally()` + ML-Kit-Imports entfernen; `describeImage(bitmap, prompt, useCloud)` → `useCloud`-Parameter entfernen, immer `describeCloud`. Aufrufer anpassen (Executor/Handler der Vision-Action).
+* `GeminiVisionButtonAction.useCloud` **bleibt im Modell** (Serialisierung), wird aber ignoriert — KDoc-Hinweis ergänzen.
+* UI: `useCloud`-Toggle entfernen (`ButtonConfigDialogState.geminiVisionUseCloud`, `ActionParams.geminiVisionUseCloud`, `ActionConfigFields`-`useCloud`/`onUseCloudChange`-Wiring, zugehörige Composable-Teile in `GeminiActionFields.kt`). `buildAction(GEMINI_VISION, …)` setzt `useCloud = true`.
+* `GeminiUseCase.getLocalCapabilities()` (toter Nano-Kommentar) entfernen, falls ungenutzt.
+
+#### Schritt 8B.4: Tote Einstellung `useLocalGenerativeAi` entfernen
+* Entfernen aus: `GenAiSettings` (+ Flow), `FeatureSettings`, `GenAiSettingsRepository`, `SettingsRepositoryImpl` (ProfileConfig-Write-Back-Block!), `SettingsConstants.KEY_USE_LOCAL_GENERATIVE_AI`, `SettingsMapper`, `ProfileBootstrapper`, `ProfileConfig` (Feld raus — alle Json-Parser haben `ignoreUnknownKeys = true`, alte Profile bleiben lesbar), `GoTalkNowImportModels`, betroffene Tests (`SettingsRepositoryTest`, `SettingsRoundTripTest`, `PageImportExportManagerTest`).
+* ⚠️ Cloud-Settings-Sync: prüfen, dass `SettingsMapper` den Key nur weglässt (ältere App-Versionen ignorieren fehlende Keys / nutzen Default).
+
+#### Schritt 8B.5: Dependency raus
+* `google-generativeai-mlkit` aus `app/build.gradle.kts` und `core-ai/build.gradle.kts`; `generativeAiMlKit`-Version aus `libs.versions.toml`. (`mediapipe-tasks-audio` bleibt — anderes Feature.)
+* Verifikation: `./gradlew assembleDebug` + voller Testlauf + grep `mlkit.genai|GeminiNano|useLocalGenerativeAi` über `src/` → nur noch Tombstone-Klasse + ggf. Mapping-Kommentare.
+
+**Smoke-Test**: Bestehenden Nano-Button öffnen → erscheint als Gemini (Cloud), Speichern konvertiert; Vision-Button ausführen → Cloud-Beschreibung; Profil laden/exportieren/importieren → keine Fehler; Template-Liste zeigt kein „Gemini Nano (Lokal)" mehr.
+
+---
+
+### Phase 9: Analytics-Bereich — Detailplan (Rev. 1, 2026-06-12)
+
+**Betroffene Dateien**: `ui/pages/analytics/AnalyticsRecommendationsTab.kt` (1251 Z.) und `ui/pages/ButtonStatisticsTabContent.kt` (752 Z.). Umfeld (bleibt unangetastet): `AnalyticsDashboardScreen.kt` (510, Aufrufer), `AnalyticsOverviewTab/DetailsTab/FatigueCharts/DurationCharts/ErrorRateCharts`.
+
+**Ist-Analyse (Claude, im Code verifiziert)**:
+* Beide Dateien bestehen aus **je genau einem Composable**.
+* `AnalyticsRecommendationsTab` hat **42 Parameter** (21 State-Werte + 21 Callbacks) und drei klar markierte Sektionen: Shortcut-Wizard (Z. 116–258), Layout-Optimierung mit Filter/Sortierung (Z. 259–569), KI-Buchrestrukturierung (Z. 570–1251, ~680 Zeilen inkl. Seitenauswahl-Dialog, Knoten-Editor, Token-Warnung, Feedback-Karte, Layout-Lade-Logik).
+* `ButtonStatisticsTabContent` hat vier Sektionen: KPI-Karten (Z. 115), Smart-Prediction-KPIs (Z. 406), Button-Empfehlungen (Z. 588), Verlaufsliste (Z. 659). Liegt falsch in `ui/pages/` statt `ui/pages/analytics/`.
+* Berechnungslogik liegt überwiegend schon in ViewModel/Delegates (`AiRestructureDelegate`, `AnalyticsDelegate`, `PathAnalyzer`) — Phase 9 ist primär ein UI-Zuschnitt, kein Logik-Umbau.
+
+**Vorgehen** (jeder Schritt kompilierbar + committen; Verifikation: `:app:compileDebugKotlin` + `testDebugUnitTest` + Smoke unten):
+
+#### Schritt 9.1: ButtonStatisticsTabContent verschieben & aufteilen
+* Datei nach `ui/pages/analytics/buttonstats/` verschieben (Package anpassen, Aufrufer: `ButtonConfigDialog`).
+* In 4 Sektions-Dateien aufteilen: `ButtonKpiSection.kt`, `SmartPredictionKpiSection.kt`, `ButtonRecommendationsSection.kt`, `ButtonHistorySection.kt`; `ButtonStatisticsTabContent` bleibt Orchestrierung (< 150 Z.).
+* Inline-Aggregationen (falls in den KPI-Sektionen welche stecken) als pure `internal fun` in `ButtonStatsCalculations.kt` herausziehen + Mini-Unit-Test.
+
+#### Schritt 9.2: Parameter der RecommendationsTab bündeln (behavior-neutral)
+* Statt 42 Einzelparametern drei `@Immutable`-Bündel in `ui/pages/analytics/recommendations/`:
+  * `ShortcutWizardState/Actions` (recommendations, isCalculating / onApplyShortcutRecommendation)
+  * `LayoutProposalsState/Actions` (layoutProposals, currentFilter, currentSort / onSetProposalFilter, onSetProposalSort, onGeneratePageSplitProposal, onChangePageScanPattern, onChangeScanDelay, onApplySpacerRelocate)
+  * `AiRestructureState/Actions` (alles ab `aiProposal` … / die On-Lambdas ab `onSelect…`)
+* `AnalyticsDashboardScreen` (Aufrufer) baut die Bündel; reine Signatur-Umstellung, kein Logik-Move.
+
+#### Schritt 9.3: RecommendationsTab in Sektions-Dateien aufteilen
+* `recommendations/ShortcutWizardSection.kt` (Z. 116–258)
+* `recommendations/LayoutOptimizationSection.kt` (Z. 259–569, inkl. Filter-/Sort-Dropdowns)
+* `recommendations/AiRestructureSection.kt` (Z. 570–1251) — wegen Größe intern weiter aufteilen:
+  * `AiPageSelectionDialog.kt`, `AiHierarchyNodeEditDialog.kt`, `AiTokenWarningDialog.kt` (Dialoge)
+  * `AiHierarchyProposalCard.kt` (Hierarchie-Karten inkl. Seitenlayout-Laden), `AiFeedbackCard.kt`
+* `AnalyticsRecommendationsTab.kt` bleibt Orchestrierung (< 200 Z.). Lokale `remember`-States wandern in die jeweilige Sektion, sofern sie nur dort gebraucht werden.
+
+#### Schritt 9.4: Abschluss-Review
+* Zielgrößen: keine Datei > 400 Z.; `AnalyticsRecommendationsTab` < 200 Z.
+* Claude reviewt Verhaltensgleichheit (insb. die `showAll…`-Toggles, Filter/Sort-State und der mehrstufige KI-Flow).
+
+**Smoke-Test-Checkliste**:
+1. Analytics-Dashboard öffnen, alle Tabs durchklicken.
+2. Shortcut-Empfehlung anwenden (Erfolgs-Toast), „alle anzeigen"-Toggle.
+3. Layout-Vorschläge filtern + sortieren, einen Vorschlag anwenden.
+4. KI-Restrukturierung: Seiten auswählen → Hierarchie generieren → Knoten bearbeiten → Layouts laden → anwenden; Token-Warnung und Fehlerfall (Gemini deaktiviert) prüfen.
+5. Button-Statistik-Tab im ButtonConfigDialog (KPIs, Verlauf, Empfehlung anwenden).
 
 ### Phase 10: MainActivity entschlacken (731 Zeilen)
 * Lifecycle-, Permission-, Locale- und Screen-State-Logik in eigene Klassen/Manager herauslösen.

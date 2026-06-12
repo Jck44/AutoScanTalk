@@ -1,109 +1,7 @@
 package com.andreas_kratzer.ghosttalk.ui.pages.components
 
 import android.content.Context
-import androidx.compose.runtime.Immutable
 import com.andreas_kratzer.ghosttalk.R
-import com.andreas_kratzer.ghosttalk.core.model.ButtonAction
-import com.andreas_kratzer.ghosttalk.core.model.DeviceActionType
-import com.andreas_kratzer.ghosttalk.core.model.MediaProvider
-import com.andreas_kratzer.ghosttalk.core.model.PredictionType
-import com.andreas_kratzer.ghosttalk.core.model.SmartHomeProvider
-import com.andreas_kratzer.ghosttalk.core.model.SpokenTextMode
-
-@Immutable
-data class ButtonSettingsUiState(
-    val label: String = "",
-    val spokenText: String = "",
-    val spokenTextMode: SpokenTextMode = SpokenTextMode.TTS,
-    val audioFileName: String? = null,
-    val auditoryCueText: String = "",
-    val isActive: Boolean = true,
-    val playActionAsAuditoryCue: Boolean = false,
-    val selectedActionType: String = "",
-    val targetPageId: String = "",
-    val geminiPrompt: String = "",
-    val geminiVisionUseCloud: Boolean = false,
-    val geminiVisionPlayShutterSound: Boolean = false,
-    val rank: Int = 1,
-    val predictionType: PredictionType = PredictionType.ALL,
-    val deviceActionType: DeviceActionType = DeviceActionType.READ_TIME,
-    val volumeValue: String = "50",
-    val contactName: String = "",
-    val contactPhone: String = "",
-    val messageText: String = "",
-    val includeWeekday: Boolean = false,
-    val prefixText: String = "",
-    val suffixText: String = "",
-    val offsetValue: String = "0",
-    val ignoreEmojis: Boolean = false,
-    val smartHomeProvider: SmartHomeProvider = SmartHomeProvider.PHILIPS_HUE,
-    val smartHomeDeviceId: String = "",
-    val smartHomeDeviceName: String = "",
-    val smartHomeIntent: String = "",
-    val smartHomeValue: String = "",
-    val mediaProvider: MediaProvider = MediaProvider.SPOTIFY,
-    val mediaContentUri: String = "",
-    val mediaContentName: String = "",
-    val mediaReturnToAppDelaySec: String = "0",
-    val mediaForcePlayViaMediaSession: Boolean = false,
-    val isRecording: Boolean = false,
-    val isPlayingAudio: Boolean = false,
-    val showDeleteConfirmation: Boolean = false,
-    val isFetchingDevices: Boolean = false,
-    val isLoadingSpotifyPlaylists: Boolean = false,
-    val spotifyUserDisplayName: String? = null
-)
-
-@Immutable
-data class ButtonSettingsActions(
-    val onLabelChange: (String) -> Unit,
-    val onSpokenTextChange: (String) -> Unit,
-    val onSpokenTextModeChange: (SpokenTextMode) -> Unit,
-    val onAudioFileNameChange: (String?) -> Unit,
-    val onAuditoryCueTextChange: (String) -> Unit,
-    val onIsActiveChange: (Boolean) -> Unit,
-    val onPlayActionAsAuditoryCueChange: (Boolean) -> Unit,
-    val onSelectedActionTypeChange: (String) -> Unit,
-    val onTargetPageIdChange: (String) -> Unit,
-    val onGeminiPromptChange: (String) -> Unit,
-    val onGeminiVisionUseCloudChange: (Boolean) -> Unit,
-    val onGeminiVisionPlayShutterSoundChange: (Boolean) -> Unit,
-    val onRankChange: (Int) -> Unit,
-    val onPredictionTypeChange: (PredictionType) -> Unit,
-    val onDeviceActionTypeChange: (DeviceActionType) -> Unit,
-    val onVolumeValueChange: (String) -> Unit,
-    val onContactNameChange: (String) -> Unit,
-    val onContactPhoneChange: (String) -> Unit,
-    val onMessageTextChange: (String) -> Unit,
-    val onIncludeWeekdayChange: (Boolean) -> Unit,
-    val onPrefixTextChange: (String) -> Unit,
-    val onSuffixTextChange: (String) -> Unit,
-    val onOffsetValueChange: (String) -> Unit,
-    val onIgnoreEmojisChange: (Boolean) -> Unit,
-    val onSmartHomeProviderChange: (SmartHomeProvider) -> Unit,
-    val onSmartHomeDeviceIdChange: (String) -> Unit,
-    val onSmartHomeDeviceNameChange: (String) -> Unit,
-    val onSmartHomeIntentChange: (String) -> Unit,
-    val onSmartHomeValueChange: (String) -> Unit,
-    val onMediaProviderChange: (MediaProvider) -> Unit,
-    val onMediaContentUriChange: (String) -> Unit,
-    val onMediaContentNameChange: (String) -> Unit,
-    val onMediaReturnToAppDelaySecChange: (String) -> Unit,
-    val onMediaForcePlayViaMediaSessionChange: (Boolean) -> Unit,
-    val onIsRecordingChange: (Boolean) -> Unit,
-    val onIsPlayingAudioChange: (Boolean) -> Unit,
-    val onShowDeleteConfirmationChange: (Boolean) -> Unit,
-    val onIsFetchingDevicesChange: (Boolean) -> Unit,
-    val onConnectSpotify: () -> Unit,
-    val onDisconnectSpotify: () -> Unit,
-    val onLoadSpotifyPlaylists: () -> Unit,
-    val onStartVoiceRecording: () -> Unit,
-    val onStopVoiceRecording: () -> Unit,
-    val onPlayRecording: (java.io.File) -> Unit,
-    val buildCurrentAction: () -> ButtonAction,
-    val handleAutoSave: () -> Unit,
-    val saveWithAction: (ButtonAction) -> Unit
-)
 
 class ActionTypeResolver(context: Context) {
     val actionTypeSpeak = context.getString(R.string.button_action_speak_text)
@@ -136,6 +34,7 @@ class ActionTypeResolver(context: Context) {
     val actionTypeStatusVibrate = context.getString(R.string.status_vibrate)
     val actionTypeStatusLoud = context.getString(R.string.status_loud)
     val actionTypeToggleScanning = context.getString(R.string.button_device_control_toggle_scanning)
+    val actionTypeInstallUpdate = context.getString(R.string.button_device_control_install_update)
     val actionTypeStartSync = context.getString(R.string.button_device_control_start_sync)
     val actionTypeToggleAutoRead = "Automatisches Vorlesen umschalten"
     val actionTypeSpotify = "Spotify abspielen"
@@ -147,4 +46,52 @@ class ActionTypeResolver(context: Context) {
     val actionTypeFrequent = context.getString(R.string.button_action_frequent_action)
     val actionTypePrevious = context.getString(R.string.action_previous_action)
     val actionTypeSmart = context.getString(R.string.button_action_smart_prediction)
+
+    fun getLabel(id: ActionTypeId): String {
+        return when (id) {
+            ActionTypeId.SPEAK -> actionTypeSpeak
+            ActionTypeId.NAVIGATE -> actionTypeNavigate
+            ActionTypeId.NAVIGATE_BACK -> actionTypeNavigateBack
+            ActionTypeId.NAVIGATE_TO_START_PAGE -> actionTypeNavigateToStartPage
+            ActionTypeId.GEMINI -> actionTypeGemini
+            ActionTypeId.GEMINI_SEARCH -> actionTypeGeminiSearch
+            ActionTypeId.GEMINI_VISION -> actionTypeGeminiVision
+            ActionTypeId.WEATHER -> actionTypeWeather
+            ActionTypeId.READ_NOTIFICATIONS -> actionTypeReadNotifications
+            ActionTypeId.TOGGLE_AUTO_READ -> actionTypeToggleAutoRead
+            ActionTypeId.CLEAR_NOTIFICATIONS -> actionTypeClearNotifications
+            ActionTypeId.SEND_MESSAGE -> actionTypeSendMessage
+            ActionTypeId.SEND_LAST_SPOKEN_SMS -> actionTypeSendLastSpokenSms
+            ActionTypeId.START_CALL -> actionTypeStartCall
+            ActionTypeId.SPOTIFY -> actionTypeSpotify
+            ActionTypeId.YOUTUBE -> actionTypeYoutube
+            ActionTypeId.YOUTUBE_MUSIC -> actionTypeYoutubeMusic
+            ActionTypeId.AUDIBLE -> actionTypeAudible
+            ActionTypeId.MEDIA_PLAY_PAUSE -> actionTypeMediaPlayPause
+            ActionTypeId.MEDIA_NEXT -> actionTypeMediaNext
+            ActionTypeId.MEDIA_PREVIOUS -> actionTypeMediaPrevious
+            ActionTypeId.READ_TIME -> actionTypeReadTime
+            ActionTypeId.READ_DATE -> actionTypeReadDate
+            ActionTypeId.READ_CALENDAR_ENTRIES -> actionTypeReadCalendarEntries
+            ActionTypeId.READ_BATTERY -> actionTypeReadBattery
+            ActionTypeId.VOLUME_MEDIA -> actionTypeVolumeMedia
+            ActionTypeId.VOLUME_NOTIFICATION -> actionTypeVolumeNotification
+            ActionTypeId.VOLUME_ALARM -> actionTypeVolumeAlarm
+            ActionTypeId.VOLUME_CALL -> actionTypeVolumeCall
+            ActionTypeId.VOLUME_IN_APP_TTS -> actionTypeVolumeInAppTts
+            ActionTypeId.VOLUME_IN_APP_CUES -> actionTypeVolumeInAppCues
+            ActionTypeId.STATUS_SILENT -> actionTypeStatusSilent
+            ActionTypeId.STATUS_VIBRATE -> actionTypeStatusVibrate
+            ActionTypeId.STATUS_LOUD -> actionTypeStatusLoud
+            ActionTypeId.TOGGLE_SCANNING -> actionTypeToggleScanning
+            ActionTypeId.INSTALL_UPDATE -> actionTypeInstallUpdate
+            ActionTypeId.START_SYNC -> actionTypeStartSync
+            ActionTypeId.PHILIPS_HUE -> actionTypePhilipsHue
+            ActionTypeId.GOOGLE_HOME -> actionTypeGoogleHome
+            ActionTypeId.FREQUENT -> actionTypeFrequent
+            ActionTypeId.PREVIOUS -> actionTypePrevious
+            ActionTypeId.SMART -> actionTypeSmart
+            ActionTypeId.GEMINI_NANO -> actionTypeGemini
+        }
+    }
 }
