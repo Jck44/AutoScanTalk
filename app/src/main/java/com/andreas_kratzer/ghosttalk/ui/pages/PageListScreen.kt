@@ -55,13 +55,14 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.core.domain.pages.UsageLocation
-import com.andreas_kratzer.ghosttalk.ui.components.UsageLocationRow
 import com.andreas_kratzer.ghosttalk.core.model.Page
 import com.andreas_kratzer.ghosttalk.core.model.SortOrder
 import com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkCard
 import com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkScaffold
+import com.andreas_kratzer.ghosttalk.core.ui.components.adaptiveCardHeight
 import com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
+import com.andreas_kratzer.ghosttalk.ui.components.UsageLocationRow
 import kotlinx.coroutines.launch
 import java.io.BufferedReader
 import java.io.InputStreamReader
@@ -325,8 +326,7 @@ fun PageListScreen(
             .fillMaxSize()
             .padding(paddingValues)
     ) {
-        val isLandscape = maxWidth > maxHeight
-        val dynamicCardHeight = (maxHeight * if (isLandscape) 0.18f else 0.12f).coerceIn(90.dp, 140.dp)
+        val dynamicCardHeight = adaptiveCardHeight()
 
         Column(
             modifier = Modifier
@@ -355,9 +355,9 @@ fun PageListScreen(
             if (allPages.isEmpty()) {
                 com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkEmptyState(
                     icon = com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons.Description,
-                    title = "Keine Seiten",
-                    description = "Erstelle eine neue Seite, um Knöpfe und Aktionen zu definieren.",
-                    actionLabel = "Seite erstellen",
+                    title = stringResource(R.string.page_list_empty_title),
+                    description = stringResource(R.string.page_list_empty_desc),
+                    actionLabel = stringResource(R.string.page_list_empty_action),
                     onAction = { if (!showAddDialog) showAddDialog = true }
                 )
             } else {

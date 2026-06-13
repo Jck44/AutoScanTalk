@@ -1,6 +1,7 @@
 package com.andreas_kratzer.ghosttalk.core.ui.components
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraintsScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -25,9 +26,20 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.andreas_kratzer.ghosttalk.core.ui.R
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
+
+/**
+ * Einheitliche, vom verfügbaren Platz abhängige Höhe für Hub-/Listen-Karten.
+ * Innerhalb eines BoxWithConstraints aufrufen.
+ */
+fun BoxWithConstraintsScope.adaptiveCardHeight(): Dp {
+    val isLandscape = maxWidth > maxHeight
+    val factor = if (isLandscape) 0.18f else 0.12f
+    return (maxHeight * factor).coerceIn(90.dp, 140.dp)
+}
 
 @Composable
 fun AppBrandHeader(

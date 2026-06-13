@@ -1,6 +1,7 @@
 package com.andreas_kratzer.ghosttalk.ui.pages.delegates
 
 import android.util.Log
+import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.core.ai.domain.GeminiUseCase
 import com.andreas_kratzer.ghosttalk.core.data.BookRepository
 import com.andreas_kratzer.ghosttalk.core.data.ButtonUsageRepository
@@ -10,16 +11,17 @@ import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.core.model.NavigateToPageButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.NavigateToStartPageButtonAction
 import com.andreas_kratzer.ghosttalk.core.util.GridUtils
+import com.andreas_kratzer.ghosttalk.ui.pages.history.EditIcon
+import com.andreas_kratzer.ghosttalk.ui.pages.history.EditLabel
+import com.andreas_kratzer.ghosttalk.ui.pages.history.PageFullSnapshotCommand
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import kotlinx.coroutines.sync.withLock
-import com.andreas_kratzer.ghosttalk.R
-import com.andreas_kratzer.ghosttalk.ui.pages.history.*
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 import javax.inject.Singleton
 

@@ -564,4 +564,21 @@
     <string name="settings_error_import_export">Error import/export: %1$s</string>
     <string name="settings_profile_edit_draft_title">Edit Profile (Draft)</string>
     <string name="settings_profile_edit_draft_desc">You are editing settings for the profile \'%1$s\'. These will only be applied and synced to the cloud when saved.</string>
+
+    <!-- AP 4 Strings -->
+    <string name="content_manage_configure_static_row">Configure Static Row</string>
+    <string name="hue_toast_searching">Searching for Hue Bridges...</string>
+    <string name="hue_toast_bridge_found">Bridge found: %1$s</string>
+    <string name="hue_toast_no_bridge_found">No Hue Bridge found in network.</string>
+    <string name="hue_toast_missing_ip">Please enter or search bridge IP first.</string>
+    <string name="hue_toast_certificate_error">Could not retrieve certificate.</string>
+    <string name="hue_toast_not_paired">Please pair first (IP and username required).</string>
+    <string name="hue_toast_devices_cached">%1$d lights loaded and stored in cache.</string>
+    <string name="hue_toast_bridge_unreachable">Could not reach Bridge. Keeping old cache.</string>
+    <string name="hue_toast_cert_accepted_press_button">Certificate accepted. Please press the link button on the Bridge!</string>
+    <string name="hue_pairing_press_link_button">Please press the link button on your Hue Bridge now...</string>
+    <string name="hue_toast_pairing_success">Successfully paired!</string>
+    <string name="hue_toast_pairing_failed">Pairing failed. Did you press the button?</string>
+    <string name="cloud_sync_no_backups_in_folder">No backups found in the selected folder.</string>
+    <string name="cloud_sync_no_backups_found">No backups found.</string>
 </resources>

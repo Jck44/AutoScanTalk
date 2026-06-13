@@ -565,4 +565,21 @@
     <string name="settings_error_import_export">Fehler beim Import/Export: %1$s</string>
     <string name="settings_profile_edit_draft_title">Profil bearbeiten (Entwurf)</string>
     <string name="settings_profile_edit_draft_desc">Sie bearbeiten Einstellungen für das Profil \'%1$s\'. Diese werden erst beim Speichern angewendet und in die Cloud synchronisiert.</string>
+
+    <!-- AP 4 Strings -->
+    <string name="content_manage_configure_static_row">Statische Zeile konfigurieren</string>
+    <string name="hue_toast_searching">Suche nach Hue Bridges...</string>
+    <string name="hue_toast_bridge_found">Bridge gefunden: %1$s</string>
+    <string name="hue_toast_no_bridge_found">Keine Hue Bridge im Netzwerk gefunden.</string>
+    <string name="hue_toast_missing_ip">Bitte zuerst die Bridge-IP angeben oder suchen.</string>
+    <string name="hue_toast_certificate_error">Zertifikat konnte nicht abgerufen werden.</string>
+    <string name="hue_toast_not_paired">Bitte zuerst koppeln (IP und Benutzername erforderlich).</string>
+    <string name="hue_toast_devices_cached">%1$d Lampen geladen und im Cache gespeichert.</string>
+    <string name="hue_toast_bridge_unreachable">Konnte Bridge nicht erreichen. Alter Cache wird beibehalten.</string>
+    <string name="hue_toast_cert_accepted_press_button">Zertifikat akzeptiert. Bitte den Knopf auf der Bridge drücken!</string>
+    <string name="hue_pairing_press_link_button">Bitte drücken Sie jetzt den Link-Button auf Ihrer Hue Bridge...</string>
+    <string name="hue_toast_pairing_success">Erfolgreich gekoppelt!</string>
+    <string name="hue_toast_pairing_failed">Kopplung fehlgeschlagen. Haben Sie den Knopf gedrückt?</string>
+    <string name="cloud_sync_no_backups_in_folder">Keine Backups in dem ausgewählten Ordner gefunden.</string>
+    <string name="cloud_sync_no_backups_found">Keine Backups gefunden.</string>
 </resources>

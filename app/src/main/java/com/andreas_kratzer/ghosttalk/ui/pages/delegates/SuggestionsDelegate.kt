@@ -3,6 +3,7 @@ package com.andreas_kratzer.ghosttalk.ui.pages.delegates
 import android.app.Application
 import android.util.Log
 import android.widget.Toast
+import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.core.ai.domain.GeminiUseCase
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
@@ -67,7 +68,7 @@ class SuggestionsDelegate @Inject constructor(
         }
 
         if (labels.isEmpty()) {
-            Toast.makeText(application, "Keine aktiven Buttons in dieser Zeile vorhanden.", Toast.LENGTH_SHORT).show()
+            Toast.makeText(application, application.getString(R.string.suggestions_no_active_buttons), Toast.LENGTH_SHORT).show()
             onResult("")
             return
         }

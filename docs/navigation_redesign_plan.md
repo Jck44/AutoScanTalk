@@ -53,12 +53,15 @@ Dieser Plan **ersetzt den `StartScreen`** und fasst `content_management` / `anal
 
 Navigationsgraph in [GhostTalkNavHost.kt](../app/src/main/java/com/andreas_kratzer/ghosttalk/ui/main/GhosTTalkNavHost.kt):
 
+> **Update 2026-06-13:** Editor-Kohäsion Teil B (B3) wurde **vor** diesem Plan umgesetzt. Die Routen `page_editor/{pageId}` und `structure_editor` sind zu **einer** Route `editor/{pageId}?mode={raster|struktur}&buttonId=&triggerSplit=` konsolidiert (Container `PageWorkbenchScreen`). Dieser Plan referenziert ab hier diese neue Route.
+
 ```
 onboarding_setup
 book_list ──(Buch wählen)──> start ──┬─> main            (Nutzermodus, Vollbild)
-                                      ├─> content_management ─┬─> page_list ─> page_editor
+                                      ├─> content_management ─┬─> page_list ─> editor/{pageId}?mode=raster
                                       │                       ├─> templates ─> template_editor
-                                      │                       └─> page_editor/static_row_<bookId>
+                                      │                       ├─> editor/static_row_<bookId>?mode=raster
+                                      │                       └─> editor/{startPageId}?mode=struktur
                                       ├─> analytics_dashboard
                                       └─> settings?isGlobal=false  ─> vocal_training
 book_list ──(Zahnrad)──> settings?isGlobal=true
@@ -81,7 +84,7 @@ onboarding_setup
 book_list ──(Buch wählen)──> book_shell        ← NEU: adaptive Betreuer-Shell
    book_shell (NavigationSuiteScaffold, Top-Bar mit Buch-Umschalter):
      • Sprechen      → Aktion: navigate("main")   (Vollbild, verlässt die Shell)
-     • Inhalte       → Pane: Seiten / Vorlagen / Statische Zeile → page_editor / template_editor
+     • Inhalte       → Pane: Seiten / Vorlagen / Statische Zeile → editor/{pageId} / template_editor
      • Statistik     → Pane: Analytics-Inhalt
      • Einstellungen → Pane: Buch-Einstellungen (isGlobal=false) → vocal_training
 main ──(Zurück, PIN/Biometrie)──> book_shell   ← Exit-Sperre (AP 4)
@@ -90,7 +93,7 @@ book_list bleibt erreichbar für Buch-CRUD + globale Einstellungen
 
 - **„Sprechen" ist kein Pane**, sondern ein Navigations-Item, das in die isolierte Route `main` springt.
 - **Inhalte/Statistik/Einstellungen** sind Panes innerhalb der Shell; der ausgewählte Tab lebt in `rememberSaveable`-State, nicht als separate NavHost-Route.
-- **Tiefe Ziele** (`page_editor`, `template_editor`, `vocal_training`, ggf. `page_list`/`templates`) bleiben eigene NavHost-Routen, die aus den Panes heraus per Callback geöffnet werden (Vollbild über der Shell). So bleibt der Editier-Flow unverändert.
+- **Tiefe Ziele** (`editor/{pageId}?mode=`, `template_editor`, `vocal_training`, ggf. `page_list`/`templates`) bleiben eigene NavHost-Routen, die aus den Panes heraus per Callback geöffnet werden (Vollbild über der Shell). So bleibt der Editier-Flow unverändert. Der Editor (Raster/Struktur) ist seit Teil B **ein** Container `PageWorkbenchScreen`.
 
 ### Adaptives Verhalten
 `NavigationSuiteScaffold` wählt automatisch: **NavigationBar** (kompakt/Hochformat) bzw. **NavigationRail** (expandiert/Querformat/Tablet). Keine manuelle Orientierungs-Logik nötig.
@@ -160,7 +163,7 @@ fun BookShellScreen(
 ```
 
 Vorgehen:
-- Die **Inhalte** der bisherigen `ContentManagementScreen`, `AnalyticsDashboardScreen` und `SettingsScreen(isGlobal=false)` als Panes wiederverwenden. Bevorzugt deren Composables so refaktorieren, dass der **Inhalt** (ohne eigenes `Scaffold`/`TopAppBar`) als eigene Funktion aufrufbar ist, und ihn im Shell-Pane einbetten. Die Tiefen-Navigation (page_editor etc.) läuft über die durchgereichten Callbacks weiter auf dem **äußeren** NavHost.
+- Die **Inhalte** der bisherigen `ContentManagementScreen`, `AnalyticsDashboardScreen` und `SettingsScreen(isGlobal=false)` als Panes wiederverwenden. Bevorzugt deren Composables so refaktorieren, dass der **Inhalt** (ohne eigenes `Scaffold`/`TopAppBar`) als eigene Funktion aufrufbar ist, und ihn im Shell-Pane einbetten. Die Tiefen-Navigation (`editor/{pageId}?mode=` etc.) läuft über die durchgereichten Callbacks weiter auf dem **äußeren** NavHost.
 - **Neue stabile testTags:** `nav_item_speak`, `nav_item_content`, `nav_item_stats`, `nav_item_settings`, `book_shell`. Die alten `start_card_*` / `content_manage_*` entfallen.
 - Im NavHost: Route **`start` rendert jetzt `BookShellScreen`** statt `StartScreen`. Die Callbacks (onLaunchUserMode = bestehende User-Mode-Lade-Logik aus `onNavigateToUserMode`; onEditPage/onEditTemplate/onEditStaticRow/onOpenVocalTraining = bestehende `safeNavigate(...)`-Ziele) 1:1 aus den heutigen `composable("start"|"content_management"|"analytics_dashboard"|"settings")`-Blöcken übernehmen.
 - `BackHandler` der Shell: zurück zu `book_list` (wie heute `StartScreen`).

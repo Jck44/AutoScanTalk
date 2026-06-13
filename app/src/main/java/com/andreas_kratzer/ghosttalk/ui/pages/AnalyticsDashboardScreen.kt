@@ -3,9 +3,7 @@ package com.andreas_kratzer.ghosttalk.ui.pages
 import android.annotation.SuppressLint
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
@@ -27,7 +25,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
@@ -36,12 +33,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.core.domain.pages.UsageLocation
-import com.andreas_kratzer.ghosttalk.ui.components.UsageLocationRow
 import com.andreas_kratzer.ghosttalk.core.model.Page
 import com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkEmptyState
 import com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkScaffold
 import com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
+import com.andreas_kratzer.ghosttalk.ui.components.UsageLocationRow
 import com.andreas_kratzer.ghosttalk.ui.pages.analytics.AnalyticsDetailsTab
 import com.andreas_kratzer.ghosttalk.ui.pages.analytics.AnalyticsOverviewTab
 import com.andreas_kratzer.ghosttalk.ui.pages.analytics.AnalyticsRecommendationsTab
@@ -110,7 +107,7 @@ fun AnalyticsDashboardScreen(
         val maxTime = maxOf(maxEvent, maxSession)
 
         if (minTime == Long.MAX_VALUE || maxTime == 0L) {
-            "Keine Statistiken erfasst"
+            context.getString(R.string.analytics_empty_stats)
         } else {
             val dateForm = SimpleDateFormat("dd.MM.yyyy HH:mm", locale)
             "Statistiken erfasst von ${dateForm.format(Date(minTime))} bis ${dateForm.format(Date(maxTime))}"
@@ -317,8 +314,8 @@ fun AnalyticsDashboardScreen(
         if (historyEvents.isEmpty() && userModeSessions.isEmpty()) {
             GhostTalkEmptyState(
                 icon = GhostTalkIcons.History,
-                title = "Keine Statistiken erfasst",
-                description = "Verwende die Anwendung im Nutzermodus, um Nutzungsstatistiken und KI-Empfehlungen zu generieren."
+                title = stringResource(R.string.analytics_empty_stats),
+                description = stringResource(R.string.analytics_empty_stats_desc)
             )
         } else {
             Column(

@@ -1,6 +1,5 @@
 package com.andreas_kratzer.ghosttalk.ui.main
 
-import android.content.res.Configuration
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -21,13 +20,12 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
 import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkCard
 import com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkScaffold
+import com.andreas_kratzer.ghosttalk.core.ui.components.adaptiveCardHeight
 import com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
 import com.andreas_kratzer.ghosttalk.core.ui.R as CoreR
@@ -42,8 +40,6 @@ fun StartScreen(
     onNavigateToBooks: () -> Unit,
     bookName: String
 ) {
-    val configuration = LocalConfiguration.current
-    val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
     val dimensions = LocalDimensions.current
 
     BackHandler {
@@ -82,7 +78,7 @@ fun StartScreen(
             ) {
                 val isLandscape = maxWidth > maxHeight
                 val vSpacing = dimensions.paddingLarge
-                val dynamicCardHeight = (maxHeight * if (isLandscape) 0.2f else 0.12f).coerceIn(90.dp, 140.dp)
+                val dynamicCardHeight = adaptiveCardHeight()
                 
                 FlowRow(
                     modifier = Modifier.fillMaxWidth(),

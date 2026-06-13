@@ -11,11 +11,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
 import com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkCard
 import com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkScaffold
+import com.andreas_kratzer.ghosttalk.core.ui.components.adaptiveCardHeight
 import com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
+import com.andreas_kratzer.ghosttalk.feature.settings.R
 import com.andreas_kratzer.ghosttalk.core.ui.R as CoreR
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -43,8 +44,7 @@ fun ContentManagementScreen(
                 .padding(paddingValues)
                 .padding(dimensions.screenPaddingHorizontal)
         ) {
-            val isLandscape = maxWidth > maxHeight
-            val dynamicCardHeight = (maxHeight * if (isLandscape) 0.18f else 0.12f).coerceIn(90.dp, 140.dp)
+            val dynamicCardHeight = adaptiveCardHeight()
 
             Column(
                 modifier = Modifier.fillMaxSize(),
@@ -76,7 +76,7 @@ fun ContentManagementScreen(
                 )
             
                 GhostTalkCard(
-                    title = "Statische Zeile konfigurieren",
+                    title = stringResource(R.string.content_manage_configure_static_row),
                     icon = GhostTalkIcons.GridView,
                     onClick = onNavigateToStaticRowEditor,
                     height = dynamicCardHeight,

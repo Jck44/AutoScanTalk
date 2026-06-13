@@ -48,6 +48,7 @@ import com.andreas_kratzer.ghosttalk.core.model.PageTemplate
 import com.andreas_kratzer.ghosttalk.core.model.SortOrder
 import com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkCard
 import com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkScaffold
+import com.andreas_kratzer.ghosttalk.core.ui.components.adaptiveCardHeight
 import com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
 import kotlinx.coroutines.launch
@@ -119,8 +120,7 @@ fun TemplateScreen(
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            val isLandscape = maxWidth > maxHeight
-            val dynamicCardHeight = (maxHeight * if (isLandscape) 0.18f else 0.12f).coerceIn(90.dp, 140.dp)
+            val dynamicCardHeight = adaptiveCardHeight()
 
             Column(
                 modifier = Modifier
@@ -149,9 +149,9 @@ fun TemplateScreen(
                 if (templates.isEmpty()) {
                     com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkEmptyState(
                         icon = com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons.GridView,
-                        title = "Keine Vorlagen",
-                        description = "Erstelle eine neue Vorlage, um ein konsistentes Raster für Seiten festzulegen.",
-                        actionLabel = "Vorlage erstellen",
+                        title = stringResource(R.string.template_list_empty_title),
+                        description = stringResource(R.string.template_list_empty_desc),
+                        actionLabel = stringResource(R.string.template_list_empty_action),
                         onAction = { if (!showAddDialog) showAddDialog = true }
                     )
                 } else {

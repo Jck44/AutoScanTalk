@@ -29,11 +29,10 @@ import com.andreas_kratzer.ghosttalk.feature.settings.ui.VocalTrainingScreen
 import com.andreas_kratzer.ghosttalk.ui.books.BookListScreen
 import com.andreas_kratzer.ghosttalk.ui.books.BookViewModel
 import com.andreas_kratzer.ghosttalk.ui.pages.AnalyticsDashboardScreen
-import com.andreas_kratzer.ghosttalk.ui.pages.PageEditorScreen
 import com.andreas_kratzer.ghosttalk.ui.pages.PageListScreen
 import com.andreas_kratzer.ghosttalk.ui.pages.PageScreen
 import com.andreas_kratzer.ghosttalk.ui.pages.PageViewModel
-import com.andreas_kratzer.ghosttalk.ui.pages.structure.StructureEditorScreen
+import com.andreas_kratzer.ghosttalk.ui.pages.PageWorkbenchScreen
 import com.andreas_kratzer.ghosttalk.ui.templates.TemplateEditorScreen
 import com.andreas_kratzer.ghosttalk.ui.templates.TemplateScreen
 import com.andreas_kratzer.ghosttalk.ui.templates.TemplateViewModel
@@ -66,8 +65,7 @@ fun GhostTalkNavHost(
             route == "content_management" || 
             route == "page_list" || 
             route == "templates" || 
-            route.startsWith("structure_editor") || 
-            route.startsWith("page_editor") || 
+            route.startsWith("editor") || 
             route.startsWith("template_editor") -> securityManager.isSecurityRequiredForEdit()
             else -> false
         }
@@ -113,14 +111,7 @@ fun GhostTalkNavHost(
             val behavior = settingsRepository.startupBehavior
             if (behavior == "USER_MODE") {
                 // Navigate directly to user mode
-                val startId = settingsRepository.defaultStartPageId
-                val startPage = if (startId != null) {
-                    withContext(Dispatchers.IO) { pageRepository.getPageById(startId) }
-                } else null
-
-                val finalPage = startPage ?: withContext(Dispatchers.IO) {
-                    pageRepository.getPagesForBook(selectedBookId).firstOrNull()
-                }
+                val finalPage = resolveStartPage(selectedBookId, settingsRepository, pageRepository)
                 
                 if (finalPage != null) {
                     pageViewModel.loadPage(finalPage)
@@ -157,10 +148,10 @@ fun GhostTalkNavHost(
             runOnMainThread {
                 when (event) {
                     is SettingsViewModel.SettingsNavigationEvent.EditButton -> {
-                        navController.navigate("page_editor/${event.pageId}?buttonId=${event.buttonId}")
+                        navController.navigate("editor/${event.pageId}?mode=raster&buttonId=${event.buttonId}")
                     }
                     is SettingsViewModel.SettingsNavigationEvent.JumpToPage -> {
-                        navController.navigate("page_editor/${event.pageId}")
+                        navController.navigate("editor/${event.pageId}?mode=raster")
                     }
                     is SettingsViewModel.SettingsNavigationEvent.StartSetup -> {
                         settingsRepository.isSetupCompleted = false
@@ -245,20 +236,10 @@ fun GhostTalkNavHost(
             StartScreen(
                 bookName = activeBook?.name ?: "GhostTalk",
                 onNavigateToUserMode = {
-                    val startId = settingsRepository.defaultStartPageId
                     coroutineScope.launch {
-                        android.util.Log.d("NAV_DEBUG", "onNavigateToUserMode clicked")
-                        val startPage = if (startId != null) {
-                            withContext(Dispatchers.IO) { pageRepository.getPageById(startId) }
-                        } else null
-
-                        val finalPage = startPage ?: withContext(Dispatchers.IO) {
-                            pageRepository.getPagesForBook(activeBookId ?: "book-default").firstOrNull()
-                        }
-                        
+                        val finalPage = resolveStartPage(activeBookId ?: "book-default", settingsRepository, pageRepository)
                         if (finalPage != null) {
                             pageViewModel.loadPage(finalPage)
-                            android.util.Log.d("NAV_DEBUG", "onNavigateToUserMode: loaded page ${finalPage.id}, navigating to main")
                             navigateWithSecurity("main")
                         }
                     }
@@ -276,10 +257,18 @@ fun GhostTalkNavHost(
                 onNavigateToTemplateManager = { navController.safeNavigate("templates") },
                 onNavigateToStaticRowEditor = {
                     val bookId = activeBookId ?: "book-default"
-                    navController.safeNavigate("page_editor/static_row_$bookId")
+                    navController.safeNavigate("editor/static_row_$bookId?mode=raster")
                 },
                 onNavigateToStructureEditor = {
-                    navigateWithSecurity("structure_editor")
+                    val bookId = activeBookId ?: "book-default"
+                    coroutineScope.launch {
+                        val finalPage = resolveStartPage(bookId, settingsRepository, pageRepository)
+                        if (finalPage != null) {
+                            runOnMainThread {
+                                navigateWithSecurity("editor/${finalPage.id}?mode=struktur")
+                            }
+                        }
+                    }
                 },
                 onNavigateBack = { navController.safePopBackStack() }
             )
@@ -289,7 +278,7 @@ fun GhostTalkNavHost(
                 pageViewModel = pageViewModel,
                 onNavigateBack = { navController.safePopBackStack() },
                 onEditPage = { pageId ->
-                    navController.safeNavigate("page_editor/$pageId")
+                    navController.safeNavigate("editor/$pageId?mode=raster")
                 }
             )
         }
@@ -356,67 +345,52 @@ fun GhostTalkNavHost(
                 pageViewModel = pageViewModel,
                 onNavigateBack = { navController.safePopBackStack() },
                 onEditPage = { pageId: String ->
-                    navController.safeNavigate("page_editor/$pageId")
+                    navController.safeNavigate("editor/$pageId?mode=raster")
                 },
                 onEditTemplate = { templateId: String ->
                     navController.safeNavigate("template_editor/$templateId")
                 },
                 onOpenStructureEditor = {
-                    navigateWithSecurity("structure_editor")
+                    val bookId = pageViewModel.activeBookId.value ?: "book-default"
+                    coroutineScope.launch {
+                        val finalPage = resolveStartPage(bookId, settingsRepository, pageRepository)
+                        if (finalPage != null) {
+                            runOnMainThread {
+                                navigateWithSecurity("editor/${finalPage.id}?mode=struktur")
+                            }
+                        }
+                    }
                 }
             )
         }
         composable(
-            "structure_editor?focus={focus}&triggerSplit={triggerSplit}",
+            "editor/{pageId}?mode={mode}&buttonId={buttonId}&triggerSplit={triggerSplit}",
             arguments = listOf(
-                navArgument("focus") { type = NavType.StringType; nullable = true; defaultValue = null },
+                navArgument("pageId") { type = NavType.StringType },
+                navArgument("mode") { type = NavType.StringType; defaultValue = "raster" },
+                navArgument("buttonId") { type = NavType.StringType; nullable = true; defaultValue = null },
                 navArgument("triggerSplit") { type = NavType.BoolType; defaultValue = false }
             )
         ) { backStackEntry ->
-            val focus = backStackEntry.arguments?.getString("focus")
+            val pageId = backStackEntry.arguments?.getString("pageId")
+            val mode = backStackEntry.arguments?.getString("mode") ?: "raster"
+            val buttonId = backStackEntry.arguments?.getString("buttonId")
             val triggerSplit = backStackEntry.arguments?.getBoolean("triggerSplit") ?: false
             val gridEditorViewModel = hiltViewModel<com.andreas_kratzer.ghosttalk.ui.pages.GridEditorViewModel>()
-            StructureEditorScreen(
-                pageViewModel = pageViewModel,
-                gridEditorViewModel = gridEditorViewModel,
-                initialFocusedPageId = focus,
-                initialTriggerSplit = triggerSplit,
-                onEditPageInGrid = { pageId ->
-                    navController.safeNavigate("page_editor/$pageId")
-                },
-                onNavigateBack = {
-                    navController.safePopBackStack()
-                }
-            )
-        }
-        composable(
-            "page_editor/{pageId}?buttonId={buttonId}",
-            arguments = listOf(
-                navArgument("pageId") { type = NavType.StringType },
-                navArgument("buttonId") { type = NavType.StringType; nullable = true; defaultValue = null }
-            )
-        ) { backStackEntry ->
-            val pageId = backStackEntry.arguments?.getString("pageId")
-            val buttonId = backStackEntry.arguments?.getString("buttonId")
             if (pageId != null) {
-                PageEditorScreen(
+                PageWorkbenchScreen(
                     pageId = pageId,
+                    initialMode = mode,
                     initialButtonId = buttonId,
+                    initialTriggerSplit = triggerSplit,
                     pageViewModel = pageViewModel,
+                    gridEditorViewModel = gridEditorViewModel,
                     onNavigateBack = { navController.safePopBackStack() },
                     onExitEditor = {
-                        navController.popBackStack("page_list", inclusive = false)
-                    },
-                    onEditPage = { targetPageId, currentButtonId ->
-                        if (currentButtonId != null) {
-                            navController.currentBackStackEntry?.arguments?.putString("buttonId", currentButtonId)
+                        val popped = navController.popBackStack("page_list", inclusive = false)
+                        if (!popped) {
+                            navController.safePopBackStack()
                         }
-                        runOnMainThread {
-                            navController.navigate("page_editor/$targetPageId")
-                        }
-                    },
-                    onOpenStructureEditor = { focusedId, triggerSplit ->
-                        navigateWithSecurity("structure_editor?focus=$focusedId&triggerSplit=$triggerSplit")
                     }
                 )
             }
@@ -426,6 +400,20 @@ fun GhostTalkNavHost(
                 onNavigateBack = { navController.safePopBackStack() }
             )
         }
+    }
+}
+
+private suspend fun resolveStartPage(
+    bookId: String,
+    settingsRepository: SettingsRepository,
+    pageRepository: PageRepository
+): com.andreas_kratzer.ghosttalk.core.model.Page? {
+    val startId = settingsRepository.defaultStartPageId
+    val startPage = if (startId != null) {
+        withContext(Dispatchers.IO) { pageRepository.getPageById(startId) }
+    } else null
+    return startPage ?: withContext(Dispatchers.IO) {
+        pageRepository.getPagesForBook(bookId).firstOrNull()
     }
 }
 
@@ -440,7 +428,6 @@ private fun runOnMainThread(action: () -> Unit) {
 private fun NavHostController.safePopBackStack() {
     runOnMainThread {
         val state = currentBackStackEntry?.lifecycle?.currentState
-        android.util.Log.d("NAV_DEBUG", "safePopBackStack called. currentDestination=${currentDestination?.route} state=$state")
         if (state != null && state.isAtLeast(Lifecycle.State.STARTED)) {
             popBackStack()
         }
@@ -451,7 +438,6 @@ private fun NavHostController.safeNavigate(route: String) {
     runOnMainThread {
         val currentRoute = currentDestination?.route
         val state = currentBackStackEntry?.lifecycle?.currentState
-        android.util.Log.d("NAV_DEBUG", "safeNavigate called. route=$route currentRoute=$currentRoute state=$state")
         if (currentRoute == route) {
             return@runOnMainThread
         }

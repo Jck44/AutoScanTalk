@@ -1,5 +1,6 @@
 package com.andreas_kratzer.ghosttalk.ui.pages.delegates
 
+import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.core.data.AppStateRepository
 import com.andreas_kratzer.ghosttalk.core.data.BookRepository
 import com.andreas_kratzer.ghosttalk.core.data.GetPagesUseCase
@@ -26,17 +27,25 @@ import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.core.model.GridSettingsUpdate
 import com.andreas_kratzer.ghosttalk.core.model.NavigateToPageButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.NavigateToStartPageButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.OptionalProperty
 import com.andreas_kratzer.ghosttalk.core.model.Page
 import com.andreas_kratzer.ghosttalk.core.model.PageTemplate
+import com.andreas_kratzer.ghosttalk.ui.pages.history.CreatePageCommand
+import com.andreas_kratzer.ghosttalk.ui.pages.history.DeletePageCommand
+import com.andreas_kratzer.ghosttalk.ui.pages.history.DuplicateButtonToPageCommand
+import com.andreas_kratzer.ghosttalk.ui.pages.history.EditCommand
+import com.andreas_kratzer.ghosttalk.ui.pages.history.EditHistory
+import com.andreas_kratzer.ghosttalk.ui.pages.history.EditIcon
+import com.andreas_kratzer.ghosttalk.ui.pages.history.EditLabel
+import com.andreas_kratzer.ghosttalk.ui.pages.history.MoveButtonCommand
+import com.andreas_kratzer.ghosttalk.ui.pages.history.MoveButtonToPageCommand
+import com.andreas_kratzer.ghosttalk.ui.pages.history.PageSnapshotCommand
+import com.andreas_kratzer.ghosttalk.ui.pages.history.UpdateButtonConfigCommand
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import com.andreas_kratzer.ghosttalk.R
-import com.andreas_kratzer.ghosttalk.ui.pages.history.*
-import com.andreas_kratzer.ghosttalk.core.model.OptionalProperty
-import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import javax.inject.Inject
 import javax.inject.Singleton

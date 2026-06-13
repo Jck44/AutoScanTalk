@@ -1,28 +1,77 @@
 package com.andreas_kratzer.ghosttalk.ui.pages.structure
 
-import android.content.res.Configuration
-import androidx.compose.foundation.layout.*
+import android.widget.Toast
+import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.BottomSheetDefaults
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.core.domain.pages.BookNavigationGraph
 import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
+import com.andreas_kratzer.ghosttalk.core.model.GridSettingsUpdate
 import com.andreas_kratzer.ghosttalk.core.model.NavigateToPageButtonAction
-import com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkScaffold
+import com.andreas_kratzer.ghosttalk.core.ui.components.EditorTopBar
+import com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons
+import com.andreas_kratzer.ghosttalk.ui.components.ValidatedTextField
 import com.andreas_kratzer.ghosttalk.ui.pages.GridEditorViewModel
-import com.andreas_kratzer.ghosttalk.ui.pages.PageViewModel
+import com.andreas_kratzer.ghosttalk.ui.pages.IncomingReferencesDialog
 import com.andreas_kratzer.ghosttalk.ui.pages.PageSplitViewModel
-import com.andreas_kratzer.ghosttalk.ui.pages.pagesplit.PageSplitOptInDialog
+import com.andreas_kratzer.ghosttalk.ui.pages.PageViewModel
+import com.andreas_kratzer.ghosttalk.ui.pages.history.EditIcon
 import com.andreas_kratzer.ghosttalk.ui.pages.pagesplit.PageSplitManualPromptDialog
-import androidx.activity.compose.BackHandler
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import com.andreas_kratzer.ghosttalk.ui.pages.pagesplit.PageSplitOptInDialog
+import com.andreas_kratzer.ghosttalk.ui.pages.resolveEditLabel
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -34,12 +83,14 @@ fun StructureEditorScreen(
     initialTriggerSplit: Boolean = false,
     pageSplitViewModel: PageSplitViewModel = hiltViewModel(),
     onEditPageInGrid: (pageId: String) -> Unit,
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
+    modeSwitcher: (@Composable () -> Unit)? = null
 ) {
-    val pages by pageViewModel.unfilteredPages.collectAsState(initial = emptyList())
+    val pages by pageViewModel.unfilteredPages.collectAsState()
     val templates by pageViewModel.templates.collectAsState(initial = emptyList())
     val startPageId by pageViewModel.defaultStartPageIdFlow.collectAsState(initial = null)
     val activeBookId by pageViewModel.activeBookId.collectAsState(initial = null)
+    val context = LocalContext.current
 
     val graph = remember(pages, startPageId) {
         BookNavigationGraph.from(pages, startPageId)
@@ -57,7 +108,7 @@ fun StructureEditorScreen(
     }
 
     var focusedPageId by rememberSaveable {
-        mutableStateOf("")
+        mutableStateOf(initialFocusedPageId ?: "")
     }
 
     var focusHistory by rememberSaveable {
@@ -108,6 +159,19 @@ fun StructureEditorScreen(
         }
     }
 
+    val focusedPage = remember(pages, focusedPageId) { pages.find { it.id == focusedPageId } }
+    var localName by remember(focusedPage?.name) { mutableStateOf(focusedPage?.name ?: "") }
+
+    LaunchedEffect(localName) {
+        if (focusedPage != null && localName != focusedPage.name && localName.isNotBlank()) {
+            kotlinx.coroutines.delay(500)
+            gridEditorViewModel.updateGridSettings(
+                itemId = focusedPage.id,
+                update = GridSettingsUpdate(name = localName)
+            )
+        }
+    }
+
     val configuration = LocalConfiguration.current
     val isTablet = configuration.screenWidthDp >= 600
 
@@ -116,6 +180,11 @@ fun StructureEditorScreen(
     var showBottomSheet by remember { mutableStateOf(false) }
 
     val snackbarHostState = remember { SnackbarHostState() }
+
+    var showHistoryPanel by remember { mutableStateOf(false) }
+    var showIncomingLinksDialog by remember { mutableStateOf(false) }
+    var incomingUsages by remember { mutableStateOf<List<com.andreas_kratzer.ghosttalk.core.domain.pages.UsageLocation>>(emptyList()) }
+    var showOverflowMenu by remember { mutableStateOf(false) }
 
     var pageToRemoveConnectionFromPageId by remember { mutableStateOf("") }
     var pageToRemoveConnectionByButtonIndex by remember { mutableStateOf<Int?>(null) }
@@ -215,48 +284,248 @@ fun StructureEditorScreen(
         )
     }
 
-    GhostTalkScaffold(
-        title = stringResource(R.string.structure_editor_title),
-        onNavigateBack = onNavigateBack,
-        snackbarHost = { SnackbarHost(snackbarHostState) },
-        actions = {
-            if (!isTablet) {
-                IconButton(onClick = { showBottomSheet = true }) {
-                    Icon(
-                        imageVector = Icons.Default.Menu,
-                        contentDescription = stringResource(R.string.structure_tree_toggle)
-                    )
-                }
-            }
+    if (pages.isEmpty()) {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator()
         }
+        return
+    }
+
+    Scaffold(
+        topBar = {
+            EditorTopBar(
+                titleContent = {
+                    ValidatedTextField(
+                        value = localName,
+                        onValueChange = { localName = it },
+                        isRequired = true,
+                        errorMessage = stringResource(R.string.error_page_name_required),
+                        onFocusLost = {
+                            if (focusedPage != null && it.isNotBlank() && it != focusedPage.name) {
+                                gridEditorViewModel.updateGridSettings(
+                                    itemId = focusedPage.id,
+                                    update = GridSettingsUpdate(name = it)
+                                )
+                            }
+                        },
+                        placeholder = { Text(stringResource(R.string.page_name_label)) },
+                        modifier = Modifier
+                            .widthIn(max = 200.dp)
+                            .padding(vertical = 4.dp)
+                            .testTag("structure_editor_name_field")
+                    )
+                },
+                onNavigateBack = onNavigateBack,
+                actions = {
+                    val historyState by gridEditorViewModel.historyState.collectAsState()
+                    val isNarrow = LocalConfiguration.current.screenWidthDp < 600
+
+                    IconButton(
+                        onClick = {
+                            gridEditorViewModel.undo { message ->
+                                scope.launch { snackbarHostState.showSnackbar(message) }
+                            }
+                        },
+                        enabled = historyState.canUndo,
+                        modifier = Modifier.testTag("structure_editor_undo_button")
+                    ) {
+                        Icon(
+                            imageVector = GhostTalkIcons.Undo,
+                            contentDescription = stringResource(R.string.structure_action_undo),
+                            tint = if (historyState.canUndo) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f)
+                        )
+                    }
+
+                    IconButton(
+                        onClick = {
+                            gridEditorViewModel.redo { message ->
+                                scope.launch { snackbarHostState.showSnackbar(message) }
+                            }
+                        },
+                        enabled = historyState.canRedo,
+                        modifier = Modifier.testTag("structure_editor_redo_button")
+                    ) {
+                        Icon(
+                            imageVector = GhostTalkIcons.Redo,
+                            contentDescription = stringResource(R.string.history_redo_action),
+                            tint = if (historyState.canRedo) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f)
+                        )
+                    }
+
+                    if (!isNarrow) {
+                        IconButton(
+                            onClick = { showHistoryPanel = true },
+                            modifier = Modifier.testTag("structure_editor_history_button")
+                        ) {
+                            Icon(
+                                imageVector = GhostTalkIcons.History,
+                                contentDescription = stringResource(R.string.history_panel_title),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+
+                        IconButton(
+                            onClick = {
+                                scope.launch {
+                                    incomingUsages = pageViewModel.getPageUsages(focusedPageId)
+                                    showIncomingLinksDialog = true
+                                }
+                            },
+                            modifier = Modifier.testTag("structure_editor_incoming_links")
+                        ) {
+                            Icon(
+                                imageVector = GhostTalkIcons.Link,
+                                contentDescription = stringResource(R.string.page_incoming_links_title),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+
+                        if (!isTablet) {
+                            IconButton(onClick = { showBottomSheet = true }) {
+                                Icon(
+                                    imageVector = Icons.Default.Menu,
+                                    contentDescription = stringResource(R.string.structure_tree_toggle)
+                                )
+                            }
+                        }
+                    }
+
+                    Box {
+                        IconButton(
+                            onClick = { showOverflowMenu = true },
+                            modifier = Modifier.testTag("structure_editor_overflow_menu_trigger")
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.MoreVert,
+                                contentDescription = "Mehr Optionen",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        DropdownMenu(
+                            expanded = showOverflowMenu,
+                            onDismissRequest = { showOverflowMenu = false }
+                        ) {
+                            if (isNarrow) {
+                                if (!isTablet) {
+                                    DropdownMenuItem(
+                                        text = { Text(stringResource(R.string.structure_tree_toggle)) },
+                                        onClick = {
+                                            showOverflowMenu = false
+                                            showBottomSheet = true
+                                        },
+                                        leadingIcon = {
+                                            Icon(
+                                                imageVector = Icons.Default.Menu,
+                                                contentDescription = null,
+                                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
+                                    )
+                                }
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(R.string.page_incoming_links_title)) },
+                                    onClick = {
+                                        showOverflowMenu = false
+                                        scope.launch {
+                                            incomingUsages = pageViewModel.getPageUsages(focusedPageId)
+                                            showIncomingLinksDialog = true
+                                        }
+                                    },
+                                    leadingIcon = {
+                                        Icon(
+                                            imageVector = GhostTalkIcons.Link,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(R.string.history_panel_title)) },
+                                    onClick = {
+                                        showOverflowMenu = false
+                                        showHistoryPanel = true
+                                    },
+                                    leadingIcon = {
+                                        Icon(
+                                            imageVector = GhostTalkIcons.History,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                )
+                            }
+
+                            DropdownMenuItem(
+                                text = { Text("Layout- & Struktur-Assistent") },
+                                onClick = {
+                                    showOverflowMenu = false
+                                    val accepted = pageSplitViewModel.hasAcceptedPageSplitOptIn
+                                    if (accepted) {
+                                        pageSplitViewModel.generatePageSplitProposal(focusedPageId)
+                                    } else {
+                                        showOptInDialog.value = true
+                                    }
+                                },
+                                leadingIcon = {
+                                    Icon(
+                                        imageVector = GhostTalkIcons.AutoAwesome,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                },
+                                modifier = Modifier.testTag("structure_editor_split_wizard_trigger_menu")
+                            )
+                        }
+                    }
+                }
+            )
+        },
+        snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { paddingValues ->
-        Row(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            if (isTablet) {
-                // Left Column: TreeView (~34%)
-                Card(
+            if (modeSwitcher != null) {
+                Box(
                     modifier = Modifier
-                        .fillMaxHeight()
-                        .width(300.dp)
-                        .padding(start = 16.dp, top = 16.dp, bottom = 16.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    contentAlignment = Alignment.Center
                 ) {
-                    StructureTreeNavigator(
-                        graph = graph,
-                        pageNames = pageNames,
-                        focusedPageId = focusedPageId,
-                        onFocus = { navigateToPage(it) },
-                        onOrphanClick = { orphanId -> orphanToConnectId = orphanId },
-                        modifier = Modifier.fillMaxSize()
-                    )
+                    modeSwitcher()
                 }
-
-                // Split divider
-                Spacer(modifier = Modifier.width(8.dp))
             }
+
+            Row(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .weight(1f)
+            ) {
+                if (isTablet) {
+                    // Left Column: TreeView (~34%)
+                    Card(
+                        modifier = Modifier
+                            .fillMaxHeight()
+                            .width(300.dp)
+                            .padding(start = 16.dp, top = 16.dp, bottom = 16.dp),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                    ) {
+                        StructureTreeNavigator(
+                            graph = graph,
+                            pages = pages,
+                            pageNames = pageNames,
+                            focusedPageId = focusedPageId,
+                            onFocus = { navigateToPage(it) },
+                            onOrphanClick = { orphanId -> orphanToConnectId = orphanId },
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    }
+
+                    // Split divider
+                    Spacer(modifier = Modifier.width(8.dp))
+                }
 
             // Right Column / Main: Focus Canvas
             StructureFocusCanvas(
@@ -297,6 +566,7 @@ fun StructureEditorScreen(
                     .fillMaxHeight()
             )
         }
+        }
 
         // Drawer / BottomSheet for tree view on phones
         if (!isTablet && showBottomSheet) {
@@ -318,6 +588,7 @@ fun StructureEditorScreen(
                     )
                     StructureTreeNavigator(
                         graph = graph,
+                        pages = pages,
                         pageNames = pageNames,
                         focusedPageId = focusedPageId,
                         onFocus = {
@@ -446,5 +717,98 @@ fun StructureEditorScreen(
             },
             onDismiss = { showManualPromptDialog.value = false }
         )
+    }
+
+    if (showIncomingLinksDialog) {
+        val pageName = pageNames[focusedPageId] ?: ""
+        IncomingReferencesDialog(
+            pageName = pageName,
+            usages = incomingUsages,
+            onDismiss = { showIncomingLinksDialog = false },
+            onNavigateToUsage = { usage ->
+                showIncomingLinksDialog = false
+                if (usage is com.andreas_kratzer.ghosttalk.core.domain.pages.UsageLocation.PageUsage) {
+                    navigateToPage(usage.id)
+                } else {
+                    Toast.makeText(context, R.string.page_incoming_links_template_toast, Toast.LENGTH_SHORT).show()
+                }
+            }
+        )
+    }
+
+    if (showHistoryPanel) {
+        val historyState by gridEditorViewModel.historyState.collectAsState()
+        ModalBottomSheet(
+            onDismissRequest = { showHistoryPanel = false }
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
+            ) {
+                Text(
+                    text = stringResource(R.string.history_panel_title),
+                    style = MaterialTheme.typography.titleLarge,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+
+                if (historyState.entries.isEmpty()) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 32.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = stringResource(R.string.history_empty),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                } else {
+                    androidx.compose.foundation.lazy.LazyColumn(
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        items(historyState.entries.size) { index ->
+                            val entry = historyState.entries[index]
+                            Surface(
+                                onClick = {
+                                    gridEditorViewModel.undoTo(index)
+                                    showHistoryPanel = false
+                                },
+                                shape = MaterialTheme.shapes.medium,
+                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(12.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                ) {
+                                    val icon = when (entry.icon) {
+                                        EditIcon.DELETE -> Icons.Default.Close
+                                        EditIcon.MOVE -> GhostTalkIcons.DragHandle
+                                        EditIcon.EDIT -> GhostTalkIcons.AutoAwesome
+                                        EditIcon.REORDER -> GhostTalkIcons.Sort
+                                        EditIcon.PAGE -> GhostTalkIcons.GridView
+                                        EditIcon.BOOK -> GhostTalkIcons.Book
+                                    }
+                                    Icon(
+                                        imageVector = icon,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.primary
+                                    )
+                                    Text(
+                                        text = resolveEditLabel(entry.label),
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 }

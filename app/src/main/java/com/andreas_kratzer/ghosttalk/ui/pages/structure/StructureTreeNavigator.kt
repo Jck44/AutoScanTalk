@@ -1,29 +1,57 @@
 package com.andreas_kratzer.ghosttalk.ui.pages.structure
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Badge
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.SuggestionChip
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.core.domain.pages.BookNavigationGraph
 import com.andreas_kratzer.ghosttalk.core.domain.pages.TreeNode
+import com.andreas_kratzer.ghosttalk.core.model.Page
+import com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons
+import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun StructureTreeNavigator(
     graph: BookNavigationGraph,
+    pages: List<Page>,
     pageNames: Map<String, String>,
     focusedPageId: String,
     onFocus: (String) -> Unit,
@@ -74,11 +102,13 @@ fun StructureTreeNavigator(
         }
     }
 
-    Column(modifier = modifier) {
+    val dimensions = LocalDimensions.current
+
+    Column(modifier = modifier.padding(dimensions.paddingMedium)) {
         OutlinedTextField(
             value = searchQuery,
             onValueChange = { searchQuery = it },
-            placeholder = { Text(stringResource(R.string.structure_search)) },
+            placeholder = { Text(stringResource(R.string.structure_search), fontSize = 14.sp) },
             leadingIcon = { Icon(imageVector = Icons.Default.Search, contentDescription = null) },
             trailingIcon = {
                 if (searchQuery.isNotEmpty()) {
@@ -88,15 +118,21 @@ fun StructureTreeNavigator(
                 }
             },
             singleLine = true,
+            shape = MaterialTheme.shapes.medium,
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
+                focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.15f)
+            ),
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(8.dp)
+                .padding(bottom = dimensions.paddingMedium)
         )
 
         LazyColumn(
             modifier = Modifier
-                .weight(1f)
-                .padding(horizontal = 8.dp),
+                .weight(1f),
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             if (searchQuery.isNotBlank()) {
@@ -119,6 +155,10 @@ fun StructureTreeNavigator(
                     items(searchResults) { pageId ->
                         val pageName = pageNames[pageId] ?: pageId
                         val isFocused = pageId == focusedPageId
+                        val page = pages.find { it.id == pageId }
+                        val hasSpeech = page?.buttonConfigs?.any { it != null && it.isActive && it.buttonAction is com.andreas_kratzer.ghosttalk.core.model.SpeakTextButtonAction } ?: false
+                        val hasNav = page?.buttonConfigs?.any { it != null && it.isActive && (it.buttonAction is com.andreas_kratzer.ghosttalk.core.model.NavigateToPageButtonAction || it.buttonAction is com.andreas_kratzer.ghosttalk.core.model.NavigateToStartPageButtonAction || it.buttonAction is com.andreas_kratzer.ghosttalk.core.model.NavigateBackButtonAction) } ?: false
+
                         Surface(
                             color = if (isFocused) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface,
                             shape = MaterialTheme.shapes.small,
@@ -143,8 +183,33 @@ fun StructureTreeNavigator(
                                         )
                                     } else {
                                         MaterialTheme.typography.bodyMedium
-                                    }
+                                    },
+                                    modifier = Modifier.weight(1f)
                                 )
+
+                                Row(
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.padding(end = 8.dp)
+                                ) {
+                                    val isDark = androidx.compose.foundation.isSystemInDarkTheme()
+                                    if (hasSpeech) {
+                                        val speechColor = if (isDark) com.andreas_kratzer.ghosttalk.core.ui.theme.SpeakTextBadgeTextDark else com.andreas_kratzer.ghosttalk.core.ui.theme.SpeakTextBadgeTextLight
+                                        Box(
+                                            modifier = Modifier
+                                                .size(8.dp)
+                                                .background(speechColor, shape = CircleShape)
+                                        )
+                                    }
+                                    if (hasNav) {
+                                        val navColor = if (isDark) com.andreas_kratzer.ghosttalk.core.ui.theme.NavigateBadgeTextDark else com.andreas_kratzer.ghosttalk.core.ui.theme.NavigateBadgeTextLight
+                                        Box(
+                                            modifier = Modifier
+                                                .size(8.dp)
+                                                .background(navColor, shape = CircleShape)
+                                        )
+                                    }
+                                }
                             }
                         }
                     }
@@ -205,6 +270,34 @@ fun StructureTreeNavigator(
                                     },
                                     modifier = Modifier.weight(1f)
                                 )
+
+                                val page = pages.find { it.id == node.pageId }
+                                val hasSpeech = page?.buttonConfigs?.any { it != null && it.isActive && it.buttonAction is com.andreas_kratzer.ghosttalk.core.model.SpeakTextButtonAction } ?: false
+                                val hasNav = page?.buttonConfigs?.any { it != null && it.isActive && (it.buttonAction is com.andreas_kratzer.ghosttalk.core.model.NavigateToPageButtonAction || it.buttonAction is com.andreas_kratzer.ghosttalk.core.model.NavigateToStartPageButtonAction || it.buttonAction is com.andreas_kratzer.ghosttalk.core.model.NavigateBackButtonAction) } ?: false
+
+                                Row(
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.padding(end = 8.dp)
+                                ) {
+                                    val isDark = androidx.compose.foundation.isSystemInDarkTheme()
+                                    if (hasSpeech) {
+                                        val speechColor = if (isDark) com.andreas_kratzer.ghosttalk.core.ui.theme.SpeakTextBadgeTextDark else com.andreas_kratzer.ghosttalk.core.ui.theme.SpeakTextBadgeTextLight
+                                        Box(
+                                            modifier = Modifier
+                                                .size(8.dp)
+                                                .background(speechColor, shape = CircleShape)
+                                        )
+                                    }
+                                    if (hasNav) {
+                                        val navColor = if (isDark) com.andreas_kratzer.ghosttalk.core.ui.theme.NavigateBadgeTextDark else com.andreas_kratzer.ghosttalk.core.ui.theme.NavigateBadgeTextLight
+                                        Box(
+                                            modifier = Modifier
+                                                .size(8.dp)
+                                                .background(navColor, shape = CircleShape)
+                                        )
+                                    }
+                                }
 
                                 if (node.isReference) {
                                     SuggestionChip(
@@ -278,8 +371,37 @@ fun StructureTreeNavigator(
                                             )
                                         } else {
                                             MaterialTheme.typography.bodyMedium
-                                        }
+                                        },
+                                        modifier = Modifier.weight(1f)
                                     )
+
+                                    val page = pages.find { it.id == orphanId }
+                                    val hasSpeech = page?.buttonConfigs?.any { it != null && it.isActive && it.buttonAction is com.andreas_kratzer.ghosttalk.core.model.SpeakTextButtonAction } ?: false
+                                    val hasNav = page?.buttonConfigs?.any { it != null && it.isActive && (it.buttonAction is com.andreas_kratzer.ghosttalk.core.model.NavigateToPageButtonAction || it.buttonAction is com.andreas_kratzer.ghosttalk.core.model.NavigateToStartPageButtonAction || it.buttonAction is com.andreas_kratzer.ghosttalk.core.model.NavigateBackButtonAction) } ?: false
+
+                                    Row(
+                                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        modifier = Modifier.padding(end = 8.dp)
+                                    ) {
+                                        val isDark = androidx.compose.foundation.isSystemInDarkTheme()
+                                        if (hasSpeech) {
+                                            val speechColor = if (isDark) com.andreas_kratzer.ghosttalk.core.ui.theme.SpeakTextBadgeTextDark else com.andreas_kratzer.ghosttalk.core.ui.theme.SpeakTextBadgeTextLight
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(8.dp)
+                                                    .background(speechColor, shape = CircleShape)
+                                            )
+                                        }
+                                        if (hasNav) {
+                                            val navColor = if (isDark) com.andreas_kratzer.ghosttalk.core.ui.theme.NavigateBadgeTextDark else com.andreas_kratzer.ghosttalk.core.ui.theme.NavigateBadgeTextLight
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(8.dp)
+                                                    .background(navColor, shape = CircleShape)
+                                            )
+                                        }
+                                    }
                                 }
                             }
                         }

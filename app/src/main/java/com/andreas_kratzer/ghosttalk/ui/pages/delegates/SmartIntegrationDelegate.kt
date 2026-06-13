@@ -5,6 +5,7 @@ import android.content.Intent
 import android.util.Log
 import android.widget.Toast
 import androidx.core.net.toUri
+import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.core.ai.domain.GeminiUseCase
 import com.andreas_kratzer.ghosttalk.core.cloud.PhilipsHueManager
 import com.andreas_kratzer.ghosttalk.core.cloud.SpotifyManager
@@ -97,7 +98,7 @@ class SmartIntegrationDelegate @Inject constructor(
         val username = settingsRepository.hueUsername
         if (ip.isBlank() || username.isBlank()) {
             if (!silentOnFailure) {
-                Toast.makeText(application, "Bitte zuerst in den Einstellungen koppeln.", Toast.LENGTH_LONG).show()
+                Toast.makeText(application, application.getString(R.string.smart_integration_please_pair), Toast.LENGTH_LONG).show()
             }
             onResult?.invoke(false)
             return

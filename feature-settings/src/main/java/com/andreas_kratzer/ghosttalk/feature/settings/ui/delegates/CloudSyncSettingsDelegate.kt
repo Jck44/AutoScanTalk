@@ -230,7 +230,7 @@ class CloudSyncSettingsDelegate @Inject constructor(
                 val backups = getAvailableBackupsUseCase.execute(null, uri)
                 _availableBackups.value = backups
                 if (backups.isEmpty()) {
-                    Toast.makeText(application, "Keine Backups in dem ausgewählten Ordner gefunden.", Toast.LENGTH_LONG).show()
+                    Toast.makeText(application, application.getString(R.string.cloud_sync_no_backups_in_folder), Toast.LENGTH_LONG).show()
                 } else {
                     _showBackupSelectionDialog.value = true
                 }
@@ -261,7 +261,7 @@ class CloudSyncSettingsDelegate @Inject constructor(
 
                 _availableBackups.value = backups
                 if (backups.isEmpty()) {
-                    Toast.makeText(application, "Keine Backups gefunden.", Toast.LENGTH_LONG).show()
+                    Toast.makeText(application, application.getString(R.string.cloud_sync_no_backups_found), Toast.LENGTH_LONG).show()
                 } else {
                     _showBackupSelectionDialog.value = true
                 }

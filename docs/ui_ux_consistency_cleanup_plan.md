@@ -32,18 +32,18 @@ Parallel wird eine **neue Navigationsseite / Informationsarchitektur** geplant. 
 
 | AP | Thema | Risiko | Stand |
 |----|-------|--------|-------|
-| 1 | Debug-Logs + toter Code entfernen | trivial | offen |
-| 2 | Geteilter Adaptive-Card-Height-Helper | klein | offen |
-| 3 | BookListScreen-Dialoge auf `GhostTalkDialog` | klein | offen |
-| 4 | Restliche hartcodierte UI-Strings → Resources | mittel | offen |
-| 5 | Speichern/Abbrechen-Balken hinter Navigationsleiste (Profil bearbeiten) | klein | offen |
-| 6 | Windowed/Freeform offiziell unterstützen (resizeableActivity + Mindestgröße) | klein | offen |
+| 1 | Debug-Logs + toter Code entfernen | trivial | ✅ umgesetzt+reviewt |
+| 2 | Geteilter Adaptive-Card-Height-Helper | klein | ✅ umgesetzt+reviewt |
+| 3 | BookListScreen-Dialoge auf `GhostTalkDialog` | klein | ✅ umgesetzt+reviewt |
+| 4 | Restliche hartcodierte UI-Strings → Resources | mittel | ✅ umgesetzt+reviewt (M1+Nits behoben; Hue-Pairing-Residuum → i18n-Ticket) |
+| 5 | Speichern/Abbrechen-Balken hinter Navigationsleiste (Profil bearbeiten) | klein | ✅ umgesetzt+reviewt (manuelle Gerätesicht offen) |
+| 6 | Windowed/Freeform offiziell unterstützen (resizeableActivity + Mindestgröße) | klein | ✅ umgesetzt+reviewt (manueller Resize-Test offen) |
 | R | Abschluss-Review (Claude) — **nur Teil A** | — | offen |
-| B1 | Geteilte Editor-Top-Bar extrahieren | klein | offen |
-| B2 | Geteilte visuelle Token für Seite/Button (Raster/Chip/Graph) | mittel | offen |
-| B3 | Modus-Container + Route-Konsolidierung (`editor/{pageId}?mode=`) | **hoch** | offen |
-| B4 | Baum-Navigator als geteiltes Element in beiden Modi | mittel | offen |
-| B5 | Übergänge/Terminologie entschlacken + Undo-Konsistenz | klein | offen |
+| B1 | Geteilte Editor-Top-Bar extrahieren | klein | ✅ umgesetzt+reviewt |
+| B2 | Geteilte visuelle Token für Seite/Button (Raster/Chip/Graph) | mittel | ✅ umgesetzt+reviewt |
+| B3 | Modus-Container + Route-Konsolidierung (`editor/{pageId}?mode=`) | **hoch** | ✅ umgesetzt+reviewt (Nav-Plan nachgezogen) |
+| B4 | Baum-Navigator als geteiltes Element in beiden Modi | mittel | ✅ umgesetzt+reviewt (Phone-Raster ohne Inline-Baum, s. Notiz) |
+| B5 | Übergänge/Terminologie entschlacken + Undo-Konsistenz | klein | ✅ umgesetzt+reviewt |
 
 ---
 
@@ -330,4 +330,40 @@ bisherigen Funktionen beider Editoren erreichbar; Tests grün; Build grün. **Vo
 
 ## 5. Review-Notizen (Claude — wird während des Reviews gefüllt)
 
-_(leer bis zur Umsetzung)_
+### Review Teil A (AP 1–6), Claude, 2026-06-13 — gegen uncommitteten Working Tree
+
+**Gesamt:** Sauber umgesetzt, Scope eingehalten (nur die erwarteten Dateien), `assembleDebug` + `testDebugUnitTest` grün. **Ein Must-Fix (klein) in AP 4**, sonst nur Kosmetik.
+
+**Pro AP:**
+- **AP 1 ✅** Alle 4 `NAV_DEBUG`-Logs entfernt (`onNavigateToUserMode` ×2, `safePopBackStack`, `safeNavigate`); `safeNavigate`/`safePopBackStack`/`runOnMainThread`-Wrapper unangetastet. `StartScreen`: toter äußerer `isLandscape` + `Configuration`/`LocalConfiguration`-Imports raus, innerer `isLandscape` (für `maxItemsInEachRow`) korrekt erhalten.
+- **AP 2 ✅** `adaptiveCardHeight()` in `GhostTalkComponents.kt` (plan-konform), alle 5 Call-Sites migriert, Landscape-Faktor auf 0.18 vereinheitlicht (StartScreen 0.2 → 0.18).
+- **AP 3 ✅** Beide rohen `AlertDialog` (Umbenennen/Neu) auf `GhostTalkDialog` migriert; Validierungs-, `forceSoftKeyboard`/`onFocusChanged`-, `isError`-Logik 1:1 erhalten; `isDestructive=false`.
+- **AP 4 ⚠️** Empty-States (Book/Template/Page/Analytics) + ContentManagement-Karte + Toasts (Suggestions, SmartIntegration, CloudSync, **alle** Hue-Meldungen) lokalisiert; **de/en-Parität vollständig**, Format-Args (`%1$s`/`%1$d`) korrekt. Hue über den Minimal-Scope hinaus (positiv, im Sinne von AP 4).
+- **AP 5 ✅** `WindowInsets.safeDrawing.only(Horizontal+Bottom)` + `imePadding()` auf die bottomBar-`Row`. (`imePadding` ist redundant, da `safeDrawing` `ime` bereits enthält — harmlos dank Inset-Consumption.)
+- **AP 6 ✅** `resizeableActivity="true"` + `<layout minWidth=360dp minHeight=480dp gravity=center>`.
+
+**🐛 Must-Fix M1 (klein, AP 4): `HueSettingsDelegate.kt:136` noch hartcodiert.** ✅ **behoben** (Gemini, 2026-06-13): `hue_pairing_press_link_button` (de+en) + `context.getString(...)`. Verifiziert, Build grün.
+
+**Nachtrag (Claude, 2026-06-13): i18n-Residuum erkannt, NICHT Teil A.** `_huePairingStatus.value` wird noch an 7 weiteren Stellen mit hartcodiertem Deutsch gesetzt (`HueSettingsDelegate.kt:65,68,76,95,144,149,153`) → Pairing-Status jetzt gemischt lokalisiert. War **nicht** in der AP-4-Liste (nur 52/60/102/135 genannt), daher kein Teil-A-Blocker. **→ i18n-Sammelticket** (zusammen mit `AnalyticsDashboardScreen.kt:259`).
+
+**Kosmetik (keine Blocker):** ✅ **beide behoben** (Gemini, 2026-06-13), verifiziert.
+- Doppelter `import androidx.compose.ui.unit.dp` in `GhostTalkComponents.kt` → entfernt.
+- Ungenutzte Imports `AlertDialog`/`Button`/`ButtonDefaults` in `BookListScreen.kt` → entfernt.
+- **Out-of-scope-Residuum (nicht in AP-4-Liste):** `AnalyticsDashboardScreen.kt:259` „Seite wird verwendet" noch hartcodiert → fürs i18n-Sammelticket.
+
+**Noch offen (manuell, headless nicht prüfbar):** Sichtprüfung Light/Dark + Hoch/Quer; Profil-Save/Cancel über Navigationsleiste auf echtem Gerät; Splitscreen/Freeform-Resize (AP 6); App-Sprache Englisch ohne dt. Resttexte.
+
+### Review Teil B (B1–B5), Claude, 2026-06-13 — gegen uncommitteten Working Tree
+
+**Gesamt:** Sauber und kohärent umgesetzt, `assembleDebug` + `testDebugUnitTest` grün, alle `page_editor_*`/`structure_*`-testTags erhalten. **Keine Code-Must-Fixes.** Eine Doku-Koordination (B3↔Nav-Plan) + kleinere Notizen.
+
+- **B1 ✅** `EditorTopBar` (core-ui, neu) in **beiden** Editoren adoptiert; `titleContent`/`modeSwitcher`/`actions`/`onExitEditor`-Slots; Exit-Button trägt weiterhin `page_editor_exit_button`.
+- **B2 ✅** `ActionVisualTokens` (core-ui, neu) — geteilte Badge-Farben für Nav/Sprech/SmartHome/Gemini/… über Rasterzelle, Chip, Graph, Baum.
+- **B3 ✅** `PageWorkbenchScreen` (neu) hostet beide Modi für **eine** `pageId`; `mode`/`focusedPageId`/`buttonId`/`triggerSplit` in `rememberSaveable` → **kein Fokusverlust** beim Umschalten. Route konsolidiert: `page_editor` + `structure_editor` → `editor/{pageId}?mode={raster|struktur}&buttonId=&triggerSplit=`; Security-Gate auf `route.startsWith("editor")` angepasst; Settings-Nav-Events + alle Einstiege migriert. **Geteilte `GridEditorViewModel`** (workbench-scoped) an beide Modi → gemeinsamer Edit-/Undo-State (= B5-Undo-Konsistenz).
+- **B4 ✅** `StructureTreeNavigator` in beiden Modi: Tablet = 300dp-Seitenpane (auch im Raster), Phone = Bottom-Sheet (im Struktur-Modus). **Notiz:** Phone-**Raster** hat keinen Inline-Baum — Baum dort nur nach Moduswechsel erreichbar (Plan B4 wollte Sheet in beiden Modi). Akzeptabel via Umschalter, ggf. Folgeschliff.
+- **B5 ✅** Plain-„Struktur bearbeiten" entfernt → Modus-Umschalter ist der kanonische Übergang; Overflow hat nur noch Analytics-Toggle + „Layout-/Struktur-Assistent" (eigenständige KI-Split-Aktion); Link-Icon = eingehende Links (eigene Funktion, korrekt behalten).
+
+**Befunde (keine Blocker):**
+- **Koordination B3↔Nav-Plan (erledigt):** `navigation_redesign_plan.md` referenzierte noch `page_editor`/`structure_editor`. Da B3 zuerst kam, **Nav-Plan auf `editor/{pageId}?mode=` nachgezogen** (Ist-Diagramm + AP 2/AP 5). Kein Code-Konflikt (Nav-Redesign noch nicht implementiert).
+- **Neue hartcodierte UI-Strings durch Teil B** → ins i18n-Sammelticket aufgenommen: `PageWorkbenchScreen` „Raster"/„Struktur", `EditorTopBar` „Editor beenden".
+- **Pre-existing/minor:** `onExitEditor` macht `popBackStack("page_list")` — wenn der Editor aus ContentManagement (Statische Zeile) o. Analytics betreten wird, ist `page_list` evtl. nicht im Back-Stack (Altlast, nicht durch B3 verursacht). Start-Seiten-Auflösung für den Struktur-Einstieg 3× dupliziert im NavHost (DRY, trivial).

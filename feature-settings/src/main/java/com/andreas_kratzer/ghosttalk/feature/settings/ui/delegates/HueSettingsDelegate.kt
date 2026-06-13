@@ -5,6 +5,7 @@ import android.widget.Toast
 import com.andreas_kratzer.ghosttalk.core.cloud.BridgeCertificateInfo
 import com.andreas_kratzer.ghosttalk.core.cloud.PhilipsHueManager
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
+import com.andreas_kratzer.ghosttalk.feature.settings.R
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
@@ -43,13 +44,13 @@ class HueSettingsDelegate @Inject constructor(
 
     fun discoverHueBridges() {
         viewModelScopeLaunch {
-            Toast.makeText(context, "Suche nach Hue Bridges...", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, context.getString(R.string.hue_toast_searching), Toast.LENGTH_SHORT).show()
             val bridges = hueManager.discoverBridges()
             if (bridges.isNotEmpty()) {
                 settingsRepository.hueBridgeIp = bridges.first()
-                Toast.makeText(context, "Bridge gefunden: ${bridges.first()}", Toast.LENGTH_LONG).show()
+                Toast.makeText(context, context.getString(R.string.hue_toast_bridge_found, bridges.first()), Toast.LENGTH_LONG).show()
             } else {
-                Toast.makeText(context, "Keine Hue Bridge im Netzwerk gefunden.", Toast.LENGTH_LONG).show()
+                Toast.makeText(context, context.getString(R.string.hue_toast_no_bridge_found), Toast.LENGTH_LONG).show()
             }
         }
     }
@@ -57,7 +58,7 @@ class HueSettingsDelegate @Inject constructor(
     fun registerLocalHueBridge() {
         val ip = settingsRepository.hueBridgeIp
         if (ip.isBlank()) {
-            Toast.makeText(context, "Bitte zuerst die Bridge-IP angeben oder suchen.", Toast.LENGTH_LONG).show()
+            Toast.makeText(context, context.getString(R.string.hue_toast_missing_ip), Toast.LENGTH_LONG).show()
             return
         }
         viewModelScopeLaunch {
@@ -65,7 +66,7 @@ class HueSettingsDelegate @Inject constructor(
             val certInfo = hueManager.fetchBridgeCertificateInfo(ip)
             if (certInfo == null) {
                 _huePairingStatus.value = "Zertifikatsabfrage fehlgeschlagen."
-                Toast.makeText(context, "Zertifikat konnte nicht abgerufen werden.", Toast.LENGTH_LONG).show()
+                Toast.makeText(context, context.getString(R.string.hue_toast_certificate_error), Toast.LENGTH_LONG).show()
                 return@viewModelScopeLaunch
             }
 
@@ -99,7 +100,7 @@ class HueSettingsDelegate @Inject constructor(
         val username = settingsRepository.hueUsername
         if (ip.isBlank() || username.isBlank()) {
             if (!silentOnFailure) {
-                Toast.makeText(context, "Bitte zuerst koppeln (IP und Benutzername erforderlich).", Toast.LENGTH_LONG).show()
+                Toast.makeText(context, context.getString(R.string.hue_toast_not_paired), Toast.LENGTH_LONG).show()
             }
             onResult?.invoke(false)
             return
@@ -119,11 +120,11 @@ class HueSettingsDelegate @Inject constructor(
                     array.put(obj)
                 }
                 settingsRepository.hueCachedDevices = array.toString()
-                Toast.makeText(context, "${fetchedDevices.size} Lampen geladen und im Cache gespeichert.", Toast.LENGTH_LONG).show()
+                Toast.makeText(context, context.getString(R.string.hue_toast_devices_cached, fetchedDevices.size), Toast.LENGTH_LONG).show()
                 onResult?.invoke(true)
             } else {
                 if (!silentOnFailure) {
-                    Toast.makeText(context, "Konnte Bridge nicht erreichen. Alter Cache wird beibehalten.", Toast.LENGTH_LONG).show()
+                    Toast.makeText(context, context.getString(R.string.hue_toast_bridge_unreachable), Toast.LENGTH_LONG).show()
                 }
                 onResult?.invoke(false)
             }
@@ -132,8 +133,8 @@ class HueSettingsDelegate @Inject constructor(
     }
 
     private suspend fun proceedWithPairing(ip: String) {
-        _huePairingStatus.value = "Bitte drücken Sie jetzt den Link-Button auf Ihrer Hue Bridge..."
-        Toast.makeText(context, "Zertifikat akzeptiert. Bitte den Knopf auf der Bridge drücken!", Toast.LENGTH_LONG).show()
+        _huePairingStatus.value = context.getString(R.string.hue_pairing_press_link_button)
+        Toast.makeText(context, context.getString(R.string.hue_toast_cert_accepted_press_button), Toast.LENGTH_LONG).show()
         var success = false
         val maxRetries = 15 // 30 seconds
         for (i in 1..maxRetries) {
@@ -141,7 +142,7 @@ class HueSettingsDelegate @Inject constructor(
             if (username != null) {
                 settingsRepository.hueUsername = username
                 _huePairingStatus.value = "Erfolgreich gekoppelt!"
-                Toast.makeText(context, "Erfolgreich gekoppelt!", Toast.LENGTH_LONG).show()
+                Toast.makeText(context, context.getString(R.string.hue_toast_pairing_success), Toast.LENGTH_LONG).show()
                 success = true
                 break
             }
@@ -150,7 +151,7 @@ class HueSettingsDelegate @Inject constructor(
         }
         if (!success) {
             _huePairingStatus.value = "Kopplung fehlgeschlagen. Zeitüberschreitung."
-            Toast.makeText(context, "Kopplung fehlgeschlagen. Haben Sie den Knopf gedrückt?", Toast.LENGTH_LONG).show()
+            Toast.makeText(context, context.getString(R.string.hue_toast_pairing_failed), Toast.LENGTH_LONG).show()
         } else {
             delay(3000)
             _huePairingStatus.value = null

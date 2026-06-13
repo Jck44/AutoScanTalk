@@ -650,7 +650,7 @@
     <string name="structure_target_full">Zielseite ist voll – Raster vergrößern oder anders platzieren?</string>
     <string name="structure_action_undo">Rückgängig</string>
     <string name="structure_via_button">über Button: \"%1$s\"</string>
-    <string name="structure_add_connection_btn">+ Zielseite verbinden</string>
+    <string name="structure_add_connection_btn">Zielseite verbinden</string>
     <string name="structure_add_connection_title">Zielseite hinzufügen</string>
     <string name="structure_remove_connection_title">Verbindung entfernen?</string>
     <string name="structure_remove_connection_msg">Möchtest du die Navigation zu \"%1$s\" entfernen? Der Button wird gelöscht.</string>
@@ -688,5 +688,20 @@
     <string name="history_duplicate_button_to_page">Knopf „%1$s“ auf Seite „%2$s“ dupliziert</string>
     <string name="history_page_split">Seite „%1$s“ aufgeteilt</string>
     <string name="structure_search_clear">Suche löschen</string>
+
+    <!-- AP 4 Strings -->
+    <string name="book_list_empty_title">Keine Bücher</string>
+    <string name="book_list_empty_desc">Erstelle ein neues Buch, um mit der Kommunikation zu beginnen.</string>
+    <string name="book_list_empty_action">Buch erstellen</string>
+    <string name="template_list_empty_title">Keine Vorlagen</string>
+    <string name="template_list_empty_desc">Erstelle eine neue Vorlage, um ein konsistentes Raster für Seiten festzulegen.</string>
+    <string name="template_list_empty_action">Vorlage erstellen</string>
+    <string name="page_list_empty_title">Keine Seiten</string>
+    <string name="page_list_empty_desc">Erstelle eine neue Seite, um Knöpfe und Aktionen zu definieren.</string>
+    <string name="page_list_empty_action">Seite erstellen</string>
+    <string name="analytics_empty_stats">Keine Statistiken erfasst</string>
+    <string name="analytics_empty_stats_desc">Verwende die Anwendung im Nutzermodus, um Nutzungsstatistiken und KI-Empfehlungen zu generieren.</string>
+    <string name="suggestions_no_active_buttons">Keine aktiven Buttons in dieser Zeile vorhanden.</string>
+    <string name="smart_integration_please_pair">Bitte zuerst in den Einstellungen koppeln.</string>
 </resources>
 

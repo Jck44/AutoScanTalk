@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -39,10 +40,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.zIndex
 import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.core.model.ButtonTemplate
@@ -52,10 +55,10 @@ import com.andreas_kratzer.ghosttalk.core.model.PageTemplate
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalCurrentPageId
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalIsUserModeActive
+import com.andreas_kratzer.ghosttalk.ui.pages.structure.StructureTreeNavigator
 import com.andreas_kratzer.ghosttalk.ui.templates.ButtonTemplatesPanel
 import com.andreas_kratzer.ghosttalk.ui.util.GridEditorActions
 import kotlinx.coroutines.launch
-import androidx.compose.ui.zIndex
 
 
 data class GridCellTarget(val index: Int)
@@ -76,7 +79,8 @@ fun GridEditorContent(
     bookDefaultScanPattern: String?,
     paddingValues: PaddingValues,
     onEditPage: ((String, String?) -> Unit)? = null,
-    initialButtonId: String? = null
+    initialButtonId: String? = null,
+    defaultStartPageId: String? = null
 ) {
     CompositionLocalProvider(
         LocalCurrentPageId provides item.id,
@@ -222,6 +226,66 @@ fun GridEditorContent(
             }
         ) {
             Row(modifier = Modifier.fillMaxSize()) {
+                var activeSidePanelTab by rememberSaveable { mutableStateOf("templates") } // "templates" or "tree"
+
+                if (isLandscape || dimensions.isTablet) {
+                    Card(
+                        modifier = Modifier
+                            .width(300.dp)
+                            .fillMaxHeight()
+                            .padding(start = dimensions.paddingMedium, top = dimensions.paddingMedium, bottom = dimensions.paddingMedium),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                    ) {
+                        Column(modifier = Modifier.fillMaxSize()) {
+                            androidx.compose.material3.TabRow(
+                                selectedTabIndex = if (activeSidePanelTab == "templates") 0 else 1,
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                androidx.compose.material3.Tab(
+                                    selected = activeSidePanelTab == "templates",
+                                    onClick = { activeSidePanelTab = "templates" },
+                                    text = { Text(stringResource(R.string.template_panel_title)) }
+                                )
+                                androidx.compose.material3.Tab(
+                                    selected = activeSidePanelTab == "tree",
+                                    onClick = { activeSidePanelTab = "tree" },
+                                    text = { Text("Seitenbaum") }
+                                )
+                            }
+
+                            Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
+                                if (activeSidePanelTab == "templates") {
+                                    ButtonTemplatesPanel(
+                                        actions = actions,
+                                        onEditTemplate = { template -> editingTemplateId = template.id },
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .dropTarget(key = TemplatesPanelTarget)
+                                    )
+                                } else {
+                                    val graph = remember(availablePages, defaultStartPageId) {
+                                        com.andreas_kratzer.ghosttalk.core.domain.pages.BookNavigationGraph.from(availablePages, defaultStartPageId)
+                                    }
+                                    val pageNames = remember(availablePages) {
+                                        availablePages.associate { it.id to it.name }
+                                    }
+                                    StructureTreeNavigator(
+                                        graph = graph,
+                                        pages = availablePages,
+                                        pageNames = pageNames,
+                                        focusedPageId = item.id,
+                                        onFocus = { targetPageId ->
+                                            onEditPage?.invoke(targetPageId, null)
+                                        },
+                                        modifier = Modifier.fillMaxSize()
+                                    )
+                                }
+                            }
+                        }
+                    }
+                    Spacer(modifier = Modifier.width(dimensions.paddingSmall))
+                }
+
                 Column(
                     modifier = Modifier
                         .weight(1f)
@@ -278,17 +342,6 @@ fun GridEditorContent(
                             }
                         )
                     }
-                }
-
-                if (isLandscape || dimensions.isTablet) {
-                    ButtonTemplatesPanel(
-                        actions = actions,
-                        onEditTemplate = { template -> editingTemplateId = template.id },
-                        modifier = Modifier
-                            .width(if (isLandscape) 320.dp else 280.dp)
-                            .fillMaxHeight()
-                            .dropTarget(key = TemplatesPanelTarget)
-                    )
                 }
             }
 

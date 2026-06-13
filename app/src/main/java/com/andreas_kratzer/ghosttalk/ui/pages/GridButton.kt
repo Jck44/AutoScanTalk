@@ -44,101 +44,22 @@ import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.core.model.ActionCategoryRegistry
 import com.andreas_kratzer.ghosttalk.core.model.ButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
-import com.andreas_kratzer.ghosttalk.core.model.ControlDeviceButtonAction
-import com.andreas_kratzer.ghosttalk.core.model.FrequentActionButtonAction
-import com.andreas_kratzer.ghosttalk.core.model.GeminiButtonAction
-import com.andreas_kratzer.ghosttalk.core.model.GeminiNanoButtonAction
-import com.andreas_kratzer.ghosttalk.core.model.GeminiSearchButtonAction
-import com.andreas_kratzer.ghosttalk.core.model.GeminiVisionButtonAction
-import com.andreas_kratzer.ghosttalk.core.model.MarkAccidentalButtonAction
-import com.andreas_kratzer.ghosttalk.core.model.NavigateBackButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.NavigateToPageButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.NavigateToStartPageButtonAction
-import com.andreas_kratzer.ghosttalk.core.model.PlayMediaButtonAction
-import com.andreas_kratzer.ghosttalk.core.model.PreviousActionButtonAction
-import com.andreas_kratzer.ghosttalk.core.model.SmartHomeButtonAction
-import com.andreas_kratzer.ghosttalk.core.model.SmartPredictionButtonAction
-import com.andreas_kratzer.ghosttalk.core.model.SpeakTextButtonAction
-import com.andreas_kratzer.ghosttalk.core.model.WeatherButtonAction
-import com.andreas_kratzer.ghosttalk.core.ui.theme.ControlDeviceBadgeBgDark
-import com.andreas_kratzer.ghosttalk.core.ui.theme.ControlDeviceBadgeBgLight
-import com.andreas_kratzer.ghosttalk.core.ui.theme.ControlDeviceBadgeTextDark
-import com.andreas_kratzer.ghosttalk.core.ui.theme.ControlDeviceBadgeTextLight
-import com.andreas_kratzer.ghosttalk.core.ui.theme.FrequentActionBadgeBgDark
-import com.andreas_kratzer.ghosttalk.core.ui.theme.FrequentActionBadgeBgLight
-import com.andreas_kratzer.ghosttalk.core.ui.theme.FrequentActionBadgeTextDark
-import com.andreas_kratzer.ghosttalk.core.ui.theme.FrequentActionBadgeTextLight
 import com.andreas_kratzer.ghosttalk.core.ui.theme.FrustrationHighDark
 import com.andreas_kratzer.ghosttalk.core.ui.theme.FrustrationHighLight
 import com.andreas_kratzer.ghosttalk.core.ui.theme.FrustrationNeutralDark
 import com.andreas_kratzer.ghosttalk.core.ui.theme.FrustrationNeutralLight
 import com.andreas_kratzer.ghosttalk.core.ui.theme.FrustrationWarningDark
 import com.andreas_kratzer.ghosttalk.core.ui.theme.FrustrationWarningLight
-import com.andreas_kratzer.ghosttalk.core.ui.theme.GeminiBadgeBgDark
-import com.andreas_kratzer.ghosttalk.core.ui.theme.GeminiBadgeBgLight
-import com.andreas_kratzer.ghosttalk.core.ui.theme.GeminiBadgeTextDark
-import com.andreas_kratzer.ghosttalk.core.ui.theme.GeminiBadgeTextLight
 import com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalIsUserModeActive
-import com.andreas_kratzer.ghosttalk.core.ui.theme.NavigateBadgeBgDark
-import com.andreas_kratzer.ghosttalk.core.ui.theme.NavigateBadgeBgLight
-import com.andreas_kratzer.ghosttalk.core.ui.theme.NavigateBadgeTextDark
-import com.andreas_kratzer.ghosttalk.core.ui.theme.NavigateBadgeTextLight
-import com.andreas_kratzer.ghosttalk.core.ui.theme.PlayMediaBadgeBgDark
-import com.andreas_kratzer.ghosttalk.core.ui.theme.PlayMediaBadgeBgLight
-import com.andreas_kratzer.ghosttalk.core.ui.theme.PlayMediaBadgeTextDark
-import com.andreas_kratzer.ghosttalk.core.ui.theme.PlayMediaBadgeTextLight
-import com.andreas_kratzer.ghosttalk.core.ui.theme.SmartHomeBadgeBgDark
-import com.andreas_kratzer.ghosttalk.core.ui.theme.SmartHomeBadgeBgLight
-import com.andreas_kratzer.ghosttalk.core.ui.theme.SmartHomeBadgeTextDark
-import com.andreas_kratzer.ghosttalk.core.ui.theme.SmartHomeBadgeTextLight
-import com.andreas_kratzer.ghosttalk.core.ui.theme.SpeakTextBadgeBgDark
-import com.andreas_kratzer.ghosttalk.core.ui.theme.SpeakTextBadgeBgLight
-import com.andreas_kratzer.ghosttalk.core.ui.theme.SpeakTextBadgeTextDark
-import com.andreas_kratzer.ghosttalk.core.ui.theme.SpeakTextBadgeTextLight
-import com.andreas_kratzer.ghosttalk.core.ui.theme.WeatherBadgeBgDark
-import com.andreas_kratzer.ghosttalk.core.ui.theme.WeatherBadgeBgLight
-import com.andreas_kratzer.ghosttalk.core.ui.theme.WeatherBadgeTextDark
-import com.andreas_kratzer.ghosttalk.core.ui.theme.WeatherBadgeTextLight
 
 
 object GridButtonColors {
     fun getBadgeColors(action: ButtonAction, isDark: Boolean): Pair<Color, Color> {
-        return when (action) {
-            is SpeakTextButtonAction -> {
-                if (isDark) SpeakTextBadgeBgDark to SpeakTextBadgeTextDark
-                else SpeakTextBadgeBgLight to SpeakTextBadgeTextLight
-            }
-            is NavigateToPageButtonAction, is NavigateBackButtonAction, is NavigateToStartPageButtonAction -> {
-                if (isDark) NavigateBadgeBgDark to NavigateBadgeTextDark
-                else NavigateBadgeBgLight to NavigateBadgeTextLight
-            }
-            is SmartHomeButtonAction -> {
-                if (isDark) SmartHomeBadgeBgDark to SmartHomeBadgeTextDark
-                else SmartHomeBadgeBgLight to SmartHomeBadgeTextLight
-            }
-            is GeminiButtonAction, is GeminiSearchButtonAction, is GeminiNanoButtonAction, is GeminiVisionButtonAction -> {
-                if (isDark) GeminiBadgeBgDark to GeminiBadgeTextDark
-                else GeminiBadgeBgLight to GeminiBadgeTextLight
-            }
-            is ControlDeviceButtonAction -> {
-                if (isDark) ControlDeviceBadgeBgDark to ControlDeviceBadgeTextDark
-                else ControlDeviceBadgeBgLight to ControlDeviceBadgeTextLight
-            }
-            is WeatherButtonAction -> {
-                if (isDark) WeatherBadgeBgDark to WeatherBadgeTextDark
-                else WeatherBadgeBgLight to WeatherBadgeTextLight
-            }
-            is FrequentActionButtonAction, is SmartPredictionButtonAction, is PreviousActionButtonAction, is MarkAccidentalButtonAction -> {
-                if (isDark) FrequentActionBadgeBgDark to FrequentActionBadgeTextDark
-                else FrequentActionBadgeBgLight to FrequentActionBadgeTextLight
-            }
-            is PlayMediaButtonAction -> {
-                if (isDark) PlayMediaBadgeBgDark to PlayMediaBadgeTextDark
-                else PlayMediaBadgeBgLight to PlayMediaBadgeTextLight
-            }
-        }
+        return com.andreas_kratzer.ghosttalk.core.ui.theme.ActionVisualTokens.getColors(action, isDark)
     }
 }
  

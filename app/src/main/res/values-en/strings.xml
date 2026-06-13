@@ -645,7 +645,7 @@
     <string name="structure_target_full">Target page is full – enlarge grid or place elsewhere?</string>
     <string name="structure_action_undo">Undo</string>
     <string name="structure_via_button">via button: \"%1$s\"</string>
-    <string name="structure_add_connection_btn">+ Connect target page</string>
+    <string name="structure_add_connection_btn">Connect target page</string>
     <string name="structure_add_connection_title">Add Target Page</string>
     <string name="structure_remove_connection_title">Remove Connection?</string>
     <string name="structure_remove_connection_msg">Do you want to remove the navigation to \"%1$s\"? The button will be deleted.</string>
@@ -683,5 +683,20 @@
     <string name="history_duplicate_button_to_page">Button \"%1$s\" duplicated to page \"%2$s\"</string>
     <string name="history_page_split">Page \"%1$s\" split</string>
     <string name="structure_search_clear">Clear search</string>
+
+    <!-- AP 4 Strings -->
+    <string name="book_list_empty_title">No books</string>
+    <string name="book_list_empty_desc">Create a new book to start communicating.</string>
+    <string name="book_list_empty_action">Create book</string>
+    <string name="template_list_empty_title">No templates</string>
+    <string name="template_list_empty_desc">Create a new template to set a consistent grid for pages.</string>
+    <string name="template_list_empty_action">Create template</string>
+    <string name="page_list_empty_title">No pages</string>
+    <string name="page_list_empty_desc">Create a new page to define buttons and actions.</string>
+    <string name="page_list_empty_action">Create page</string>
+    <string name="analytics_empty_stats">No statistics recorded</string>
+    <string name="analytics_empty_stats_desc">Use the app in user mode to generate usage statistics and AI recommendations.</string>
+    <string name="suggestions_no_active_buttons">No active buttons present in this row.</string>
+    <string name="smart_integration_please_pair">Please pair in settings first.</string>
 </resources>
 

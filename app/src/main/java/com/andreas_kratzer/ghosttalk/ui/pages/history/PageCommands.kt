@@ -1,16 +1,12 @@
 package com.andreas_kratzer.ghosttalk.ui.pages.history
 
 import com.andreas_kratzer.ghosttalk.R
-import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
-import com.andreas_kratzer.ghosttalk.core.model.Page
-import com.andreas_kratzer.ghosttalk.ui.pages.delegates.PageManagementDelegate
-import com.andreas_kratzer.ghosttalk.ui.pages.history.EditCommand
-import com.andreas_kratzer.ghosttalk.ui.pages.history.EditIcon
-import com.andreas_kratzer.ghosttalk.ui.pages.history.EditLabel
-
-import com.andreas_kratzer.ghosttalk.core.model.PageTemplate
-import com.andreas_kratzer.ghosttalk.core.model.NavigateToPageButtonAction
 import com.andreas_kratzer.ghosttalk.core.domain.pages.MoveButtonToPageUseCase
+import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
+import com.andreas_kratzer.ghosttalk.core.model.NavigateToPageButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.Page
+import com.andreas_kratzer.ghosttalk.core.model.PageTemplate
+import com.andreas_kratzer.ghosttalk.ui.pages.delegates.PageManagementDelegate
 import kotlinx.coroutines.flow.first
 
 class UpdateButtonConfigCommand(

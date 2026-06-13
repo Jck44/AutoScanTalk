@@ -1,10 +1,8 @@
 package com.andreas_kratzer.ghosttalk.ui.pages.history
 
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.withLock
 
 data class HistoryEntry(
