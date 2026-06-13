@@ -55,10 +55,13 @@ import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalIsUserModeActive
 import com.andreas_kratzer.ghosttalk.ui.templates.ButtonTemplatesPanel
 import com.andreas_kratzer.ghosttalk.ui.util.GridEditorActions
 import kotlinx.coroutines.launch
+import androidx.compose.ui.zIndex
+
 
 data class GridCellTarget(val index: Int)
 data class InsertTarget(val index: Int)
 object TemplatesPanelTarget
+object DeleteTarget
 data class DraggedGridCell(val index: Int, val config: ButtonConfig)
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
@@ -296,6 +299,18 @@ fun GridEditorContent(
                     sheetState = sheetState,
                     onDismissRequest = { showLayoutSettingsSheet = false }
                 )
+            }
+
+            if (dragDropState.isDragging && dragDropState.dragItem is DraggedGridCell) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(top = dimensions.paddingLarge)
+                        .zIndex(10f),
+                    contentAlignment = Alignment.TopCenter
+                ) {
+                    DeleteDropZone()
+                }
             }
 
             Box(

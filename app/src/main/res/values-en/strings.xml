@@ -622,5 +622,6 @@
     <string name="shared_import_book_error">Error importing book: %s</string>
     <string name="shared_import_tts_success">TTS voice cache successfully imported!</string>
     <string name="shared_import_tts_error">Error importing TTS cache: %s</string>
+    <string name="page_editor_delete_drop_zone">Drag here to delete</string>
 </resources>
 

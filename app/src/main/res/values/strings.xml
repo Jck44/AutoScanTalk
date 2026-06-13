@@ -627,5 +627,6 @@
     <string name="shared_import_book_error">Fehler beim Buch-Import: %s</string>
     <string name="shared_import_tts_success">TTS Sprach-Cache erfolgreich importiert!</string>
     <string name="shared_import_tts_error">Fehler beim TTS Cache Import: %s</string>
+    <string name="page_editor_delete_drop_zone">Zum Löschen hierher ziehen</string>
 </resources>
 

@@ -120,7 +120,10 @@ object GridDragDropHandler {
                 }
             }
             is DraggedGridCell -> {
-                if (target is GridCellTarget) {
+                if (target is DeleteTarget) {
+                    actions.updateButtonConfig(itemId, draggedItem.index, null)
+                    showUndoSnackbar("Button gelöscht")
+                } else if (target is GridCellTarget) {
                     if (draggedItem.index != target.index) {
                         actions.moveButton(itemId, draggedItem.index, target.index)
                         showUndoSnackbar("Button verschoben")
