@@ -30,6 +30,8 @@ import com.andreas_kratzer.ghosttalk.core.domain.pages.BookNavigationGraph
 import com.andreas_kratzer.ghosttalk.core.model.Page
 import com.andreas_kratzer.ghosttalk.core.model.PageTemplate
 import com.andreas_kratzer.ghosttalk.ui.components.DraggableChip
+import com.andreas_kratzer.ghosttalk.ui.components.rememberChipDragDropState
+import com.andreas_kratzer.ghosttalk.ui.components.chipDropTarget
 import com.andreas_kratzer.ghosttalk.ui.pages.actions.NavigationActionFields
 import kotlin.math.roundToInt
 
@@ -56,21 +58,13 @@ fun StructureFocusCanvas(
     val incomingSources = remember(graph, focusedPageId) { graph.incoming[focusedPageId] ?: emptyList() }
     val outgoingEdges = remember(graph, focusedPageId) { graph.outgoing[focusedPageId] ?: emptyList() }
 
-    var draggedButtonIndex by remember { mutableStateOf<Int?>(null) }
-    var draggedLabel by remember { mutableStateOf("") }
-    val dragStartCenter = remember { mutableStateOf(Offset.Zero) }
-    var dragOffset by remember { mutableStateOf(Offset.Zero) }
-    var draggedSize by remember { mutableStateOf(Offset.Zero) }
-    var rootBoxBounds by remember { mutableStateOf<Rect?>(null) }
-    val dragGlobalPos = dragStartCenter.value + dragOffset
+    val dragDropState = rememberChipDragDropState(focusedPageId)
 
     var showAddNavigationSection by remember(focusedPageId) { mutableStateOf(false) }
     var newNavigationPageId by remember(focusedPageId) { mutableStateOf("") }
 
     var showAllSources by rememberSaveable(focusedPageId) { mutableStateOf(false) }
     var showAllTargets by rememberSaveable(focusedPageId) { mutableStateOf(false) }
-
-    val targetBounds = remember(focusedPageId, showAllTargets) { mutableStateOf(mutableMapOf<String, Rect>()) }
 
     if (page == null) {
         Box(modifier = modifier, contentAlignment = Alignment.Center) {
@@ -86,7 +80,7 @@ fun StructureFocusCanvas(
     Box(
         modifier = modifier
             .onGloballyPositioned { layoutCoordinates ->
-                rootBoxBounds = layoutCoordinates.boundsInRoot()
+                dragDropState.rootBoxBounds = layoutCoordinates.boundsInRoot()
             }
     ) {
         Column(
@@ -230,33 +224,29 @@ fun StructureFocusCanvas(
                                     key(btn.id) {
                                         DraggableChip(
                                             label = btn.label,
-                                            isDragged = draggedButtonIndex == index,
+                                            isDragged = dragDropState.draggedKey == index.toString(),
                                             onDragStart = { initialCenter, size ->
-                                                draggedButtonIndex = index
-                                                draggedLabel = btn.label
-                                                dragStartCenter.value = initialCenter
-                                                draggedSize = size
-                                                dragOffset = Offset.Zero
+                                                dragDropState.onDragStart(index.toString(), btn.label, null, initialCenter, size)
                                             },
                                             onDrag = { amount ->
-                                                dragOffset += amount
+                                                dragDropState.onDrag(amount)
                                             },
                                             onDragEnd = {
-                                                if (draggedButtonIndex == index) {
-                                                    val targetPageId = targetBounds.value.entries.find { entry ->
-                                                        entry.value.contains(dragGlobalPos)
+                                                if (dragDropState.draggedKey == index.toString()) {
+                                                    val targetPageId = dragDropState.targetBounds.entries.find { entry ->
+                                                        entry.value.contains(dragDropState.dragGlobalPos)
                                                     }?.key
 
                                                     if (targetPageId != null) {
                                                         onMoveButton(index, targetPageId)
                                                     }
 
-                                                    draggedButtonIndex = null
+                                                    dragDropState.clear()
                                                 }
                                             },
                                             onDragCancel = {
-                                                if (draggedButtonIndex == index) {
-                                                    draggedButtonIndex = null
+                                                if (dragDropState.draggedKey == index.toString()) {
+                                                    dragDropState.clear()
                                                 }
                                             }
                                         )
@@ -312,10 +302,7 @@ fun StructureFocusCanvas(
                                 InputChip(
                                     selected = false,
                                     onClick = { onFocus(edge.targetPageId) },
-                                    modifier = Modifier.onGloballyPositioned { layoutCoordinates ->
-                                        val bounds = layoutCoordinates.boundsInRoot()
-                                        targetBounds.value[edge.targetPageId] = bounds
-                                    },
+                                    modifier = Modifier.chipDropTarget(dragDropState, edge.targetPageId),
                                     label = {
                                         Column {
                                             Text(targetName, fontWeight = FontWeight.SemiBold)
@@ -407,9 +394,9 @@ fun StructureFocusCanvas(
         }
 
         // Floating Drag Overlay
-        if (draggedButtonIndex != null && rootBoxBounds != null) {
-            val relativeX = dragGlobalPos.x - rootBoxBounds!!.left - draggedSize.x / 2
-            val relativeY = dragGlobalPos.y - rootBoxBounds!!.top - draggedSize.y / 2
+        if (dragDropState.draggedKey != null && dragDropState.rootBoxBounds != null) {
+            val relativeX = dragDropState.dragGlobalPos.x - dragDropState.rootBoxBounds!!.left - dragDropState.draggedSize.x / 2
+            val relativeY = dragDropState.dragGlobalPos.y - dragDropState.rootBoxBounds!!.top - dragDropState.draggedSize.y / 2
 
             Box(
                 modifier = Modifier
@@ -428,7 +415,7 @@ fun StructureFocusCanvas(
                     tonalElevation = 8.dp
                 ) {
                     Text(
-                        text = draggedLabel,
+                        text = dragDropState.draggedLabel,
                         style = MaterialTheme.typography.bodyMedium,
                         modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
                         fontWeight = FontWeight.Bold,

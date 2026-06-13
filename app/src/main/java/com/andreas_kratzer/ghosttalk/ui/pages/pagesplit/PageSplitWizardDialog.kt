@@ -42,6 +42,8 @@ import com.andreas_kratzer.ghosttalk.core.ai.domain.SplitPageUseCase.CategoryPro
 import com.andreas_kratzer.ghosttalk.core.ai.domain.SplitPageUseCase.PageSplitProposal
 import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.ui.components.DraggableChip
+import com.andreas_kratzer.ghosttalk.ui.components.rememberChipDragDropState
+import com.andreas_kratzer.ghosttalk.ui.components.chipDropTarget
 import kotlin.math.roundToInt
 
 /**
@@ -97,15 +99,7 @@ fun PageSplitWizardDialog(
         mutableStateOf(initialData.second)
     }
 
-    // Drag-Drop Koordinaten-Tracking (holds category name to Rect mapping)
-    val categoryBounds = remember { mutableMapOf<String, Rect>() }
-    var draggedItemId by remember { mutableStateOf<String?>(null) } // unique item buttonId
-    var dragSourceCategory by remember { mutableStateOf<String?>(null) } // null = Unassigned
-    val dragStartCenter = remember { mutableStateOf(Offset.Zero) }
-    var dragOffset by remember { mutableStateOf(Offset.Zero) }
-    var draggedSize by remember { mutableStateOf(Offset.Zero) }
-    var rootBoxBounds by remember { mutableStateOf<Rect?>(null) }
-    val dragGlobalPos = dragStartCenter.value + dragOffset
+    val dragDropState = rememberChipDragDropState(proposal)
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -116,7 +110,7 @@ fun PageSplitWizardDialog(
                     .fillMaxWidth()
                     .heightIn(min = 150.dp, max = 500.dp)
                     .onGloballyPositioned { layoutCoordinates ->
-                        rootBoxBounds = layoutCoordinates.boundsInRoot()
+                        dragDropState.rootBoxBounds = layoutCoordinates.boundsInRoot()
                     },
                 contentAlignment = Alignment.Center
             ) {
@@ -147,10 +141,8 @@ fun PageSplitWizardDialog(
                                     ),
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .zIndex(if (draggedItemId != null && dragSourceCategory == null) 10f else 1f)
-                                        .onGloballyPositioned { layoutCoordinates ->
-                                            categoryBounds["_unassigned"] = layoutCoordinates.boundsInRoot()
-                                        }
+                                        .zIndex(if (dragDropState.draggedKey != null && dragDropState.dragSourceCategory == null) 10f else 1f)
+                                        .chipDropTarget(dragDropState, "_unassigned")
                                 ) {
                                     Column(modifier = Modifier.padding(8.dp)) {
                                         Text(
@@ -175,48 +167,39 @@ fun PageSplitWizardDialog(
                                                 unassignedList.forEach { item ->
                                                     key(item.buttonId) {
                                                         DraggableChip(
-                                                            label = item.label,
-                                                            isDragged = draggedItemId == item.buttonId,
-                                                            onDragStart = { initialCenter, size ->
-                                                                draggedItemId = item.buttonId
-                                                                dragSourceCategory = null
-                                                                dragStartCenter.value = initialCenter
-                                                                draggedSize = size
-                                                                dragOffset = Offset.Zero
-                                                            },
-                                                            onDrag = { amount ->
-                                                                dragOffset += amount
-                                                            },
-                                                            onDragEnd = {
-                                                                if (draggedItemId == item.buttonId) {
-                                                                    val targetCategory = categoryBounds.entries.find { entry ->
-                                                                        val rect = entry.value
-                                                                        dragGlobalPos.y >= rect.top && dragGlobalPos.y <= rect.bottom
-                                                                    }?.key
-                                                                    
-                                                                    android.util.Log.d("DragDrop", "Drop unassigned: item=${item.label}, dragGlobalPos=$dragGlobalPos, targetCategory=$targetCategory")
-                                                                    categoryBounds.forEach { (name, rect) ->
-                                                                        android.util.Log.d("DragDrop", "  Bound: name=$name, rect=$rect, containsY=${dragGlobalPos.y >= rect.top && dragGlobalPos.y <= rect.bottom}")
-                                                                    }
-                                                                    
-                                                                    if (targetCategory != null && targetCategory != "_unassigned") {
-                                                                        // Verschiebe von Unassigned in die Zielkategorie
-                                                                        unassignedList = unassignedList.filter { it.buttonId != item.buttonId }
-                                                                        categoryProposals = categoryProposals.map { cat ->
-                                                                            if (cat.name == targetCategory) {
-                                                                                cat.copy(items = cat.items + item)
-                                                                            } else cat
-                                                                        }
-                                                                    }
-                                                                    draggedItemId = null
-                                                                }
-                                                            },
-                                                            onDragCancel = {
-                                                                if (draggedItemId == item.buttonId) {
-                                                                    draggedItemId = null
-                                                                }
-                                                            }
-                                                        )
+                                                             label = item.label,
+                                                             isDragged = dragDropState.draggedKey == item.buttonId,
+                                                             onDragStart = { initialCenter, size ->
+                                                                 dragDropState.onDragStart(item.buttonId, item.label, null, initialCenter, size)
+                                                             },
+                                                             onDrag = { amount ->
+                                                                 dragDropState.onDrag(amount)
+                                                             },
+                                                             onDragEnd = {
+                                                                 if (dragDropState.draggedKey == item.buttonId) {
+                                                                     val targetCategory = dragDropState.targetBounds.entries.find { entry ->
+                                                                         val rect = entry.value
+                                                                         dragDropState.dragGlobalPos.y >= rect.top && dragDropState.dragGlobalPos.y <= rect.bottom
+                                                                     }?.key
+                                                                     
+                                                                     if (targetCategory != null && targetCategory != "_unassigned") {
+                                                                         // Verschiebe von Unassigned in die Zielkategorie
+                                                                         unassignedList = unassignedList.filter { it.buttonId != item.buttonId }
+                                                                         categoryProposals = categoryProposals.map { cat ->
+                                                                             if (cat.name == targetCategory) {
+                                                                                 cat.copy(items = cat.items + item)
+                                                                             } else cat
+                                                                         }
+                                                                     }
+                                                                     dragDropState.clear()
+                                                                 }
+                                                             },
+                                                             onDragCancel = {
+                                                                 if (dragDropState.draggedKey == item.buttonId) {
+                                                                     dragDropState.clear()
+                                                                 }
+                                                             }
+                                                         )
                                                     }
                                                 }
                                             }
@@ -230,10 +213,8 @@ fun PageSplitWizardDialog(
                                 Card(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .zIndex(if (draggedItemId != null && dragSourceCategory == category.name) 10f else 1f)
-                                        .onGloballyPositioned { layoutCoordinates ->
-                                            categoryBounds[category.name] = layoutCoordinates.boundsInRoot()
-                                        }
+                                        .zIndex(if (dragDropState.draggedKey != null && dragDropState.dragSourceCategory == category.name) 10f else 1f)
+                                        .chipDropTarget(dragDropState, category.name)
                                 ) {
                                     Column(modifier = Modifier.padding(8.dp)) {
                                         Text(
@@ -258,59 +239,50 @@ fun PageSplitWizardDialog(
                                                 category.items.forEach { item ->
                                                     key(item.buttonId) {
                                                         DraggableChip(
-                                                            label = item.label,
-                                                            isDragged = draggedItemId == item.buttonId,
-                                                            onDragStart = { initialCenter, size ->
-                                                                draggedItemId = item.buttonId
-                                                                dragSourceCategory = category.name
-                                                                dragStartCenter.value = initialCenter
-                                                                draggedSize = size
-                                                                dragOffset = Offset.Zero
-                                                            },
-                                                            onDrag = { amount ->
-                                                                dragOffset += amount
-                                                            },
-                                                            onDragEnd = {
-                                                                if (draggedItemId == item.buttonId) {
-                                                                    val targetCategory = categoryBounds.entries.find { entry ->
-                                                                        val rect = entry.value
-                                                                        dragGlobalPos.y >= rect.top && dragGlobalPos.y <= rect.bottom
-                                                                    }?.key
-                                                                    
-                                                                    android.util.Log.d("DragDrop", "Drop category item: item=${item.label}, from=${category.name}, dragGlobalPos=$dragGlobalPos, targetCategory=$targetCategory")
-                                                                    categoryBounds.forEach { (name, rect) ->
-                                                                        android.util.Log.d("DragDrop", "  Bound: name=$name, rect=$rect, containsY=${dragGlobalPos.y >= rect.top && dragGlobalPos.y <= rect.bottom}")
-                                                                    }
-                                                                    
-                                                                    if (targetCategory != null && targetCategory != category.name) {
-                                                                        if (targetCategory == "_unassigned") {
-                                                                            // Verschiebe von Kategorie zurück in Unassigned (sicher, da unterschiedliche States)
-                                                                            categoryProposals = categoryProposals.map { cat ->
-                                                                                if (cat.name == category.name) {
-                                                                                    cat.copy(items = cat.items.filter { it.buttonId != item.buttonId })
-                                                                                } else cat
-                                                                            }
-                                                                            unassignedList = unassignedList + item
-                                                                        } else {
-                                                                            // Verschiebe zwischen zwei Kategorien in einem einzigen, transaktionalen State-Update!
-                                                                            categoryProposals = categoryProposals.map { cat ->
-                                                                                when (cat.name) {
-                                                                                    category.name -> cat.copy(items = cat.items.filter { it.buttonId != item.buttonId })
-                                                                                    targetCategory -> cat.copy(items = cat.items + item)
-                                                                                    else -> cat
-                                                                                }
-                                                                            }
-                                                                        }
-                                                                    }
-                                                                    draggedItemId = null
-                                                                }
-                                                            },
-                                                            onDragCancel = {
-                                                                if (draggedItemId == item.buttonId) {
-                                                                    draggedItemId = null
-                                                                }
-                                                            }
-                                                        )
+                                                             label = item.label,
+                                                             isDragged = dragDropState.draggedKey == item.buttonId,
+                                                             onDragStart = { initialCenter, size ->
+                                                                 dragDropState.onDragStart(item.buttonId, item.label, category.name, initialCenter, size)
+                                                             },
+                                                             onDrag = { amount ->
+                                                                 dragDropState.onDrag(amount)
+                                                             },
+                                                             onDragEnd = {
+                                                                 if (dragDropState.draggedKey == item.buttonId) {
+                                                                     val targetCategory = dragDropState.targetBounds.entries.find { entry ->
+                                                                         val rect = entry.value
+                                                                         dragDropState.dragGlobalPos.y >= rect.top && dragDropState.dragGlobalPos.y <= rect.bottom
+                                                                     }?.key
+                                                                     
+                                                                     if (targetCategory != null && targetCategory != category.name) {
+                                                                         if (targetCategory == "_unassigned") {
+                                                                             // Verschiebe von Kategorie zurück in Unassigned (sicher, da unterschiedliche States)
+                                                                             categoryProposals = categoryProposals.map { cat ->
+                                                                                 if (cat.name == category.name) {
+                                                                                     cat.copy(items = cat.items.filter { it.buttonId != item.buttonId })
+                                                                                 } else cat
+                                                                             }
+                                                                             unassignedList = unassignedList + item
+                                                                         } else {
+                                                                             // Verschiebe zwischen zwei Kategorien in einem einzigen, transaktionalen State-Update!
+                                                                             categoryProposals = categoryProposals.map { cat ->
+                                                                                 when (cat.name) {
+                                                                                     category.name -> cat.copy(items = cat.items.filter { it.buttonId != item.buttonId })
+                                                                                     targetCategory -> cat.copy(items = cat.items + item)
+                                                                                     else -> cat
+                                                                                 }
+                                                                             }
+                                                                         }
+                                                                     }
+                                                                     dragDropState.clear()
+                                                                 }
+                                                             },
+                                                             onDragCancel = {
+                                                                 if (dragDropState.draggedKey == item.buttonId) {
+                                                                     dragDropState.clear()
+                                                                 }
+                                                             }
+                                                         )
                                                     }
                                                 }
                                             }
@@ -321,10 +293,10 @@ fun PageSplitWizardDialog(
                         }
                     }
 
-                    if (draggedItemId != null && rootBoxBounds != null) {
-                        val draggedLabel = allItems.find { it.buttonId == draggedItemId }?.label ?: ""
-                        val relativeX = dragGlobalPos.x - rootBoxBounds!!.left - draggedSize.x / 2
-                        val relativeY = dragGlobalPos.y - rootBoxBounds!!.top - draggedSize.y / 2
+                    if (dragDropState.draggedKey != null && dragDropState.rootBoxBounds != null) {
+                        val draggedLabel = allItems.find { it.buttonId == dragDropState.draggedKey }?.label ?: ""
+                        val relativeX = dragDropState.dragGlobalPos.x - dragDropState.rootBoxBounds!!.left - dragDropState.draggedSize.x / 2
+                        val relativeY = dragDropState.dragGlobalPos.y - dragDropState.rootBoxBounds!!.top - dragDropState.draggedSize.y / 2
                         
                         Box(
                             modifier = Modifier
