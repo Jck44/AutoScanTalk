@@ -3,6 +3,7 @@ package com.andreas_kratzer.ghosttalk.ui.books
 import android.app.Application
 import com.andreas_kratzer.ghosttalk.core.data.BookRepository
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
+import com.andreas_kratzer.ghosttalk.core.data.impl.CloneBookUseCase
 import com.andreas_kratzer.ghosttalk.core.model.Book
 import io.mockk.every
 import io.mockk.mockk
@@ -26,6 +27,7 @@ class BookViewModelTest {
     
     private lateinit var application: Application
     private lateinit var bookRepository: BookRepository
+    private lateinit var cloneBookUseCase: CloneBookUseCase
     private lateinit var settingsRepository: SettingsRepository
     
     private val booksFlow = MutableStateFlow<List<Book>>(emptyList())
@@ -37,6 +39,7 @@ class BookViewModelTest {
         
         application = mockk<Application>(relaxed = true)
         bookRepository = mockk<BookRepository>(relaxed = true)
+        cloneBookUseCase = mockk<CloneBookUseCase>(relaxed = true)
         settingsRepository = mockk<SettingsRepository>(relaxed = true)
 
         // Mock book list flow
@@ -60,6 +63,7 @@ class BookViewModelTest {
     private fun createViewModel() = BookViewModel(
         application = application,
         bookRepository = bookRepository,
+        cloneBookUseCase = cloneBookUseCase,
         settingsRepository = settingsRepository
     )
 

@@ -255,6 +255,27 @@ class CloneBookUseCaseTest {
     }
 
     @Test
+    fun `cloning book with custom name uses specified custom name`() = runTest {
+        val sourceBookId = "srcBookId"
+        val sourceBook = Book(
+            id = sourceBookId,
+            name = "My Book",
+            createdAt = 1000L,
+            updatedAt = 2000L
+        )
+
+        coEvery { mockBookRepository.getBookById(sourceBookId) } returns sourceBook
+        coEvery { mockPageDao.getPagesForBookWithButtons(sourceBookId) } returns emptyList()
+
+        val targetBookId = cloneBookUseCase.execute(sourceBookId, proposal = null, customName = "Custom Book Name")
+
+        val bookSlot = slot<Book>()
+        coVerify { mockBookRepository.insertBook(capture(bookSlot)) }
+        assertEquals(targetBookId, bookSlot.captured.id)
+        assertEquals("Custom Book Name", bookSlot.captured.name)
+    }
+
+    @Test
     fun `cloning book with MOVE_BUTTON restructure proposal applies action`() = runTest {
         val sourceBookId = "srcBookId"
         val sourceBook = Book(id = sourceBookId, name = "My Book")

@@ -141,6 +141,7 @@ fun BookListScreen(
                         height = dynamicCardHeight,
                         testTag = "book_card_${book.id}",
                     trailingAction = {
+                        val duplicateSuffix = stringResource(R.string.duplicate_suffix)
                         Row(
                             horizontalArrangement = Arrangement.spacedBy(4.dp),
                             verticalAlignment = Alignment.CenterVertically
@@ -167,6 +168,19 @@ fun BookListScreen(
                                 Icon(
                                     imageVector = Icons.Default.Edit,
                                     contentDescription = stringResource(R.string.action_edit),
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+
+                            IconButton(
+                                onClick = {
+                                    bookViewModel.duplicateBook(book.id, duplicateSuffix)
+                                },
+                                modifier = Modifier.testTag("book_duplicate_button_${book.id}")
+                            ) {
+                                Icon(
+                                    imageVector = GhostTalkIcons.Copy,
+                                    contentDescription = stringResource(R.string.action_duplicate),
                                     tint = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }

@@ -4,11 +4,10 @@ import android.app.Application
 import com.andreas_kratzer.ghosttalk.core.call.CallState
 import com.andreas_kratzer.ghosttalk.core.call.SystemCallManager
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
+import com.andreas_kratzer.ghosttalk.core.di.ApplicationScope
 import com.andreas_kratzer.ghosttalk.core.tts.TextToSpeechHelper
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
@@ -20,7 +19,8 @@ class CallManagementDelegate @Inject constructor(
     private val application: Application,
     val systemCallManager: SystemCallManager,
     private val settingsRepository: SettingsRepository,
-    private val ttsHelper: TextToSpeechHelper
+    private val ttsHelper: TextToSpeechHelper,
+    @ApplicationScope private val appScope: CoroutineScope
 ) {
     val callState = systemCallManager.callState
     val callerName = systemCallManager.callerName
@@ -35,10 +35,10 @@ class CallManagementDelegate @Inject constructor(
     private var callScanJob: Job? = null
     private var lastCallPressTime = 0L
 
-    // Resets the hang-up press counter once the configured time window between
-    // presses elapses, so accidental presses (coughing/laughing) spread over time
-    // don't accumulate toward a hang-up.
-    private val hangUpResetScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
+    // Resets the hang-up press counter once the configured time window between presses
+    // elapses, so accidental presses (coughing/laughing) spread over time don't accumulate
+    // toward a hang-up. Runs on the injected application scope because a hang-up press can
+    // occur during an outgoing call (DIALING), where no call-scanning scope is active.
     private var hangUpResetJob: Job? = null
 
     fun speakCallScreenButton(button: String, isInitial: Boolean) {
@@ -143,7 +143,7 @@ class CallManagementDelegate @Inject constructor(
     private fun scheduleHangUpReset(windowMillis: Long) {
         hangUpResetJob?.cancel()
         if (windowMillis <= 0L) return
-        hangUpResetJob = hangUpResetScope.launch {
+        hangUpResetJob = appScope.launch {
             delay(windowMillis)
             isHangUpButtonFocused.value = false
             hangUpPressCount.value = 0

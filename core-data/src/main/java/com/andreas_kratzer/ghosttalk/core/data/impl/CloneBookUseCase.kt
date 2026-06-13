@@ -27,13 +27,14 @@ class CloneBookUseCase @Inject constructor(
 
     suspend fun execute(
         sourceBookId: String,
-        proposal: BookRestructureProposal? = null
+        proposal: BookRestructureProposal? = null,
+        customName: String? = null
     ): String = appDatabase.withTransaction {
         val sourceBook = bookRepository.getBookById(sourceBookId)
             ?: throw IllegalArgumentException("Source book $sourceBookId not found")
 
         val targetBookId = UUID.randomUUID().toString()
-        val targetBookName = "[Vorschlag] ${sourceBook.name}"
+        val targetBookName = customName ?: "[Vorschlag] ${sourceBook.name}"
         val targetBook = sourceBook.copy(
             id = targetBookId,
             name = targetBookName,

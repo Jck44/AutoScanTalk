@@ -226,6 +226,36 @@ class PageManagementDelegateTest {
     }
 
     @Test
+    fun `moveButtonsToPages processes every move sequentially and in order`() = runTest(testDispatcher) {
+        delegate.init(backgroundScope)
+
+        coEvery {
+            moveButtonToPageUseCase.execute(any(), any(), any(), any())
+        } returns MoveButtonToPageUseCase.MoveResult.Success(mockk(), mockk())
+
+        val moves = listOf(
+            0 to "pageA",
+            5 to "pageA",
+            3 to "pageB"
+        )
+
+        var completed = false
+        delegate.moveButtonsToPages("src", moves, forceMove = true) { completed = true }
+
+        testScheduler.advanceUntilIdle()
+
+        // Each move must reach the use case exactly once, in the given order, so that every
+        // move reads the committed result of the previous one (guards against the concurrent
+        // read-modify-write that lost/duplicated buttons).
+        coVerify(ordering = io.mockk.Ordering.ORDERED) {
+            moveButtonToPageUseCase.execute("src", 0, "pageA", true)
+            moveButtonToPageUseCase.execute("src", 5, "pageA", true)
+            moveButtonToPageUseCase.execute("src", 3, "pageB", true)
+        }
+        assertEquals(true, completed)
+    }
+
+    @Test
     fun `moveButtonWithInsert moves button and shifts elements`() = runTest(testDispatcher) {
         val originalConfigs = MutableList<ButtonConfig?>(49) { null }
         val b1 = ButtonConfig(id = "b1", label = "L1")
@@ -253,10 +283,12 @@ class PageManagementDelegateTest {
         // Wait for coroutine to complete
         testScheduler.advanceUntilIdle()
         
+        // Assert by id rather than object equality: the shift logic bumps updatedAt on the
+        // moved/shifted buttons, so the copies are no longer structurally equal to the originals.
         val updated = updatedPageSlot.captured
-        assertEquals(b2, updated.buttonConfigs[0])
-        assertEquals(b1, updated.buttonConfigs[1])
-        assertEquals(b3, updated.buttonConfigs[2])
+        assertEquals(b2.id, updated.buttonConfigs[0]?.id)
+        assertEquals(b1.id, updated.buttonConfigs[1]?.id)
+        assertEquals(b3.id, updated.buttonConfigs[2]?.id)
     }
 
     @Test

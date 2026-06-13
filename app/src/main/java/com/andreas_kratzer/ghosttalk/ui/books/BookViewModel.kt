@@ -5,6 +5,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.andreas_kratzer.ghosttalk.core.data.BookRepository
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
+import com.andreas_kratzer.ghosttalk.core.data.impl.CloneBookUseCase
 import com.andreas_kratzer.ghosttalk.core.model.Book
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
@@ -22,6 +23,7 @@ import javax.inject.Inject
 class BookViewModel @Inject constructor(
     application: Application,
     private val bookRepository: BookRepository,
+    private val cloneBookUseCase: CloneBookUseCase,
     val settingsRepository: SettingsRepository
 ) : AndroidViewModel(application) {
 
@@ -126,6 +128,16 @@ class BookViewModel @Inject constructor(
         )
         viewModelScope.launch(Dispatchers.IO) {
             bookRepository.updateBook(updatedBook)
+        }
+    }
+
+    fun duplicateBook(bookId: String, suffix: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val book = bookRepository.getBookById(bookId) ?: return@launch
+            cloneBookUseCase.execute(
+                sourceBookId = bookId,
+                customName = "${book.name}$suffix"
+            )
         }
     }
 

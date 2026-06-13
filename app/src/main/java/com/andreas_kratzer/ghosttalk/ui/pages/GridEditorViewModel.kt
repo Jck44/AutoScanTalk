@@ -179,17 +179,10 @@ class GridEditorViewModel @Inject constructor(
     }
 
     fun executeBulkMove(fromPageId: String, categoryMoves: List<ReorderCategory>) {
-        categoryMoves.forEach { category ->
-            category.items.forEach { item ->
-                pageManagementDelegate.moveButtonToPage(
-                    fromPageId = fromPageId,
-                    fromIndex = item.originalIndex,
-                    toPageId = category.pageId,
-                    forceMove = true,
-                    onResult = {}
-                )
-            }
+        val moves = categoryMoves.flatMap { category ->
+            category.items.map { item -> item.originalIndex to category.pageId }
         }
+        pageManagementDelegate.moveButtonsToPages(fromPageId, moves)
     }
 }
 

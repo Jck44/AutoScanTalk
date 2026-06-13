@@ -61,7 +61,8 @@ class CallViewModelTest {
             application = application,
             systemCallManager = systemCallManager,
             settingsRepository = settingsRepository,
-            ttsHelper = ttsHelper
+            ttsHelper = ttsHelper,
+            appScope = kotlinx.coroutines.CoroutineScope(testDispatcher)
         )
 
         viewModel = CallViewModel(application, delegate)

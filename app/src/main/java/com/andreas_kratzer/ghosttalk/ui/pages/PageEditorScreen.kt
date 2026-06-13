@@ -177,7 +177,7 @@ fun PageEditorScreen(
             ) {
                 Icon(
                     imageVector = GhostTalkIcons.Link,
-                    contentDescription = "Eingehende Verknüpfungen",
+                    contentDescription = stringResource(R.string.page_incoming_links_title),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }

@@ -309,7 +309,8 @@ class PageViewModelTest {
             application = application,
             systemCallManager = systemCallManager,
             settingsRepository = settingsRepository,
-            ttsHelper = ttsHelper
+            ttsHelper = ttsHelper,
+            appScope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Unconfined)
         )
 
         val aiRestructureDelegate = com.andreas_kratzer.ghosttalk.ui.pages.delegates.AiRestructureDelegate(
