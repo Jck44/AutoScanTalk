@@ -117,6 +117,7 @@ object SettingsConstants {
     const val KEY_CALL_AUTO_ENABLE_SPEAKERPHONE = "pref_call_auto_enable_speakerphone"
     const val KEY_SIMULATE_CALLS_ENABLED = "pref_simulate_calls_enabled"
     const val KEY_CALL_HANG_UP_PRESSES_REQUIRED = "pref_call_hang_up_presses_required"
+    const val KEY_CALL_HANG_UP_PRESS_WINDOW_SECONDS = "pref_call_hang_up_press_window_seconds"
     const val KEY_FILTER_CALLS_NOT_IN_CONTACTS = "pref_filter_calls_not_in_contacts"
     const val KEY_IS_SETUP_COMPLETED = "is_setup_completed"
     

@@ -87,6 +87,7 @@ class SettingsBackupCoverageTest {
         "headphoneVolume",          // Audio volume scaling (local)
         "headphoneVolumeFlow",
         "hangUpPressesRequired",    // Call hang-up presses setting (local)
+        "hangUpPressWindowSeconds", // Call hang-up press time window setting (local)
         "staticRowEnabledFlow",
         "filterCallsNotInContacts",
         "filterCallsNotInContactsFlow",

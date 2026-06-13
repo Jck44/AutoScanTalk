@@ -47,12 +47,13 @@ class LayoutWizardDelegate @Inject constructor(
 
     private fun packButtonsIntoGrid(buttons: List<ButtonConfig>, rows: Int, cols: Int): List<ButtonConfig?> {
         val finalConfigs = MutableList<ButtonConfig?>(GridUtils.TOTAL_SLOTS) { null }
+        val now = System.currentTimeMillis()
         var buttonIndex = 0
         for (r in 0 until rows) {
             for (c in 0 until cols) {
                 if (buttonIndex < buttons.size) {
                     val globalPos = r * GridUtils.MAX_GRID_SIZE + c
-                    finalConfigs[globalPos] = buttons[buttonIndex]
+                    finalConfigs[globalPos] = buttons[buttonIndex].copy(updatedAt = now)
                     buttonIndex++
                 }
             }

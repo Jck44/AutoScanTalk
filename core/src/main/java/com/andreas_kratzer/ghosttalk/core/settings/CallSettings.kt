@@ -41,6 +41,12 @@ interface CallSettings {
     var hangUpPressesRequired: Int
     val hangUpPressesRequiredFlow: StateFlow<Int>
 
+    // Maximum time (in seconds) allowed between consecutive hang-up presses.
+    // If the gap exceeds this window, the press counter resets to avoid
+    // accidental hang-ups from coughing/laughing spread over time. 0 = no window.
+    var hangUpPressWindowSeconds: Int
+    val hangUpPressWindowSecondsFlow: StateFlow<Int>
+
     var filterCallsNotInContacts: Boolean
     val filterCallsNotInContactsFlow: StateFlow<Boolean>
 }

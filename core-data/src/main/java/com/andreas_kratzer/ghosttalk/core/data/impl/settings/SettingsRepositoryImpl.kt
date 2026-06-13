@@ -160,6 +160,7 @@ class SettingsRepositoryImpl @Inject constructor(
                             autoEnableSpeakerphone = autoEnableSpeakerphone,
                             simulateCallsEnabled = simulateCallsEnabled,
                             hangUpPressesRequired = hangUpPressesRequired,
+                            hangUpPressWindowSeconds = hangUpPressWindowSeconds,
                             filterCallsNotInContacts = filterCallsNotInContacts,
                             isNotificationReadingEnabled = isNotificationReadingEnabled,
                             monitoredNotificationApps = monitoredNotificationApps,
@@ -670,6 +671,7 @@ class SettingsRepositoryImpl @Inject constructor(
             editor.putBoolean(SettingsConstants.KEY_CALL_AUTO_ENABLE_SPEAKERPHONE, config.autoEnableSpeakerphone)
             editor.putBoolean(SettingsConstants.KEY_SIMULATE_CALLS_ENABLED, config.simulateCallsEnabled)
             editor.putInt(SettingsConstants.KEY_CALL_HANG_UP_PRESSES_REQUIRED, config.hangUpPressesRequired)
+            editor.putInt(SettingsConstants.KEY_CALL_HANG_UP_PRESS_WINDOW_SECONDS, config.hangUpPressWindowSeconds)
             editor.putBoolean(SettingsConstants.KEY_FILTER_CALLS_NOT_IN_CONTACTS, config.filterCallsNotInContacts)
             editor.putBoolean(SettingsConstants.KEY_NOTIFICATION_READING_ENABLED, config.isNotificationReadingEnabled)
             editor.putStringSet(SettingsConstants.KEY_MONITORED_NOTIFICATION_APPS, config.monitoredNotificationApps)

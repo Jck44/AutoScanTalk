@@ -22,7 +22,10 @@ class DuplicateButtonToPageUseCase @Inject constructor(
         val buttonToCopy = fromPage.buttonConfigs.getOrNull(fromIndex) ?: return MoveButtonToPageUseCase.MoveResult.Error
 
         // Create a new button with a unique ID
-        val duplicatedButton = buttonToCopy.copy(id = UUID.randomUUID().toString())
+        val duplicatedButton = buttonToCopy.copy(
+            id = UUID.randomUUID().toString(),
+            updatedAt = System.currentTimeMillis()
+        )
 
         // 1. Determine target slot
         val placement = GridUtils.determineTargetSlot(toPage, forceMove)

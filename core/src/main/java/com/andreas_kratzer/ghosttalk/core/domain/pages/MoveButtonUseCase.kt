@@ -22,11 +22,12 @@ class MoveButtonUseCase @Inject constructor(
         if (fromIndex !in newButtonConfigs.indices || toIndex !in newButtonConfigs.indices) return page
 
         // Spatial Swap instead of Shift
+        val now = System.currentTimeMillis()
         val fromConfig = newButtonConfigs[fromIndex]
         val toConfig = newButtonConfigs[toIndex]
         
-        newButtonConfigs[toIndex] = fromConfig
-        newButtonConfigs[fromIndex] = toConfig
+        newButtonConfigs[toIndex] = fromConfig?.copy(updatedAt = now)
+        newButtonConfigs[fromIndex] = toConfig?.copy(updatedAt = now)
         
         val updatedPage = page.copy(buttonConfigs = newButtonConfigs)
         

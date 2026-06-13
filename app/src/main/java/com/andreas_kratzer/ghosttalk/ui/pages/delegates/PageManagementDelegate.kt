@@ -241,17 +241,18 @@ class PageManagementDelegate @Inject constructor(
                         val lastItem = newButtonConfigs[lastVisibleGlobal]
                         
                         // Shift visible items down by 1
+                        val now = System.currentTimeMillis()
                         for (i in visibleIndices.size - 1 downTo dropVisiblePos + 1) {
                             val currentGlobal = visibleIndices[i]
                             val prevGlobal = visibleIndices[i - 1]
-                            newButtonConfigs[currentGlobal] = newButtonConfigs[prevGlobal]
+                            newButtonConfigs[currentGlobal] = newButtonConfigs[prevGlobal]?.copy(updatedAt = now)
                         }
                         
                         // Rescue the last item by placing it in the first available invisible slot
                         if (lastItem != null) {
                             for (i in 0 until com.andreas_kratzer.ghosttalk.core.util.GridUtils.TOTAL_SLOTS) {
                                 if (i !in visibleIndices && newButtonConfigs[i] == null) {
-                                    newButtonConfigs[i] = lastItem
+                                    newButtonConfigs[i] = lastItem.copy(updatedAt = now)
                                     break
                                 }
                             }
@@ -353,28 +354,29 @@ class PageManagementDelegate @Inject constructor(
                 // Clear the source
                 newButtonConfigs[fromIndex] = null
                 
+                val now = System.currentTimeMillis()
                 if (fromIndex < toIndex) {
                     // Shift items between fromIndex + 1 and toIndex - 1 to the left
                     for (i in fromIndex until toIndex - 1) {
                         if (i < visibleIndices.size - 1) {
                             val currentGlobal = visibleIndices[i]
                             val nextGlobal = visibleIndices[i + 1]
-                            newButtonConfigs[currentGlobal] = newButtonConfigs[nextGlobal]
+                            newButtonConfigs[currentGlobal] = newButtonConfigs[nextGlobal]?.copy(updatedAt = now)
                         }
                     }
                     // Insert the moved item at toIndex - 1
                     val targetGlobal = visibleIndices[toIndex - 1]
-                    newButtonConfigs[targetGlobal] = movedItem
+                    newButtonConfigs[targetGlobal] = movedItem.copy(updatedAt = now)
                 } else if (fromIndex > toIndex) {
                     // Shift items between toIndex and fromIndex - 1 to the right
                     for (i in fromIndex downTo toIndex + 1) {
                         val currentGlobal = visibleIndices[i]
                         val prevGlobal = visibleIndices[i - 1]
-                        newButtonConfigs[currentGlobal] = newButtonConfigs[prevGlobal]
+                        newButtonConfigs[currentGlobal] = newButtonConfigs[prevGlobal]?.copy(updatedAt = now)
                     }
                     // Insert the moved item at toIndex
                     val targetGlobal = visibleIndices[toIndex]
-                    newButtonConfigs[targetGlobal] = movedItem
+                    newButtonConfigs[targetGlobal] = movedItem.copy(updatedAt = now)
                 }
                 
                 val updatedPage = page.copy(buttonConfigs = newButtonConfigs)

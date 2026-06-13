@@ -28,6 +28,7 @@ import com.andreas_kratzer.ghosttalk.core.SecurityManager
 import com.andreas_kratzer.ghosttalk.core.UpdateManager
 import com.andreas_kratzer.ghosttalk.core.cloud.SpotifyManager
 import com.andreas_kratzer.ghosttalk.core.cloud.SyncWorkRequester
+import com.andreas_kratzer.ghosttalk.core.cloud.AuthManager
 import com.andreas_kratzer.ghosttalk.core.cloud.domain.RescheduleProfileSyncUseCase
 import com.andreas_kratzer.ghosttalk.core.data.PageRepository
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
@@ -77,6 +78,7 @@ class MainActivity : AppCompatActivity() {
     @Inject lateinit var sharedZipImportHandler: SharedZipImportHandler
     @Inject lateinit var syncWorkRequester: SyncWorkRequester
     @Inject lateinit var appStartupInitializer: AppStartupInitializer
+    @Inject lateinit var authManager: AuthManager
     
     private lateinit var screenStateObserver: ScreenStateObserver
 
@@ -249,13 +251,16 @@ class MainActivity : AppCompatActivity() {
             repeatOnLifecycle(Lifecycle.State.RESUMED) {
                 while (true) {
                     delay(60000) // Check every 60 seconds (1 minute)
-                    if (settingsRepository.isDataCloudSyncEnabled) {
-                        val lastSync = settingsRepository.lastSuccessfulSyncTime
-                        val intervalMs = settingsRepository.foregroundSyncIntervalMinutes * 60 * 1000L
-                        val now = System.currentTimeMillis()
-                        if (now - lastSync >= intervalMs) {
+                    val lastSync = settingsRepository.lastSuccessfulSyncTime
+                    val intervalMs = settingsRepository.foregroundSyncIntervalMinutes * 60 * 1000L
+                    val now = System.currentTimeMillis()
+                    if (now - lastSync >= intervalMs) {
+                        if (settingsRepository.isDataCloudSyncEnabled) {
                             Log.d("MainActivity", "Foreground periodic sync check triggered: ${now - lastSync}ms elapsed since last sync (interval: ${intervalMs}ms)")
                             syncWorkRequester.enqueueOneTimeSync(ExistingWorkPolicy.KEEP)
+                        } else if (authManager.userEmail.value != null) {
+                            Log.d("MainActivity", "Foreground periodic profile sync check triggered: ${now - lastSync}ms elapsed since last sync (interval: ${intervalMs}ms)")
+                            rescheduleProfileSyncUseCase.runOnceImmediately()
                         }
                     }
                 }
@@ -293,6 +298,8 @@ class MainActivity : AppCompatActivity() {
         super.onStop()
         if (settingsRepository.isDataCloudSyncEnabled) {
             syncWorkRequester.enqueueOneTimeSync(ExistingWorkPolicy.REPLACE)
+        } else if (authManager.userEmail.value != null) {
+            rescheduleProfileSyncUseCase.runOnceImmediately()
         }
     }
 

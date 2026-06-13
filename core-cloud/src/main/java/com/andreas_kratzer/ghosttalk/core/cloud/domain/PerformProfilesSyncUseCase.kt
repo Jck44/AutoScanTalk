@@ -46,6 +46,7 @@ class PerformProfilesSyncUseCase @Inject constructor(
         return@withContext try {
             val success = cloudSyncUseCase.syncProfilesOnly(drive, onProgress)
             if (success) {
+                settingsRepository.lastSuccessfulSyncTime = System.currentTimeMillis()
                 Result.Success
             } else {
                 Result.Error("Profil-Synchronisation fehlgeschlagen.")

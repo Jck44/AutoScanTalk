@@ -6,7 +6,9 @@ import com.andreas_kratzer.ghosttalk.core.call.SystemCallManager
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.core.tts.TextToSpeechHelper
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
@@ -32,6 +34,12 @@ class CallManagementDelegate @Inject constructor(
     val focusedCallScreenButton = MutableStateFlow("ANNEHMEN") // "ANNEHMEN" or "ABLEHNEN"
     private var callScanJob: Job? = null
     private var lastCallPressTime = 0L
+
+    // Resets the hang-up press counter once the configured time window between
+    // presses elapses, so accidental presses (coughing/laughing) spread over time
+    // don't accumulate toward a hang-up.
+    private val hangUpResetScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
+    private var hangUpResetJob: Job? = null
 
     fun speakCallScreenButton(button: String, isInitial: Boolean) {
         val textRes = if (button == "ANNEHMEN") {
@@ -74,6 +82,8 @@ class CallManagementDelegate @Inject constructor(
     }
 
     fun resetHangUpState() {
+        hangUpResetJob?.cancel()
+        hangUpResetJob = null
         isHangUpButtonFocused.value = false
         hangUpPressCount.value = 0
     }
@@ -96,23 +106,47 @@ class CallManagementDelegate @Inject constructor(
                 // Ignore rapid accidental presses (debounce / Haltezeit)
                 return true
             }
-            lastCallPressTime = currentTime
-
             val requiredPresses = settingsRepository.hangUpPressesRequired
-            val nextPressCount = hangUpPressCount.value + 1
+            val windowMillis = settingsRepository.hangUpPressWindowSeconds * 1000L
+
+            // If a time window is configured, a press that arrives too long after the
+            // previous one restarts the count instead of accumulating toward a hang-up.
+            val withinWindow = windowMillis <= 0L ||
+                hangUpPressCount.value == 0 ||
+                currentTime - lastCallPressTime <= windowMillis
+            val nextPressCount = if (withinWindow) hangUpPressCount.value + 1 else 1
+
+            lastCallPressTime = currentTime
             hangUpPressCount.value = nextPressCount
 
             if (requiredPresses <= 1 || nextPressCount >= requiredPresses) {
+                hangUpResetJob?.cancel()
                 systemCallManager.hangUp()
             } else {
                 isHangUpButtonFocused.value = true
                 val cueDevice = settingsRepository.cuesAudioDeviceAddress
                 val text = application.getString(com.andreas_kratzer.ghosttalk.R.string.call_hang_up)
                 ttsHelper.speakRouted(text, cueDevice, isForCues = true)
+                scheduleHangUpReset(windowMillis)
             }
             return true
         }
 
         return false
+    }
+
+    /**
+     * Schedules the hang-up press counter (and its visual/audible focus) to reset once
+     * [windowMillis] elapses without another press. A non-positive window disables the
+     * timer, preserving the legacy behavior where presses never time out.
+     */
+    private fun scheduleHangUpReset(windowMillis: Long) {
+        hangUpResetJob?.cancel()
+        if (windowMillis <= 0L) return
+        hangUpResetJob = hangUpResetScope.launch {
+            delay(windowMillis)
+            isHangUpButtonFocused.value = false
+            hangUpPressCount.value = 0
+        }
     }
 }

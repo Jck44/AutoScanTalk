@@ -414,6 +414,9 @@
     <string name="settings_call_action_answer">Annehmen</string>
     <string name="settings_call_action_reject">Ablehnen</string>
     <string name="settings_call_hang_up_presses">Tastendrücke zum Auflegen</string>
+    <string name="settings_call_hang_up_press_window">Zeitfenster für Auflegen-Drücke</string>
+    <string name="settings_call_hang_up_press_window_off">Aus (kein Limit)</string>
+    <string name="settings_call_hang_up_press_window_seconds">Innerhalb %1$d Sek.</string>
     <string name="settings_dialer_register_title">Als Standard-Telefon-App festlegen</string>
     <string name="settings_dialer_register_desc">Registriert GhostTalk im System als Standard-Telefon-App (Dialer), um Anrufe direkt annehmen und steuern zu können.</string>
     <string name="settings_dialer_registered">Bereits als Standard-Telefon-App registriert</string>

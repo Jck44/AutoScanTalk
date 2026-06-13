@@ -98,13 +98,14 @@ object GridUtils {
      */
     fun migrateFrom6To7(oldConfigs: List<ButtonConfig?>): List<ButtonConfig?> {
         val newConfigs = MutableList<ButtonConfig?>(TOTAL_SLOTS) { null }
+        val now = System.currentTimeMillis()
         oldConfigs.forEachIndexed { oldIndex, config ->
             if (config != null) {
                 val r = oldIndex / 6
                 val c = oldIndex % 6
                 if (r < MAX_GRID_SIZE) {
                     val newIndex = getGlobalIndex(r, c)
-                    newConfigs[newIndex] = config
+                    newConfigs[newIndex] = config.copy(updatedAt = now)
                 }
             }
         }
@@ -132,6 +133,7 @@ object GridUtils {
         }
         
         val newConfigs = MutableList<ButtonConfig?>(TOTAL_SLOTS) { null }
+        val now = System.currentTimeMillis()
         
         if (sourceColumns != null && sourceRows != null && configs.size != TOTAL_SLOTS) {
             // Spatially map existing buttons based on their original grid positions
@@ -140,7 +142,7 @@ object GridUtils {
                 if (config != null && index < sourceRows * sourceColumns) {
                     val globalIdx = localToGlobalIndex(index, sourceColumns)
                     if (globalIdx < TOTAL_SLOTS) {
-                        newConfigs[globalIdx] = config
+                        newConfigs[globalIdx] = config.copy(updatedAt = now)
                     }
                 }
             }

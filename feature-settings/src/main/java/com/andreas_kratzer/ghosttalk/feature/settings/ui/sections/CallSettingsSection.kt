@@ -62,6 +62,7 @@ fun CallSettingsSection(viewModel: SettingsViewModel) {
             val callAnnouncementAsCue by viewModel.call.callAnnouncementAsCue.collectAsState()
             val autoEnableSpeakerphone by viewModel.call.autoEnableSpeakerphone.collectAsState()
             val hangUpPressesRequired by viewModel.call.hangUpPressesRequired.collectAsState()
+            val hangUpPressWindowSeconds by viewModel.call.hangUpPressWindowSeconds.collectAsState()
             val filterCallsNotInContacts by viewModel.call.filterCallsNotInContacts.collectAsState()
 
             var isDefaultDialer by remember { mutableStateOf(false) }
@@ -244,6 +245,28 @@ fun CallSettingsSection(viewModel: SettingsViewModel) {
                     optLabel to { viewModel.call.setHangUpPressesRequired(presses) }
                 }
             )
+
+            // Zeitfenster für Auflegen-Tastendrücke (nur relevant, wenn mehr als 1 Druck nötig)
+            if (hangUpPressesRequired > 1) {
+                val hangUpWindowLabel = stringResource(R.string.settings_call_hang_up_press_window)
+                val hangUpWindowOff = stringResource(R.string.settings_call_hang_up_press_window_off)
+                val hangUpWindowOptions = listOf(0, 2, 3, 5, 10)
+                val windowOptionLabel: (Int) -> String = { seconds ->
+                    if (seconds == 0) {
+                        hangUpWindowOff
+                    } else {
+                        context.getString(R.string.settings_call_hang_up_press_window_seconds, seconds)
+                    }
+                }
+                val selectedWindowLabel = windowOptionLabel(hangUpPressWindowSeconds)
+                SettingsDropdownItem(
+                    label = hangUpWindowLabel,
+                    selectedOption = selectedWindowLabel,
+                    options = hangUpWindowOptions.map { seconds ->
+                        windowOptionLabel(seconds) to { viewModel.call.setHangUpPressWindowSeconds(seconds) }
+                    }
+                )
+            }
 
             Spacer(modifier = Modifier.height(dimensions.paddingSmall))
 

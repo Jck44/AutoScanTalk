@@ -31,7 +31,10 @@ class UpdateMultipleButtonsUseCase @Inject constructor(
                     if (usage.index in updatedConfigs.indices) {
                         val config = updatedConfigs[usage.index]
                         if (config != null) {
-                            updatedConfigs[usage.index] = config.copy(isActive = isActive)
+                            updatedConfigs[usage.index] = config.copy(
+                                isActive = isActive,
+                                updatedAt = System.currentTimeMillis()
+                            )
                             changed = true
                         }
                     }
@@ -53,7 +56,10 @@ class UpdateMultipleButtonsUseCase @Inject constructor(
                     if (usage.index in updatedConfigs.indices) {
                         val config = updatedConfigs[usage.index]
                         if (config != null) {
-                            updatedConfigs[usage.index] = config.copy(isActive = isActive)
+                            updatedConfigs[usage.index] = config.copy(
+                                isActive = isActive,
+                                updatedAt = System.currentTimeMillis()
+                            )
                             changed = true
                         }
                     }

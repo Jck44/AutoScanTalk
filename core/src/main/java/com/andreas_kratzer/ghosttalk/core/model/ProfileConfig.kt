@@ -67,6 +67,7 @@ data class ProfileConfig(
     val autoEnableSpeakerphone: Boolean = true,
     val simulateCallsEnabled: Boolean = false,
     val hangUpPressesRequired: Int = 1,
+    val hangUpPressWindowSeconds: Int = 3,
     val filterCallsNotInContacts: Boolean = false,
     val isNotificationReadingEnabled: Boolean = false,
     val monitoredNotificationApps: Set<String> = emptySet(),

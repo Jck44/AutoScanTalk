@@ -53,8 +53,9 @@ class MoveButtonToPageUseCase @Inject constructor(
         }
 
         // 2. Perform the move
+        val now = System.currentTimeMillis()
         val updatedToConfigs = toPage.buttonConfigs.toMutableList()
-        updatedToConfigs[targetIndex] = buttonToMove
+        updatedToConfigs[targetIndex] = buttonToMove.copy(updatedAt = now)
         
         val finalToPage = toPage.copy(
             buttonConfigs = updatedToConfigs,

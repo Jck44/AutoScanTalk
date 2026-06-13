@@ -130,4 +130,24 @@ class CallViewModelTest {
         viewModel.handleCallButtonPress()
         verify { systemCallManager.hangUp() }
     }
+
+    @Test
+    fun `hang up focus and count reset after the press window elapses`() = runTest {
+        every { settingsRepository.hangUpPressesRequired } returns 2
+        every { settingsRepository.hangUpPressWindowSeconds } returns 3
+        every { application.getString(com.andreas_kratzer.ghosttalk.R.string.call_hang_up) } returns "Hang Up"
+        mockCallStateFlow.value = CallState.ACTIVE
+
+        viewModel.handleCallButtonPress()
+        assertEquals(true, viewModel.isHangUpButtonFocused.value)
+        assertEquals(1, delegate.hangUpPressCount.value)
+
+        // Let the configured window (3s) elapse without a second press.
+        testDispatcher.scheduler.advanceTimeBy(3_001)
+        testDispatcher.scheduler.runCurrent()
+
+        assertEquals(false, viewModel.isHangUpButtonFocused.value)
+        assertEquals(0, delegate.hangUpPressCount.value)
+        verify(exactly = 0) { systemCallManager.hangUp() }
+    }
 }

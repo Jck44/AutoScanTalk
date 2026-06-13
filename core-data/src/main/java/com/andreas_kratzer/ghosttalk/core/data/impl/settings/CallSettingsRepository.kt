@@ -5,6 +5,7 @@ import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.K
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_CALL_AUTO_ENABLE_SPEAKERPHONE
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_CALL_DURATION_FEEDBACK_INTERVAL_SECONDS
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_CALL_HANG_UP_PRESSES_REQUIRED
+import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_CALL_HANG_UP_PRESS_WINDOW_SECONDS
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_FILTER_CALLS_NOT_IN_CONTACTS
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_INCOMING_CALL_AUTO_ACTION_ACTIVE
 import com.andreas_kratzer.ghosttalk.core.data.impl.settings.SettingsConstants.KEY_INCOMING_CALL_AUTO_ACTION_INACTIVE
@@ -36,6 +37,7 @@ class CallSettingsRepository @Inject constructor(
     private val _callAutoEnableSpeakerphone = BooleanSetting(KEY_CALL_AUTO_ENABLE_SPEAKERPHONE, true, isScoped = false)
     private val _simulateCallsEnabled = BooleanSetting(KEY_SIMULATE_CALLS_ENABLED, false, isScoped = false)
     private val _hangUpPressesRequired = IntSetting(KEY_CALL_HANG_UP_PRESSES_REQUIRED, 2, isScoped = false)
+    private val _hangUpPressWindowSeconds = IntSetting(KEY_CALL_HANG_UP_PRESS_WINDOW_SECONDS, 3, isScoped = false)
     private val _filterCallsNotInContacts = BooleanSetting(KEY_FILTER_CALLS_NOT_IN_CONTACTS, false, isScoped = false)
 
     override val maxCallDurationSecondsFlow = _maxCallDurationSeconds.flow
@@ -50,6 +52,7 @@ class CallSettingsRepository @Inject constructor(
     override val autoEnableSpeakerphoneFlow = _callAutoEnableSpeakerphone.flow
     override val simulateCallsEnabledFlow = _simulateCallsEnabled.flow
     override val hangUpPressesRequiredFlow = _hangUpPressesRequired.flow
+    override val hangUpPressWindowSecondsFlow = _hangUpPressWindowSeconds.flow
     override val filterCallsNotInContactsFlow = _filterCallsNotInContacts.flow
 
     override var maxCallDurationSeconds: Int by _maxCallDurationSeconds
@@ -64,6 +67,7 @@ class CallSettingsRepository @Inject constructor(
     override var autoEnableSpeakerphone: Boolean by _callAutoEnableSpeakerphone
     override var simulateCallsEnabled: Boolean by _simulateCallsEnabled
     override var hangUpPressesRequired: Int by _hangUpPressesRequired
+    override var hangUpPressWindowSeconds: Int by _hangUpPressWindowSeconds
     override var filterCallsNotInContacts: Boolean by _filterCallsNotInContacts
 
     override fun refresh() {
@@ -79,6 +83,7 @@ class CallSettingsRepository @Inject constructor(
         _callAutoEnableSpeakerphone.refresh()
         _simulateCallsEnabled.refresh()
         _hangUpPressesRequired.refresh()
+        _hangUpPressWindowSeconds.refresh()
         _filterCallsNotInContacts.refresh()
     }
 }

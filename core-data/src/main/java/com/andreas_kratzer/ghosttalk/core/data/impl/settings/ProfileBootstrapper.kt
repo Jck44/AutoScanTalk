@@ -92,6 +92,7 @@ class ProfileBootstrapper @Inject constructor(
                 autoEnableSpeakerphone = prefs.getBoolean(SettingsConstants.KEY_CALL_AUTO_ENABLE_SPEAKERPHONE, true),
                 simulateCallsEnabled = prefs.getBoolean(SettingsConstants.KEY_SIMULATE_CALLS_ENABLED, false),
                 hangUpPressesRequired = prefs.getInt(SettingsConstants.KEY_CALL_HANG_UP_PRESSES_REQUIRED, 1),
+                hangUpPressWindowSeconds = prefs.getInt(SettingsConstants.KEY_CALL_HANG_UP_PRESS_WINDOW_SECONDS, 3),
                 filterCallsNotInContacts = prefs.getBoolean(SettingsConstants.KEY_FILTER_CALLS_NOT_IN_CONTACTS, false),
                 isNotificationReadingEnabled = prefs.getBoolean(SettingsConstants.KEY_NOTIFICATION_READING_ENABLED, false),
                 monitoredNotificationApps = prefs.getStringSet(SettingsConstants.KEY_MONITORED_NOTIFICATION_APPS, emptySet()) ?: emptySet(),

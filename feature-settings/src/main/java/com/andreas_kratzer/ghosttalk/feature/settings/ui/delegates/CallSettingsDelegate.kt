@@ -27,6 +27,7 @@ class CallSettingsDelegate(
     val autoEnableSpeakerphone: StateFlow<Boolean> = draftCoordinator.scopedFlow(settingsRepository.autoEnableSpeakerphoneFlow) { it.autoEnableSpeakerphone }
     val simulateCallsEnabled: StateFlow<Boolean> = draftCoordinator.scopedFlow(settingsRepository.simulateCallsEnabledFlow) { it.simulateCallsEnabled }
     val hangUpPressesRequired: StateFlow<Int> = draftCoordinator.scopedFlow(settingsRepository.hangUpPressesRequiredFlow) { it.hangUpPressesRequired }
+    val hangUpPressWindowSeconds: StateFlow<Int> = draftCoordinator.scopedFlow(settingsRepository.hangUpPressWindowSecondsFlow) { it.hangUpPressWindowSeconds }
     val filterCallsNotInContacts: StateFlow<Boolean> = draftCoordinator.scopedFlow(settingsRepository.filterCallsNotInContactsFlow) { it.filterCallsNotInContacts }
 
     fun setMaxCallDurationSeconds(seconds: Int) = draftCoordinator.update({ 
@@ -73,9 +74,13 @@ class CallSettingsDelegate(
         settingsRepository.simulateCallsEnabled = enable
     }) { it.copy(simulateCallsEnabled = enable) }
 
-    fun setHangUpPressesRequired(presses: Int) = draftCoordinator.update({ 
+    fun setHangUpPressesRequired(presses: Int) = draftCoordinator.update({
         settingsRepository.hangUpPressesRequired = presses
     }) { it.copy(hangUpPressesRequired = presses) }
+
+    fun setHangUpPressWindowSeconds(seconds: Int) = draftCoordinator.update({
+        settingsRepository.hangUpPressWindowSeconds = seconds
+    }) { it.copy(hangUpPressWindowSeconds = seconds) }
 
     fun setFilterCallsNotInContacts(filter: Boolean) = draftCoordinator.update({ 
         settingsRepository.filterCallsNotInContacts = filter
