@@ -31,9 +31,6 @@ import com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkScaffold
 import com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons
 import com.andreas_kratzer.ghosttalk.ui.components.GridEditorContent
 import com.andreas_kratzer.ghosttalk.ui.components.ValidatedTextField
-import com.andreas_kratzer.ghosttalk.ui.pages.pagesplit.PageSplitManualPromptDialog
-import com.andreas_kratzer.ghosttalk.ui.pages.pagesplit.PageSplitOptInDialog
-import com.andreas_kratzer.ghosttalk.ui.pages.pagesplit.PageSplitWizardDialog
 import com.andreas_kratzer.ghosttalk.ui.pages.IncomingReferencesDialog
 import com.andreas_kratzer.ghosttalk.core.domain.pages.UsageLocation
 import androidx.compose.ui.platform.LocalContext
@@ -55,7 +52,7 @@ fun PageEditorScreen(
     onNavigateBack: () -> Unit,
     onEditPage: ((String, String?) -> Unit)? = null,
     onExitEditor: (() -> Unit)? = null,
-    onOpenStructureEditor: ((String) -> Unit)? = null
+    onOpenStructureEditor: ((String, Boolean) -> Unit)? = null
 ) {
     val allPages by pageViewModel.allPages.collectAsState()
     val unfilteredPages by pageViewModel.unfilteredPages.collectAsState()
@@ -82,15 +79,7 @@ fun PageEditorScreen(
     
     // Layout & Page Split Dialog States
     val showLayoutAssistantDialog = remember { mutableStateOf(false) }
-    val showOptInDialog = remember { mutableStateOf(false) }
-    val showManualPromptDialog = remember { mutableStateOf(false) }
-    val showWizardDialog = remember { mutableStateOf(false) }
-    var manualPromptText by remember { mutableStateOf("") }
     var showOverflowMenu by remember { mutableStateOf(false) }
-
-    
-    val pageSplitProposal by pageSplitViewModel.pageSplitProposal.collectAsState()
-    val isPageSplitLoading by pageSplitViewModel.isPageSplitLoading.collectAsState()
 
     val handleNavigateBack = {
         if (localName.isNotBlank()) {
@@ -229,7 +218,7 @@ fun PageEditorScreen(
                         text = { Text(stringResource(R.string.structure_editor_open)) },
                         onClick = {
                             showOverflowMenu = false
-                            onOpenStructureEditor?.invoke(pageId)
+                            onOpenStructureEditor?.invoke(pageId, false)
                         },
                         leadingIcon = {
                             Icon(
@@ -277,13 +266,7 @@ fun PageEditorScreen(
                 page = page,
                 pageSplitViewModel = pageSplitViewModel,
                 onStartPageSplit = {
-                    val accepted = pageSplitViewModel.hasAcceptedPageSplitOptIn
-                    if (accepted) {
-                        showWizardDialog.value = true
-                        pageSplitViewModel.generatePageSplitProposal(page.id)
-                    } else {
-                        showOptInDialog.value = true
-                    }
+                    onOpenStructureEditor?.invoke(page.id, true)
                 },
                 onStartMagicCleanup = {
                     pageSplitViewModel.magicCleanup(page.id) {
@@ -304,61 +287,6 @@ fun PageEditorScreen(
                     }
                 },
                 onDismiss = { showLayoutAssistantDialog.value = false }
-            )
-        }
-
-        if (showOptInDialog.value) {
-            PageSplitOptInDialog(
-                onConfirmCloud = { rememberDecision ->
-                    showOptInDialog.value = false
-                    if (rememberDecision) {
-                        pageSplitViewModel.hasAcceptedPageSplitOptIn = true
-                    }
-                    showWizardDialog.value = true
-                    pageSplitViewModel.generatePageSplitProposal(page.id)
-                },
-                onConfirmManual = {
-                    showOptInDialog.value = false
-                    val defaultStartPageId = pageSplitViewModel.defaultStartPageId
-                    val labels = page.buttonConfigs
-                        .filter { !pageSplitViewModel.shouldFilterButtonFromSplit(it, defaultStartPageId, page.id) }
-                        .map { it!!.label }
-                    manualPromptText = pageSplitViewModel.generatePageSplitPrompt(labels)
-                    showManualPromptDialog.value = true
-                },
-                onDismiss = { showOptInDialog.value = false }
-            )
-        }
-
-        if (showManualPromptDialog.value) {
-            PageSplitManualPromptDialog(
-                promptText = manualPromptText,
-                onEvaluateResponse = { response ->
-                    pageSplitViewModel.parsePageSplitProposal(response)
-                    showManualPromptDialog.value = false
-                    showWizardDialog.value = true
-                },
-                onDismiss = { showManualPromptDialog.value = false }
-            )
-        }
-
-        if (showWizardDialog.value) {
-            val activeButtons = page.buttonConfigs
-                .filter { it != null && it.isActive && it.label.isNotBlank() }
-                .map { it!! }
-
-            PageSplitWizardDialog(
-                proposal = pageSplitProposal,
-                allAvailableButtons = activeButtons,
-                isLoading = isPageSplitLoading,
-                onConfirm = { updatedProposal ->
-                    pageSplitViewModel.applyPageSplit(page.id, updatedProposal)
-                    showWizardDialog.value = false
-                },
-                onDismiss = {
-                    showWizardDialog.value = false
-                    pageSplitViewModel.clearPageSplitProposal()
-                }
             )
         }
 

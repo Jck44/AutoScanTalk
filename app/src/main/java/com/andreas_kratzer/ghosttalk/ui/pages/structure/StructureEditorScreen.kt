@@ -18,6 +18,10 @@ import com.andreas_kratzer.ghosttalk.core.model.NavigateToPageButtonAction
 import com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkScaffold
 import com.andreas_kratzer.ghosttalk.ui.pages.GridEditorViewModel
 import com.andreas_kratzer.ghosttalk.ui.pages.PageViewModel
+import com.andreas_kratzer.ghosttalk.ui.pages.PageSplitViewModel
+import com.andreas_kratzer.ghosttalk.ui.pages.pagesplit.PageSplitOptInDialog
+import com.andreas_kratzer.ghosttalk.ui.pages.pagesplit.PageSplitManualPromptDialog
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -26,6 +30,8 @@ fun StructureEditorScreen(
     pageViewModel: PageViewModel,
     gridEditorViewModel: GridEditorViewModel,
     initialFocusedPageId: String? = null,
+    initialTriggerSplit: Boolean = false,
+    pageSplitViewModel: PageSplitViewModel = hiltViewModel(),
     onEditPageInGrid: (pageId: String) -> Unit,
     onNavigateBack: () -> Unit
 ) {
@@ -51,6 +57,29 @@ fun StructureEditorScreen(
 
     var focusedPageId by rememberSaveable {
         mutableStateOf("")
+    }
+
+    val pageSplitProposal by pageSplitViewModel.pageSplitProposal.collectAsState()
+    val isPageSplitLoading by pageSplitViewModel.isPageSplitLoading.collectAsState()
+
+    val showOptInDialog = remember { mutableStateOf(false) }
+    val showManualPromptDialog = remember { mutableStateOf(false) }
+    var manualPromptText by remember { mutableStateOf("") }
+
+    var hasTriggeredInitialSplit by rememberSaveable(initialFocusedId) { mutableStateOf(false) }
+    LaunchedEffect(initialTriggerSplit, initialFocusedId, pages) {
+        if (initialTriggerSplit && !hasTriggeredInitialSplit && initialFocusedId.isNotBlank() && pages.isNotEmpty()) {
+            hasTriggeredInitialSplit = true
+            val page = pages.find { it.id == initialFocusedId }
+            if (page != null) {
+                val accepted = pageSplitViewModel.hasAcceptedPageSplitOptIn
+                if (accepted) {
+                    pageSplitViewModel.generatePageSplitProposal(page.id)
+                } else {
+                    showOptInDialog.value = true
+                }
+            }
+        }
     }
 
     LaunchedEffect(initialFocusedId, pages) {
@@ -215,6 +244,23 @@ fun StructureEditorScreen(
                 templates = templates,
                 graph = graph,
                 pageNames = pageNames,
+                proposal = pageSplitProposal,
+                isSplitLoading = isPageSplitLoading,
+                onTriggerSplit = {
+                    val accepted = pageSplitViewModel.hasAcceptedPageSplitOptIn
+                    if (accepted) {
+                        pageSplitViewModel.generatePageSplitProposal(focusedPageId)
+                    } else {
+                        showOptInDialog.value = true
+                    }
+                },
+                onApplySplit = { proposalVal ->
+                    pageSplitViewModel.applyPageSplit(focusedPageId, proposalVal)
+                    pageSplitViewModel.clearPageSplitProposal()
+                },
+                onDiscardSplit = {
+                    pageSplitViewModel.clearPageSplitProposal()
+                },
                 onFocus = { focusedPageId = it },
                 onEditPageInGrid = onEditPageInGrid,
                 onMoveButton = onMoveButton,
@@ -339,6 +385,42 @@ fun StructureEditorScreen(
                     Text(stringResource(R.string.structure_view_page))
                 }
             }
+        )
+    }
+
+    if (showOptInDialog.value) {
+        PageSplitOptInDialog(
+            onConfirmCloud = { rememberDecision ->
+                showOptInDialog.value = false
+                if (rememberDecision) {
+                    pageSplitViewModel.hasAcceptedPageSplitOptIn = true
+                }
+                pageSplitViewModel.generatePageSplitProposal(focusedPageId)
+            },
+            onConfirmManual = {
+                showOptInDialog.value = false
+                val page = pages.find { it.id == focusedPageId }
+                if (page != null) {
+                    val defaultStartPageId = pageSplitViewModel.defaultStartPageId
+                    val labels = page.buttonConfigs
+                        .filter { !pageSplitViewModel.shouldFilterButtonFromSplit(it, defaultStartPageId, page.id) }
+                        .map { it!!.label }
+                    manualPromptText = pageSplitViewModel.generatePageSplitPrompt(labels)
+                    showManualPromptDialog.value = true
+                }
+            },
+            onDismiss = { showOptInDialog.value = false }
+        )
+    }
+
+    if (showManualPromptDialog.value) {
+        PageSplitManualPromptDialog(
+            promptText = manualPromptText,
+            onEvaluateResponse = { response ->
+                pageSplitViewModel.parsePageSplitProposal(response)
+                showManualPromptDialog.value = false
+            },
+            onDismiss = { showManualPromptDialog.value = false }
         )
     }
 }

@@ -364,17 +364,20 @@ fun GhostTalkNavHost(
             )
         }
         composable(
-            "structure_editor?focus={focus}",
+            "structure_editor?focus={focus}&triggerSplit={triggerSplit}",
             arguments = listOf(
-                navArgument("focus") { type = NavType.StringType; nullable = true; defaultValue = null }
+                navArgument("focus") { type = NavType.StringType; nullable = true; defaultValue = null },
+                navArgument("triggerSplit") { type = NavType.BoolType; defaultValue = false }
             )
         ) { backStackEntry ->
             val focus = backStackEntry.arguments?.getString("focus")
+            val triggerSplit = backStackEntry.arguments?.getBoolean("triggerSplit") ?: false
             val gridEditorViewModel = hiltViewModel<com.andreas_kratzer.ghosttalk.ui.pages.GridEditorViewModel>()
             StructureEditorScreen(
                 pageViewModel = pageViewModel,
                 gridEditorViewModel = gridEditorViewModel,
                 initialFocusedPageId = focus,
+                initialTriggerSplit = triggerSplit,
                 onEditPageInGrid = { pageId ->
                     navController.safeNavigate("page_editor/$pageId")
                 },
@@ -409,8 +412,8 @@ fun GhostTalkNavHost(
                             navController.navigate("page_editor/$targetPageId")
                         }
                     },
-                    onOpenStructureEditor = { focusedId ->
-                        navigateWithSecurity("structure_editor?focus=$focusedId")
+                    onOpenStructureEditor = { focusedId, triggerSplit ->
+                        navigateWithSecurity("structure_editor?focus=$focusedId&triggerSplit=$triggerSplit")
                     }
                 )
             }
