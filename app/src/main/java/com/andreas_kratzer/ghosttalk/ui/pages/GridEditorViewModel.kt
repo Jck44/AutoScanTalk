@@ -13,6 +13,8 @@ import com.andreas_kratzer.ghosttalk.ui.pages.delegates.PageManagementDelegate
 import com.andreas_kratzer.ghosttalk.ui.pages.delegates.SuggestionsDelegate
 import com.andreas_kratzer.ghosttalk.ui.pages.delegates.TtsPreviewDelegate
 import com.andreas_kratzer.ghosttalk.ui.util.GridEditorActions
+import com.andreas_kratzer.ghosttalk.ui.pages.bulkreorder.ReorderCategory
+
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.StateFlow
 import javax.inject.Inject
@@ -175,4 +177,19 @@ class GridEditorViewModel @Inject constructor(
     override fun stopTtsPreview() {
         ttsPreviewDelegate.stopTtsPreview()
     }
+
+    fun executeBulkMove(fromPageId: String, categoryMoves: List<ReorderCategory>) {
+        categoryMoves.forEach { category ->
+            category.items.forEach { item ->
+                pageManagementDelegate.moveButtonToPage(
+                    fromPageId = fromPageId,
+                    fromIndex = item.originalIndex,
+                    toPageId = category.pageId,
+                    forceMove = true,
+                    onResult = {}
+                )
+            }
+        }
+    }
 }
+

@@ -21,8 +21,8 @@ class MoveRowUseCaseTest {
     fun `execute moves row correctly`() = runTest {
         // Arrange
         val buttons = MutableList<ButtonConfig?>(49) { null }
-        val row0Button = mockk<ButtonConfig>()
-        val row1Button = mockk<ButtonConfig>()
+        val row0Button = ButtonConfig(id = "b0", label = "B0", buttonAction = com.andreas_kratzer.ghosttalk.core.model.SpeakTextButtonAction())
+        val row1Button = ButtonConfig(id = "b1", label = "B1", buttonAction = com.andreas_kratzer.ghosttalk.core.model.SpeakTextButtonAction())
         buttons[0] = row0Button // Start of row 0
         buttons[7] = row1Button // Start of row 1
         
@@ -36,8 +36,8 @@ class MoveRowUseCaseTest {
         val result = useCase.execute("page1", 0, 1)
 
         // Assert
-        assertEquals(row1Button, result?.buttonConfigs?.get(0))
-        assertEquals(row0Button, result?.buttonConfigs?.get(7))
+        assertEquals(row1Button.id, result?.buttonConfigs?.get(0)?.id)
+        assertEquals(row0Button.id, result?.buttonConfigs?.get(7)?.id)
         
         assertEquals("Row 1", result?.rowNames?.get(0))
         assertEquals("Row 0", result?.rowNames?.get(1))

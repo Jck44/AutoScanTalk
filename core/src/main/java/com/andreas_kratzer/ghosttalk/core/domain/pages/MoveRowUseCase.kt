@@ -35,6 +35,17 @@ class MoveRowUseCase @Inject constructor(
         val toStart = toRow * maxCols
         newButtonConfigs.addAll(toStart, rowToMove)
         
+        // Bump updatedAt for all buttons that were moved or shifted
+        val now = System.currentTimeMillis()
+        val minAffectedRow = minOf(fromRow, toRow)
+        val maxAffectedRow = maxOf(fromRow, toRow)
+        val startIndex = minAffectedRow * maxCols
+        val endIndex = (maxAffectedRow + 1) * maxCols
+        
+        for (i in startIndex until endIndex) {
+            newButtonConfigs[i] = newButtonConfigs[i]?.copy(updatedAt = now)
+        }
+        
         // Reorder row names if exist
         val newRowNames = page.rowNames.toMutableList()
         if (newRowNames.isNotEmpty()) {

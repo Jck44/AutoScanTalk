@@ -39,6 +39,13 @@ import com.andreas_kratzer.ghosttalk.core.domain.pages.UsageLocation
 import androidx.compose.ui.platform.LocalContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+
+import com.andreas_kratzer.ghosttalk.ui.pages.bulkreorder.BulkReorderDialog
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -81,6 +88,9 @@ fun PageEditorScreen(
     val showManualPromptDialog = remember { mutableStateOf(false) }
     val showWizardDialog = remember { mutableStateOf(false) }
     var manualPromptText by remember { mutableStateOf("") }
+    var showBulkReorderDialog by remember { mutableStateOf(false) }
+    var showOverflowMenu by remember { mutableStateOf(false) }
+
     
     val pageSplitProposal by pageSplitViewModel.pageSplitProposal.collectAsState()
     val isPageSplitLoading by pageSplitViewModel.isPageSplitLoading.collectAsState()
@@ -156,21 +166,6 @@ fun PageEditorScreen(
                 )
             }
 
-            val isAnalyticsEnabled by pageViewModel.isAnalyticsOverlayEnabled.collectAsState()
-            IconButton(
-                onClick = { pageViewModel.toggleAnalyticsOverlay() },
-                modifier = Modifier.testTag("page_editor_analytics_toggle")
-            ) {
-                Icon(
-                    imageVector = GhostTalkIcons.BarChart,
-                    contentDescription = stringResource(R.string.page_editor_analytics_toggle),
-                    tint = if (isAnalyticsEnabled) {
-                        MaterialTheme.colorScheme.primary
-                    } else {
-                        MaterialTheme.colorScheme.onSurfaceVariant
-                    }
-                )
-            }
             IconButton(
                 onClick = {
                     coroutineScope.launch {
@@ -187,17 +182,68 @@ fun PageEditorScreen(
                 )
             }
 
-            IconButton(
-                onClick = {
-                    showLayoutAssistantDialog.value = true
-                },
-                modifier = Modifier.testTag("page_editor_split_wizard_trigger")
-            ) {
-                Icon(
-                    imageVector = GhostTalkIcons.AutoAwesome,
-                    contentDescription = "Layout- & Struktur-Assistent",
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+            Box {
+                IconButton(
+                    onClick = { showOverflowMenu = true },
+                    modifier = Modifier.testTag("page_editor_overflow_menu_trigger")
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.MoreVert,
+                        contentDescription = "Mehr Optionen",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                DropdownMenu(
+                    expanded = showOverflowMenu,
+                    onDismissRequest = { showOverflowMenu = false }
+                ) {
+                    val isAnalyticsEnabled by pageViewModel.isAnalyticsOverlayEnabled.collectAsState()
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.page_editor_analytics_toggle)) },
+                        onClick = {
+                            showOverflowMenu = false
+                            pageViewModel.toggleAnalyticsOverlay()
+                        },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = GhostTalkIcons.BarChart,
+                                contentDescription = null,
+                                tint = if (isAnalyticsEnabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        },
+                        modifier = Modifier.testTag("page_editor_analytics_toggle_menu")
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Layout- & Struktur-Assistent") },
+                        onClick = {
+                            showOverflowMenu = false
+                            showLayoutAssistantDialog.value = true
+                        },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = GhostTalkIcons.AutoAwesome,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        },
+                        modifier = Modifier.testTag("page_editor_split_wizard_trigger_menu")
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Organisieren (Bulk Reorder)") },
+                        onClick = {
+                            showOverflowMenu = false
+                            showBulkReorderDialog = true
+                        },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Default.Settings,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        },
+                        modifier = Modifier.testTag("page_editor_bulk_reorder_trigger_menu")
+                    )
+                }
             }
 
             if (onExitEditor != null) {
@@ -372,6 +418,28 @@ fun PageEditorScreen(
                     } else {
                         android.widget.Toast.makeText(context, R.string.page_incoming_links_template_toast, android.widget.Toast.LENGTH_SHORT).show()
                     }
+                }
+            )
+        }
+
+        if (showBulkReorderDialog) {
+            BulkReorderDialog(
+                currentPage = page,
+                allAvailablePages = unfilteredPages,
+                templates = templates,
+                onConfirm = { categoryMoves ->
+                    gridEditorViewModel.executeBulkMove(page.id, categoryMoves)
+                    showBulkReorderDialog = false
+                },
+                onDismiss = { showBulkReorderDialog = false },
+                onNavigateToPage = { targetPageId ->
+                    onEditPage?.invoke(targetPageId, null)
+                },
+                onCreateNavigationButton = { index, config ->
+                    gridEditorViewModel.insertButtonConfig(page.id, index, config, false) { success -> }
+                },
+                onCreatePage = { name, rows, cols, templateId, callback ->
+                    gridEditorViewModel.createNewPage(name, rows, cols, page.bookId, templateId, callback)
                 }
             )
         }

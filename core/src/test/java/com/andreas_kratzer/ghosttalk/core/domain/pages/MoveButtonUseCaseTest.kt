@@ -20,8 +20,8 @@ class MoveButtonUseCaseTest {
     @Test
     fun `execute swaps buttons correctly`() = runTest {
         // Arrange
-        val button1 = mockk<ButtonConfig>()
-        val button2 = mockk<ButtonConfig>()
+        val button1 = ButtonConfig(id = "b1", label = "B1", buttonAction = com.andreas_kratzer.ghosttalk.core.model.SpeakTextButtonAction())
+        val button2 = ButtonConfig(id = "b2", label = "B2", buttonAction = com.andreas_kratzer.ghosttalk.core.model.SpeakTextButtonAction())
         val initialButtons = mutableListOf<ButtonConfig?>(button1, button2)
         while (initialButtons.size < 49) initialButtons.add(null)
         
@@ -33,10 +33,10 @@ class MoveButtonUseCaseTest {
         val updatedPage = useCase.execute("page1", 0, 1)
 
         // Assert
-        assertEquals(button2, updatedPage?.buttonConfigs?.get(0))
-        assertEquals(button1, updatedPage?.buttonConfigs?.get(1))
+        assertEquals(button2.id, updatedPage?.buttonConfigs?.get(0)?.id)
+        assertEquals(button1.id, updatedPage?.buttonConfigs?.get(1)?.id)
         
-        coVerify { pageRepository.updatePage(match { it.buttonConfigs[0] == button2 && it.buttonConfigs[1] == button1 }) }
+        coVerify { pageRepository.updatePage(match { it.buttonConfigs[0]?.id == button2.id && it.buttonConfigs[1]?.id == button1.id }) }
         coVerify { bookRepository.updateLastModified("book1", any()) }
     }
 
