@@ -410,38 +410,6 @@ class PageManagementDelegate @Inject constructor(
         }
     }
 
-    /**
-     * Moves several buttons off [fromPageId] onto their respective target pages in a single
-     * coroutine, awaiting each move before starting the next.
-     *
-     * This MUST stay sequential: every move is a read-modify-write of the full button grid of
-     * the affected pages. Launching the moves concurrently (e.g. one [scope] coroutine per button)
-     * makes them all read the same original state and clobber each other on write, so buttons get
-     * lost or duplicated. Processing them one at a time guarantees each move sees the committed
-     * result of the previous one (freed source slot, occupied target slot).
-     *
-     * @param moves pairs of (sourceSlotIndex on [fromPageId]) to (targetPageId).
-     */
-    fun moveButtonsToPages(
-        fromPageId: String,
-        moves: List<Pair<Int, String>>,
-        forceMove: Boolean = true,
-        onComplete: () -> Unit = {}
-    ) {
-        scope.launch {
-            for ((fromIndex, toPageId) in moves) {
-                val result = moveButtonToPageUseCase.execute(fromPageId, fromIndex, toPageId, forceMove)
-                if (result is MoveButtonToPageUseCase.MoveResult.Success) {
-                    when (_currentPage.value?.id) {
-                        fromPageId -> setCurrentPage(result.fromPage)
-                        toPageId -> setCurrentPage(result.toPage)
-                    }
-                }
-            }
-            onComplete()
-        }
-    }
-
     fun duplicateButtonToPage(
         fromPageId: String,
         fromIndex: Int,

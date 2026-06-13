@@ -337,108 +337,142 @@ bleibt liegen. `focusedPageId` ist `rememberSaveable` → sollte beim Zurück er
 
 ---
 
-### Phase 5 — Vereinheitlichung von Drag&Drop & Einstieg
+### Phase 5 — Einstieg konsolidieren & `BulkReorderDialog` entfernen
 
-Ziel: Die zweifach vorhandene, handgerollte Drag&Drop-Mechanik (in `BulkReorderDialog` und
-`StructureFocusCanvas`) in einen gemeinsamen, wiederverwendbaren Baustein ziehen und den
-„Organisieren"-Einstieg konsolidieren. **Riskanteste Phase**, weil sie getesteten Code anfasst —
-daher strikt verhaltenserhaltend + Smoke-Tests beider Oberflächen.
+**Entscheidung (2026-06-13):** `BulkReorderDialog` wird **sofort entfernt** (nicht gestaffelt).
+Der „Organisieren"-Einstieg im Raster-Editor wird auf den neuen Struktur-Editor (fokussiert auf die
+aktuelle Seite) umgeleitet.
 
-#### AP5.1 — Gemeinsamen Drag&Drop-Baustein extrahieren
+> Konsequenz: Die ursprünglich geplante Vereinheitlichung der Drag&Drop-Mechanik (gemeinsamer
+> `ChipDragDropState`-Baustein) **entfällt** — nach dem Entfernen des Dialogs gibt es nur noch
+> *einen* Drag&Drop-Konsumenten (`StructureFocusCanvas`), also nichts mehr zu vereinheitlichen.
+> Die Drag-Logik bleibt dort, wo sie ist.
 
-Die Duplikation umfasst: Drag-State (`draggedId`, `dragStartCenter`, `dragOffset`, `draggedSize`,
-`rootBoxBounds`, `targetBounds`, abgeleitet `dragGlobalPos`), das Hit-Testing beim Drop und das
-schwebende Drag-Overlay.
+#### AP5.1 — Deep-Link: Struktur-Editor mit initialem Fokus
 
-Neue Datei `app/.../ui/components/dragdrop/ChipDragDropState.kt`:
+Voraussetzung für den umgeleiteten Einstieg.
 
-```kotlin
-class ChipDragDropState internal constructor() {
-    var draggedKey by mutableStateOf<String?>(null); internal set
-    internal var draggedLabel by mutableStateOf("")
-    internal val targetBounds = mutableMapOf<String, Rect>()
-    // dragStartCenter, dragOffset, draggedSize, rootBoxBounds ...
-    val dragGlobalPos: Offset get() = dragStartCenter + dragOffset
-
-    fun onDragStart(key: String, label: String, center: Offset, size: Offset) { ... }
-    fun onDrag(delta: Offset) { ... }
-    /** liefert den getroffenen Ziel-Key (oder null) und setzt den State zurück */
-    fun onDragEnd(): String? { ... }
-    fun onDragCancel() { ... }
-    fun clearTargets() { targetBounds.clear() }   // bei Fokus-/Kontextwechsel aufrufen
-}
-
-@Composable fun rememberChipDragDropState(resetKey: Any?): ChipDragDropState
-// resetKey (z.B. focusedPageId) -> remember(resetKey){...} + clearTargets bei Wechsel
-
-// Modifier: registriert/aktualisiert die Bounds eines Drop-Ziels
-fun Modifier.chipDropTarget(state: ChipDragDropState, key: String): Modifier
-
-// Root-Container, der rootBoxBounds erfasst und das Overlay rendert
-@Composable fun ChipDragDropContainer(state: ChipDragDropState, modifier: Modifier, content: @Composable BoxScope.() -> Unit)
-```
-
-- `DraggableChip` bleibt unverändert und wird weiter genutzt; der State-Holder kapselt nur die
-  Koordinaten-/Overlay-Logik. Das in Phase 2 gefixte „Bounds bei Fokuswechsel leeren" wird hier
-  zur `clearTargets()`/`resetKey`-Mechanik (eine Quelle der Wahrheit).
-- Lage in `app` (beide Nutzer liegen in `app`); kein core-Modul nötig.
+- Route erweitern: `structure_editor?focus={pageId}` (optionales `navArgument`, `nullable=true`,
+  `defaultValue=null`) in `GhosTTalkNavHost`. Bestehende `composable("structure_editor")` durch die
+  parametrisierte Route ersetzen; `backStackEntry.arguments?.getString("focus")` auslesen.
+- `StructureEditorScreen` bekommt `initialFocusPageId: String? = null`. Initialisierung von
+  `focusedPageId`: `initialFocusPageId?.takeIf { id -> pages.any { it.id == id } }` **vor** der
+  bestehenden Startseiten-/`orderIndex`-Fallback-Logik. Der `LaunchedEffect`-Reparaturpfad bleibt
+  unverändert (greift nur bei leer/gelöscht).
+- Einstieg aus der Seitenübersicht (`onOpenStructureEditor`) ruft weiterhin ohne `?focus=` auf
+  → Fokus = Startseite wie bisher.
 
 **Review-Checkliste AP5.1**
-- [ ] Reiner Extraktions-Baustein, keine Verhaltensänderung an sich.
-- [ ] `resetKey` leert `targetBounds` zuverlässig (kein stale-Drop-Bug, vgl. Phase-2-Fix).
-
-#### AP5.2 — `StructureFocusCanvas` auf den Baustein umstellen
-
-- Lokale Drag-Felder durch `rememberChipDragDropState(focusedPageId)` ersetzen, Zielkarten mit
-  `Modifier.chipDropTarget(state, edge.targetPageId)`, Drop über `state.onDragEnd()`.
-- Verhalten 1:1 erhalten (Sofort-Move + Undo + TargetFull).
-
-**Review-Checkliste AP5.2**
-- [ ] Move/Undo/Voll-Fall verhalten sich identisch zu Phase 2/3.
-
-#### AP5.3 — `BulkReorderDialog` auf den Baustein umstellen
-
-- Den Block in [BulkReorderDialog.kt:112-120](app/src/main/java/com/andreas_kratzer/ghosttalk/ui/pages/bulkreorder/BulkReorderDialog.kt)
-  (manuelles Bounds-/Drag-Tracking) und das Drag-Overlay (`:435-465`) durch den Baustein ersetzen;
-  `CurrentPageCard`/`TargetCategoryItem` als Drop-Ziele über `chipDropTarget` registrieren.
-- **Verhaltenserhaltend**: Der Dialog sammelt Moves bis „Anwenden" (`categoryProposals`), während der
-  Canvas sofort anwendet — diese Logik bleibt im jeweiligen Aufrufer; nur Drag-Mechanik wird geteilt.
-- Bestehende Funktion penibel gegenprüfen (chip von „Aktuelle Seite" → Zielseite, zurückziehen ins
-  „Unassigned", „+ Zielseite hinzufügen").
-
-**Review-Checkliste AP5.3**
-- [ ] Alle bisherigen Dialog-Interaktionen funktionieren unverändert (manueller Smoke-Test).
-- [ ] Kein Regress bei „Anwenden" / abgebrochenem Drag.
-
-#### AP5.4 — Deep-Link: Struktur-Editor mit initialem Fokus
-
-Voraussetzung für AP5.5.
-
-- Route erweitern: `structure_editor?focus={pageId}` (optionales `navArgument`, `nullable=true`).
-- `StructureEditorScreen` bekommt `initialFocusPageId: String? = null`; falls gesetzt und in `pages`
-  vorhanden, wird `focusedPageId` initial darauf gesetzt (vor der bestehenden Fallback-Logik).
-- Bestehender Einstieg aus der Seitenübersicht ruft weiter ohne Argument auf (Fokus = Startseite).
-
-**Review-Checkliste AP5.4**
 - [ ] Aufruf ohne Argument unverändert (Startseite im Fokus).
 - [ ] Aufruf mit `?focus=X` startet auf X (sofern existent), sonst sauberer Fallback.
+- [ ] Rotation/Restore: Fokus bleibt erhalten (rememberSaveable greift weiterhin).
 
-#### AP5.5 — „Organisieren"-Einstieg konsolidieren
+#### AP5.2 — „Organisieren"-Einstieg auf den Struktur-Editor umlenken
 
+- `StructureEditorScreen`-Aufruf in `GhosTTalkNavHost` (parametrisierte Route) durchreichen.
+- `PageEditorScreen` bekommt einen neuen Callback `onOpenStructureEditor: (pageId: String) -> Unit`;
+  in `GhosTTalkNavHost` verdrahten auf `navController.safeNavigate("structure_editor?focus=$pageId")`.
 - In [PageEditorScreen.kt:232](app/src/main/java/com/andreas_kratzer/ghosttalk/ui/pages/PageEditorScreen.kt)
-  den `BulkReorderDialog`-Aufruf optional ersetzen durch Navigation zu
-  `structure_editor?focus={currentPageId}`.
-- **Entscheidung für später (nicht blind umsetzen):** ob `BulkReorderDialog` danach entfernt wird.
-  Empfehlung: erst beide Wege koexistieren lassen, nach positivem Caregiver-Feedback zum Struktur-
-  Editor den Dialog in einem separaten Schritt entfernen (eigener Commit, damit reviewbar/reverttbar).
+  den bisherigen Menüpunkt „Organisieren (Bulk Reorder)" so umbauen, dass er
+  `onOpenStructureEditor(page.id)` aufruft (Label beibehalten oder auf `structure_editor_open`
+  vereinheitlichen).
 
-**Review-Checkliste AP5.5**
+**Review-Checkliste AP5.2**
 - [ ] „Organisieren" im Raster-Editor öffnet den Struktur-Editor fokussiert auf die aktuelle Seite.
-- [ ] Falls Dialog entfernt wird: keine toten Referenzen/Strings; Security-Verhalten unverändert.
+- [ ] Security-Verhalten unverändert (Route ist bereits unter `isSecurityRequiredForEdit`).
 
-> Reihenfolge-Hinweis für Gemini: AP5.1 → AP5.2 → AP5.3 (jeweils kompilieren + Smoke-Test), dann
-> AP5.4 → AP5.5. Phase 5 nicht in einem einzigen Commit erschlagen — pro AP committen, damit der
-> Review (und ggf. ein Revert) handhabbar bleibt.
+#### AP5.3 — `BulkReorderDialog` + Dead Code entfernen
+
+Erst NACH AP5.2 (sonst kompiliert PageEditor nicht). Konkrete Streichliste (per grep verifiziert):
+
+- **Datei löschen:** `app/.../ui/pages/bulkreorder/BulkReorderDialog.kt`
+  (enthält auch `ReorderCategory` / `ReorderButtonItem`).
+- **`PageEditorScreen.kt`:** entfernen — Import (`:47`), `var showBulkReorderDialog` (`:91`),
+  der `if (showBulkReorderDialog) { BulkReorderDialog(...) }`-Block (`:425-445`); der Menüpunkt ist
+  in AP5.2 bereits umgebaut.
+- **`GridEditorViewModel.kt`:** `fun executeBulkMove(...)` (`:181-185`) und der Import
+  `...bulkreorder.ReorderCategory` (`:16`) werden tot → entfernen.
+- **`PageManagementDelegate.kt`:** `fun moveButtonsToPages(...)` (`:425`) wird tot (nur von
+  `executeBulkMove` genutzt) → entfernen. (Der ausführliche Sequentiell-Kommentar entfällt mit.)
+- **Strings:** Die hartcodierten Dialog-Texte verschwinden mit der Datei. Prüfen, ob durch das
+  Entfernen verwaiste String-Keys entstehen (vermutlich keine, da der Dialog Texte inline hatte).
+- Abschließend `:app:compileDebugKotlin` → es dürfen **keine** ungenutzten Referenzen/Imports
+  übrigbleiben (Compiler-Warnings beachten).
+
+**Review-Checkliste AP5.3**
+- [ ] `BulkReorderDialog.kt` gelöscht, kein verbleibender Import/Aufruf irgendwo (`grep`).
+- [ ] `executeBulkMove` + `moveButtonsToPages` entfernt, keine toten Referenzen.
+- [ ] App kompiliert ohne neue Warnings zu ungenutztem Code.
+- [ ] Raster-Editor öffnet/funktioniert weiterhin; „Organisieren" führt zum Struktur-Editor.
+
+> Reihenfolge-Hinweis für Gemini: **AP5.1 → AP5.2 → AP5.3**, jeweils einzeln committen
+> (kompilieren nach jedem Schritt). AP5.3 erst, wenn AP5.2 den Einstieg ersetzt hat — sonst bricht
+> der Build. Nicht in einem einzigen Commit erschlagen, damit Review und ggf. Revert handhabbar bleiben.
+
+#### AP5.4 — Magic Wizard auf den gemeinsamen Drag&Drop-Baustein umstellen
+
+Hintergrund: `PageSplitWizardDialog` enthält eine **dritte** handgerollte Drag&Drop-Kopie
+(eigene `WizardButtonItem`/`WizardCategory`, `boundsInRoot`-Tracking, Drag-Overlay). Nach AP5.3
+ist der `BulkReorderDialog` weg → `ChipDragDropState` hat mit Canvas + Wizard **zwei echte
+Konsumenten**, was die Extraktion rechtfertigt. (Korrigiert die frühere Annahme „nur ein Konsument".)
+
+- Internes Drag&Drop in `PageSplitWizardDialog` durch `rememberChipDragDropState()` /
+  `Modifier.chipDropTarget(state, key)` / `ChipDragDropContainer` ersetzen (wie beim Canvas).
+- Drag-Key = `WizardButtonItem.buttonId`; Drop-Ziele = Kategorien (`key = category.name`).
+- **Modal bleibt**, `onConfirm(PageSplitProposal)` unverändert — rein verhaltenserhaltend.
+
+**Review-Checkliste AP5.4**
+- [ ] Buttons zwischen Kategorien verschieben verhält sich identisch.
+- [ ] Keine eigene Bounds-/Overlay-Logik mehr im Wizard (dritte Kopie entfernt).
+- [ ] `onConfirm` liefert dieselbe `PageSplitProposal`-Struktur.
+
+---
+
+### Phase 6 — KI-Seiten-Split in den Struktur-Editor einbetten
+
+Ziel: Den modalen Magic-Wizard durch einen **„Vorschlags-Modus" im Struktur-Editor** ersetzen — die
+KI-Kategorien werden zu **provisorischen Zielzonen** im Fokus-Canvas, in die man Buttons mit demselben
+Drag&Drop-Paradigma einsortiert; „Übernehmen" ruft das bestehende `applyPageSplit`. Eigene Phase,
+eigene Commits. **Voraussetzung: AP5.4** (Wizard nutzt dann bereits den Baustein → DnD-Zonen-Logik
+ist wiederverwendbar).
+
+**Kernhürde:** provisorische Ziele — die Kategorien sind noch *keine* echten Seiten und dürfen
+NICHT in `pages`/`BookNavigationGraph` gelangen, bis bestätigt wird.
+
+#### AP6.1 — Vorschlags-Modus & Trigger
+- „✨ Vorschlag"-Aktion im Canvas (für die fokussierte Seite). Den bestehenden
+  `PageSplitOptInDialog` (Cloud/Token-Warnung) vorschalten — **nicht** umgehen.
+- `pageSplitViewModel.generatePageSplitProposal(focusedPageId)` → `PageSplitProposal` in lokalem
+  Screen-State halten (`proposal: PageSplitProposal?`), nicht persistieren.
+
+#### AP6.2 — Provisorische Zielzonen im Canvas
+- Bei aktivem Proposal zusätzlich zu den echten „führt zu"-Zielen die Kategorien als
+  **provisorische Drop-Zonen** rendern (`chipDropTarget(state, key = "proposal:<catName>")`),
+  visuell klar als Vorschlag markiert (z. B. gestrichelt).
+- Drag eines Button-Chips in eine Kategorie → **lokale** Proposal-Mutation (kein DB-Write).
+- Drop-Auswertung in `onDragEnd()`: Key-Präfix `proposal:` → Proposal anpassen statt `moveButtonToPage`.
+
+#### AP6.3 — Übernehmen / Verwerfen
+- „Übernehmen" → `pageSplitViewModel.applyPageSplit(focusedPageId, proposal)` (legt Unterseiten +
+  Nav-Buttons an + verschiebt — **bestehende Logik wiederverwenden, nichts neu bauen**).
+- „Verwerfen" → Proposal-State leeren. Danach aktualisiert sich Graph/Canvas automatisch über die Flows.
+
+#### AP6.4 — Alten Wizard-Einstieg umlenken
+- Im `PageLayoutAssistantDialog` den „Seiten-Split"-Einstieg auf den Vorschlags-Modus des
+  Struktur-Editors umleiten (analog AP5.2, via `?focus=` + Modus-Flag).
+- Danach kann `PageSplitWizardDialog` entfernt werden (separater Commit). Die **Nicht-DnD-Tools**
+  des Assistenten (`magicCleanup`, `shrinkGridToMinimum`, `insertHomeNavigationEveryX`,
+  `reorderByClickStats`, `deleteDeactivatedButtons`) bleiben im Assistenten — sie sind One-Shot-
+  Aktionen, kein Drag&Drop.
+
+**Review-Schwerpunkte Phase 6**
+- [ ] Provisorische Ziele tauchen NICHT im Graph/Baum/`pages` auf, bis „Übernehmen".
+- [ ] Opt-in/Token-Pfad wird nicht umgangen.
+- [ ] `applyPageSplit` unverändert wiederverwendet; Ergebnis identisch zum alten Wizard.
+- [ ] Drop unterscheidet sauber echte Ziele (`moveButtonToPage`) von provisorischen (`proposal:`).
+
+**Bewusst NICHT in Phase 6:** die übrigen Assistent-One-Shot-Tools in den Editor holen (separat,
+falls überhaupt gewünscht).
 
 ---
 

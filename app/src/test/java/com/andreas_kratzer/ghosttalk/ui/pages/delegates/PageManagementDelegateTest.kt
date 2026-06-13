@@ -225,35 +225,6 @@ class PageManagementDelegateTest {
         assertEquals(result, receivedResult)
     }
 
-    @Test
-    fun `moveButtonsToPages processes every move sequentially and in order`() = runTest(testDispatcher) {
-        delegate.init(backgroundScope)
-
-        coEvery {
-            moveButtonToPageUseCase.execute(any(), any(), any(), any())
-        } returns MoveButtonToPageUseCase.MoveResult.Success(mockk(), mockk())
-
-        val moves = listOf(
-            0 to "pageA",
-            5 to "pageA",
-            3 to "pageB"
-        )
-
-        var completed = false
-        delegate.moveButtonsToPages("src", moves, forceMove = true) { completed = true }
-
-        testScheduler.advanceUntilIdle()
-
-        // Each move must reach the use case exactly once, in the given order, so that every
-        // move reads the committed result of the previous one (guards against the concurrent
-        // read-modify-write that lost/duplicated buttons).
-        coVerify(ordering = io.mockk.Ordering.ORDERED) {
-            moveButtonToPageUseCase.execute("src", 0, "pageA", true)
-            moveButtonToPageUseCase.execute("src", 5, "pageA", true)
-            moveButtonToPageUseCase.execute("src", 3, "pageB", true)
-        }
-        assertEquals(true, completed)
-    }
 
     @Test
     fun `moveButtonWithInsert moves button and shifts elements`() = runTest(testDispatcher) {

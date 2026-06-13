@@ -66,7 +66,7 @@ fun GhostTalkNavHost(
             route == "content_management" || 
             route == "page_list" || 
             route == "templates" || 
-            route == "structure_editor" || 
+            route.startsWith("structure_editor") || 
             route.startsWith("page_editor") || 
             route.startsWith("template_editor") -> securityManager.isSecurityRequiredForEdit()
             else -> false
@@ -363,11 +363,18 @@ fun GhostTalkNavHost(
                 }
             )
         }
-        composable("structure_editor") {
+        composable(
+            "structure_editor?focus={focus}",
+            arguments = listOf(
+                navArgument("focus") { type = NavType.StringType; nullable = true; defaultValue = null }
+            )
+        ) { backStackEntry ->
+            val focus = backStackEntry.arguments?.getString("focus")
             val gridEditorViewModel = hiltViewModel<com.andreas_kratzer.ghosttalk.ui.pages.GridEditorViewModel>()
             StructureEditorScreen(
                 pageViewModel = pageViewModel,
                 gridEditorViewModel = gridEditorViewModel,
+                initialFocusedPageId = focus,
                 onEditPageInGrid = { pageId ->
                     navController.safeNavigate("page_editor/$pageId")
                 },
@@ -401,6 +408,9 @@ fun GhostTalkNavHost(
                         runOnMainThread {
                             navController.navigate("page_editor/$targetPageId")
                         }
+                    },
+                    onOpenStructureEditor = { focusedId ->
+                        navigateWithSecurity("structure_editor?focus=$focusedId")
                     }
                 )
             }

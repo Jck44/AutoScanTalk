@@ -25,6 +25,7 @@ import kotlinx.coroutines.launch
 fun StructureEditorScreen(
     pageViewModel: PageViewModel,
     gridEditorViewModel: GridEditorViewModel,
+    initialFocusedPageId: String? = null,
     onEditPageInGrid: (pageId: String) -> Unit,
     onNavigateBack: () -> Unit
 ) {
@@ -41,8 +42,9 @@ fun StructureEditorScreen(
         pages.associate { it.id to it.name }
     }
 
-    val initialFocusedId = remember(pages, startPageId) {
-        startPageId?.takeIf { id -> pages.any { it.id == id } }
+    val initialFocusedId = remember(pages, startPageId, initialFocusedPageId) {
+        initialFocusedPageId?.takeIf { id -> pages.any { it.id == id } }
+            ?: startPageId?.takeIf { id -> pages.any { it.id == id } }
             ?: pages.minByOrNull { it.orderIndex }?.id
             ?: ""
     }

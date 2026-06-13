@@ -44,9 +44,6 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 
-import com.andreas_kratzer.ghosttalk.ui.pages.bulkreorder.BulkReorderDialog
-
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PageEditorScreen(
@@ -57,7 +54,8 @@ fun PageEditorScreen(
     pageSplitViewModel: PageSplitViewModel = androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel(),
     onNavigateBack: () -> Unit,
     onEditPage: ((String, String?) -> Unit)? = null,
-    onExitEditor: (() -> Unit)? = null
+    onExitEditor: (() -> Unit)? = null,
+    onOpenStructureEditor: ((String) -> Unit)? = null
 ) {
     val allPages by pageViewModel.allPages.collectAsState()
     val unfilteredPages by pageViewModel.unfilteredPages.collectAsState()
@@ -88,7 +86,6 @@ fun PageEditorScreen(
     val showManualPromptDialog = remember { mutableStateOf(false) }
     val showWizardDialog = remember { mutableStateOf(false) }
     var manualPromptText by remember { mutableStateOf("") }
-    var showBulkReorderDialog by remember { mutableStateOf(false) }
     var showOverflowMenu by remember { mutableStateOf(false) }
 
     
@@ -229,10 +226,10 @@ fun PageEditorScreen(
                         modifier = Modifier.testTag("page_editor_split_wizard_trigger_menu")
                     )
                     DropdownMenuItem(
-                        text = { Text("Organisieren (Bulk Reorder)") },
+                        text = { Text(stringResource(R.string.structure_editor_open)) },
                         onClick = {
                             showOverflowMenu = false
-                            showBulkReorderDialog = true
+                            onOpenStructureEditor?.invoke(pageId)
                         },
                         leadingIcon = {
                             Icon(
@@ -418,28 +415,6 @@ fun PageEditorScreen(
                     } else {
                         android.widget.Toast.makeText(context, R.string.page_incoming_links_template_toast, android.widget.Toast.LENGTH_SHORT).show()
                     }
-                }
-            )
-        }
-
-        if (showBulkReorderDialog) {
-            BulkReorderDialog(
-                currentPage = page,
-                allAvailablePages = unfilteredPages,
-                templates = templates,
-                onConfirm = { categoryMoves ->
-                    gridEditorViewModel.executeBulkMove(page.id, categoryMoves)
-                    showBulkReorderDialog = false
-                },
-                onDismiss = { showBulkReorderDialog = false },
-                onNavigateToPage = { targetPageId ->
-                    onEditPage?.invoke(targetPageId, null)
-                },
-                onCreateNavigationButton = { index, config ->
-                    gridEditorViewModel.insertButtonConfig(page.id, index, config, false) { success -> }
-                },
-                onCreatePage = { name, rows, cols, templateId, callback ->
-                    gridEditorViewModel.createNewPage(name, rows, cols, page.bookId, templateId, callback)
                 }
             )
         }
