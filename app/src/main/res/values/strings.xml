@@ -647,5 +647,8 @@
     <string name="structure_reference_badge">Ref</string>
     <string name="structure_collapse">Zuklappen</string>
     <string name="structure_expand">Aufklappen</string>
+    <string name="structure_target_full">Zielseite ist voll – Raster vergrößern oder anders platzieren?</string>
+    <string name="structure_action_undo">Rückgängig</string>
+    <string name="structure_via_button">über Button: \"%1$s\"</string>
 </resources>
 

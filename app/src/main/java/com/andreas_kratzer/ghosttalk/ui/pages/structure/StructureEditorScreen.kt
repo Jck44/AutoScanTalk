@@ -17,10 +17,13 @@ import com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkScaffold
 import com.andreas_kratzer.ghosttalk.ui.pages.PageViewModel
 import kotlinx.coroutines.launch
 
+import com.andreas_kratzer.ghosttalk.ui.pages.GridEditorViewModel
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun StructureEditorScreen(
     pageViewModel: PageViewModel,
+    gridEditorViewModel: GridEditorViewModel,
     onEditPageInGrid: (pageId: String) -> Unit,
     onNavigateBack: () -> Unit
 ) {
@@ -60,9 +63,49 @@ fun StructureEditorScreen(
     val scope = rememberCoroutineScope()
     var showBottomSheet by remember { mutableStateOf(false) }
 
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    val onMoveButton = { fromIndex: Int, targetPageId: String ->
+        gridEditorViewModel.moveButtonToPage(
+            fromPageId = focusedPageId,
+            fromIndex = fromIndex,
+            toPageId = targetPageId,
+            forceMove = false
+        ) { result ->
+            when (result) {
+                is com.andreas_kratzer.ghosttalk.core.domain.pages.MoveButtonToPageUseCase.MoveResult.Success -> {
+                    scope.launch {
+                        snackbarHostState.currentSnackbarData?.dismiss()
+                        val snackbarResult = snackbarHostState.showSnackbar(
+                            message = pageViewModel.getApplication<android.app.Application>().getString(R.string.button_move_success),
+                            actionLabel = pageViewModel.getApplication<android.app.Application>().getString(R.string.structure_action_undo),
+                            duration = SnackbarDuration.Long
+                        )
+                        if (snackbarResult == SnackbarResult.ActionPerformed) {
+                            gridEditorViewModel.undo { undoMsg ->
+                                scope.launch {
+                                    snackbarHostState.showSnackbar(undoMsg)
+                                }
+                            }
+                        }
+                    }
+                }
+                is com.andreas_kratzer.ghosttalk.core.domain.pages.MoveButtonToPageUseCase.MoveResult.TargetFull -> {
+                    scope.launch {
+                        snackbarHostState.showSnackbar(
+                            message = pageViewModel.getApplication<android.app.Application>().getString(R.string.structure_target_full)
+                        )
+                    }
+                }
+                else -> {}
+            }
+        }
+    }
+
     GhostTalkScaffold(
         title = stringResource(R.string.structure_editor_title),
         onNavigateBack = onNavigateBack,
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         actions = {
             if (!isTablet) {
                 IconButton(onClick = { showBottomSheet = true }) {
@@ -109,6 +152,7 @@ fun StructureEditorScreen(
                 pageNames = pageNames,
                 onFocus = { focusedPageId = it },
                 onEditPageInGrid = onEditPageInGrid,
+                onMoveButton = onMoveButton,
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxHeight()

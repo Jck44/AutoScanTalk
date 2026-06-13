@@ -364,8 +364,10 @@ fun GhostTalkNavHost(
             )
         }
         composable("structure_editor") {
+            val gridEditorViewModel = hiltViewModel<com.andreas_kratzer.ghosttalk.ui.pages.GridEditorViewModel>()
             StructureEditorScreen(
                 pageViewModel = pageViewModel,
+                gridEditorViewModel = gridEditorViewModel,
                 onEditPageInGrid = { pageId ->
                     navController.safeNavigate("page_editor/$pageId")
                 },

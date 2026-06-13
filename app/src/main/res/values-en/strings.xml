@@ -642,5 +642,8 @@
     <string name="structure_reference_badge">Ref</string>
     <string name="structure_collapse">Collapse</string>
     <string name="structure_expand">Expand</string>
+    <string name="structure_target_full">Target page is full – enlarge grid or place elsewhere?</string>
+    <string name="structure_action_undo">Undo</string>
+    <string name="structure_via_button">via button: \"%1$s\"</string>
 </resources>
 
