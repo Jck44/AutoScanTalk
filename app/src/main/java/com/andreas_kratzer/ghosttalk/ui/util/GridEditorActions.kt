@@ -32,7 +32,9 @@ interface GridEditorActions {
     fun moveButton(itemId: String, fromIndex: Int, toIndex: Int)
     fun moveButtonWithInsert(itemId: String, fromIndex: Int, toIndex: Int)
     fun undo(onSuccess: (String) -> Unit)
-    val canUndo: StateFlow<Boolean>
+    fun redo(onSuccess: (String) -> Unit = {})
+    fun undoTo(index: Int)
+    val historyState: StateFlow<com.andreas_kratzer.ghosttalk.ui.pages.history.HistoryState>
     
     // For ButtonConfigDialog
     val isExecuting: StateFlow<Boolean>

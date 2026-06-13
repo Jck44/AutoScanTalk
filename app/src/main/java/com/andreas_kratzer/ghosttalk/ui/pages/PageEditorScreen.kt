@@ -40,6 +40,7 @@ import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import com.andreas_kratzer.ghosttalk.ui.pages.history.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -80,6 +81,7 @@ fun PageEditorScreen(
     // Layout & Page Split Dialog States
     val showLayoutAssistantDialog = remember { mutableStateOf(false) }
     var showOverflowMenu by remember { mutableStateOf(false) }
+    var showHistoryPanel by remember { mutableStateOf(false) }
 
     val handleNavigateBack = {
         if (localName.isNotBlank()) {
@@ -136,7 +138,63 @@ fun PageEditorScreen(
         },
         actions = {
             val isEditPreviewActive by pageViewModel.isEditPreviewActive.collectAsState()
-            
+            val historyState by gridEditorViewModel.historyState.collectAsState()
+
+            IconButton(
+                onClick = {
+                    gridEditorViewModel.undo { message ->
+                        coroutineScope.launch { snackbarHostState.showSnackbar(message) }
+                    }
+                },
+                enabled = historyState.canUndo,
+                modifier = Modifier.testTag("page_editor_undo_button")
+            ) {
+                val nextUndoLabel = historyState.entries.firstOrNull()?.let { resolveEditLabel(it.label) } ?: ""
+                val tooltipText = if (nextUndoLabel.isNotEmpty()) {
+                    stringResource(R.string.history_undo_tooltip, nextUndoLabel)
+                } else {
+                    stringResource(R.string.structure_action_undo)
+                }
+                Icon(
+                    imageVector = GhostTalkIcons.Undo,
+                    contentDescription = tooltipText,
+                    tint = if (historyState.canUndo) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f)
+                )
+            }
+
+            IconButton(
+                onClick = {
+                    gridEditorViewModel.redo { message ->
+                        coroutineScope.launch { snackbarHostState.showSnackbar(message) }
+                    }
+                },
+                enabled = historyState.canRedo,
+                modifier = Modifier.testTag("page_editor_redo_button")
+            ) {
+                val nextRedoLabel = historyState.nextRedoLabel?.let { resolveEditLabel(it) } ?: ""
+                val tooltipText = if (nextRedoLabel.isNotEmpty()) {
+                    stringResource(R.string.history_redo_tooltip, nextRedoLabel)
+                } else {
+                    stringResource(R.string.history_redo_action) // Fallback string
+                }
+                Icon(
+                    imageVector = GhostTalkIcons.Redo,
+                    contentDescription = tooltipText,
+                    tint = if (historyState.canRedo) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f)
+                )
+            }
+
+            IconButton(
+                onClick = { showHistoryPanel = true },
+                modifier = Modifier.testTag("page_editor_history_button")
+            ) {
+                Icon(
+                    imageVector = GhostTalkIcons.History,
+                    contentDescription = stringResource(R.string.history_panel_title),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
             IconButton(
                 onClick = { pageViewModel.toggleEditPreviewActive() },
                 modifier = Modifier.testTag("page_editor_preview_toggle")
@@ -346,5 +404,94 @@ fun PageEditorScreen(
                 }
             )
         }
+
+        if (showHistoryPanel) {
+            val historyState by gridEditorViewModel.historyState.collectAsState()
+            androidx.compose.material3.ModalBottomSheet(
+                onDismissRequest = { showHistoryPanel = false }
+            ) {
+                androidx.compose.foundation.layout.Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp)
+                ) {
+                    Text(
+                        text = stringResource(R.string.history_panel_title),
+                        style = MaterialTheme.typography.titleLarge,
+                        modifier = Modifier.padding(bottom = 16.dp)
+                    )
+                    
+                    if (historyState.entries.isEmpty()) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 32.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = stringResource(R.string.history_empty),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    } else {
+                        androidx.compose.foundation.lazy.LazyColumn(
+                            verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            items(historyState.entries.size) { index ->
+                                val entry = historyState.entries[index]
+                                androidx.compose.material3.Surface(
+                                    onClick = {
+                                        gridEditorViewModel.undoTo(index)
+                                        showHistoryPanel = false
+                                    },
+                                    shape = MaterialTheme.shapes.medium,
+                                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    androidx.compose.foundation.layout.Row(
+                                        modifier = Modifier.padding(12.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(12.dp)
+                                    ) {
+                                        val icon = when (entry.icon) {
+                                            EditIcon.DELETE -> Icons.Default.Close
+                                            EditIcon.MOVE -> GhostTalkIcons.DragHandle
+                                            EditIcon.EDIT -> GhostTalkIcons.AutoAwesome
+                                            EditIcon.REORDER -> GhostTalkIcons.Sort
+                                            EditIcon.PAGE -> GhostTalkIcons.GridView
+                                            EditIcon.BOOK -> GhostTalkIcons.Book
+                                        }
+                                        Icon(
+                                            imageVector = icon,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.primary
+                                        )
+                                        Text(
+                                            text = resolveEditLabel(entry.label),
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            color = MaterialTheme.colorScheme.onSurface
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
+}
+
+@Composable
+fun resolveEditLabel(label: EditLabel): String {
+    val context = LocalContext.current
+    val formatArgs = label.args.map { arg ->
+        if (arg is EditLabel) {
+            resolveEditLabel(arg)
+        } else {
+            arg
+        }
+    }.toTypedArray()
+    return context.getString(label.resId, *formatArgs)
 }

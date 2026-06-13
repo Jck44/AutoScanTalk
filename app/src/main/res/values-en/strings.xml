@@ -661,6 +661,27 @@
     <string name="structure_search_no_results">No results</string>
     <string name="structure_show_more">Show %1$d more</string>
     <string name="structure_show_less">Show less</string>
+    <!-- Edit History / Undo Redo -->
+    <string name="history_delete_button">Button \"%1$s\" deleted</string>
+    <string name="history_add_button">Button \"%1$s\" added</string>
+    <string name="history_edit_button">Button \"%1$s\" modified</string>
+    <string name="history_insert_button">Button \"%1$s\" inserted</string>
+    <string name="history_update_settings">Page settings for \"%1$s\" modified</string>
+    <string name="history_update_row_name">Row %1$d renamed to \"%2$s\"</string>
+    <string name="history_move_row">Row %1$d moved to row %2$d</string>
+    <string name="history_move_button">Button \"%1$s\" moved from position %2$d to %3$d</string>
+    <string name="history_move_button_with_insert">Button \"%1$s\" shifted</string>
+    <string name="history_panel_title">Edit History</string>
+    <string name="history_empty">No edits in history</string>
+    <string name="history_undo_tooltip">Undo: %1$s</string>
+    <string name="history_redo_tooltip">Redo: %1$s</string>
+    <string name="history_redo_action">Redo</string>
+    <string name="history_reorder">Layout optimized</string>
+    <string name="history_create_page">Page \"%1$s\" created</string>
+    <string name="history_delete_page">Page \"%1$s\" deleted</string>
+    <string name="history_move_button_to_page">Button \"%1$s\" moved to page \"%2$s\"</string>
+    <string name="history_duplicate_button_to_page">Button \"%1$s\" duplicated to page \"%2$s\"</string>
+    <string name="history_page_split">Page \"%1$s\" split</string>
     <string name="structure_search_clear">Clear search</string>
 </resources>
 

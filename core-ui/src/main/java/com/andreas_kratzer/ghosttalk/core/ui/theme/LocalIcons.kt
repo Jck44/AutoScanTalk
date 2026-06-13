@@ -1533,5 +1533,47 @@ object GhostTalkIcons {
                 close()
             }
         }
+
+    val Undo: ImageVector
+        get() = materialIcon(name = "AutoMirrored.Filled.Undo", autoMirror = true) {
+            materialPath {
+                moveTo(12.5f, 8.0f)
+                curveToRelative(-2.65f, 0.0f, -5.05f, 1.0f, -6.9f, 2.6f)
+                lineTo(2.0f, 7.0f)
+                verticalLineToRelative(9.0f)
+                horizontalLineToRelative(9.0f)
+                lineToRelative(-3.62f, -3.62f)
+                curveToRelative(1.39f, -1.16f, 3.16f, -1.88f, 5.12f, -1.88f)
+                curveToRelative(4.42f, 0.0f, 8.0f, 3.58f, 8.0f, 8.0f)
+                reflectiveCurveToRelative(-3.58f, 8.0f, -8.0f, 8.0f)
+                curveToRelative(-3.38f, 0.0f, -6.27f, -2.1f, -7.42f, -5.05f)
+                lineToRelative(-1.79f, 0.62f)
+                curveTo(4.91f, 21.27f, 8.35f, 24.0f, 12.5f, 24.0f)
+                curveToRelative(5.52f, 0.0f, 10.0f, -4.48f, 10.0f, -10.0f)
+                reflectiveCurveTo(18.02f, 8.0f, 12.5f, 8.0f)
+                close()
+            }
+        }
+
+    val Redo: ImageVector
+        get() = materialIcon(name = "AutoMirrored.Filled.Redo", autoMirror = true) {
+            materialPath {
+                moveTo(18.4f, 10.6f)
+                curveToRelative(-1.85f, -1.6f, -4.25f, -2.6f, -6.9f, -2.6f)
+                curveTo(5.98f, 8.0f, 1.5f, 12.48f, 1.5f, 18.0f)
+                reflectiveCurveTo(5.98f, 28.0f, 11.5f, 28.0f)
+                curveToRelative(4.15f, 0.0f, 7.59f, -2.73f, 8.79f, -6.38f)
+                lineToRelative(-1.79f, -0.62f)
+                curveToRelative(-0.95f, 2.95f, -3.84f, 5.0f, -7.0f, 5.0f)
+                curveToRelative(-4.42f, 0.0f, -8.0f, -3.58f, -8.0f, -8.0f)
+                reflectiveCurveToRelative(3.58f, -8.0f, 8.0f, -8.0f)
+                curveToRelative(1.96f, 0.0f, 3.73f, 0.72f, 5.12f, 1.88f)
+                lineTo(13.0f, 16.0f)
+                horizontalLineToRelative(9.0f)
+                verticalLineTo(7.0f)
+                lineTo(18.4f, 10.6f)
+                close()
+            }
+        }
 }
 

@@ -25,6 +25,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.sync.withLock
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -245,7 +246,10 @@ class PageSplitDelegate @Inject constructor(
         scope.launch(Dispatchers.IO) {
             try {
                 _isPageSplitLoading.value = true
-                
+                val sourcePageVal = pageManagementDelegate.getPageById(pageId) ?: throw IllegalArgumentException("Source page not found")
+                val bookIdVal = sourcePageVal.bookId
+                val preSplitPages = pageManagementDelegate.pageRepository.getPagesForBook(bookIdVal)
+
                 val finalSourcePage = pageManagementDelegate.pageRepository.runInTransaction {
                     val sourcePage = pageManagementDelegate.getPageById(pageId) ?: throw IllegalArgumentException("Source page not found")
                     val bookId = sourcePage.bookId
@@ -343,6 +347,20 @@ class PageSplitDelegate @Inject constructor(
                     )
                     pageManagementDelegate.pageRepository.updatePage(updatedPage)
                     updatedPage
+                }
+
+                val command = com.andreas_kratzer.ghosttalk.ui.pages.history.PageSplitCommand(
+                    delegate = pageManagementDelegate,
+                    bookId = bookIdVal,
+                    sourcePageId = pageId,
+                    preSplitPages = preSplitPages,
+                    label = com.andreas_kratzer.ghosttalk.ui.pages.history.EditLabel(
+                        com.andreas_kratzer.ghosttalk.R.string.history_page_split,
+                        listOf(sourcePageVal.name)
+                    )
+                )
+                pageManagementDelegate.history.mutex.withLock {
+                    pageManagementDelegate.history.execute(command)
                 }
 
                 withContext(Dispatchers.Main) {

@@ -39,8 +39,16 @@ class TemplateViewModel @Inject constructor(
     override val availableGeminiTools = geminiUseCase.getAvailableTools()
 
     private val undoStack = mutableListOf<PageTemplate>()
-    private val _canUndo = MutableStateFlow(false)
-    override val canUndo: StateFlow<Boolean> = _canUndo.asStateFlow()
+    private val _historyState = MutableStateFlow(com.andreas_kratzer.ghosttalk.ui.pages.history.HistoryState())
+    override val historyState: StateFlow<com.andreas_kratzer.ghosttalk.ui.pages.history.HistoryState> = _historyState.asStateFlow()
+
+    private fun updateHistoryState() {
+        _historyState.value = com.andreas_kratzer.ghosttalk.ui.pages.history.HistoryState(
+            canUndo = undoStack.isNotEmpty(),
+            canRedo = false,
+            entries = emptyList()
+        )
+    }
 
     private fun saveUndoState(templateId: String) {
         templates.value.find { it.id == templateId }?.let { current ->
@@ -48,20 +56,21 @@ class TemplateViewModel @Inject constructor(
                 undoStack.removeAt(0)
             }
             undoStack.add(current.copy(buttonConfigs = current.buttonConfigs.toList()))
-            _canUndo.value = true
+            updateHistoryState()
         }
     }
 
     override fun undo(onSuccess: (String) -> Unit) {
         if (undoStack.isNotEmpty()) {
             val previousState = undoStack.removeLast()
-            if (undoStack.isEmpty()) {
-                _canUndo.value = false
-            }
+            updateHistoryState()
             updateTemplate(previousState)
             onSuccess("Aktion rückgängig gemacht")
         }
     }
+
+    override fun redo(onSuccess: (String) -> Unit) {}
+    override fun undoTo(index: Int) {}
 
     private val _searchQuery = MutableStateFlow("")
     val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()

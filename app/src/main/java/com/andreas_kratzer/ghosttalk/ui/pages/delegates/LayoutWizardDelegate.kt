@@ -17,6 +17,9 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.sync.withLock
+import com.andreas_kratzer.ghosttalk.R
+import com.andreas_kratzer.ghosttalk.ui.pages.history.*
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -222,11 +225,6 @@ class LayoutWizardDelegate @Inject constructor(
                     return@launch
                 }
 
-                // Save the undo state before doing any operations
-                withContext(Dispatchers.Main) {
-                    pageManagementDelegate.saveUndoState(page)
-                }
-
                 val activeButtonsOnly = page.buttonConfigs.filterNotNull().filter { it.isActive }
 
                 // 2. Reorder buttons by usage statistics
@@ -333,11 +331,18 @@ class LayoutWizardDelegate @Inject constructor(
                     scanPattern = finalScanPattern,
                     rowNames = if (rowNames.isNotEmpty()) rowNames else page.rowNames
                 )
+                val command = PageFullSnapshotCommand(
+                    delegate = pageManagementDelegate,
+                    oldPage = page,
+                    newPage = updatedPage,
+                    label = EditLabel(R.string.history_reorder),
+                    icon = EditIcon.REORDER
+                )
+                pageManagementDelegate.history.mutex.withLock {
+                    pageManagementDelegate.history.execute(command)
+                }
 
-                pageManagementDelegate.pageRepository.updatePage(updatedPage)
-                bookRepository.updateLastModified(page.bookId)
                 withContext(Dispatchers.Main) {
-                    pageManagementDelegate.setCurrentPage(updatedPage)
                     _magicCleanupProgress.value = null
                     onComplete()
                 }

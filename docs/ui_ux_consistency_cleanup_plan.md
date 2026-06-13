@@ -3,7 +3,11 @@
 **Zielgruppe dieses Dokuments:** Gemini (Android Studio / CLI) als ausführender Agent.
 **Arbeitsmodus:** Claude reviewt und plant, Gemini setzt um. **Abschnitt 0 zuerst lesen.**
 
-Dies ist die **Nachlese zum Facelift** (`docs/ui_ux_redesign_plan.md`, AP 1–8 umgesetzt). Behoben werden Restbestände und Anti-Patterns, die das Review vom 2026-06-13 gefunden hat — **reine Konsistenz-/Aufräumarbeit, kein neues Feature, keine Verhaltensänderung.**
+Dies ist die **Nachlese zum Facelift** (`docs/ui_ux_redesign_plan.md`, AP 1–8 umgesetzt). Behoben werden Restbestände und Anti-Patterns, die das Review vom 2026-06-13 gefunden hat.
+
+Das Dokument hat **zwei Teile mit unterschiedlichem Charakter**:
+- **Teil A (AP 1–6)** — reine Konsistenz-/Aufräumarbeit, kein neues Feature, keine Verhaltensänderung. Es gelten die Regeln in Abschnitt 0.
+- **Teil B (AP B1–B5)** — **Editor-Kohäsion „ein Editor, zwei Modi" (Stufe B)**, eine bewusste **Architektur-/Verhaltensänderung** (Modus-Container + Route-Konsolidierung). Hierfür gelten **eigene Regeln** (siehe Teil B), die Abschnitt 0 für diese APs ausdrücklich erweitern. Teil B berührt Navigationslogik und überschneidet sich mit dem Nav-Redesign-Track → **vor Umsetzung mit dem Nav-Plan koordinieren.**
 
 ## Abgrenzung zur neuen Navigationsseite (wichtig)
 
@@ -34,7 +38,12 @@ Parallel wird eine **neue Navigationsseite / Informationsarchitektur** geplant. 
 | 4 | Restliche hartcodierte UI-Strings → Resources | mittel | offen |
 | 5 | Speichern/Abbrechen-Balken hinter Navigationsleiste (Profil bearbeiten) | klein | offen |
 | 6 | Windowed/Freeform offiziell unterstützen (resizeableActivity + Mindestgröße) | klein | offen |
-| R | Abschluss-Review (Claude) | — | offen |
+| R | Abschluss-Review (Claude) — **nur Teil A** | — | offen |
+| B1 | Geteilte Editor-Top-Bar extrahieren | klein | offen |
+| B2 | Geteilte visuelle Token für Seite/Button (Raster/Chip/Graph) | mittel | offen |
+| B3 | Modus-Container + Route-Konsolidierung (`editor/{pageId}?mode=`) | **hoch** | offen |
+| B4 | Baum-Navigator als geteiltes Element in beiden Modi | mittel | offen |
+| B5 | Übergänge/Terminologie entschlacken + Undo-Konsistenz | klein | offen |
 
 ---
 
@@ -225,6 +234,97 @@ Diese Befunde aus dem Review sind **bewusst nicht** Teil dieses Plans, weil sie 
 - **String-basiertes Routing & Schutz-Check** (`route.startsWith("settings")`, Sonderfall `launchSingleTop`) → bei Nav-Redesign auf typisierte Routen heben.
 - **Zwei identische Settings-Zahnräder** (global vs. buchbezogen, `isGlobal=true/false`) — Disambiguierung im neuen Nav-Konzept lösen.
 - **Doppelte Affordance** im BookList-Empty-State (Aktionsbutton + FAB) — bewusst lassen oder im Nav-Konzept klären.
+
+---
+
+## Teil B — Editor-Kohäsion: „Ein Editor, zwei Modi" (Stufe B)
+
+> ⚠️ **Scope-Wechsel ggü. Teil A.** Dies ist eine **Architektur-/Verhaltensänderung**, kein Cleanup.
+> Sie führt Seiten-Editor ([PageEditorScreen](../app/src/main/java/com/andreas_kratzer/ghosttalk/ui/pages/PageEditorScreen.kt))
+> und Struktur-Editor ([StructureEditorScreen](../app/src/main/java/com/andreas_kratzer/ghosttalk/ui/pages/structure/StructureEditorScreen.kt))
+> zu **einer** Editier-Oberfläche zusammen, die zwischen zwei Modi umschaltet.
+
+### B.0 Regeln für Teil B (erweitern Abschnitt 0)
+
+- **Erlaubt** (abweichend von Regel 0.2): Änderungen an `GhostTalkNavHost` (Routen), an den beiden
+  Editor-Screens und ihren Einstiegen. **Weiterhin tabu:** Datenmodelle, Repositories, `core-scanning`,
+  ViewModel-**Logik** (Signaturen dürfen für die Zusammenführung erweitert, aber nicht in ihrer
+  Semantik geändert werden).
+- **Koordination mit dem Nav-Redesign-Plan ist Pflicht:** Routen/IA gehören eigentlich dorthin. AP B3
+  (Route-Konsolidierung) **erst** umsetzen, wenn mit dem Nav-Plan abgestimmt ist, dass `editor/...`
+  dort nicht konkurrierend angefasst wird. Sonst Datei-Kollision in `GhostTalkNavHost`.
+- **`testTag` erhalten** — die bestehenden `page_editor_*`/`structure_*`-Tags dürfen NICHT verschwinden
+  (Tests). Beim Zusammenführen die Tags an die entsprechenden Mode-Bodies durchreichen.
+- **Ein AP = ein Commit**, Reihenfolge B1 → B5, nach jedem AP `assembleDebug` grün.
+
+### Zielbild
+
+Eine Werkbank, fokussiert auf **eine** Seite, mit Umschalter in einer **geteilten Top-Bar**:
+- **Raster** = Buttons *innerhalb* der Seite bearbeiten (heutiger `GridEditorContent`).
+- **Struktur** = Verbindungen/Graph + Baum *zwischen* Seiten (heutige Struktur-Inhalte).
+
+Moduswechsel behält die fokussierte Seite. Der Baum-Navigator (buchweit) ist in beiden Modi
+erreichbar und steuert den Fokus für beide.
+
+### AP B1 — Geteilte Editor-Top-Bar extrahieren (klein, Vorarbeit)
+
+- Neues Composable `EditorTopBar` (in `app/.../ui/pages/` oder `core-ui`): Slots für **Titel**
+  (editierbarer Seitenname), **Modus-Umschalter** (zunächst leer/optional), **Aktionen**, **Zurück/Exit**.
+- Beide Screens adoptieren es **verhaltenserhaltend** (gleiche Titelbehandlung, gleiche Exit-Semantik,
+  gleiche Icon-Anordnung). Noch **keine** Modus-Logik.
+- Beseitigt schon hier die Top-Bar-Divergenz (editierbarer Titel + 5 Icons vs. statischer Titel + Menü).
+
+**Fertig wenn:** beide Editoren nutzen `EditorTopBar`; Top-Bars sehen gleich aus; `testTag`s erhalten; Build grün.
+
+### AP B2 — Geteilte visuelle Token für Seite/Button (mittel)
+
+- Ein gemeinsamer Token-/Helper-Satz „so sieht ein **Navigations**- vs. **Sprech**-Button aus"
+  (Farbe, Icon) und „so sieht ein **Seiten**-Knoten aus", genutzt in **Rasterzelle, Struktur-Chip
+  und Graph-Knoten**. Lage: `core-ui`.
+- Rein visuell/verhaltenserhaltend — macht dasselbe Objekt über alle Darstellungen wiedererkennbar
+  (der größte „aus-einem-Guss"-Hebel).
+
+**Fertig wenn:** Nav-/Sprech-Button und Seiten-Knoten verwenden in Raster, Chip und Graph denselben
+Token; visuell gegengeprüft (Light/Dark); Build grün.
+
+### AP B3 — Modus-Container + Route-Konsolidierung (HOCH — Kernstück)
+
+- Neuer Container (`PageWorkbenchScreen` oder erweitertes Screen) hostet **beide Mode-Bodies** für
+  **eine** `pageId`, mit `SegmentedButton`-Umschalter „Raster | Struktur" in der `EditorTopBar`.
+- Route `editor/{pageId}?mode={raster|struktur}` (Default `raster`); die bisherigen
+  `page_editor/{pageId}` und `structure_editor?focus=` darauf zusammenführen (oder als Aliase
+  weiterleiten, bis alle Einstiege migriert sind).
+- Moduswechsel **behält `pageId`** (kein Fokusverlust). Bestehende Inhalte werden zu Mode-Bodies:
+  Raster = `GridEditorContent`, Struktur = `StructureFocusCanvas`/Baum.
+- `testTag`s der alten Screens an die Mode-Bodies durchreichen.
+
+**Fertig wenn:** eine Route, ein Screen, zwei umschaltbare Modi; Wechsel behält die Seite; alle
+bisherigen Funktionen beider Editoren erreichbar; Tests grün; Build grün. **Vorher Nav-Plan-Koordination.**
+
+### AP B4 — Baum-Navigator als geteiltes Element (mittel)
+
+- `StructureTreeNavigator` in **beiden** Modi erreichbar (Tablet: Seitenpane; Phone: Drawer/Sheet,
+  Muster aus dem heutigen Struktur-Editor). Tap im Baum setzt die fokussierte `pageId` für beide Modi.
+
+**Fertig wenn:** Aus dem Raster-Modus heraus per Baum die Seite wechseln; Struktur-Modus folgt demselben Fokus; Build grün.
+
+### AP B5 — Übergänge entschlacken, Terminologie & Undo-Konsistenz (klein)
+
+- Redundante Übergänge entfernen: der `Link`-Icon **und** der Overflow-Eintrag „Struktur bearbeiten"
+  in `PageEditorScreen` werden durch den **Modus-Umschalter** ersetzt.
+- Einheitliche Terminologie/Icons („Raster" / „Struktur") überall.
+- **Undo-Konsistenz:** Sicherstellen, dass sich Undo in beiden Modi identisch anfühlt — Abstimmung mit
+  [docs/undo_redo_history_plan.md](undo_redo_history_plan.md) (falls Undo dort buchweit/historienbasiert wird).
+
+**Fertig wenn:** nur noch der Modus-Umschalter als Übergang; konsistente Begriffe/Icons; Undo gleich in beiden Modi; Build grün.
+
+### Review-Schwerpunkte Teil B (Claude)
+
+- [ ] Keine `testTag`-Regression (page_editor_*, structure_*).
+- [ ] Kein Fokusverlust beim Moduswechsel; Round-Trip stabil.
+- [ ] AP B3 wurde mit dem Nav-Plan koordiniert (keine konkurrierende `GhostTalkNavHost`-Änderung).
+- [ ] Keine Semantikänderung an ViewModels/Delegates (nur Verdrahtung).
+- [ ] Nutzermodus (`PageScreen`) unberührt.
 
 ---
 

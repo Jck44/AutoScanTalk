@@ -13,9 +13,11 @@ import com.andreas_kratzer.ghosttalk.ui.pages.delegates.PageManagementDelegate
 import com.andreas_kratzer.ghosttalk.ui.pages.delegates.SuggestionsDelegate
 import com.andreas_kratzer.ghosttalk.ui.pages.delegates.TtsPreviewDelegate
 import com.andreas_kratzer.ghosttalk.ui.util.GridEditorActions
+import com.andreas_kratzer.ghosttalk.ui.pages.history.HistoryState
 
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
@@ -83,10 +85,41 @@ class GridEditorViewModel @Inject constructor(
     }
 
     override fun undo(onSuccess: (String) -> Unit) {
-        pageManagementDelegate.undo(onSuccess)
+        viewModelScope.launch {
+            try {
+                if (pageManagementDelegate.history.undo()) {
+                    onSuccess("Aktion rückgängig gemacht")
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("GridEditorViewModel", "Undo failed", e)
+            }
+        }
     }
 
-    override val canUndo: StateFlow<Boolean> = pageManagementDelegate.canUndo
+    override fun redo(onSuccess: (String) -> Unit) {
+        viewModelScope.launch {
+            try {
+                if (pageManagementDelegate.history.redo()) {
+                    onSuccess("Aktion wiederholt")
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("GridEditorViewModel", "Redo failed", e)
+            }
+        }
+    }
+
+    override fun undoTo(index: Int) {
+        viewModelScope.launch {
+            try {
+                pageManagementDelegate.history.undoTo(index)
+            } catch (e: Exception) {
+                android.util.Log.e("GridEditorViewModel", "UndoTo failed", e)
+            }
+        }
+    }
+
+    override val historyState: StateFlow<HistoryState>
+        get() = pageManagementDelegate.history.state
 
     override fun updateGridSettings(
         itemId: String,

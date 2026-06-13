@@ -666,6 +666,27 @@
     <string name="structure_search_no_results">Keine Ergebnisse</string>
     <string name="structure_show_more">%1$d weitere anzeigen</string>
     <string name="structure_show_less">Weniger anzeigen</string>
+    <!-- Edit History / Undo Redo -->
+    <string name="history_delete_button">Knopf „%1$s“ gelöscht</string>
+    <string name="history_add_button">Knopf „%1$s“ hinzugefügt</string>
+    <string name="history_edit_button">Knopf „%1$s“ geändert</string>
+    <string name="history_insert_button">Knopf „%1$s“ eingefügt</string>
+    <string name="history_update_settings">Seiteneinstellungen für „%1$s“ geändert</string>
+    <string name="history_update_row_name">Zeile %1$d in „%2$s“ umbenannt</string>
+    <string name="history_move_row">Zeile %1$d nach Zeile %2$d verschoben</string>
+    <string name="history_move_button">Knopf „%1$s“ von Position %2$d nach %3$d verschoben</string>
+    <string name="history_move_button_with_insert">Knopf „%1$s“ mit Verschieben bewegt</string>
+    <string name="history_panel_title">Verlauf der Änderungen</string>
+    <string name="history_empty">Keine Änderungen im Verlauf</string>
+    <string name="history_undo_tooltip">Rückgängig: %1$s</string>
+    <string name="history_redo_tooltip">Wiederholen: %1$s</string>
+    <string name="history_redo_action">Wiederholen</string>
+    <string name="history_reorder">Layout optimiert</string>
+    <string name="history_create_page">Seite „%1$s“ erstellt</string>
+    <string name="history_delete_page">Seite „%1$s“ gelöscht</string>
+    <string name="history_move_button_to_page">Knopf „%1$s“ auf Seite „%2$s“ verschoben</string>
+    <string name="history_duplicate_button_to_page">Knopf „%1$s“ auf Seite „%2$s“ dupliziert</string>
+    <string name="history_page_split">Seite „%1$s“ aufgeteilt</string>
     <string name="structure_search_clear">Suche löschen</string>
 </resources>
 

@@ -153,12 +153,19 @@ class PageManagementDelegateTest {
 
     @Test
     fun `createNewPage delegates to use case`() = runTest(testDispatcher) {
+        val generatedId = "p-new"
+        coEvery { createPageUseCaseMock.execute(any(), any(), any(), any(), any(), any()) } returns generatedId
+        val page = Page(id = generatedId, bookId = "book1", name = "New Page", rows = 2, columns = 2, buttonConfigs = emptyList())
+        coEvery { pageRepository.getPageById(generatedId) } returns page
+
         delegate.init(backgroundScope)
         
         delegate.createNewPage("New Page", 2, 2, "book1", null) {}
         
-        coVerify { createPageUseCaseMock.execute("New Page", 2, 2, "book1", any(), any()) }
-        coVerify { bookRepository.updateLastModified("book1", any()) }
+        testScheduler.advanceUntilIdle()
+        
+        coVerify { createPageUseCaseMock.execute("New Page", 2, 2, "book1", any(), null) }
+        coVerify { bookRepository.updateLastModified("book1", any(), any()) }
     }
 
     @Test
@@ -276,7 +283,7 @@ class PageManagementDelegateTest {
         
         delegate.init(backgroundScope)
         
-        // Change button configuration at index 0 (which triggers saveUndoStateForPage)
+        // Change button configuration at index 0
         val newConfig = ButtonConfig(id = "b1_new", label = "L1_new")
         delegate.insertButtonConfig("page1", 0, newConfig, forceShift = false) { }
         
@@ -286,17 +293,75 @@ class PageManagementDelegateTest {
         assertEquals(newConfig, updatedPageSlot.captured.buttonConfigs[0])
         
         // Verify we can undo
-        assertEquals(true, delegate.canUndo.value)
+        assertEquals(true, delegate.history.state.value.canUndo)
         
         // Trigger undo
-        var undoMsg: String? = null
-        delegate.undo { undoMsg = it }
+        delegate.history.undo()
         
         testScheduler.advanceUntilIdle()
         
         // After undo, the repository should have been updated back to the original page state
-        assertEquals("Aktion rückgängig gemacht", undoMsg)
         assertEquals(b1, updatedPageSlot.captured.buttonConfigs[0])
-        assertEquals(false, delegate.canUndo.value)
+        assertEquals(false, delegate.history.state.value.canUndo)
+    }
+
+    @Test
+    fun `createNewPage can be undone`() = runTest(testDispatcher) {
+        val generatedId = "p-new"
+        coEvery { createPageUseCaseMock.execute(any(), any(), any(), any(), any(), any()) } returns generatedId
+        val page = Page(id = generatedId, bookId = "book1", name = "New Page", rows = 2, columns = 3, buttonConfigs = emptyList())
+        coEvery { pageRepository.getPageById(generatedId) } returns page
+
+        delegate.init(backgroundScope)
+
+        var createdId: String? = null
+        delegate.createNewPage("New Page", 2, 3, "book1") { createdId = it }
+        testScheduler.advanceUntilIdle()
+
+        assertEquals(generatedId, createdId)
+        assertEquals(true, delegate.history.state.value.canUndo)
+
+        // Undo
+        delegate.history.undo()
+        testScheduler.advanceUntilIdle()
+
+        // Verify deletePageUseCase was executed for the created page
+        coVerify { deletePageUseCase.execute(page, false) }
+    }
+
+    @Test
+    fun `deletePage can be undone and restores references`() = runTest(testDispatcher) {
+        val pageToDelete = Page(id = "del-page", bookId = "book1", name = "To Delete", rows = 2, columns = 3, buttonConfigs = emptyList())
+        
+        // Mock a referencing page
+        val refPage = Page(
+            id = "ref-page", 
+            bookId = "book1", 
+            name = "Ref Page", 
+            rows = 2, 
+            columns = 3, 
+            buttonConfigs = listOf(
+                ButtonConfig(id = "b1", label = "Link", buttonAction = com.andreas_kratzer.ghosttalk.core.model.NavigateToPageButtonAction("del-page"))
+            )
+        )
+        coEvery { pageRepository.getAllPages() } returns listOf(pageToDelete, refPage)
+        coEvery { templateRepository.getAllTemplates() } returns kotlinx.coroutines.flow.MutableStateFlow(emptyList())
+
+        delegate.init(backgroundScope)
+
+        delegate.deletePage(pageToDelete, deleteUsages = true)
+        testScheduler.advanceUntilIdle()
+
+        coVerify { deletePageUseCase.execute(pageToDelete, true) }
+        assertEquals(true, delegate.history.state.value.canUndo)
+
+        // Undo
+        delegate.history.undo()
+        testScheduler.advanceUntilIdle()
+
+        // Verify page to delete is re-inserted
+        coVerify { pageRepository.insertPage(pageToDelete) }
+        // Verify referencing page is updated back to its original state
+        coVerify { pageRepository.updatePage(refPage) }
     }
 }
