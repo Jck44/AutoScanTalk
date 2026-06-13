@@ -1430,5 +1430,49 @@ class PageImportExportManagerTest {
         assertNotNull(button)
         assertTrue(button!!.buttonAction is NavigateToStartPageButtonAction)
     }
+
+    @Test
+    fun `importFromJson regenerates static row button IDs during cross book import`() = runTest {
+        val targetBookId = "targetBookId"
+        val sourceBookId = "sourceBookId"
+        val jsonString = """
+            {
+                "bookId": "$sourceBookId",
+                "defaultStartPageId": "page-start",
+                "pages": [
+                    {
+                        "importId": "static_row_$sourceBookId",
+                        "name": "Statische Zeile",
+                        "buttons": [
+                            {
+                                "id": "btn-static-original",
+                                "index": 0,
+                                "label": "Static Action",
+                                "action": {
+                                    "type": "SPEAK_TEXT",
+                                    "text": "Hello"
+                                }
+                            }
+                        ]
+                    }
+                ]
+            }
+        """.trimIndent()
+
+        val capturedPages = mutableListOf<Page>()
+        coEvery { pageRepository.insertPage(any()) } returns Unit
+        coEvery { pageRepository.insertPageRaw(capture(capturedPages)) } returns Unit
+        coEvery { pageRepository.getPageById(any()) } returns null
+
+        val result = manager.importFromJson(jsonString, targetBookId, regenerateIds = false)
+
+        assertTrue(result.isSuccess)
+        val staticRowPage = capturedPages.find { it.id == "static_row_$targetBookId" }
+        assertNotNull(staticRowPage)
+        val button = staticRowPage!!.buttonConfigs[0]
+        assertNotNull(button)
+        // Since it's a cross-book import (sourceBookId != targetBookId), the ID must be regenerated and not be "btn-static-original"
+        assertNotEquals("btn-static-original", button!!.id)
+    }
 }
 

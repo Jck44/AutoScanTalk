@@ -56,7 +56,7 @@ class BookJsonImporter @Inject constructor(
                 applyBookMeta(bookId, importData, restoreSyncSettings)
 
                 // 3. Build ID maps
-                val (idMap, regeneratedPages) = buildIdMap(bookId, importData, regenerateIds)
+                val (idMap, regeneratedPages, forceRegeneration) = buildIdMap(bookId, importData, regenerateIds)
 
                 // 4. Restore book scoped preferences
                 restoreBookScopedPrefs(bookId, importData, idMap)
@@ -66,7 +66,7 @@ class BookJsonImporter @Inject constructor(
                 } ?: settingsRepository.getDefaultStartPageIdForBook(bookId)
 
                 // 5. Import pages
-                importPages(bookId, importData, idMap, regeneratedPages, restoredStartPageId, regenerateIds, warnings)
+                importPages(bookId, importData, idMap, regeneratedPages, restoredStartPageId, forceRegeneration, warnings)
 
                 // 6. Import templates
                 importTemplates(importData, idMap, restoredStartPageId, restoreSyncSettings, warnings)
@@ -131,7 +131,7 @@ class BookJsonImporter @Inject constructor(
         }
     }
 
-    private suspend fun buildIdMap(bookId: String, importData: ImportExportData, regenerateIds: Boolean): Pair<Map<String, String>, Set<String>> {
+    private suspend fun buildIdMap(bookId: String, importData: ImportExportData, regenerateIds: Boolean): Triple<Map<String, String>, Set<String>, Boolean> {
         val idMap = mutableMapOf<String, String>()
         val sourceBookId = importData.bookId?.takeIf { it.isNotBlank() }
         val forceRegeneration = regenerateIds || (sourceBookId != null && sourceBookId.lowercase() != bookId.lowercase())
@@ -151,7 +151,7 @@ class BookJsonImporter @Inject constructor(
             idMap[importPage.importId] = targetPageId
         }
         logger.d(TAG, "ID mapping complete. Mapping size: ${idMap.size}. ForceRegeneration: $forceRegeneration")
-        return Pair(idMap, regeneratedPages)
+        return Triple(idMap, regeneratedPages, forceRegeneration)
     }
 
     private fun restoreBookScopedPrefs(bookId: String, importData: ImportExportData, idMap: Map<String, String>) {

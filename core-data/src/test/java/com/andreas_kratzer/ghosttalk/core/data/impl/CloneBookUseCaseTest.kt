@@ -777,4 +777,129 @@ class CloneBookUseCaseTest {
         assertNotNull(clonedStaticBtn)
         assertEquals(newStaticRow.id, clonedStaticBtn!!.pageId)
     }
+
+    @Test
+    fun `applyHierarchyRestructure preserves small grid dimensions when layout buttons under 49`() = runTest {
+        val sourceBookId = "srcBook"
+        val sourceBook = Book(id = sourceBookId, name = "Original Book")
+        
+        val page1 = Page(id = "p1", bookId = sourceBookId, name = "Hauptseite", rows = 3, columns = 3)
+        val button = ButtonEntity(
+            id = "b1",
+            pageId = "p1",
+            globalIndex = 0,
+            label = "Action 1",
+            buttonAction = SpeakTextButtonAction(),
+            isActive = true
+        )
+        
+        val oldPagesWithButtons = listOf(
+            PageWithButtons(page = page1, buttons = listOf(button))
+        )
+        
+        coEvery { mockBookRepository.getBookById(sourceBookId) } returns sourceBook
+        coEvery { mockPageDao.getPagesForBookWithButtons(sourceBookId) } returns oldPagesWithButtons
+        
+        val proposal = com.andreas_kratzer.ghosttalk.core.model.BookHierarchyProposal(
+            pages = listOf(
+                com.andreas_kratzer.ghosttalk.core.model.HierarchyPageNode(
+                    name = "Hauptseite",
+                    description = "Startseite",
+                    subpages = emptyList()
+                )
+            )
+        )
+        
+        val layouts = mapOf(
+            "Hauptseite" to com.andreas_kratzer.ghosttalk.core.model.PageLayoutProposal(
+                pageName = "Hauptseite",
+                actions = listOf(
+                    com.andreas_kratzer.ghosttalk.core.model.PageButtonAction(
+                        type = "MOVE_BUTTON",
+                        buttonLabel = "Action 1",
+                        rationale = "preserve layout",
+                        buttonId = "b1"
+                    )
+                )
+            )
+        )
+        
+        val targetBookId = cloneBookUseCase.applyHierarchyRestructure(sourceBookId, proposal, layouts)
+        
+        val pageSlots = mutableListOf<Page>()
+        coVerify { mockPageDao.insertPageEntity(capture(pageSlots)) }
+        val clonedPage = pageSlots.find { it.name == "Hauptseite" }
+        
+        assertNotNull(clonedPage)
+        // Original rows/cols was 3x3, and it had 1 button. It should keep 3x3.
+        assertEquals(3, clonedPage!!.rows)
+        assertEquals(3, clonedPage!!.columns)
+    }
+
+    @Test
+    fun `applyHierarchyRestructure fits overflow page grid to its button count when layout exceeds 49`() = runTest {
+        val sourceBookId = "srcBook"
+        val sourceBook = Book(id = sourceBookId, name = "Original Book")
+
+        // 50 buttons on one source page → layout page must chunk into 2 pages.
+        val sourceButtons = (1..50).map { i ->
+            ButtonEntity(
+                id = "b$i",
+                pageId = "p1",
+                globalIndex = i - 1,
+                label = "Action $i",
+                buttonAction = SpeakTextButtonAction(),
+                isActive = true
+            )
+        }
+        val page1 = Page(id = "p1", bookId = sourceBookId, name = "Hauptseite", rows = 7, columns = 7)
+
+        val oldPagesWithButtons = listOf(
+            PageWithButtons(page = page1, buttons = sourceButtons)
+        )
+
+        coEvery { mockBookRepository.getBookById(sourceBookId) } returns sourceBook
+        coEvery { mockPageDao.getPagesForBookWithButtons(sourceBookId) } returns oldPagesWithButtons
+
+        val proposal = com.andreas_kratzer.ghosttalk.core.model.BookHierarchyProposal(
+            pages = listOf(
+                com.andreas_kratzer.ghosttalk.core.model.HierarchyPageNode(
+                    name = "Hauptseite",
+                    description = "Startseite",
+                    subpages = emptyList()
+                )
+            )
+        )
+
+        val layouts = mapOf(
+            "Hauptseite" to com.andreas_kratzer.ghosttalk.core.model.PageLayoutProposal(
+                pageName = "Hauptseite",
+                actions = (1..50).map { i ->
+                    com.andreas_kratzer.ghosttalk.core.model.PageButtonAction(
+                        type = "MOVE_BUTTON",
+                        buttonLabel = "Action $i",
+                        rationale = "move",
+                        buttonId = "b$i"
+                    )
+                }
+            )
+        )
+
+        cloneBookUseCase.applyHierarchyRestructure(sourceBookId, proposal, layouts)
+
+        val pageSlots = mutableListOf<Page>()
+        coVerify { mockPageDao.insertPageEntity(capture(pageSlots)) }
+
+        // Page 1 holds 48 buttons + 1 "Weiter" nav (49 total) → full 7x7.
+        val firstPage = pageSlots.find { it.name == "Hauptseite" }
+        assertNotNull(firstPage)
+        assertEquals(7, firstPage!!.rows)
+        assertEquals(7, firstPage.columns)
+
+        // Overflow page holds the remaining 2 buttons → grid fitted (4x4), NOT 7x7.
+        val overflowPage = pageSlots.find { it.name == "Hauptseite 2" }
+        assertNotNull(overflowPage)
+        assertEquals(4, overflowPage!!.rows)
+        assertEquals(4, overflowPage.columns)
+    }
 }

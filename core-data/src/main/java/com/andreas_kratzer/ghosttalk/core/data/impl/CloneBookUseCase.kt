@@ -254,28 +254,44 @@ class CloneBookUseCase @Inject constructor(
                 }
             }
             
-            val chunked = CloneHelpers.chunkButtons(
-                basePageName = pageName,
-                buttons = allPageButtons,
-                targetBookId = targetBookId,
-                basePageId = pageWrapper.page.id,
-                templateId = pageWrapper.page.templateId,
-                isActive = true,
-                gridStrategy = { CloneHelpers.expandGridToFit(4, 4, it) },
-                navButtonCreator = { curPageId, nextPageId, pageIndex ->
-                    val nextPageName = "$pageName ${pageIndex + 1}"
-                    CloneHelpers.createNavButton(
-                        id = UUID.randomUUID().toString(),
-                        pageId = curPageId,
-                        targetPageId = nextPageId,
-                        label = "Weiter",
-                        slot = 48,
-                        isActive = true,
-                        spokenText = "Öffne Folgeseite $nextPageName",
-                        auditoryCueText = "Öffne $nextPageName"
-                    )
+            val chunked = if (allPageButtons.size <= 49) {
+                val expandedGrid = CloneHelpers.expandGridToFit(
+                    pageWrapper.page.rows,
+                    pageWrapper.page.columns,
+                    allPageButtons.size
+                )
+                val updatedPage = pageWrapper.page.copy(
+                    rows = expandedGrid.first,
+                    columns = expandedGrid.second
+                )
+                val updatedButtons = allPageButtons.mapIndexed { idx, btn ->
+                    btn.copy(globalIndex = idx)
                 }
-            )
+                listOf(MutablePageWithButtons(updatedPage, updatedButtons.toMutableList()))
+            } else {
+                CloneHelpers.chunkButtons(
+                    basePageName = pageName,
+                    buttons = allPageButtons,
+                    targetBookId = targetBookId,
+                    basePageId = pageWrapper.page.id,
+                    templateId = pageWrapper.page.templateId,
+                    isActive = true,
+                    gridStrategy = { CloneHelpers.expandGridToFit(4, 4, it) },
+                    navButtonCreator = { curPageId, nextPageId, pageIndex ->
+                        val nextPageName = "$pageName ${pageIndex + 1}"
+                        CloneHelpers.createNavButton(
+                            id = UUID.randomUUID().toString(),
+                            pageId = curPageId,
+                            targetPageId = nextPageId,
+                            label = "Weiter",
+                            slot = 48,
+                            isActive = true,
+                            spokenText = "Öffne Folgeseite $nextPageName",
+                            auditoryCueText = "Öffne $nextPageName"
+                        )
+                    }
+                )
+            }
 
             chunked.forEachIndexed { index, chunk ->
                 if (index == 0) {
