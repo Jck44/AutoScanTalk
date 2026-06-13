@@ -254,19 +254,191 @@ Strukturbearbeitung an den Kanten selbst.
 
 ---
 
-### Phase 4 — Skalierungs-/Politur-Feinschliff (optional)
+### Phase 4 — Skalierung & Politur (für 181-Seiten-Bücher)
 
-- [ ] Suche/Filter im Baum-Navigator (Seitenname).
-- [ ] Hub-Seiten: „führt zu" scrollbar + collapsible bei vielen Zielen.
-- [ ] „kommt von" bei sehr hohem Eingangsgrad zusammenfassen („+40 Seiten").
-- [ ] Graph-Index memoisieren (nur bei `pages`-Änderung neu bauen — via `remember`/`derivedStateOf` bereits gegeben; prüfen).
-- [ ] Rücksprung aus Raster-Editor behält `focusedPageId`.
+Ziel: Der Editor muss bei echten Buchgrößen (126 verwendete / 181 gesamt, Startseite = Hub mit
+hohem Ausgangsgrad) übersichtlich und flüssig bleiben. Reine UI-Ergänzungen, keine neuen
+Schreiboperationen, keine Datenmodell-Änderungen.
 
-### Phase 5 — Vereinheitlichung (optional, später)
+#### AP4.1 — Suche/Filter im Baum-Navigator
 
-- [ ] `BulkReorderDialog` und `StructureFocusCanvas` teilen sich die Drag&Drop-Bausteine
-      (gemeinsame Composables im `bulkreorder`/`structure`-Package).
-- [ ] Ggf. den modalen „Organisieren"-Einstieg im Raster-Editor auf den neuen Screen umlenken.
+- In `StructureTreeNavigator` oben ein `OutlinedTextField` (Such-Icon, Clear-Icon) — Muster aus
+  `PageListScreen` (dortige Such-`OutlinedTextField`), aber mit **lokalem** State:
+  `var query by rememberSaveable { mutableStateOf("") }`.
+- Verhalten bei nicht-leerem `query`:
+  - **Flache Trefferliste statt Baum**: alle Seiten (aus `pageNames`/`graph.allPageIds`), deren Name
+    `query` enthält (case-insensitive), als flache, antippbare Liste. Tap = `onFocus(id)`.
+  - Bei leerem `query`: bestehende Baum-/Orphan-Ansicht unverändert.
+- Treffer-Markierung optional (fett); kein Aufwand für Highlighting nötig.
+- Neue Strings: `structure_search` (Placeholder), `structure_search_no_results`.
+
+**Review-Checkliste AP4.1**
+- [ ] Filtern ist rein lokal (kein ViewModel/Flow), übersteht Rotation.
+- [ ] Tap auf Treffer fokussiert die Seite; Suche bleibt stehen (oder wird bewusst geleert — dokumentieren).
+- [ ] Leeres Feld → exakt die bisherige Baum-Ansicht.
+
+#### AP4.2 — Hub-Entlastung: „führt zu" einklappbar
+
+Die Startseite hat viele ausgehende Kanten → die `FlowRow` in `StructureFocusCanvas` wird sehr hoch.
+
+- Schwellwert `MAX_VISIBLE_TARGETS = 12` (Konstante). Bei `outgoingEdges.size > 12`:
+  - nur die ersten 12 Chips rendern,
+  - darunter ein `TextButton` „+N weitere anzeigen" / „Weniger anzeigen", State
+    `var showAllTargets by rememberSaveable(focusedPageId) { mutableStateOf(false) }`
+    (Reset bei Fokuswechsel, damit man nicht auf jeder Hub-Seite alles aufgeklappt hat).
+- **Wichtig:** Der Schwellwert betrifft nur die Anzeige. Beim Drag&Drop muss jede Zielkarte ein
+  gültiges Drop-Ziel bleiben — wenn eingeklappt, kann nur auf die sichtbaren 12 gedroppt werden;
+  das ist akzeptabel (Nutzer klappt vorher auf). Im Review prüfen, dass eingeklappte Ziele KEINE
+  veralteten `targetBounds`-Einträge hinterlassen (Map ist bereits `remember(focusedPageId)`-scoped).
+- Neue Strings: `structure_show_more` (`%1$d`), `structure_show_less`.
+
+**Review-Checkliste AP4.2**
+- [ ] Seite mit ≤12 Zielen sieht unverändert aus.
+- [ ] „+N weitere" klappt auf/zu; Zustand resettet bei Fokuswechsel.
+- [ ] Drop funktioniert auf alle aktuell sichtbaren Ziele; keine stale Drops auf eingeklappte.
+
+#### AP4.3 — „kommt von" zusammenfassen
+
+Analog für hohen Eingangsgrad (z. B. eine Seite, die von vielen erreicht wird):
+
+- Schwellwert `MAX_VISIBLE_SOURCES = 12`. Bei mehr: erste 12 `InputChip`s + „+N weitere" zeigt den Rest.
+- Kein Drag&Drop hier (eingehend ist read-only/Navigation), daher unkritisch.
+
+**Review-Checkliste AP4.3**
+- [ ] Lange „kommt von"-Liste wird zusammengefasst, Rest per Toggle sichtbar.
+
+#### AP4.4 — Fokus übersteht Rücksprung aus dem Raster-Editor
+
+Beim „Im Raster-Editor öffnen" wird `page_editor/{id}` auf den Back-Stack gelegt; `structure_editor`
+bleibt liegen. `focusedPageId` ist `rememberSaveable` → sollte beim Zurück erhalten bleiben.
+
+- **Verifizieren** (vermutlich bereits korrekt): Fokus auf Seite X → Raster öffnen → bearbeiten →
+  zurück → Fokus weiterhin X.
+- Sicherstellen, dass der `LaunchedEffect(initialFocusedId, pages)`-Reparatur-Effekt den Fokus NUR
+  bei gelöschter/leerer Seite zurücksetzt (aktuell korrekt) — nach Button-Edit darf er NICHT auf die
+  Wurzel springen.
+
+**Review-Checkliste AP4.4**
+- [ ] Round-Trip Struktur→Raster→zurück behält `focusedPageId`.
+- [ ] Nach Button-Edit im Raster kein ungewollter Sprung zur Startseite.
+
+#### AP4.5 — Performance-Verifikation (kein Umbau erwartet)
+
+- Bestätigen, dass der Graph nur bei `pages`/`startPageId`-Änderung neu gebaut wird
+  (`remember(pages, startPageId)` in `StructureEditorScreen` — bereits gegeben), und
+  `buildTree()`/`orphans()` im Navigator `remember(graph)`-memoisiert sind (bereits gegeben).
+- An einem echten 181-Seiten-Buch grob gegentesten: Öffnen, Scrollen, Fokuswechsel flüssig.
+- Falls ruckelig: prüfen, ob `onMoveButton` (nicht `remember`t, siehe Phase-2-Review) unnötige
+  Recompositions auslöst — ggf. `remember`n. Sonst keine Änderung.
+
+**Review-Checkliste AP4.5**
+- [ ] Kein Graph-Neuaufbau pro Recomposition.
+- [ ] 181-Seiten-Buch fühlt sich flüssig an.
+
+---
+
+### Phase 5 — Vereinheitlichung von Drag&Drop & Einstieg
+
+Ziel: Die zweifach vorhandene, handgerollte Drag&Drop-Mechanik (in `BulkReorderDialog` und
+`StructureFocusCanvas`) in einen gemeinsamen, wiederverwendbaren Baustein ziehen und den
+„Organisieren"-Einstieg konsolidieren. **Riskanteste Phase**, weil sie getesteten Code anfasst —
+daher strikt verhaltenserhaltend + Smoke-Tests beider Oberflächen.
+
+#### AP5.1 — Gemeinsamen Drag&Drop-Baustein extrahieren
+
+Die Duplikation umfasst: Drag-State (`draggedId`, `dragStartCenter`, `dragOffset`, `draggedSize`,
+`rootBoxBounds`, `targetBounds`, abgeleitet `dragGlobalPos`), das Hit-Testing beim Drop und das
+schwebende Drag-Overlay.
+
+Neue Datei `app/.../ui/components/dragdrop/ChipDragDropState.kt`:
+
+```kotlin
+class ChipDragDropState internal constructor() {
+    var draggedKey by mutableStateOf<String?>(null); internal set
+    internal var draggedLabel by mutableStateOf("")
+    internal val targetBounds = mutableMapOf<String, Rect>()
+    // dragStartCenter, dragOffset, draggedSize, rootBoxBounds ...
+    val dragGlobalPos: Offset get() = dragStartCenter + dragOffset
+
+    fun onDragStart(key: String, label: String, center: Offset, size: Offset) { ... }
+    fun onDrag(delta: Offset) { ... }
+    /** liefert den getroffenen Ziel-Key (oder null) und setzt den State zurück */
+    fun onDragEnd(): String? { ... }
+    fun onDragCancel() { ... }
+    fun clearTargets() { targetBounds.clear() }   // bei Fokus-/Kontextwechsel aufrufen
+}
+
+@Composable fun rememberChipDragDropState(resetKey: Any?): ChipDragDropState
+// resetKey (z.B. focusedPageId) -> remember(resetKey){...} + clearTargets bei Wechsel
+
+// Modifier: registriert/aktualisiert die Bounds eines Drop-Ziels
+fun Modifier.chipDropTarget(state: ChipDragDropState, key: String): Modifier
+
+// Root-Container, der rootBoxBounds erfasst und das Overlay rendert
+@Composable fun ChipDragDropContainer(state: ChipDragDropState, modifier: Modifier, content: @Composable BoxScope.() -> Unit)
+```
+
+- `DraggableChip` bleibt unverändert und wird weiter genutzt; der State-Holder kapselt nur die
+  Koordinaten-/Overlay-Logik. Das in Phase 2 gefixte „Bounds bei Fokuswechsel leeren" wird hier
+  zur `clearTargets()`/`resetKey`-Mechanik (eine Quelle der Wahrheit).
+- Lage in `app` (beide Nutzer liegen in `app`); kein core-Modul nötig.
+
+**Review-Checkliste AP5.1**
+- [ ] Reiner Extraktions-Baustein, keine Verhaltensänderung an sich.
+- [ ] `resetKey` leert `targetBounds` zuverlässig (kein stale-Drop-Bug, vgl. Phase-2-Fix).
+
+#### AP5.2 — `StructureFocusCanvas` auf den Baustein umstellen
+
+- Lokale Drag-Felder durch `rememberChipDragDropState(focusedPageId)` ersetzen, Zielkarten mit
+  `Modifier.chipDropTarget(state, edge.targetPageId)`, Drop über `state.onDragEnd()`.
+- Verhalten 1:1 erhalten (Sofort-Move + Undo + TargetFull).
+
+**Review-Checkliste AP5.2**
+- [ ] Move/Undo/Voll-Fall verhalten sich identisch zu Phase 2/3.
+
+#### AP5.3 — `BulkReorderDialog` auf den Baustein umstellen
+
+- Den Block in [BulkReorderDialog.kt:112-120](app/src/main/java/com/andreas_kratzer/ghosttalk/ui/pages/bulkreorder/BulkReorderDialog.kt)
+  (manuelles Bounds-/Drag-Tracking) und das Drag-Overlay (`:435-465`) durch den Baustein ersetzen;
+  `CurrentPageCard`/`TargetCategoryItem` als Drop-Ziele über `chipDropTarget` registrieren.
+- **Verhaltenserhaltend**: Der Dialog sammelt Moves bis „Anwenden" (`categoryProposals`), während der
+  Canvas sofort anwendet — diese Logik bleibt im jeweiligen Aufrufer; nur Drag-Mechanik wird geteilt.
+- Bestehende Funktion penibel gegenprüfen (chip von „Aktuelle Seite" → Zielseite, zurückziehen ins
+  „Unassigned", „+ Zielseite hinzufügen").
+
+**Review-Checkliste AP5.3**
+- [ ] Alle bisherigen Dialog-Interaktionen funktionieren unverändert (manueller Smoke-Test).
+- [ ] Kein Regress bei „Anwenden" / abgebrochenem Drag.
+
+#### AP5.4 — Deep-Link: Struktur-Editor mit initialem Fokus
+
+Voraussetzung für AP5.5.
+
+- Route erweitern: `structure_editor?focus={pageId}` (optionales `navArgument`, `nullable=true`).
+- `StructureEditorScreen` bekommt `initialFocusPageId: String? = null`; falls gesetzt und in `pages`
+  vorhanden, wird `focusedPageId` initial darauf gesetzt (vor der bestehenden Fallback-Logik).
+- Bestehender Einstieg aus der Seitenübersicht ruft weiter ohne Argument auf (Fokus = Startseite).
+
+**Review-Checkliste AP5.4**
+- [ ] Aufruf ohne Argument unverändert (Startseite im Fokus).
+- [ ] Aufruf mit `?focus=X` startet auf X (sofern existent), sonst sauberer Fallback.
+
+#### AP5.5 — „Organisieren"-Einstieg konsolidieren
+
+- In [PageEditorScreen.kt:232](app/src/main/java/com/andreas_kratzer/ghosttalk/ui/pages/PageEditorScreen.kt)
+  den `BulkReorderDialog`-Aufruf optional ersetzen durch Navigation zu
+  `structure_editor?focus={currentPageId}`.
+- **Entscheidung für später (nicht blind umsetzen):** ob `BulkReorderDialog` danach entfernt wird.
+  Empfehlung: erst beide Wege koexistieren lassen, nach positivem Caregiver-Feedback zum Struktur-
+  Editor den Dialog in einem separaten Schritt entfernen (eigener Commit, damit reviewbar/reverttbar).
+
+**Review-Checkliste AP5.5**
+- [ ] „Organisieren" im Raster-Editor öffnet den Struktur-Editor fokussiert auf die aktuelle Seite.
+- [ ] Falls Dialog entfernt wird: keine toten Referenzen/Strings; Security-Verhalten unverändert.
+
+> Reihenfolge-Hinweis für Gemini: AP5.1 → AP5.2 → AP5.3 (jeweils kompilieren + Smoke-Test), dann
+> AP5.4 → AP5.5. Phase 5 nicht in einem einzigen Commit erschlagen — pro AP committen, damit der
+> Review (und ggf. ein Revert) handhabbar bleibt.
 
 ---
 

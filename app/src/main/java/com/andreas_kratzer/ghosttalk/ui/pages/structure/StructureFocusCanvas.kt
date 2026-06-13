@@ -7,6 +7,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -25,7 +27,9 @@ import androidx.compose.ui.zIndex
 import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.core.domain.pages.BookNavigationGraph
 import com.andreas_kratzer.ghosttalk.core.model.Page
+import com.andreas_kratzer.ghosttalk.core.model.PageTemplate
 import com.andreas_kratzer.ghosttalk.ui.components.DraggableChip
+import com.andreas_kratzer.ghosttalk.ui.pages.actions.NavigationActionFields
 import kotlin.math.roundToInt
 
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
@@ -33,11 +37,15 @@ import kotlin.math.roundToInt
 fun StructureFocusCanvas(
     focusedPageId: String,
     pages: List<Page>,
+    templates: List<PageTemplate>,
     graph: BookNavigationGraph,
     pageNames: Map<String, String>,
     onFocus: (String) -> Unit,
     onEditPageInGrid: (String) -> Unit,
     onMoveButton: (fromIndex: Int, targetPageId: String) -> Unit,
+    onAddConnection: (targetPageId: String) -> Unit,
+    onRemoveConnection: (buttonIndex: Int, targetPageName: String) -> Unit,
+    onCreatePage: (name: String, rows: Int, cols: Int, templateId: String?, onCreated: (String) -> Unit) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val page = remember(pages, focusedPageId) { pages.find { it.id == focusedPageId } }
@@ -52,6 +60,9 @@ fun StructureFocusCanvas(
     var draggedSize by remember { mutableStateOf(Offset.Zero) }
     var rootBoxBounds by remember { mutableStateOf<Rect?>(null) }
     val dragGlobalPos = dragStartCenter.value + dragOffset
+
+    var showAddNavigationSection by remember(focusedPageId) { mutableStateOf(false) }
+    var newNavigationPageId by remember(focusedPageId) { mutableStateOf("") }
 
     if (page == null) {
         Box(modifier = modifier, contentAlignment = Alignment.Center) {
@@ -265,7 +276,8 @@ fun StructureFocusCanvas(
                         ) {
                             outgoingEdges.forEach { edge ->
                                 val targetName = pageNames[edge.targetPageId] ?: edge.targetPageId
-                                SuggestionChip(
+                                InputChip(
+                                    selected = false,
                                     onClick = { onFocus(edge.targetPageId) },
                                     modifier = Modifier.onGloballyPositioned { layoutCoordinates ->
                                         val bounds = layoutCoordinates.boundsInRoot()
@@ -280,9 +292,66 @@ fun StructureFocusCanvas(
                                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                                             )
                                         }
+                                    },
+                                    trailingIcon = {
+                                        IconButton(
+                                            onClick = { onRemoveConnection(edge.sourceButtonIndex, targetName) },
+                                            modifier = Modifier.size(20.dp)
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.Close,
+                                                contentDescription = stringResource(R.string.structure_remove_connection_desc),
+                                                modifier = Modifier.size(16.dp)
+                                            )
+                                        }
                                     }
                                 )
                             }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    if (showAddNavigationSection) {
+                        Card(
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceVariant
+                            ),
+                            modifier = Modifier.fillMaxWidth().padding(top = 4.dp)
+                        ) {
+                            Column(modifier = Modifier.padding(12.dp)) {
+                                Text(
+                                    text = stringResource(R.string.structure_add_connection_title),
+                                    style = MaterialTheme.typography.titleSmall,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                                NavigationActionFields(
+                                    navigateToPageId = newNavigationPageId,
+                                    onPageSelected = { selectedPageId ->
+                                        onAddConnection(selectedPageId)
+                                        showAddNavigationSection = false
+                                        newNavigationPageId = ""
+                                    },
+                                    availablePages = pages.filter { it.id != focusedPageId },
+                                    templates = templates,
+                                    onNavigateToPage = null,
+                                    onCreatePage = onCreatePage,
+                                    onDismissDialog = {
+                                        showAddNavigationSection = false
+                                        newNavigationPageId = ""
+                                    }
+                                )
+                            }
+                        }
+                    } else {
+                        Button(
+                            onClick = { showAddNavigationSection = true },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Icon(imageVector = Icons.Default.Add, contentDescription = null)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(stringResource(R.string.structure_add_connection_btn))
                         }
                     }
                 }

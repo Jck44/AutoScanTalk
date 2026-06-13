@@ -24,6 +24,7 @@ fun StructureTreeNavigator(
     pageNames: Map<String, String>,
     focusedPageId: String,
     onFocus: (String) -> Unit,
+    onOrphanClick: ((String) -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     val rootNode = remember(graph) { graph.buildTree() }
@@ -170,7 +171,13 @@ fun StructureTreeNavigator(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(start = 16.dp)
-                                .clickable { onFocus(orphanId) }
+                                .clickable {
+                                    if (onOrphanClick != null) {
+                                        onOrphanClick(orphanId)
+                                    } else {
+                                        onFocus(orphanId)
+                                    }
+                                }
                                 .padding(vertical = 6.dp, horizontal = 4.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {

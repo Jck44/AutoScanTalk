@@ -13,11 +13,12 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.core.domain.pages.BookNavigationGraph
+import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
+import com.andreas_kratzer.ghosttalk.core.model.NavigateToPageButtonAction
 import com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkScaffold
+import com.andreas_kratzer.ghosttalk.ui.pages.GridEditorViewModel
 import com.andreas_kratzer.ghosttalk.ui.pages.PageViewModel
 import kotlinx.coroutines.launch
-
-import com.andreas_kratzer.ghosttalk.ui.pages.GridEditorViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -28,7 +29,9 @@ fun StructureEditorScreen(
     onNavigateBack: () -> Unit
 ) {
     val pages by pageViewModel.unfilteredPages.collectAsState(initial = emptyList())
+    val templates by pageViewModel.templates.collectAsState(initial = emptyList())
     val startPageId by pageViewModel.defaultStartPageIdFlow.collectAsState(initial = null)
+    val activeBookId by pageViewModel.activeBookId.collectAsState(initial = null)
 
     val graph = remember(pages, startPageId) {
         BookNavigationGraph.from(pages, startPageId)
@@ -38,7 +41,6 @@ fun StructureEditorScreen(
         pages.associate { it.id to it.name }
     }
 
-    // Determine initial focusedPageId: startPageId, or fallback to the one with the smallest orderIndex
     val initialFocusedId = remember(pages, startPageId) {
         startPageId?.takeIf { id -> pages.any { it.id == id } }
             ?: pages.minByOrNull { it.orderIndex }?.id
@@ -49,7 +51,6 @@ fun StructureEditorScreen(
         mutableStateOf("")
     }
 
-    // Adjust focused page if it gets deleted or if graph changes and focusedPageId is empty
     LaunchedEffect(initialFocusedId, pages) {
         if (focusedPageId.isBlank() || pages.none { it.id == focusedPageId }) {
             focusedPageId = initialFocusedId
@@ -65,6 +66,29 @@ fun StructureEditorScreen(
 
     val snackbarHostState = remember { SnackbarHostState() }
 
+    var pageToRemoveConnectionByButtonIndex by remember { mutableStateOf<Int?>(null) }
+    var pageToRemoveConnectionTargetName by remember { mutableStateOf("") }
+    var orphanToConnectId by remember { mutableStateOf<String?>(null) }
+
+    val showSuccessSnackbarWithUndo = {
+        scope.launch {
+            snackbarHostState.currentSnackbarData?.dismiss()
+            val app = pageViewModel.getApplication<android.app.Application>()
+            val snackbarResult = snackbarHostState.showSnackbar(
+                message = app.getString(R.string.button_move_success),
+                actionLabel = app.getString(R.string.structure_action_undo),
+                duration = SnackbarDuration.Long
+            )
+            if (snackbarResult == SnackbarResult.ActionPerformed) {
+                gridEditorViewModel.undo { undoMsg ->
+                    scope.launch {
+                        snackbarHostState.showSnackbar(undoMsg)
+                    }
+                }
+            }
+        }
+    }
+
     val onMoveButton = { fromIndex: Int, targetPageId: String ->
         gridEditorViewModel.moveButtonToPage(
             fromPageId = focusedPageId,
@@ -74,21 +98,7 @@ fun StructureEditorScreen(
         ) { result ->
             when (result) {
                 is com.andreas_kratzer.ghosttalk.core.domain.pages.MoveButtonToPageUseCase.MoveResult.Success -> {
-                    scope.launch {
-                        snackbarHostState.currentSnackbarData?.dismiss()
-                        val snackbarResult = snackbarHostState.showSnackbar(
-                            message = pageViewModel.getApplication<android.app.Application>().getString(R.string.button_move_success),
-                            actionLabel = pageViewModel.getApplication<android.app.Application>().getString(R.string.structure_action_undo),
-                            duration = SnackbarDuration.Long
-                        )
-                        if (snackbarResult == SnackbarResult.ActionPerformed) {
-                            gridEditorViewModel.undo { undoMsg ->
-                                scope.launch {
-                                    snackbarHostState.showSnackbar(undoMsg)
-                                }
-                            }
-                        }
-                    }
+                    showSuccessSnackbarWithUndo()
                 }
                 is com.andreas_kratzer.ghosttalk.core.domain.pages.MoveButtonToPageUseCase.MoveResult.TargetFull -> {
                     scope.launch {
@@ -100,6 +110,57 @@ fun StructureEditorScreen(
                 else -> {}
             }
         }
+    }
+
+    val performAddConnection = { targetPageId: String ->
+        val currentPage = pages.find { it.id == focusedPageId }
+        val targetPageName = pageNames[targetPageId] ?: targetPageId
+        if (currentPage != null) {
+            val alreadyConnected = graph.outgoing[focusedPageId].orEmpty().any { it.targetPageId == targetPageId }
+            if (alreadyConnected) {
+                scope.launch {
+                    snackbarHostState.showSnackbar(
+                        message = pageViewModel.getApplication<android.app.Application>().getString(R.string.structure_connection_exists)
+                    )
+                }
+            } else {
+                val firstFreeIndex = currentPage.buttonConfigs.indexOfFirst { it == null || !it.isActive }
+                val targetIndex = if (firstFreeIndex != -1) firstFreeIndex else currentPage.buttonConfigs.size
+                val newConfig = ButtonConfig(
+                    id = java.util.UUID.randomUUID().toString(),
+                    label = targetPageName,
+                    spokenText = "Öffne $targetPageName",
+                    buttonAction = NavigateToPageButtonAction(pageId = targetPageId),
+                    auditoryCue = com.andreas_kratzer.ghosttalk.core.model.AuditoryCue.TextToSpeechCue("Öffne $targetPageName")
+                )
+                gridEditorViewModel.insertButtonConfig(focusedPageId, targetIndex, newConfig, false) { success ->
+                    if (success) {
+                        showSuccessSnackbarWithUndo()
+                    } else {
+                        scope.launch {
+                            snackbarHostState.showSnackbar(
+                                message = pageViewModel.getApplication<android.app.Application>().getString(R.string.structure_page_full)
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    val onAddConnection = { targetPageId: String ->
+        performAddConnection(targetPageId)
+    }
+
+    val onCreatePage: (String, Int, Int, String?, (String) -> Unit) -> Unit = { name, rows, cols, templateId, callback ->
+        gridEditorViewModel.createNewPage(
+            name = name,
+            rows = rows,
+            columns = cols,
+            bookId = activeBookId ?: "book-default",
+            templateId = templateId,
+            onCreated = callback
+        )
     }
 
     GhostTalkScaffold(
@@ -136,6 +197,7 @@ fun StructureEditorScreen(
                         pageNames = pageNames,
                         focusedPageId = focusedPageId,
                         onFocus = { focusedPageId = it },
+                        onOrphanClick = { orphanId -> orphanToConnectId = orphanId },
                         modifier = Modifier.fillMaxSize()
                     )
                 }
@@ -148,11 +210,18 @@ fun StructureEditorScreen(
             StructureFocusCanvas(
                 focusedPageId = focusedPageId,
                 pages = pages,
+                templates = templates,
                 graph = graph,
                 pageNames = pageNames,
                 onFocus = { focusedPageId = it },
                 onEditPageInGrid = onEditPageInGrid,
                 onMoveButton = onMoveButton,
+                onAddConnection = onAddConnection,
+                onRemoveConnection = { buttonIndex, targetPageName ->
+                    pageToRemoveConnectionByButtonIndex = buttonIndex
+                    pageToRemoveConnectionTargetName = targetPageName
+                },
+                onCreatePage = onCreatePage,
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxHeight()
@@ -189,10 +258,85 @@ fun StructureEditorScreen(
                                 }
                             }
                         },
+                        onOrphanClick = { orphanId ->
+                            scope.launch { sheetState.hide() }.invokeOnCompletion {
+                                if (!sheetState.isVisible) {
+                                    showBottomSheet = false
+                                }
+                            }
+                            orphanToConnectId = orphanId
+                        },
                         modifier = Modifier.weight(1f)
                     )
                 }
             }
         }
+    }
+
+    // Confirmation dialogs
+    if (pageToRemoveConnectionByButtonIndex != null) {
+        AlertDialog(
+            onDismissRequest = {
+                pageToRemoveConnectionByButtonIndex = null
+                pageToRemoveConnectionTargetName = ""
+            },
+            title = { Text(stringResource(R.string.structure_remove_connection_title)) },
+            text = { Text(stringResource(R.string.structure_remove_connection_msg, pageToRemoveConnectionTargetName)) },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        val index = pageToRemoveConnectionByButtonIndex!!
+                        pageToRemoveConnectionByButtonIndex = null
+                        pageToRemoveConnectionTargetName = ""
+                        gridEditorViewModel.updateButtonConfig(focusedPageId, index, null)
+                        showSuccessSnackbarWithUndo()
+                    }
+                ) {
+                    Text(stringResource(R.string.structure_action_remove))
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        pageToRemoveConnectionByButtonIndex = null
+                        pageToRemoveConnectionTargetName = ""
+                    }
+                ) {
+                    Text(stringResource(R.string.action_cancel))
+                }
+            }
+        )
+    }
+
+    if (orphanToConnectId != null) {
+        val orphanName = pageNames[orphanToConnectId] ?: orphanToConnectId!!
+        val currentPageName = pageNames[focusedPageId] ?: focusedPageId
+        AlertDialog(
+            onDismissRequest = { orphanToConnectId = null },
+            title = { Text(stringResource(R.string.structure_connect_orphan_title)) },
+            text = { Text(stringResource(R.string.structure_connect_orphan_msg, orphanName, currentPageName)) },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        val targetId = orphanToConnectId!!
+                        orphanToConnectId = null
+                        performAddConnection(targetId)
+                    }
+                ) {
+                    Text(stringResource(R.string.structure_action_connect))
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        val targetId = orphanToConnectId!!
+                        orphanToConnectId = null
+                        focusedPageId = targetId
+                    }
+                ) {
+                    Text(stringResource(R.string.structure_view_page))
+                }
+            }
+        )
     }
 }

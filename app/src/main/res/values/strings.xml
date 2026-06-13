@@ -650,5 +650,17 @@
     <string name="structure_target_full">Zielseite ist voll – Raster vergrößern oder anders platzieren?</string>
     <string name="structure_action_undo">Rückgängig</string>
     <string name="structure_via_button">über Button: \"%1$s\"</string>
+    <string name="structure_add_connection_btn">+ Zielseite verbinden</string>
+    <string name="structure_add_connection_title">Zielseite hinzufügen</string>
+    <string name="structure_remove_connection_title">Verbindung entfernen?</string>
+    <string name="structure_remove_connection_msg">Möchtest du die Navigation zu \"%1$s\" entfernen? Der Button wird gelöscht.</string>
+    <string name="structure_connect_orphan_title">Seite verbinden?</string>
+    <string name="structure_connect_orphan_msg">Möchtest du die Seite \"%1$s\" als Navigationsziel mit \"%2$s\" verbinden?</string>
+    <string name="structure_action_connect">Verbinden</string>
+    <string name="structure_action_remove">Entfernen</string>
+    <string name="structure_connection_exists">Verknüpfung existiert bereits.</string>
+    <string name="structure_page_full">Diese Seite ist voll – kein Platz für eine neue Verknüpfung.</string>
+    <string name="structure_remove_connection_desc">Verbindung entfernen</string>
+    <string name="structure_view_page">Ansehen</string>
 </resources>
 
