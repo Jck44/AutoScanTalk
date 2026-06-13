@@ -10,12 +10,47 @@ Fortsetzung der Roadmap (Phasen 1–14 ✅, Phase 15 läuft — `docs/refactorin
 
 | Schritt | Thema | Stand |
 |---|---|---|
-| 16.1 | ImportExport: Quick Wins + pure Funktionen + Tests | ⬜ offen |
-| 16.2 | ImportExport: Media-/Statistik-/Config-Teile herauslösen | ⬜ offen |
-| 16.3 | ImportExport: BookJsonExporter / BookJsonImporter | ⬜ offen |
-| 16.4 | CloneBook: pure Helfer (Grid/Slots/NavButton/Chunking) + Tests | ⬜ offen |
-| 16.5 | CloneBook: BookDataCloner + RestructureActionApplier | ⬜ offen |
-| 16.6 | Abschluss-Review | ⬜ offen |
+| 16.1 | ImportExport: Quick Wins + pure Funktionen + Tests | ✅ umgesetzt (committet `bc54ea39`) |
+| 16.2 | ImportExport: Media-/Statistik-/Config-Teile herauslösen | ✅ umgesetzt |
+| 16.3 | ImportExport: BookJsonExporter / BookJsonImporter | ✅ Must-Fix B behoben (`forceRegeneration` via Triple), Delta C wie empfohlen belassen |
+| 16.4 | CloneBook: pure Helfer (Grid/Slots/NavButton/Chunking) + Tests | ✅ umgesetzt |
+| 16.5 | CloneBook: BookDataCloner + RestructureActionApplier | ✅ Must-Fix A + A' behoben (Claude), Grid-Tests grün |
+| 16.6 | Abschluss-Review | ✅ **abgenommen — alle Befunde behoben, core-data-Suite grün** |
+
+#### Nachkontrolle der A/B/C-Fixes (Claude, 2026-06-13)
+
+* **B ✅ behoben**: `buildIdMap` gibt jetzt `Triple(idMap, regeneratedPages, forceRegeneration)`, `importFromJson` reicht `forceRegeneration` an `importPages` (Z. 59/69). Parität für Static-Row-Buttons bei Cross-Book-Import wiederhergestellt.
+* **C ✅ wie empfohlen belassen** (Code unverändert — `trim/lowercase` auf beiden Zweigen, harmlos für UUID-Buch-Ids).
+* **A ✅ Kern behoben**: Layout-Pfad hat wieder `if (allPageButtons.size <= 49)` → eine Seite, Grid via `expandGridToFit(pageWrapper.page.rows, .columns, size)`, Buttons via `mapIndexed`. Neuer Test `applyHierarchyRestructure preserves small grid dimensions when layout buttons under 49` (3×3 bleibt 3×3). Suite grün.
+* **🐛 A' (neu eingeschleppt, klein): `>49`-Chunking-Grid jetzt konstant `7 to 7`.** Beim A-Fix wurde die `else`-`gridStrategy` von `{ expandGridToFit(4, 4, it) }` (im Commit `bc54ea39` korrekt) auf `{ _ -> 7 to 7 }` geändert ([CloneBookUseCase.kt:279](file:///Users/andreas.kratzer/AndroidStudioProjects/GoSTalk/core-data/src/main/java/com/andreas_kratzer/ghosttalk/core/data/impl/CloneBookUseCase.kt#L279)). Volle Chunk-Seiten (49 Buttons) sind in beiden Fällen 7×7, aber die **letzte Überlaufseite** mit wenigen Buttons bekommt jetzt 7×7 statt eines passenden kleineren Grids (z. B. 2 Buttons: vorher 4×4, jetzt 7×7). Eng (nur Layout-Seiten mit >49 Buttons), aber unnötig.
+  * **Fix (1 Zeile)**: `gridStrategy = { CloneHelpers.expandGridToFit(4, 4, it) }` im `else`-Zweig.
+  * Optionaler Test: Layout-Seite mit 50 Buttons → Seite 2 (2 Buttons) Grid ≠ 7×7.
+  * **✅ behoben (Claude, 2026-06-13)**: Zeile zurückgesetzt + Test `applyHierarchyRestructure fits overflow page grid to its button count when layout exceeds 49` (Seite 1 = 7×7, Überlaufseite „Hauptseite 2" mit 2 Buttons = 4×4). `:core-data:testDebugUnitTest` grün.
+
+#### Review-Befund Phase 16 (Claude, 2026-06-12, nachträglich — Code committet in `bc54ea39`)
+
+**Hinweis zum Ablauf**: Gemini hat Phase 16 komplett umgesetzt und committet, bevor das Review lief (Token-Mangel bei Andreas). Review daher gegen den committeten Stand.
+
+**Was sauber ist** (im Code verifiziert): `BookJsonExporter` — deterministische Sortierung (Templates `sortedBy id`, Buttons `sortedBy index`, Pages `sortedBy importId`, Tombstones `sortedBy entityId`) + Tombstone-Reihenfolge (Query→Serialize→Prune) + `ImportExportJson`-Config alle identisch (Invarianten 2+3 ✅). `BookJsonImporter.importFromJson` — Transaktionsgrenze, Parse-vor-Transaktion, `refresh()` nach Commit erhalten; 275-Z.-Methode sauber in benannte Schritte zerlegt. Fassade = reine Delegation; `MediaArchiveSync` dedupliziert TTS/Audio über Parameter; `runBlocking`-Altbestand mitverschoben. `BookDataCloner` — **die zwei bewusst verschiedenen Mapping-Pfade (Id- vs. Namens-Mapping, `skipUnmappedButton`) exakt über Parameter erhalten (Invariante 6 ✅)**. `CloneHelpers`/`ImportMappers` + Tests vorhanden. **Test-Änderungen plan-konform**: nur Konstruktor-Verdrahtung + `createManager`-Helfer, Test-Bodies unverändert. Voller Build + Suite grün.
+
+**🐛 Must-Fix A (tragend): `applyHierarchyRestructure` — Layout-Grid + 49-Grenze geändert.**
+Das Original hatte im Layout-Pfad einen separaten Zweig `if (allPageButtons.size <= 49) { … } else { chunking }`. Der `<=49`-Zweig (a) ließ **alle** Buttons auf **einer** Seite und (b) wuchs das Grid ab den **vorhandenen** Seitendimensionen (`pageWrapper.page.rows/columns` — aus `origPage` bzw. `optimalGridUpTo5(buttonCount)`). Der Refactor ruft jetzt **immer** `chunkButtons` mit `gridStrategy = expandGridToFit(4, 4, …)`. Folgen:
+* **Grid startet immer bei 4×4** statt der eigentlichen Seitengröße → kleine Layout-Seiten werden zu groß (z. B. 2-Button-Seite 2×2 → 4×4; eine auf eine `origPage` 3×3 gemappte Seite verliert ihr 3×3).
+* **Genau 49 Buttons splitten in 2 Seiten** (`chunkCount = ceil(49/48) = 2`) statt auf einer Seite zu bleiben.
+Beides verändert das sichtbare Ergebnis der KI-Buch-Restrukturierung. **Von keinem Test abgedeckt** (die Hierarchie-Tests prüfen Button-Platzierung/Nav/Archiv, aber keine Grid-Dimensionen und nicht die 49-Grenze im Layout-Pfad; `CloneHelpersTest` testet `chunkButtons` nur mit 97 Buttons). Der **Archiv-Pfad ist korrekt** (hatte im Original keinen `<=49`-Sonderfall, immer Chunking; leer → 2×2 = `optimalGridUpTo7(0)` ✅).
+* **Fix**: Im Layout-Zweig den `size <= 49`-Sonderfall wiederherstellen — einzelne Seite, Buttons via `forEachIndexed` platziert, Grid mit `expandGridToFit(pageWrapper.page.rows, pageWrapper.page.columns, size)`; `chunkButtons` nur bei `size > 49`. (Alternativ `chunkButtons` um Start-Grid + Single-Page-Schwelle ≤49 erweitern.)
+* **Test dazu**: Layout-Seite mit 6 Buttons → genau **1** Seite, Grid = Ausgangsgröße (nicht 4×4); Layout-Seite mit 49 Buttons → **1** Seite (kein „Weiter"); mit 50 → 2 Seiten.
+
+**🐛 Must-Fix B (Parität, billig): `BookJsonImporter.importPages` bekommt rohes `regenerateIds` statt `forceRegeneration`.**
+`importFromJson` (Z. 69) übergibt `regenerateIds`, aber `buildButtonConfigFromImport` regeneriert Button-Ids bei `forceRegeneration || pageRegenerated`. `buildIdMap` berechnet das echte `forceRegeneration = regenerateIds || (sourceBookId.lowercase() != bookId.lowercase())` intern, gibt es aber nicht zurück. Für Nicht-Static-Seiten maskiert `pageRegenerated=true` den Fehler; **Static-Row-Buttons** bekommen bei einem Cross-Book-Import (`regenerateIds=false`, Quell-Buch-Id ≠ Ziel) aber `pageRegenerated=false` → Button-Ids werden **nicht** regeneriert (Original: doch). Eng, aber Bruch von Invariante 4 (mögliche Button-Id-Kollision/Stats-Vermischung).
+* **Fix**: `buildIdMap` gibt `forceRegeneration` zurück (Triple); `importFromJson` reicht es an `importPages` durch.
+
+**Delta C (bestätigen/dokumentieren): `extractCloudBookId` — `trim()/lowercase()` jetzt auf beide Zweige.**
+Original (Präzedenz `a ?: b?.trim()?.lowercase()` = `a ?: (b?.trim()?.lowercase())`) wandte `trim/lowercase` **nur** auf den `cloudFileId`-Fallback an; war `importData.bookId` gesetzt, wurde es **roh** verwendet. Neu (`(extractedId ?: run{…})?.trim()?.lowercase()`) trimmt/lowercased beide. Für GhostTalk-UUID-Buch-Ids (bereits lowercase, kein Whitespace) ein No-Op und faktisch eher ein latenter Bugfix. Empfehlung: behalten, sofern Andreas keine strikte Parität will.
+
+**Kleinkram**: Die erklärenden Kommentare zur Tombstone-Reihenfolge (Original Z. 134–137 / 209–211) fehlen im `BookJsonExporter` — reiner Doku-Verlust, kein Verhalten.
+
+
 
 ## Betroffene Dateien
 
