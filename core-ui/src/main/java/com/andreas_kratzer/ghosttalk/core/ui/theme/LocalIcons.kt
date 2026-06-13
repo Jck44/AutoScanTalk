@@ -60,6 +60,42 @@ object GhostTalkIcons {
     }
 
 
+    val Link: ImageVector
+        get() = materialIcon(name = "Filled.Link") {
+            materialPath {
+                moveTo(3.9f, 12.0f)
+                curveToRelative(0.0f, -1.71f, 1.39f, -3.1f, 3.1f, -3.1f)
+                horizontalLineToRelative(4.0f)
+                verticalLineTo(7.0f)
+                horizontalLineTo(7.0f)
+                curveToRelative(-2.76f, 0.0f, -5.0f, 2.24f, -5.0f, 5.0f)
+                reflectiveCurveToRelative(2.24f, 5.0f, 5.0f, 5.0f)
+                horizontalLineToRelative(4.0f)
+                verticalLineToRelative(-1.9f)
+                horizontalLineTo(7.0f)
+                curveToRelative(-1.71f, 0.0f, -3.1f, -1.39f, -3.1f, -3.1f)
+                close()
+                moveTo(8.0f, 13.0f)
+                horizontalLineToRelative(8.0f)
+                verticalLineToRelative(-2.0f)
+                horizontalLineTo(8.0f)
+                verticalLineToRelative(2.0f)
+                close()
+                moveTo(17.0f, 7.0f)
+                horizontalLineToRelative(-4.0f)
+                verticalLineToRelative(1.9f)
+                horizontalLineToRelative(4.0f)
+                curveToRelative(1.71f, 0.0f, 3.1f, 1.39f, 3.1f, 3.1f)
+                reflectiveCurveToRelative(-1.39f, 3.1f, -3.1f, 3.1f)
+                horizontalLineToRelative(-4.0f)
+                verticalLineTo(17.0f)
+                horizontalLineToRelative(4.0f)
+                curveToRelative(2.76f, 0.0f, 5.0f, -2.24f, 5.0f, -5.0f)
+                reflectiveCurveToRelative(-2.24f, -5.0f, -5.0f, -5.0f)
+                close()
+            }
+        }
+
     val MusicNote: ImageVector
         get() = materialIcon(name = "Filled.MusicNote") {
             materialPath {

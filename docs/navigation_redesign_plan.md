@@ -117,7 +117,7 @@ book_list bleibt erreichbar für Buch-CRUD + globale Einstellungen
 
 Struktur (illustrativ — Gemini implementiert vollständig, opt-in ggf. nötig):
 
-```kotlin
+```text
 enum class BookSection { CONTENT, STATS, SETTINGS }
 
 @Composable

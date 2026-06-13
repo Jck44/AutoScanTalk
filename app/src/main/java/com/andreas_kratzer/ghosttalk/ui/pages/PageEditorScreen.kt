@@ -34,6 +34,9 @@ import com.andreas_kratzer.ghosttalk.ui.components.ValidatedTextField
 import com.andreas_kratzer.ghosttalk.ui.pages.pagesplit.PageSplitManualPromptDialog
 import com.andreas_kratzer.ghosttalk.ui.pages.pagesplit.PageSplitOptInDialog
 import com.andreas_kratzer.ghosttalk.ui.pages.pagesplit.PageSplitWizardDialog
+import com.andreas_kratzer.ghosttalk.ui.pages.IncomingReferencesDialog
+import com.andreas_kratzer.ghosttalk.core.domain.pages.UsageLocation
+import androidx.compose.ui.platform.LocalContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -68,6 +71,9 @@ fun PageEditorScreen(
     }
 
     var localName by remember(page.name) { mutableStateOf(page.name) }
+    var showIncomingLinksDialog by remember { mutableStateOf(false) }
+    var incomingUsages by remember { mutableStateOf<List<UsageLocation>>(emptyList()) }
+    val context = LocalContext.current
     
     // Layout & Page Split Dialog States
     val showLayoutAssistantDialog = remember { mutableStateOf(false) }
@@ -165,6 +171,22 @@ fun PageEditorScreen(
                     }
                 )
             }
+            IconButton(
+                onClick = {
+                    coroutineScope.launch {
+                        incomingUsages = pageViewModel.getPageUsages(page.id)
+                        showIncomingLinksDialog = true
+                    }
+                },
+                modifier = Modifier.testTag("page_editor_incoming_links")
+            ) {
+                Icon(
+                    imageVector = GhostTalkIcons.Link,
+                    contentDescription = "Eingehende Verknüpfungen",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
             IconButton(
                 onClick = {
                     showLayoutAssistantDialog.value = true
@@ -336,6 +358,22 @@ fun PageEditorScreen(
                     }
                 }
             }
+        }
+
+        if (showIncomingLinksDialog) {
+            IncomingReferencesDialog(
+                pageName = page.name,
+                usages = incomingUsages,
+                onDismiss = { showIncomingLinksDialog = false },
+                onNavigateToUsage = { usage ->
+                    showIncomingLinksDialog = false
+                    if (usage is UsageLocation.PageUsage) {
+                        onEditPage?.invoke(usage.id, null)
+                    } else {
+                        android.widget.Toast.makeText(context, R.string.page_incoming_links_template_toast, android.widget.Toast.LENGTH_SHORT).show()
+                    }
+                }
+            )
         }
     }
 }

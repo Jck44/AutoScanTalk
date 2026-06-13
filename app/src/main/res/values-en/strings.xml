@@ -261,6 +261,12 @@
     <string name="template_dialog_usage_page_item">• Page: %1$s</string>
     <string name="template_dialog_delete_warning">\nDeleting the template will remove the link in these pages.</string>
     <string name="page_dialog_in_use_title">Page in use</string>
+    <string name="page_incoming_links_title">Incoming Connections</string>
+    <string name="page_incoming_links_empty">No other buttons or pages navigate to this page.</string>
+    <string name="page_incoming_links_message">The following buttons navigate to the page \"%1$s\":</string>
+    <string name="page_activate_message">The following buttons navigate to page \"%1$s\". Select the ones you want to activate:</string>
+    <string name="action_close">Close</string>
+    <string name="page_incoming_links_template_toast">Editing of templates is possible in the Template Editor</string>
     <string name="page_dialog_delete_all">Delete All</string>
     <string name="page_dialog_in_use_message">Page \"%1$s\" is used for navigation in the following locations:</string>
     <string name="page_dialog_usage_item">• %1$s: %2$s</string>

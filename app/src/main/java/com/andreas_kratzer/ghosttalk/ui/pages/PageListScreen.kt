@@ -55,6 +55,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.core.domain.pages.UsageLocation
+import com.andreas_kratzer.ghosttalk.ui.components.UsageLocationRow
 import com.andreas_kratzer.ghosttalk.core.model.Page
 import com.andreas_kratzer.ghosttalk.core.model.SortOrder
 import com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkCard
@@ -216,41 +217,27 @@ fun PageListScreen(
                 ) {
                     Column {
                         for (usage in usages) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = 4.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                val typePrefix = if (usage is UsageLocation.PageUsage) stringResource(R.string.common_page) else stringResource(R.string.common_template)
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text(stringResource(R.string.page_dialog_usage_item, typePrefix, usage.name), style = MaterialTheme.typography.bodyMedium)
-                                    if (usage.buttonLabel.isNotEmpty()) {
-                                        Text(
-                                            text = stringResource(R.string.page_dialog_usage_button_label, usage.buttonLabel),
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            UsageLocationRow(
+                                usage = usage,
+                                trailingContent = {
+                                    IconButton(
+                                        onClick = {
+                                            pageToDelete.value = null
+                                            usagesToDelete.value = emptyList()
+                                            if (usage is UsageLocation.PageUsage) {
+                                                onEditPage(usage.id)
+                                            } else {
+                                                onEditTemplate(usage.id)
+                                            }
+                                        }
+                                    ) {
+                                        Icon(
+                                            imageVector = GhostTalkIcons.ArrowForward,
+                                            contentDescription = stringResource(R.string.action_navigate)
                                         )
                                     }
                                 }
-                                IconButton(
-                                    onClick = {
-                                        pageToDelete.value = null
-                                        usagesToDelete.value = emptyList()
-                                        if (usage is UsageLocation.PageUsage) {
-                                            onEditPage(usage.id)
-                                        } else {
-                                            onEditTemplate(usage.id)
-                                        }
-                                    }
-                                ) {
-                                    Icon(
-                                        imageVector = GhostTalkIcons.ArrowForward,
-                                        contentDescription = stringResource(R.string.action_navigate)
-                                    )
-                                }
-                            }
+                            )
                         }
                     }
                 }

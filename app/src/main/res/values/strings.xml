@@ -266,6 +266,12 @@
     <string name="template_dialog_usage_page_item">• Seite: %1$s</string>
     <string name="template_dialog_delete_warning">\nBeim Löschen der Vorlage wird die Verknüpfung in diesen Seiten aufgehoben.</string>
     <string name="page_dialog_in_use_title">Seite wird verwendet</string>
+    <string name="page_incoming_links_title">Eingehende Verknüpfungen</string>
+    <string name="page_incoming_links_empty">Keine anderen Buttons oder Seiten navigieren zu dieser Seite.</string>
+    <string name="page_incoming_links_message">Folgende Buttons navigieren zur Seite \"%1$s\":</string>
+    <string name="page_activate_message">Folgende Buttons navigieren zur Seite \"%1$s\". Wähle die aus, die aktiviert werden sollen:</string>
+    <string name="action_close">Schließen</string>
+    <string name="page_incoming_links_template_toast">Vorlagen-Bearbeitung im Vorlagen-Editor möglich</string>
     <string name="page_dialog_delete_all">Alles Löschen</string>
     <string name="page_dialog_in_use_message">Die Seite \"%1$s\" wird an folgenden Stellen zur Navigation verwendet:</string>
     <string name="page_dialog_usage_item">• %1$s: %2$s</string>

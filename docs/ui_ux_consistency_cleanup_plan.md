@@ -71,7 +71,7 @@ Nicht in diesem Plan (Abschnitt 4): Navigations-IA, `safeNavigate`-Wrapper, dopp
 
 Die 5× kopierte Formel durch **einen** Helper ersetzen und den Landscape-Faktor vereinheitlichen:
 
-```kotlin
+```text
 import androidx.compose.foundation.layout.BoxWithConstraintsScope
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp

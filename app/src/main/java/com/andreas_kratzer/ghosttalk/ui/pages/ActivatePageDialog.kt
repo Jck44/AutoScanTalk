@@ -27,6 +27,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.core.domain.pages.UsageLocation
+import com.andreas_kratzer.ghosttalk.ui.components.UsageLocationRow
 
 @Composable
 fun ActivatePageDialog(
@@ -43,7 +44,7 @@ fun ActivatePageDialog(
         text = {
             Column {
                 Text(
-                    text = "Folgende Buttons navigieren zur Seite \"$pageName\". Wähle die aus, die aktiviert werden sollen:",
+                    text = stringResource(R.string.page_activate_message, pageName),
                     style = MaterialTheme.typography.bodyMedium
                 )
 
@@ -77,35 +78,21 @@ fun ActivatePageDialog(
                 ) {
                     Column {
                         usages.forEach { usage ->
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = 4.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Checkbox(
-                                    checked = selectedUsages.contains(usage),
-                                    onCheckedChange = { isChecked ->
-                                        selectedUsages = if (isChecked) {
-                                            selectedUsages + usage
-                                        } else {
-                                            selectedUsages - usage
+                            UsageLocationRow(
+                                usage = usage,
+                                leadingContent = {
+                                    Checkbox(
+                                        checked = selectedUsages.contains(usage),
+                                        onCheckedChange = { isChecked ->
+                                            selectedUsages = if (isChecked) {
+                                                selectedUsages + usage
+                                            } else {
+                                                selectedUsages - usage
+                                            }
                                         }
-                                    }
-                                )
-                                Column(modifier = Modifier.padding(start = 8.dp)) {
-                                    val typePrefix = if (usage is UsageLocation.PageUsage) "Seite" else "Vorlage"
-                                    Text(
-                                        text = "$typePrefix: ${usage.name}",
-                                        style = MaterialTheme.typography.bodyLarge
-                                    )
-                                    Text(
-                                        text = "Button: \"${usage.buttonLabel}\"",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
-                            }
+                            )
                         }
                     }
                 }

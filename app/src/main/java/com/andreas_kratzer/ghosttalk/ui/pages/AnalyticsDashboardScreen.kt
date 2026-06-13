@@ -36,6 +36,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.core.domain.pages.UsageLocation
+import com.andreas_kratzer.ghosttalk.ui.components.UsageLocationRow
 import com.andreas_kratzer.ghosttalk.core.model.Page
 import com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkEmptyState
 import com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkScaffold
@@ -272,25 +273,7 @@ fun AnalyticsDashboardScreen(
                         ) {
                             Column {
                                 for (usage in usages) {
-                                    Row(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(vertical = 4.dp),
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.SpaceBetween
-                                    ) {
-                                        val typePrefix = if (usage is UsageLocation.PageUsage) "Seite" else "Vorlage"
-                                        Column(modifier = Modifier.weight(1f)) {
-                                            Text("• $typePrefix: ${usage.name}", style = MaterialTheme.typography.bodyMedium)
-                                            if (usage.buttonLabel.isNotEmpty()) {
-                                                Text(
-                                                    text = "  Button: \"${usage.buttonLabel}\"",
-                                                    style = MaterialTheme.typography.bodySmall,
-                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                                )
-                                            }
-                                        }
-                                    }
+                                    UsageLocationRow(usage = usage)
                                 }
                             }
                         }
