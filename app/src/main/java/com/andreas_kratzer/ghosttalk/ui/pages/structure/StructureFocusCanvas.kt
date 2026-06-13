@@ -12,9 +12,11 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.ui.draw.scale
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -63,9 +65,9 @@ fun StructureFocusCanvas(
     onDiscardSplit: () -> Unit = {},
     onFocus: (String) -> Unit,
     onEditPageInGrid: (String) -> Unit,
-    onMoveButton: (fromIndex: Int, targetPageId: String) -> Unit,
+    onMoveButton: (fromPageId: String, fromIndex: Int, toPageId: String) -> Unit,
     onAddConnection: (targetPageId: String) -> Unit,
-    onRemoveConnection: (buttonIndex: Int, targetPageName: String) -> Unit,
+    onRemoveConnection: (pageId: String, buttonIndex: Int, targetPageName: String) -> Unit,
     onCreatePage: (name: String, rows: Int, cols: Int, templateId: String?, onCreated: (String) -> Unit) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -267,7 +269,7 @@ fun StructureFocusCanvas(
                     .fillMaxWidth()
                     .then(
                         if (proposal != null) Modifier.chipDropTarget(dragDropState, "_unassigned")
-                        else Modifier
+                        else Modifier.chipDropTarget(dragDropState, focusedPageId)
                     )
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
@@ -484,7 +486,11 @@ fun StructureFocusCanvas(
                                                         }?.key
 
                                                         if (targetPageId != null) {
-                                                            onMoveButton(index, targetPageId)
+                                                            if (targetPageId == "delete") {
+                                                                onRemoveConnection(focusedPageId, index, btn.label)
+                                                            } else {
+                                                                onMoveButton(focusedPageId, index, targetPageId)
+                                                            }
                                                         }
 
                                                         dragDropState.clear()
@@ -720,7 +726,7 @@ fun StructureFocusCanvas(
                                                     }
                                                 }
                                                 IconButton(
-                                                    onClick = { onRemoveConnection(edge.sourceButtonIndex, targetName) }
+                                                    onClick = { onRemoveConnection(focusedPageId, edge.sourceButtonIndex, targetName) }
                                                 ) {
                                                     Icon(
                                                         imageVector = Icons.Default.Close,
@@ -737,18 +743,39 @@ fun StructureFocusCanvas(
                                                     verticalArrangement = Arrangement.spacedBy(6.dp)
                                                 ) {
                                                     targetButtons.forEach { btn ->
-                                                        Surface(
-                                                            shape = MaterialTheme.shapes.small,
-                                                            color = MaterialTheme.colorScheme.surface,
-                                                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
-                                                        ) {
-                                                            Text(
-                                                                text = btn.label,
-                                                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                                                                style = MaterialTheme.typography.labelMedium,
-                                                                maxLines = 1,
-                                                                overflow = TextOverflow.Ellipsis
-                                                            )
+                                                        val btnIndex = targetPage?.buttonConfigs?.indexOf(btn) ?: -1
+                                                        val dragKey = "target_${edge.targetPageId}_$btnIndex"
+                                                        if (btnIndex != -1) {
+                                                            key(btn.id) {
+                                                                DraggableChip(
+                                                                    label = btn.label,
+                                                                    isDragged = dragDropState.draggedKey == dragKey,
+                                                                    onDragStart = { initialCenter, size ->
+                                                                        dragDropState.onDragStart(dragKey, btn.label, null, initialCenter, size)
+                                                                    },
+                                                                    onDrag = { amount ->
+                                                                        dragDropState.onDrag(amount)
+                                                                    },
+                                                                    onDragEnd = {
+                                                                        if (dragDropState.draggedKey == dragKey) {
+                                                                            val dropTarget = dragDropState.targetBounds.entries.find { entry ->
+                                                                                entry.value.contains(dragDropState.dragGlobalPos)
+                                                                            }?.key
+                                                                            if (dropTarget == focusedPageId) {
+                                                                                onMoveButton(edge.targetPageId, btnIndex, focusedPageId)
+                                                                            } else if (dropTarget == "delete") {
+                                                                                onRemoveConnection(edge.targetPageId, btnIndex, btn.label)
+                                                                            }
+                                                                            dragDropState.clear()
+                                                                        }
+                                                                    },
+                                                                    onDragCancel = {
+                                                                        if (dragDropState.draggedKey == dragKey) {
+                                                                            dragDropState.clear()
+                                                                        }
+                                                                    }
+                                                                )
+                                                            }
                                                         }
                                                     }
                                                 }
@@ -817,6 +844,59 @@ fun StructureFocusCanvas(
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Text(stringResource(R.string.structure_add_connection_btn))
                             }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Delete Drop Target Overlay
+        if (dragDropState.draggedKey != null && proposal == null) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(top = 16.dp)
+                    .zIndex(10f),
+                contentAlignment = Alignment.TopCenter
+            ) {
+                val isHovered = dragDropState.targetBounds["delete"]?.contains(dragDropState.dragGlobalPos) == true
+                val containerColor = if (isHovered) MaterialTheme.colorScheme.error
+                                     else MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.95f)
+                val contentColor = if (isHovered) MaterialTheme.colorScheme.onError
+                                   else MaterialTheme.colorScheme.onErrorContainer
+                val scale = if (isHovered) 1.05f else 1f
+
+                Surface(
+                    shape = MaterialTheme.shapes.large,
+                    color = containerColor,
+                    tonalElevation = 4.dp,
+                    shadowElevation = 6.dp,
+                    border = BorderStroke(
+                        width = if (isHovered) 2.dp else 1.dp,
+                        color = if (isHovered) MaterialTheme.colorScheme.onError else MaterialTheme.colorScheme.error.copy(alpha = 0.5f)
+                    ),
+                    modifier = Modifier
+                        .fillMaxWidth(0.9f)
+                        .height(56.dp)
+                        .scale(scale)
+                        .chipDropTarget(dragDropState, "delete")
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Delete,
+                                contentDescription = null,
+                                tint = contentColor
+                            )
+                            Text(
+                                text = "Taste löschen (hier ablegen)",
+                                color = contentColor,
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.Bold
+                            )
                         }
                     }
                 }

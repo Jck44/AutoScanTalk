@@ -21,6 +21,7 @@ import com.andreas_kratzer.ghosttalk.ui.pages.PageViewModel
 import com.andreas_kratzer.ghosttalk.ui.pages.PageSplitViewModel
 import com.andreas_kratzer.ghosttalk.ui.pages.pagesplit.PageSplitOptInDialog
 import com.andreas_kratzer.ghosttalk.ui.pages.pagesplit.PageSplitManualPromptDialog
+import androidx.activity.compose.BackHandler
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import kotlinx.coroutines.launch
 
@@ -57,6 +58,25 @@ fun StructureEditorScreen(
 
     var focusedPageId by rememberSaveable {
         mutableStateOf("")
+    }
+
+    var focusHistory by rememberSaveable {
+        mutableStateOf(emptyList<String>())
+    }
+
+    val navigateToPage = { newPageId: String ->
+        if (newPageId != focusedPageId && newPageId.isNotBlank()) {
+            focusHistory = focusHistory + focusedPageId
+            focusedPageId = newPageId
+        }
+    }
+
+    BackHandler(enabled = focusHistory.isNotEmpty()) {
+        val lastPageId = focusHistory.lastOrNull()
+        if (lastPageId != null) {
+            focusedPageId = lastPageId
+            focusHistory = focusHistory.dropLast(1)
+        }
     }
 
     val pageSplitProposal by pageSplitViewModel.pageSplitProposal.collectAsState()
@@ -97,6 +117,7 @@ fun StructureEditorScreen(
 
     val snackbarHostState = remember { SnackbarHostState() }
 
+    var pageToRemoveConnectionFromPageId by remember { mutableStateOf("") }
     var pageToRemoveConnectionByButtonIndex by remember { mutableStateOf<Int?>(null) }
     var pageToRemoveConnectionTargetName by remember { mutableStateOf("") }
     var orphanToConnectId by remember { mutableStateOf<String?>(null) }
@@ -120,9 +141,9 @@ fun StructureEditorScreen(
         }
     }
 
-    val onMoveButton = { fromIndex: Int, targetPageId: String ->
+    val onMoveButton = { fromPageId: String, fromIndex: Int, targetPageId: String ->
         gridEditorViewModel.moveButtonToPage(
-            fromPageId = focusedPageId,
+            fromPageId = fromPageId,
             fromIndex = fromIndex,
             toPageId = targetPageId,
             forceMove = false
@@ -227,7 +248,7 @@ fun StructureEditorScreen(
                         graph = graph,
                         pageNames = pageNames,
                         focusedPageId = focusedPageId,
-                        onFocus = { focusedPageId = it },
+                        onFocus = { navigateToPage(it) },
                         onOrphanClick = { orphanId -> orphanToConnectId = orphanId },
                         modifier = Modifier.fillMaxSize()
                     )
@@ -261,11 +282,12 @@ fun StructureEditorScreen(
                 onDiscardSplit = {
                     pageSplitViewModel.clearPageSplitProposal()
                 },
-                onFocus = { focusedPageId = it },
+                onFocus = { navigateToPage(it) },
                 onEditPageInGrid = onEditPageInGrid,
                 onMoveButton = onMoveButton,
                 onAddConnection = onAddConnection,
-                onRemoveConnection = { buttonIndex, targetPageName ->
+                onRemoveConnection = { pageId, buttonIndex, targetPageName ->
+                    pageToRemoveConnectionFromPageId = pageId
                     pageToRemoveConnectionByButtonIndex = buttonIndex
                     pageToRemoveConnectionTargetName = targetPageName
                 },
@@ -299,7 +321,7 @@ fun StructureEditorScreen(
                         pageNames = pageNames,
                         focusedPageId = focusedPageId,
                         onFocus = {
-                            focusedPageId = it
+                            navigateToPage(it)
                             scope.launch { sheetState.hide() }.invokeOnCompletion {
                                 if (!sheetState.isVisible) {
                                     showBottomSheet = false
@@ -327,6 +349,7 @@ fun StructureEditorScreen(
             onDismissRequest = {
                 pageToRemoveConnectionByButtonIndex = null
                 pageToRemoveConnectionTargetName = ""
+                pageToRemoveConnectionFromPageId = ""
             },
             title = { Text(stringResource(R.string.structure_remove_connection_title)) },
             text = { Text(stringResource(R.string.structure_remove_connection_msg, pageToRemoveConnectionTargetName)) },
@@ -336,7 +359,8 @@ fun StructureEditorScreen(
                         val index = pageToRemoveConnectionByButtonIndex!!
                         pageToRemoveConnectionByButtonIndex = null
                         pageToRemoveConnectionTargetName = ""
-                        gridEditorViewModel.updateButtonConfig(focusedPageId, index, null)
+                        gridEditorViewModel.updateButtonConfig(pageToRemoveConnectionFromPageId, index, null)
+                        pageToRemoveConnectionFromPageId = ""
                         showSuccessSnackbarWithUndo()
                     }
                 ) {
@@ -379,7 +403,7 @@ fun StructureEditorScreen(
                     onClick = {
                         val targetId = orphanToConnectId!!
                         orphanToConnectId = null
-                        focusedPageId = targetId
+                        navigateToPage(targetId)
                     }
                 ) {
                     Text(stringResource(R.string.structure_view_page))

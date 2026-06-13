@@ -19,6 +19,9 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -128,7 +131,7 @@ fun BookListScreen(
             )
         } else {
             LazyVerticalGrid(
-                columns = GridCells.Adaptive(minSize = 300.dp),
+                columns = GridCells.Adaptive(minSize = 360.dp),
                 modifier = Modifier.fillMaxSize(),
                 verticalArrangement = Arrangement.spacedBy(dimensions.gridSpacing),
                 horizontalArrangement = Arrangement.spacedBy(dimensions.gridSpacing),
@@ -137,6 +140,7 @@ fun BookListScreen(
                 items(allBooks) { book ->
                     val favoriteId by bookViewModel.favoriteBookId.collectAsState()
                     val isFavorite = favoriteId == book.id
+                    var showMenu by remember { mutableStateOf(false) }
 
                     GhostTalkCard(
                         title = book.name,
@@ -162,50 +166,73 @@ fun BookListScreen(
                                 )
                             }
                             
-                            IconButton(
-                                onClick = {
-                                    editingBook = book
-                                    editBookName = book.name
-                                    showEditDialog = true
-                                },
-                                modifier = Modifier.testTag("book_edit_button_${book.id}")
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Edit,
-                                    contentDescription = stringResource(R.string.action_edit),
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-
-                            IconButton(
-                                onClick = {
-                                    bookViewModel.duplicateBook(book.id, duplicateSuffix)
-                                },
-                                modifier = Modifier.testTag("book_duplicate_button_${book.id}")
-                            ) {
-                                Icon(
-                                    imageVector = GhostTalkIcons.Copy,
-                                    contentDescription = stringResource(R.string.action_duplicate),
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-
-                            IconButton(
-                                onClick = {
-                                    deletingBook = book
-                                    if (securityManager.isSecurityRequiredForDeletion()) {
-                                        showDeleteSecurity = true
-                                    } else {
-                                        showDeleteConfirm = true
-                                    }
-                                },
-                                modifier = Modifier.testTag("book_delete_button_${book.id}")
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Delete,
-                                    contentDescription = stringResource(R.string.action_delete),
-                                    tint = MaterialTheme.colorScheme.error
-                                )
+                            Box {
+                                IconButton(
+                                    onClick = { showMenu = true },
+                                    modifier = Modifier.testTag("book_menu_button_${book.id}")
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.MoreVert,
+                                        contentDescription = "Optionen",
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                                
+                                DropdownMenu(
+                                    expanded = showMenu,
+                                    onDismissRequest = { showMenu = false }
+                                ) {
+                                    DropdownMenuItem(
+                                        text = { Text(stringResource(R.string.action_edit)) },
+                                        onClick = {
+                                            showMenu = false
+                                            editingBook = book
+                                            editBookName = book.name
+                                            showEditDialog = true
+                                        },
+                                        leadingIcon = {
+                                            Icon(
+                                                imageVector = Icons.Default.Edit,
+                                                contentDescription = null
+                                            )
+                                        },
+                                        modifier = Modifier.testTag("book_edit_button_${book.id}")
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text(stringResource(R.string.action_duplicate)) },
+                                        onClick = {
+                                            showMenu = false
+                                            bookViewModel.duplicateBook(book.id, duplicateSuffix)
+                                        },
+                                        leadingIcon = {
+                                            Icon(
+                                                imageVector = GhostTalkIcons.Copy,
+                                                contentDescription = null
+                                            )
+                                        },
+                                        modifier = Modifier.testTag("book_duplicate_button_${book.id}")
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text(stringResource(R.string.action_delete)) },
+                                        onClick = {
+                                            showMenu = false
+                                            deletingBook = book
+                                            if (securityManager.isSecurityRequiredForDeletion()) {
+                                                showDeleteSecurity = true
+                                            } else {
+                                                showDeleteConfirm = true
+                                            }
+                                        },
+                                        leadingIcon = {
+                                            Icon(
+                                                imageVector = Icons.Default.Delete,
+                                                contentDescription = null,
+                                                tint = MaterialTheme.colorScheme.error
+                                            )
+                                        },
+                                        modifier = Modifier.testTag("book_delete_button_${book.id}")
+                                    )
+                                }
                             }
                         }
                     }

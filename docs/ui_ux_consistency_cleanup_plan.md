@@ -13,8 +13,8 @@ Parallel wird eine **neue Navigationsseite / Informationsarchitektur** geplant. 
 
 ## 0. Regeln für Gemini (verbindlich)
 
-1. **Ein Arbeitspaket = ein Commit.** APs in Reihenfolge 1 → 5 umsetzen, nicht mischen.
-2. **Nur UI-Schicht.** Keine Änderungen an ViewModels, Delegates, Repositories, Datenmodellen, `core-scanning` oder der **Navigationslogik** (`GhostTalkNavHost` nur dort anfassen, wo AP 1 es ausdrücklich erlaubt — nämlich Log-Zeilen). ViewModel-Signaturen bleiben unverändert.
+1. **Ein Arbeitspaket = ein Commit.** APs in Reihenfolge 1 → 6 umsetzen, nicht mischen.
+2. **Nur UI-Schicht.** Keine Änderungen an ViewModels, Delegates, Repositories, Datenmodellen, `core-scanning` oder der **Navigationslogik** (`GhostTalkNavHost` nur dort anfassen, wo AP 1 es ausdrücklich erlaubt — nämlich Log-Zeilen). ViewModel-Signaturen bleiben unverändert. **Ausnahme:** AP 6 ändert ausschließlich `AndroidManifest.xml` (Konfiguration, kein Code).
 3. **Nach jedem AP bauen:** `./gradlew assembleDebug` muss grün sein (`JAVA_HOME` = JBR von Android Studio, kein System-Java).
 4. **`testTag`-Modifier niemals entfernen oder umbenennen** — die UI-Tests (`app/src/androidTest`) hängen daran. Insbesondere alle `start_card_*`, `book_*`, `content_manage_*`, `page_screen_*` unverändert lassen.
 5. **Keine neuen Bibliotheken.** Material 3 + Compose reichen.
@@ -33,6 +33,7 @@ Parallel wird eine **neue Navigationsseite / Informationsarchitektur** geplant. 
 | 3 | BookListScreen-Dialoge auf `GhostTalkDialog` | klein | offen |
 | 4 | Restliche hartcodierte UI-Strings → Resources | mittel | offen |
 | 5 | Speichern/Abbrechen-Balken hinter Navigationsleiste (Profil bearbeiten) | klein | offen |
+| 6 | Windowed/Freeform offiziell unterstützen (resizeableActivity + Mindestgröße) | klein | offen |
 | R | Abschluss-Review (Claude) | — | offen |
 
 ---
@@ -145,24 +146,54 @@ Folgende **user-sichtbaren** Literale nach `strings.xml` (passendes Modul) ausla
 
 Der `bottomBar`-`Surface` des inneren `Scaffold` (das mit `contentWindowInsets = WindowInsets(0.dp)` bewusst die Insets nullt) erhält **keine** Insets → bei `targetSdk=37` (Edge-to-Edge) liegt der Balken hinter der Android-Navigationsleiste und Speichern/Abbrechen sind auf Geräten mit Navigationsleiste (z. B. Samsung-Tablet) nicht erreichbar.
 
-**Fix** — das bereits in `SetupScreen.kt:225` verwendete Muster übernehmen: dem Inhalt des Balkens die System-Insets geben. Auf die `Row` (Inhalt) im `bottomBar` setzen:
+**Fix** — dem Inhalt des Balkens die relevanten Insets geben (robuster als das `navigationBarsPadding()` aus `SetupScreen.kt:225`: `safeDrawing` deckt Navigationsleiste **und** die Caption-Bar im Freeform-Fenster (AP 6) ab; zusätzlich `imePadding()` für die Tastatur). Auf die `Row` (Inhalt) im `bottomBar` setzen:
 
 ```kotlin
 Row(
     modifier = Modifier
         .fillMaxWidth()
-        .navigationBarsPadding()   // hebt den Balken über die Navigationsleiste
-        .imePadding()              // hält ihn über der Tastatur beim Profilnamen-Editieren
+        .windowInsetsPadding(
+            WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal + WindowInsetsSides.Bottom)
+        )                          // Navigationsleiste + Caption-Bar (Freeform)
+        .imePadding()              // hält den Balken über der Tastatur beim Profilnamen-Editieren
         .padding(dimensions.paddingMedium),
     horizontalArrangement = Arrangement.End
 ) { … }
 ```
 
-Die `Surface` selbst **voll-bleed** lassen (kein Padding außen), damit ihre Tonal-/Shadow-Elevation bis zum Bildschirmrand zeichnet und nur der Button-Inhalt eingerückt wird. Imports `androidx.compose.foundation.layout.navigationBarsPadding` und `…imePadding` ergänzen.
+Die `Surface` selbst **voll-bleed** lassen (kein Padding außen), damit ihre Tonal-/Shadow-Elevation bis zum Bildschirmrand zeichnet und nur der Button-Inhalt eingerückt wird. Imports ergänzen: `androidx.compose.foundation.layout.windowInsetsPadding`, `…WindowInsets`, `…WindowInsetsSides`, `…safeDrawing`, `…only`, `…imePadding`.
 
 > Hinweis: Den `bottomBar` im `SetupScreen` **nicht** anfassen — der ist bereits korrekt.
 
 **Fertig wenn:** Build grün; im Profil-Bearbeiten-Modus sind Speichern/Abbrechen auf einem Gerät/Emulator **mit** 3-Knopf-Navigationsleiste **und** mit Gesten-Leiste vollständig sichtbar/tippbar; beim Editieren des Profilnamens schiebt die Tastatur den Balken nicht außer Sicht.
+
+---
+
+### AP 6 – Windowed/Freeform offiziell unterstützen
+**Datei:** `app/src/main/AndroidManifest.xml`
+
+Hintergrund: Der Code-Audit (2026-06-13) ergab **keine** strukturellen Bruchstellen für Multi-Window/Freeform — keine echten Display-Metriken, Größenklassen sind fenster-basiert (`Theme.kt` `isTablet` via Root-`BoxWithConstraints`; `SettingsScreen` via `LocalWindowInfo.containerSize`), `configChanges` deckt Resize ohne Neustart ab, keine Orientierungs-Sperre, kein erzwungener Fullscreen, In-App-Overlay. Die App ist derzeit nur durch **eine Manifest-Flag** ausgesperrt.
+
+1. **Resizeable aktivieren:** Im `<application>`-Tag `android:resizeableActivity="false"` → `"true"` ändern.
+2. **Mindest-Fenstergröße festlegen**, damit kein absurd schmales Fenster die Hub-/Grid-Layouts staucht. In der `.MainActivity`-`<activity>` ein `<layout>`-Element ergänzen:
+   ```xml
+   <layout
+       android:minWidth="360dp"
+       android:minHeight="480dp"
+       android:gravity="center" />
+   ```
+3. **AP 5 ist Voraussetzung** (der `safeDrawing`-Insets-Fix deckt die Freeform-Caption-Bar mit ab). Keine weiteren Code-Änderungen nötig — die UI ist bereits adaptiv.
+
+**Verifikation (manuell, Gerät/Emulator mit Freeform bzw. Splitscreen):**
+- App in Splitscreen und (falls verfügbar) Freeform/DeX öffnen, Fenster von groß nach klein ziehen.
+- [ ] Layout passt sich live an (kein Neustart, kein Absturz), Hub-Karten/Nav skalieren
+- [ ] `SettingsScreen`: Side-by-Side ab ~720 dp, darunter Single-Pane; Speichern/Abbrechen-Balken korrekt über den Insets
+- [ ] Nutzermodus (`PageScreen`): Button-Grid bleibt bedienbar; Scanning unverändert
+- [ ] Multi-Resume beachten: Beim Teilen des Bildschirms mit einer zweiten App `setUserModeActive`/Scanning-Verhalten prüfen (ON_PAUSE/ON_RESUME-Semantik ändert sich im Multi-Window)
+
+> Falls die manuelle Prüfung an einer Stelle doch staucht: **nicht** die Flag zurückdrehen, sondern die konkrete Stelle melden — laut Audit ist nichts Strukturelles zu erwarten. Eine spätere Umstellung von orientierungs- auf `WindowSizeClass`-basierte Layouts ist dem Nav-Redesign vorbehalten.
+
+**Fertig wenn:** Build grün; App läuft in Splitscreen/Freeform ohne Absturz und ohne abgeschnittene Bedienelemente; Mindestgröße greift.
 
 ---
 
@@ -180,6 +211,7 @@ Sichtprüfung (Light + Dark, Hoch- + Querformat):
 - [ ] Leere Listen zeigen `GhostTalkEmptyState` mit lokalisiertem Text
 - [ ] App auf Englisch: keine deutschen Resttexte an den AP-4-Stellen
 - [ ] Profil bearbeiten: Speichern/Abbrechen über der Navigationsleiste sichtbar (Gesten- **und** 3-Knopf-Navigation)
+- [ ] Splitscreen/Freeform: Fenster groß↔klein ziehen — Layout adaptiert live, kein Absturz, keine abgeschnittenen Bedienelemente
 - [ ] Nutzermodus (`PageScreen`) unverändert funktionsfähig (Scanning, Bluetooth, Zurück)
 
 ---
