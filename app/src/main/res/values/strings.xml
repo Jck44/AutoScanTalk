@@ -628,5 +628,24 @@
     <string name="shared_import_tts_success">TTS Sprach-Cache erfolgreich importiert!</string>
     <string name="shared_import_tts_error">Fehler beim TTS Cache Import: %s</string>
     <string name="page_editor_delete_drop_zone">Zum Löschen hierher ziehen</string>
+
+    <!-- Structure Editor -->
+    <string name="structure_editor_title">Struktur-Editor</string>
+    <string name="structure_editor_open">Struktur bearbeiten</string>
+    <string name="structure_incoming">Führt hierher ("kommt von")</string>
+    <string name="structure_outgoing">Navigiert zu ("führt zu")</string>
+    <string name="structure_unconnected">Nicht verbundene Seiten</string>
+    <string name="structure_open_in_grid">Im Raster-Editor öffnen</string>
+    <string name="structure_tree_toggle">Seitenbaum anzeigen</string>
+    <string name="structure_start_page_desc">Startseite / wird über ‚Zur Startseite‘ erreicht</string>
+    <string name="structure_buttons_on_page">Buttons auf dieser Seite:</string>
+    <string name="structure_no_active_buttons">Keine aktiven Buttons mit Beschriftung auf dieser Seite.</string>
+    <string name="structure_no_outgoing">Keine ausgehenden Verbindungen von dieser Seite.</string>
+    <string name="structure_no_page_selected">Keine Seite ausgewählt</string>
+    <string name="structure_no_graph">Kein Graph vorhanden</string>
+    <string name="structure_grid_size">Raster: %1$d x %2$d</string>
+    <string name="structure_reference_badge">Ref</string>
+    <string name="structure_collapse">Zuklappen</string>
+    <string name="structure_expand">Aufklappen</string>
 </resources>
 

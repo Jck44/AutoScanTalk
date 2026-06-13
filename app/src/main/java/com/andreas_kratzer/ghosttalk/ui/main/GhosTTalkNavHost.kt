@@ -33,6 +33,7 @@ import com.andreas_kratzer.ghosttalk.ui.pages.PageEditorScreen
 import com.andreas_kratzer.ghosttalk.ui.pages.PageListScreen
 import com.andreas_kratzer.ghosttalk.ui.pages.PageScreen
 import com.andreas_kratzer.ghosttalk.ui.pages.PageViewModel
+import com.andreas_kratzer.ghosttalk.ui.pages.structure.StructureEditorScreen
 import com.andreas_kratzer.ghosttalk.ui.templates.TemplateEditorScreen
 import com.andreas_kratzer.ghosttalk.ui.templates.TemplateScreen
 import com.andreas_kratzer.ghosttalk.ui.templates.TemplateViewModel
@@ -65,6 +66,7 @@ fun GhostTalkNavHost(
             route == "content_management" || 
             route == "page_list" || 
             route == "templates" || 
+            route == "structure_editor" || 
             route.startsWith("page_editor") || 
             route.startsWith("template_editor") -> securityManager.isSecurityRequiredForEdit()
             else -> false
@@ -355,6 +357,20 @@ fun GhostTalkNavHost(
                 },
                 onEditTemplate = { templateId: String ->
                     navController.safeNavigate("template_editor/$templateId")
+                },
+                onOpenStructureEditor = {
+                    navigateWithSecurity("structure_editor")
+                }
+            )
+        }
+        composable("structure_editor") {
+            StructureEditorScreen(
+                pageViewModel = pageViewModel,
+                onEditPageInGrid = { pageId ->
+                    navController.safeNavigate("page_editor/$pageId")
+                },
+                onNavigateBack = {
+                    navController.safePopBackStack()
                 }
             )
         }

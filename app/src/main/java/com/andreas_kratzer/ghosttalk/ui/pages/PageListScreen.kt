@@ -73,7 +73,8 @@ fun PageListScreen(
     pageViewModel: PageViewModel,
     onNavigateBack: () -> Unit,
     onEditPage: (String) -> Unit,
-    onEditTemplate: (String) -> Unit
+    onEditTemplate: (String) -> Unit,
+    onOpenStructureEditor: () -> Unit
 ) {
     val allPages by pageViewModel.filteredPages.collectAsState()
     val templates by pageViewModel.templates.collectAsState()
@@ -255,6 +256,13 @@ fun PageListScreen(
             
             var showSortMenu by remember { mutableStateOf(false) }
             val pageSortOrder by pageViewModel.pageSortOrderFlow.collectAsState("MANUAL")
+            
+            IconButton(onClick = onOpenStructureEditor) {
+                Icon(
+                    imageVector = GhostTalkIcons.Link,
+                    contentDescription = stringResource(R.string.structure_editor_title)
+                )
+            }
             
             IconButton(onClick = { showSortMenu = true }) {
                 Icon(

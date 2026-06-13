@@ -121,6 +121,7 @@ class PageViewModel @Inject constructor(
     val defaultScanPattern = settingsRepository.defaultScanPatternFlow
     val showTestButtons = settingsRepository.showTestButtonsFlow
     val isGeminiEnabled get() = settingsRepository.isGeminiEnabled
+    val defaultStartPageIdFlow = settingsRepository.defaultStartPageIdFlow
 
     val spotifyUserDisplayName = smartIntegrationDelegate.spotifyUserDisplayName
     val spotifyPlaylists = smartIntegrationDelegate.spotifyPlaylists
