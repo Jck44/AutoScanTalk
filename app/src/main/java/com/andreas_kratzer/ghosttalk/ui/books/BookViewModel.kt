@@ -33,6 +33,9 @@ class BookViewModel @Inject constructor(
     private val _allBooks = MutableStateFlow<List<Book>>(emptyList())
     val allBooks: StateFlow<List<Book>> = _allBooks.asStateFlow()
 
+    private val _isLoading = MutableStateFlow(true)
+    val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
+
     private val _autoOpenBookEvent = MutableSharedFlow<String>(
         replay = 1,
         onBufferOverflow = kotlinx.coroutines.channels.BufferOverflow.DROP_OLDEST
@@ -46,6 +49,7 @@ class BookViewModel @Inject constructor(
         viewModelScope.launch {
             bookRepository.getAllBooks().collect { books ->
                 _allBooks.value = books
+                _isLoading.value = false
                 
                 if (books.isEmpty()) {
                     hasAutoOpened = true // Don't auto-open if nothing exists

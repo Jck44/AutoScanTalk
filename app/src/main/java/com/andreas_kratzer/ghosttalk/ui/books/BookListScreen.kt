@@ -1,6 +1,7 @@
 package com.andreas_kratzer.ghosttalk.ui.books
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -67,6 +68,7 @@ fun BookListScreen(
     onNavigateToGlobalSettings: () -> Unit
 ) {
     val allBooks by bookViewModel.allBooks.collectAsState()
+    val isLoading by bookViewModel.isLoading.collectAsState()
     
     var showAddDialog by remember { mutableStateOf(false) }
     var showEditDialog by remember { mutableStateOf(false) }
@@ -113,7 +115,10 @@ fun BookListScreen(
         val isLandscape = maxWidth > maxHeight
         val dynamicCardHeight = (maxHeight * if (isLandscape) 0.18f else 0.12f).coerceIn(90.dp, 140.dp)
 
-        if (allBooks.isEmpty()) {
+        if (isLoading) {
+            // Render blank surface during loading to avoid visual flash/glitch
+            Box(modifier = Modifier.fillMaxSize())
+        } else if (allBooks.isEmpty()) {
             com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkEmptyState(
                 icon = com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons.Book,
                 title = "Keine Bücher",

@@ -278,6 +278,9 @@ fun GhostTalkNavHost(
                     val bookId = activeBookId ?: "book-default"
                     navController.safeNavigate("page_editor/static_row_$bookId")
                 },
+                onNavigateToStructureEditor = {
+                    navigateWithSecurity("structure_editor")
+                },
                 onNavigateBack = { navController.safePopBackStack() }
             )
         }

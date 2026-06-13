@@ -31,4 +31,5 @@
     <string name="dialog_close">Schließen</string>
     <string name="dialog_back">Zurück</string>
     <string name="common_back">Zurück</string>
+    <string name="structure_editor_title">Struktur-Editor</string>
 </resources>

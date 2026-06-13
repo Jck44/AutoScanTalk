@@ -172,6 +172,7 @@ class PageManagementDelegate @Inject constructor(
 
     fun setActiveBookId(bookId: String?) {
         appStateRepository.setActiveBookId(bookId)
+        setCurrentPage(null)
     }
 
     fun updateSearchQuery(query: String) {

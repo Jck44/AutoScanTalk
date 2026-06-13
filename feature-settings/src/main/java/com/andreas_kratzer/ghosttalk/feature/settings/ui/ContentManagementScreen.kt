@@ -24,6 +24,7 @@ fun ContentManagementScreen(
     onNavigateToPageManager: () -> Unit,
     onNavigateToTemplateManager: () -> Unit,
     onNavigateToStaticRowEditor: () -> Unit,
+    onNavigateToStructureEditor: () -> Unit,
     onNavigateBack: () -> Unit
 ) {
     val dimensions = LocalDimensions.current
@@ -52,28 +53,36 @@ fun ContentManagementScreen(
             ) {
                 GhostTalkCard(
                     title = stringResource(CoreR.string.page_list_title),
-                icon = GhostTalkIcons.Description,
-                onClick = onNavigateToPageManager,
-                height = dynamicCardHeight,
-                testTag = "content_manage_pages"
-            )
+                    icon = GhostTalkIcons.Description,
+                    onClick = onNavigateToPageManager,
+                    height = dynamicCardHeight,
+                    testTag = "content_manage_pages"
+                )
+
+                GhostTalkCard(
+                    title = stringResource(CoreR.string.structure_editor_title),
+                    icon = GhostTalkIcons.Link,
+                    onClick = onNavigateToStructureEditor,
+                    height = dynamicCardHeight,
+                    testTag = "content_manage_structure"
+                )
             
-            GhostTalkCard(
-                title = stringResource(CoreR.string.template_manage_title),
-                icon = GhostTalkIcons.GridView,
-                onClick = onNavigateToTemplateManager,
-                height = dynamicCardHeight,
-                testTag = "content_manage_templates"
-            )
+                GhostTalkCard(
+                    title = stringResource(CoreR.string.template_manage_title),
+                    icon = GhostTalkIcons.GridView,
+                    onClick = onNavigateToTemplateManager,
+                    height = dynamicCardHeight,
+                    testTag = "content_manage_templates"
+                )
             
-            GhostTalkCard(
-                title = "Statische Zeile konfigurieren",
-                icon = GhostTalkIcons.GridView,
-                onClick = onNavigateToStaticRowEditor,
-                height = dynamicCardHeight,
-                testTag = "content_manage_static_row"
-            )
-        }
+                GhostTalkCard(
+                    title = "Statische Zeile konfigurieren",
+                    icon = GhostTalkIcons.GridView,
+                    onClick = onNavigateToStaticRowEditor,
+                    height = dynamicCardHeight,
+                    testTag = "content_manage_static_row"
+                )
+            }
     }
 }
 }
