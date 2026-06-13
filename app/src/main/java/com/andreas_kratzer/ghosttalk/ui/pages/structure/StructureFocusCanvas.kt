@@ -12,6 +12,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -31,6 +32,9 @@ import com.andreas_kratzer.ghosttalk.core.model.PageTemplate
 import com.andreas_kratzer.ghosttalk.ui.components.DraggableChip
 import com.andreas_kratzer.ghosttalk.ui.pages.actions.NavigationActionFields
 import kotlin.math.roundToInt
+
+private const val MAX_VISIBLE_TARGETS = 12
+private const val MAX_VISIBLE_SOURCES = 12
 
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -52,7 +56,6 @@ fun StructureFocusCanvas(
     val incomingSources = remember(graph, focusedPageId) { graph.incoming[focusedPageId] ?: emptyList() }
     val outgoingEdges = remember(graph, focusedPageId) { graph.outgoing[focusedPageId] ?: emptyList() }
 
-    val targetBounds = remember(focusedPageId) { mutableStateOf(mutableMapOf<String, Rect>()) }
     var draggedButtonIndex by remember { mutableStateOf<Int?>(null) }
     var draggedLabel by remember { mutableStateOf("") }
     val dragStartCenter = remember { mutableStateOf(Offset.Zero) }
@@ -63,6 +66,11 @@ fun StructureFocusCanvas(
 
     var showAddNavigationSection by remember(focusedPageId) { mutableStateOf(false) }
     var newNavigationPageId by remember(focusedPageId) { mutableStateOf("") }
+
+    var showAllSources by rememberSaveable(focusedPageId) { mutableStateOf(false) }
+    var showAllTargets by rememberSaveable(focusedPageId) { mutableStateOf(false) }
+
+    val targetBounds = remember(focusedPageId, showAllTargets) { mutableStateOf(mutableMapOf<String, Rect>()) }
 
     if (page == null) {
         Box(modifier = modifier, contentAlignment = Alignment.Center) {
@@ -118,16 +126,36 @@ fun StructureFocusCanvas(
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     } else {
+                        val visibleSources = if (showAllSources || incomingSources.size <= MAX_VISIBLE_SOURCES) {
+                            incomingSources
+                        } else {
+                            incomingSources.take(MAX_VISIBLE_SOURCES)
+                        }
                         FlowRow(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            incomingSources.forEach { sourceId ->
+                            visibleSources.forEach { sourceId ->
                                 val sourceName = pageNames[sourceId] ?: sourceId
                                 InputChip(
                                     selected = false,
                                     onClick = { onFocus(sourceId) },
                                     label = { Text(sourceName) }
+                                )
+                            }
+                        }
+                        if (incomingSources.size > 12) {
+                            Spacer(modifier = Modifier.height(4.dp))
+                            TextButton(
+                                onClick = { showAllSources = !showAllSources },
+                                contentPadding = PaddingValues(0.dp)
+                            ) {
+                                Text(
+                                    text = if (showAllSources) {
+                                        stringResource(R.string.structure_show_less)
+                                    } else {
+                                        stringResource(R.string.structure_show_more, incomingSources.size - MAX_VISIBLE_SOURCES)
+                                    }
                                 )
                             }
                         }
@@ -270,11 +298,16 @@ fun StructureFocusCanvas(
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     } else {
+                        val visibleEdges = if (showAllTargets || outgoingEdges.size <= MAX_VISIBLE_TARGETS) {
+                            outgoingEdges
+                        } else {
+                            outgoingEdges.take(MAX_VISIBLE_TARGETS)
+                        }
                         FlowRow(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            outgoingEdges.forEach { edge ->
+                            visibleEdges.forEach { edge ->
                                 val targetName = pageNames[edge.targetPageId] ?: edge.targetPageId
                                 InputChip(
                                     selected = false,
@@ -304,6 +337,21 @@ fun StructureFocusCanvas(
                                                 modifier = Modifier.size(16.dp)
                                             )
                                         }
+                                    }
+                                )
+                            }
+                        }
+                        if (outgoingEdges.size > 12) {
+                            Spacer(modifier = Modifier.height(4.dp))
+                            TextButton(
+                                onClick = { showAllTargets = !showAllTargets },
+                                contentPadding = PaddingValues(0.dp)
+                            ) {
+                                Text(
+                                    text = if (showAllTargets) {
+                                        stringResource(R.string.structure_show_less)
+                                    } else {
+                                        stringResource(R.string.structure_show_more, outgoingEdges.size - MAX_VISIBLE_TARGETS)
                                     }
                                 )
                             }

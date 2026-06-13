@@ -662,5 +662,10 @@
     <string name="structure_page_full">Diese Seite ist voll – kein Platz für eine neue Verknüpfung.</string>
     <string name="structure_remove_connection_desc">Verbindung entfernen</string>
     <string name="structure_view_page">Ansehen</string>
+    <string name="structure_search">Seiten suchen…</string>
+    <string name="structure_search_no_results">Keine Ergebnisse</string>
+    <string name="structure_show_more">%1$d weitere anzeigen</string>
+    <string name="structure_show_less">Weniger anzeigen</string>
+    <string name="structure_search_clear">Suche löschen</string>
 </resources>
 

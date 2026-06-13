@@ -657,5 +657,10 @@
     <string name="structure_page_full">This page is full – no space for a new connection.</string>
     <string name="structure_remove_connection_desc">Remove connection</string>
     <string name="structure_view_page">View</string>
+    <string name="structure_search">Search pages…</string>
+    <string name="structure_search_no_results">No results</string>
+    <string name="structure_show_more">Show %1$d more</string>
+    <string name="structure_show_less">Show less</string>
+    <string name="structure_search_clear">Clear search</string>
 </resources>
 
