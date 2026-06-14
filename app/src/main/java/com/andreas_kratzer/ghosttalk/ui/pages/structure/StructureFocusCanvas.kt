@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -35,6 +36,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ElevatedCard
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -44,6 +46,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -69,6 +72,8 @@ import androidx.compose.ui.zIndex
 import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.core.ai.domain.SplitPageUseCase
 import com.andreas_kratzer.ghosttalk.core.domain.pages.BookNavigationGraph
+import com.andreas_kratzer.ghosttalk.core.domain.pages.NavEdge
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import com.andreas_kratzer.ghosttalk.core.model.NavigateToPageButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.NavigateToStartPageButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.Page
@@ -77,6 +82,7 @@ import com.andreas_kratzer.ghosttalk.ui.components.DraggableChip
 import com.andreas_kratzer.ghosttalk.ui.components.chipDropTarget
 import com.andreas_kratzer.ghosttalk.ui.components.rememberChipDragDropState
 import com.andreas_kratzer.ghosttalk.ui.pages.actions.NavigationActionFields
+import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
 import kotlin.math.roundToInt
 
 private const val MAX_VISIBLE_TARGETS = 12
@@ -101,6 +107,7 @@ fun StructureFocusCanvas(
     onAddConnection: (targetPageId: String) -> Unit,
     onRemoveConnection: (pageId: String, buttonIndex: Int, targetPageName: String) -> Unit,
     onCreatePage: (name: String, rows: Int, cols: Int, templateId: String?, onCreated: (String) -> Unit) -> Unit,
+    viewMode: StructureViewMode = StructureViewMode.CARDS,
     modifier: Modifier = Modifier
 ) {
     val page = remember(pages, focusedPageId) { pages.find { it.id == focusedPageId } }
@@ -182,8 +189,7 @@ fun StructureFocusCanvas(
         mutableStateOf(initialData.second)
     }
 
-    var showAddNavigationSection by remember(focusedPageId) { mutableStateOf(false) }
-    var newNavigationPageId by remember(focusedPageId) { mutableStateOf("") }
+    var showConnectDialog by remember { mutableStateOf(false) }
 
     var showAllSources by rememberSaveable(focusedPageId) { mutableStateOf(false) }
     var showAllTargets by rememberSaveable(focusedPageId) { mutableStateOf(false) }
@@ -208,50 +214,57 @@ fun StructureFocusCanvas(
                 dragDropState.rootBoxBounds = layoutCoordinates.boundsInRoot()
             }
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp)
-                .verticalScroll(scrollState),
-            verticalArrangement = Arrangement.spacedBy(20.dp)
-        ) {
-            val configuration = androidx.compose.ui.platform.LocalConfiguration.current
-            val isTablet = configuration.screenWidthDp >= 600
-            val showGraph = isTablet && (incomingSources.isNotEmpty() || outgoingEdges.isNotEmpty())
-            if (showGraph) {
-                LocalNavigationViewGraph(
-                    focusedPageId = focusedPageId,
-                    focusedPageName = page.name,
-                    incomingSources = incomingSources,
-                    outgoingTargets = outgoingEdges.map { it.targetPageId },
-                    pageNames = pageNames,
-                    onFocus = onFocus
-                )
-            }
+        if (viewMode == StructureViewMode.GRAPH) {
+            LocalNavigationViewGraph(
+                focusedPageId = focusedPageId,
+                focusedPageName = page.name,
+                incomingSources = incomingSources,
+                outgoingEdges = outgoingEdges,
+                graph = graph,
+                pageNames = pageNames,
+                onFocus = onFocus,
+                onRemoveConnection = onRemoveConnection,
+                isFullView = true,
+                modifier = Modifier.fillMaxSize()
+            )
+        } else {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp)
+                    .verticalScroll(scrollState),
+                verticalArrangement = Arrangement.spacedBy(20.dp)
+            ) {
+                val configuration = androidx.compose.ui.platform.LocalConfiguration.current
+                val isTablet = configuration.screenWidthDp >= 600
+                val showGraph = isTablet && (incomingSources.isNotEmpty() || outgoingEdges.isNotEmpty())
+                if (showGraph) {
+                    LocalNavigationViewGraph(
+                        focusedPageId = focusedPageId,
+                        focusedPageName = page.name,
+                        incomingSources = incomingSources,
+                        outgoingEdges = outgoingEdges,
+                        graph = graph,
+                        pageNames = pageNames,
+                        onFocus = onFocus,
+                        onRemoveConnection = null,
+                        isFullView = false
+                    )
+                }
 
             // Top Section: Incoming
+            val dimensions = LocalDimensions.current
             Card(
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
+                shape = MaterialTheme.shapes.medium,
+                elevation = CardDefaults.cardElevation(defaultElevation = dimensions.cardElevation),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Column(modifier = Modifier.padding(12.dp)) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.secondary
-                        )
-                        Text(
-                            text = stringResource(R.string.structure_incoming),
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.secondary
-                        )
-                    }
-                    Spacer(modifier = Modifier.height(8.dp))
+                Column(modifier = Modifier.padding(dimensions.paddingMedium)) {
+                    com.andreas_kratzer.ghosttalk.core.ui.components.SectionHeader(
+                        title = stringResource(R.string.structure_incoming),
+                        modifier = Modifier.padding(top = 0.dp, bottom = dimensions.paddingMedium)
+                    )
                     if (incomingSources.isEmpty()) {
                         Text(
                             text = stringResource(R.string.structure_start_page_desc),
@@ -265,8 +278,8 @@ fun StructureFocusCanvas(
                             incomingSources.take(MAX_VISIBLE_SOURCES)
                         }
                         FlowRow(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                            horizontalArrangement = Arrangement.spacedBy(dimensions.paddingMedium),
+                            verticalArrangement = Arrangement.spacedBy(dimensions.paddingMedium)
                         ) {
                             visibleSources.forEach { sourceId ->
                                 val sourceName = pageNames[sourceId] ?: sourceId
@@ -278,7 +291,7 @@ fun StructureFocusCanvas(
                             }
                         }
                         if (incomingSources.size > 12) {
-                            Spacer(modifier = Modifier.height(4.dp))
+                            Spacer(modifier = Modifier.height(dimensions.paddingSmall))
                             TextButton(
                                 onClick = { showAllSources = !showAllSources },
                                 contentPadding = PaddingValues(0.dp)
@@ -297,7 +310,10 @@ fun StructureFocusCanvas(
             }
 
             // Middle Section: Focused Page Details and buttons
-            ElevatedCard(
+            Card(
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
+                shape = MaterialTheme.shapes.medium,
+                elevation = CardDefaults.cardElevation(defaultElevation = dimensions.cardElevation),
                 modifier = Modifier
                     .fillMaxWidth()
                     .then(
@@ -305,7 +321,7 @@ fun StructureFocusCanvas(
                         else Modifier.chipDropTarget(dragDropState, focusedPageId)
                     )
             ) {
-                Column(modifier = Modifier.padding(16.dp)) {
+                Column(modifier = Modifier.padding(dimensions.paddingLarge)) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -319,15 +335,10 @@ fun StructureFocusCanvas(
                                 maxLines = 2,
                                 overflow = TextOverflow.Ellipsis
                             )
-                            Text(
-                                text = stringResource(R.string.structure_grid_size, page.rows, page.columns),
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(dimensions.paddingLarge))
 
                     val outgoingButtonIndices = remember(outgoingEdges) {
                         outgoingEdges.map { it.sourceButtonIndex }.toSet()
@@ -361,7 +372,7 @@ fun StructureFocusCanvas(
                                 if (proposal == null && hasValidButtons) {
                                     Modifier.clickable { showMainButtons = !showMainButtons }
                                 } else Modifier
-                            ),
+                             ),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -371,7 +382,7 @@ fun StructureFocusCanvas(
                                     imageVector = if (showMainButtons) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
                                     contentDescription = null,
                                     tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.padding(end = 8.dp)
+                                    modifier = Modifier.padding(end = dimensions.paddingMedium)
                                 )
                             }
                             Text(
@@ -381,25 +392,11 @@ fun StructureFocusCanvas(
                                 color = MaterialTheme.colorScheme.primary
                             )
                         }
-                        if (proposal == null && hasValidButtons) {
-                            TextButton(
-                                onClick = onTriggerSplit,
-                                contentPadding = PaddingValues(horizontal = 8.dp)
-                            ) {
-                                Icon(
-                                    imageVector = com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons.AutoAwesome,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(16.dp)
-                                )
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Text("Seite aufteilen (KI)", fontSize = 12.sp)
-                            }
-                        }
                     }
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(dimensions.paddingMedium))
 
                     if (isSplitLoading) {
-                        Box(modifier = Modifier.fillMaxWidth().padding(24.dp), contentAlignment = Alignment.Center) {
+                        Box(modifier = Modifier.fillMaxWidth().padding(dimensions.paddingExtraLarge), contentAlignment = Alignment.Center) {
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                 CircularProgressIndicator()
                                 Spacer(modifier = Modifier.height(16.dp))
@@ -532,32 +529,21 @@ fun StructureFocusCanvas(
                 }
             }
 
-            // Bottom Section: Outgoing / Targets
             if (proposal != null) {
                 Card(
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
+                    shape = MaterialTheme.shapes.medium,
+                    elevation = CardDefaults.cardElevation(defaultElevation = dimensions.cardElevation),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(
-                        modifier = Modifier.padding(12.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                        modifier = Modifier.padding(dimensions.paddingMedium),
+                        verticalArrangement = Arrangement.spacedBy(dimensions.paddingMedium)
                     ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                            Text(
-                                text = "Vorgeschlagene neue Seiten (Zielzonen)",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                        }
+                        com.andreas_kratzer.ghosttalk.core.ui.components.SectionHeader(
+                            title = "Vorgeschlagene neue Seiten (Zielzonen)",
+                            modifier = Modifier.padding(top = 0.dp, bottom = dimensions.paddingMedium)
+                        )
 
                         categoryProposals.forEach { category ->
                             Card(
@@ -672,27 +658,16 @@ fun StructureFocusCanvas(
                 }
             } else {
                 Card(
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
+                    shape = MaterialTheme.shapes.medium,
+                    elevation = CardDefaults.cardElevation(defaultElevation = dimensions.cardElevation),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Column(modifier = Modifier.padding(12.dp)) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                            Text(
-                                text = stringResource(R.string.structure_outgoing),
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                        }
-                        Spacer(modifier = Modifier.height(8.dp))
+                    Column(modifier = Modifier.padding(dimensions.paddingMedium)) {
+                        com.andreas_kratzer.ghosttalk.core.ui.components.SectionHeader(
+                            title = stringResource(R.string.structure_outgoing),
+                            modifier = Modifier.padding(top = 0.dp, bottom = dimensions.paddingMedium)
+                        )
                         if (outgoingEdges.isEmpty()) {
                             Text(
                                 text = stringResource(R.string.structure_no_outgoing),
@@ -822,54 +797,10 @@ fun StructureFocusCanvas(
                                 }
                             }
                         }
-
-                        Spacer(modifier = Modifier.height(8.dp))
-
-                        if (showAddNavigationSection) {
-                            Card(
-                                colors = CardDefaults.cardColors(
-                                    containerColor = MaterialTheme.colorScheme.surface
-                                ),
-                                modifier = Modifier.fillMaxWidth().padding(top = 4.dp)
-                            ) {
-                                Column(modifier = Modifier.padding(12.dp)) {
-                                    Text(
-                                        text = stringResource(R.string.structure_add_connection_title),
-                                        style = MaterialTheme.typography.titleSmall,
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                    Spacer(modifier = Modifier.height(8.dp))
-                                    NavigationActionFields(
-                                        navigateToPageId = newNavigationPageId,
-                                        onPageSelected = { selectedPageId ->
-                                            onAddConnection(selectedPageId)
-                                            showAddNavigationSection = false
-                                            newNavigationPageId = ""
-                                        },
-                                        availablePages = pages.filter { it.id != focusedPageId },
-                                        templates = templates,
-                                        onNavigateToPage = null,
-                                        onCreatePage = onCreatePage,
-                                        onDismissDialog = {
-                                            showAddNavigationSection = false
-                                            newNavigationPageId = ""
-                                        }
-                                    )
-                                }
-                            }
-                        } else {
-                            Button(
-                                onClick = { showAddNavigationSection = true },
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Icon(imageVector = Icons.Default.Add, contentDescription = null)
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(stringResource(R.string.structure_add_connection_btn))
-                            }
-                        }
                     }
                 }
             }
+        }
         }
 
         // Delete Drop Target Overlay
@@ -956,7 +887,133 @@ fun StructureFocusCanvas(
                 }
             }
         }
+
+        // Floating Action Button for adding connection
+        if (proposal == null) {
+            FloatingActionButton(
+                onClick = { showConnectDialog = true },
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(16.dp),
+                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Icon(imageVector = Icons.Default.Add, contentDescription = null)
+                    Text(stringResource(R.string.structure_add_connection_btn))
+                }
+            }
+        }
     }
+
+    if (showConnectDialog) {
+        ConnectPageDialog(
+            focusedPageId = focusedPageId,
+            pages = pages,
+            pageNames = pageNames,
+            onDismissRequest = { showConnectDialog = false },
+            onPageSelected = { targetPageId ->
+                onAddConnection(targetPageId)
+                showConnectDialog = false
+            }
+        )
+    }
+}
+
+@Composable
+fun ConnectPageDialog(
+    focusedPageId: String,
+    pages: List<Page>,
+    pageNames: Map<String, String>,
+    onDismissRequest: () -> Unit,
+    onPageSelected: (String) -> Unit
+) {
+    var searchQuery by remember { mutableStateOf("") }
+    val filteredPages = remember(searchQuery, pages, focusedPageId) {
+        pages.filter { it.id != focusedPageId }
+            .filter { page ->
+                searchQuery.isBlank() || page.name.contains(searchQuery, ignoreCase = true)
+            }
+            .sortedBy { it.name }
+    }
+
+    androidx.compose.material3.AlertDialog(
+        onDismissRequest = onDismissRequest,
+        title = {
+            Text(
+                text = stringResource(R.string.structure_add_connection_title),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
+            )
+        },
+        text = {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = 400.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                androidx.compose.material3.OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = { searchQuery = it },
+                    placeholder = { Text(stringResource(R.string.structure_connect_dialog_search_hint)) },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = MaterialTheme.shapes.large,
+                    singleLine = true
+                )
+
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    items(filteredPages.size) { index ->
+                        val pageOption = filteredPages[index]
+                        Surface(
+                            onClick = {
+                                onPageSelected(pageOption.id)
+                            },
+                            shape = MaterialTheme.shapes.medium,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(
+                                text = pageOption.name,
+                                style = MaterialTheme.typography.bodyLarge,
+                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
+                            )
+                        }
+                    }
+                    if (filteredPages.isEmpty()) {
+                        item {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 24.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = stringResource(R.string.page_none_found),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {},
+        dismissButton = {
+            TextButton(onClick = onDismissRequest) {
+                Text(stringResource(R.string.action_cancel))
+            }
+        }
+    )
 }
 
 @Composable
@@ -964,43 +1021,59 @@ private fun LocalNavigationViewGraph(
     focusedPageId: String,
     focusedPageName: String,
     incomingSources: List<String>,
-    outgoingTargets: List<String>,
+    outgoingEdges: List<NavEdge>,
+    graph: BookNavigationGraph,
     pageNames: Map<String, String>,
     onFocus: (String) -> Unit,
+    onRemoveConnection: ((pageId: String, buttonIndex: Int, targetPageName: String) -> Unit)? = null,
+    isFullView: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     val distinctIncoming = incomingSources.distinct()
-    val distinctOutgoing = outgoingTargets.distinct()
+    val distinctOutgoing = outgoingEdges.map { it.targetPageId }.distinct()
 
-    val maxIncomingRows = 4
-    val showIncomingMore = distinctIncoming.size > maxIncomingRows
-    val visibleIncoming = if (showIncomingMore) distinctIncoming.take(maxIncomingRows - 1) else distinctIncoming
+    val maxIncomingRows = if (isFullView) 8 else 4
+    var incomingLimit by remember(focusedPageId) { mutableStateOf(maxIncomingRows) }
+    val showIncomingMore = distinctIncoming.size > incomingLimit
+    val visibleIncoming = if (showIncomingMore) distinctIncoming.take(incomingLimit - 1) else distinctIncoming
     val incomingCount = visibleIncoming.size + (if (showIncomingMore) 1 else 0)
 
-    val maxOutgoingRows = 4
-    // Dynamically calculate column count with no upper limit cap
-    val targetColumnsCount = ((distinctOutgoing.size + maxOutgoingRows - 1) / maxOutgoingRows).coerceAtLeast(1)
-    
-    val visibleOutgoing = distinctOutgoing
-    val outgoingCount = visibleOutgoing.size
+    val maxOutgoingRows = if (isFullView) 8 else 4
+    val maxOutgoingColumns = if (isFullView) 2 else 1
+    val maxOutgoingTotal = maxOutgoingRows * maxOutgoingColumns
+    var outgoingTotalLimit by remember(focusedPageId) { mutableStateOf(maxOutgoingTotal) }
+    val showOutgoingMore = distinctOutgoing.size > outgoingTotalLimit
+    val visibleOutgoing = if (showOutgoingMore) distinctOutgoing.take(outgoingTotalLimit - 1) else distinctOutgoing
+    val outgoingCount = visibleOutgoing.size + (if (showOutgoingMore) 1 else 0)
+    // Dynamically calculate column count based on visible count
+    val targetColumnsCount = ((outgoingCount + maxOutgoingRows - 1) / maxOutgoingRows).coerceAtLeast(1)
 
     val incomingRows = incomingCount
     val maxOutgoingRowsInAnyCol = if (outgoingCount == 0) 0 else {
         if (outgoingCount <= maxOutgoingRows) outgoingCount else maxOutgoingRows
     }
     val maxRows = maxOf(incomingRows, maxOutgoingRowsInAnyCol, 1)
-    val dynamicHeight = (maxRows * 52).coerceIn(160, 320).dp
+    val rowHeight = if (isFullView) 64 else 52
+    val dynamicHeight = if (isFullView) {
+        (maxRows * rowHeight).coerceAtLeast(450).dp
+    } else {
+        (maxRows * rowHeight).coerceIn(160, 320).dp
+    }
 
     val incomingWidthDp = 160.dp
     val centerWidthDp = 190.dp
     val outgoingColWidthDp = 170.dp
     val virtualWidthDp = incomingWidthDp + centerWidthDp + (outgoingColWidthDp * targetColumnsCount)
 
+    var selectedEdgeForDeletion by remember { mutableStateOf<NavEdge?>(null) }
+
     Card(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)),
-        modifier = modifier.fillMaxWidth()
+        modifier = if (isFullView) modifier.fillMaxSize() else modifier.fillMaxWidth()
     ) {
-        Column(modifier = Modifier.padding(12.dp)) {
+        Column(
+            modifier = if (isFullView) Modifier.fillMaxSize().padding(12.dp) else Modifier.padding(12.dp)
+        ) {
             Text(
                 text = "Visueller Navigations-Graph",
                 style = MaterialTheme.typography.titleSmall,
@@ -1012,6 +1085,13 @@ private fun LocalNavigationViewGraph(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .then(if (isFullView) Modifier.weight(1f) else Modifier)
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null
+                    ) {
+                        selectedEdgeForDeletion = null
+                    }
                     .horizontalScroll(rememberScrollState())
             ) {
                 Box(
@@ -1032,6 +1112,10 @@ private fun LocalNavigationViewGraph(
                     val nodeHeightPx = with(density) { nodeHeightDp.toPx() }
                     val centerNodeWidthPx = with(density) { centerNodeWidthDp.toPx() }
                     val centerNodeHeightPx = with(density) { centerNodeHeightDp.toPx() }
+
+                    val arrowLength = with(density) { 8.dp.toPx() }
+                    val arrowWidth = with(density) { 5.dp.toPx() }
+                    val gapPx = with(density) { (outgoingColWidthDp - nodeWidthDp).toPx() }
 
                     val centerX = with(density) { (incomingWidthDp + centerWidthDp / 2).toPx() }
                     val centerY = heightPx / 2
@@ -1069,10 +1153,6 @@ private fun LocalNavigationViewGraph(
                     val secondaryColor = MaterialTheme.colorScheme.secondary
 
                     Canvas(modifier = Modifier.fillMaxSize()) {
-                        val arrowLength = 8.dp.toPx()
-                        val arrowWidth = 5.dp.toPx()
-                        val gapPx = with(density) { (outgoingColWidthDp - nodeWidthDp).toPx() }
-
                         // 1. Draw Incoming Connections
                         // Main incoming trunk line
                         if (incomingCount > 0) {
@@ -1151,9 +1231,10 @@ private fun LocalNavigationViewGraph(
                         }
 
                         outgoingPoints.forEachIndexed { index, pt ->
+                            val isMoreNode = showOutgoingMore && index == outgoingCount - 1
                             val endX = pt.first - nodeWidthPx / 2
                             val endY = pt.second
-                            val curveEndX = endX - arrowLength
+                            val curveEndX = if (isMoreNode) endX else endX - arrowLength
                             
                             val startX = endX - gapPx + arrowLength
                             val startY = centerY
@@ -1168,20 +1249,34 @@ private fun LocalNavigationViewGraph(
                                 )
                             }
 
+                            val stroke = if (isMoreNode) {
+                                androidx.compose.ui.graphics.drawscope.Stroke(
+                                    width = 1.5.dp.toPx(),
+                                    pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(
+                                        intervals = floatArrayOf(10f, 10f),
+                                        phase = 0f
+                                    )
+                                )
+                            } else {
+                                androidx.compose.ui.graphics.drawscope.Stroke(width = 2.dp.toPx())
+                            }
+
                             drawPath(
                                 path = path,
-                                color = primaryColor.copy(alpha = 0.6f),
-                                style = androidx.compose.ui.graphics.drawscope.Stroke(width = 2.dp.toPx())
+                                color = primaryColor.copy(alpha = if (isMoreNode) 0.4f else 0.6f),
+                                style = stroke
                             )
 
-                            // Arrowhead at the target node input
-                            val arrowPath = androidx.compose.ui.graphics.Path().apply {
-                                moveTo(endX, endY)
-                                lineTo(endX - arrowLength, endY - arrowWidth)
-                                lineTo(endX - arrowLength, endY + arrowWidth)
-                                close()
+                            // Arrowhead at the target node input (only for actual pages, not 'more' placeholder)
+                            if (!isMoreNode) {
+                                val arrowPath = androidx.compose.ui.graphics.Path().apply {
+                                    moveTo(endX, endY)
+                                    lineTo(endX - arrowLength, endY - arrowWidth)
+                                    lineTo(endX - arrowLength, endY + arrowWidth)
+                                    close()
+                                }
+                                drawPath(arrowPath, color = primaryColor.copy(alpha = 0.8f))
                             }
-                            drawPath(arrowPath, color = primaryColor.copy(alpha = 0.8f))
                         }
                     }
 
@@ -1197,8 +1292,9 @@ private fun LocalNavigationViewGraph(
                                 .height(nodeHeightDp)
                         ) {
                             if (isMoreNode) {
-                                val moreCount = distinctIncoming.size - (maxIncomingRows - 1)
+                                val moreCount = distinctIncoming.size - (incomingLimit - 1)
                                 Surface(
+                                    onClick = { incomingLimit += 8 },
                                     shape = MaterialTheme.shapes.medium,
                                     color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
                                     border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)),
@@ -1267,8 +1363,7 @@ private fun LocalNavigationViewGraph(
                     // Render Outgoing Nodes
                     for (index in 0 until outgoingCount) {
                         val pt = outgoingPoints[index]
-                        val targetId = visibleOutgoing[index]
-                        val targetName = pageNames[targetId] ?: targetId
+                        val isMoreNode = showOutgoingMore && index == outgoingCount - 1
                         
                         Box(
                             modifier = Modifier
@@ -1276,27 +1371,175 @@ private fun LocalNavigationViewGraph(
                                 .width(nodeWidthDp)
                                 .height(nodeHeightDp)
                         ) {
-                            Surface(
-                                onClick = { onFocus(targetId) },
-                                shape = MaterialTheme.shapes.medium,
-                                color = MaterialTheme.colorScheme.surface,
-                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-                                tonalElevation = 2.dp,
-                                modifier = Modifier.fillMaxSize()
-                            ) {
-                                Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(horizontal = 8.dp)) {
-                                    Text(
-                                        text = targetName,
-                                        style = MaterialTheme.typography.labelMedium,
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis
-                                    )
+                            if (isMoreNode) {
+                                val moreCount = distinctOutgoing.size - (outgoingTotalLimit - 1)
+                                Surface(
+                                    onClick = { outgoingTotalLimit += 8 },
+                                    shape = MaterialTheme.shapes.medium,
+                                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)),
+                                    modifier = Modifier.fillMaxSize()
+                                ) {
+                                    Box(contentAlignment = Alignment.Center) {
+                                        Text(
+                                            text = "+ $moreCount weitere",
+                                            style = MaterialTheme.typography.labelMedium,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                    }
+                                }
+                            } else {
+                                val targetId = visibleOutgoing[index]
+                                val targetName = pageNames[targetId] ?: targetId
+                                Surface(
+                                    onClick = { onFocus(targetId) },
+                                    shape = MaterialTheme.shapes.medium,
+                                    color = MaterialTheme.colorScheme.surface,
+                                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                                    tonalElevation = 2.dp,
+                                    modifier = Modifier.fillMaxSize()
+                                ) {
+                                    Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(horizontal = 8.dp)) {
+                                        Text(
+                                            text = targetName,
+                                            style = MaterialTheme.typography.labelMedium,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    if (onRemoveConnection != null) {
+                        for (index in 0 until incomingCount) {
+                            val isMoreNode = showIncomingMore && index == incomingCount - 1
+                            if (!isMoreNode) {
+                                val sourceId = visibleIncoming[index]
+                                val pt = incomingPoints[index]
+                                val startX = pt.first + nodeWidthPx / 2
+                                val startY = pt.second
+                                val endX = centerX - centerNodeWidthPx / 2
+                                val midX = (startX + endX) / 2
+                                val midY = (startY + centerY) / 2
+
+                                // Find matching edge
+                                val matchingEdge = graph.outgoing[sourceId]?.find { it.targetPageId == focusedPageId }
+                                if (matchingEdge != null) {
+                                    val sizeDp = 36.dp
+                                    val sizePx = with(density) { sizeDp.toPx() }
+                                    Box(
+                                        modifier = Modifier
+                                            .offset { IntOffset((midX - sizePx / 2).toInt(), (midY - sizePx / 2).toInt()) }
+                                            .size(sizeDp)
+                                            .zIndex(20f)
+                                    ) {
+                                        val isSelected = selectedEdgeForDeletion == matchingEdge
+                                        if (isSelected) {
+                                            Surface(
+                                                onClick = {
+                                                    onRemoveConnection(matchingEdge.sourcePageId, matchingEdge.sourceButtonIndex, focusedPageName)
+                                                    selectedEdgeForDeletion = null
+                                                },
+                                                shape = androidx.compose.foundation.shape.CircleShape,
+                                                color = MaterialTheme.colorScheme.error,
+                                                tonalElevation = 4.dp,
+                                                modifier = Modifier.fillMaxSize()
+                                            ) {
+                                                Box(contentAlignment = Alignment.Center) {
+                                                    Icon(
+                                                        imageVector = Icons.Default.Close,
+                                                        contentDescription = "Verbindung trennen",
+                                                        tint = MaterialTheme.colorScheme.onError,
+                                                        modifier = Modifier.size(16.dp)
+                                                    )
+                                                }
+                                            }
+                                        } else {
+                                            // Invisible touch target
+                                            Box(
+                                                modifier = Modifier
+                                                    .fillMaxSize()
+                                                    .clickable(
+                                                        interactionSource = remember { MutableInteractionSource() },
+                                                        indication = null
+                                                    ) {
+                                                        selectedEdgeForDeletion = matchingEdge
+                                                    }
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        // Outgoing connection touch targets
+                        for (index in 0 until outgoingCount) {
+                            val isMoreNode = showOutgoingMore && index == outgoingCount - 1
+                            if (!isMoreNode) {
+                                val targetId = visibleOutgoing[index]
+                                val pt = outgoingPoints[index]
+                                val endX = pt.first - nodeWidthPx / 2
+                                val endY = pt.second
+                                val curveEndX = endX - arrowLength
+                                val startX = endX - gapPx + arrowLength
+                                val midX = (startX + curveEndX) / 2
+                                val midY = (centerY + endY) / 2
+
+                                val matchingEdge = outgoingEdges.getOrNull(index)
+                                if (matchingEdge != null) {
+                                    val sizeDp = 36.dp
+                                    val sizePx = with(density) { sizeDp.toPx() }
+                                    Box(
+                                        modifier = Modifier
+                                            .offset { IntOffset((midX - sizePx / 2).toInt(), (midY - sizePx / 2).toInt()) }
+                                            .size(sizeDp)
+                                            .zIndex(20f)
+                                    ) {
+                                        val isSelected = selectedEdgeForDeletion == matchingEdge
+                                        if (isSelected) {
+                                            val targetName = pageNames[targetId] ?: targetId
+                                            Surface(
+                                                onClick = {
+                                                    onRemoveConnection(focusedPageId, matchingEdge.sourceButtonIndex, targetName)
+                                                    selectedEdgeForDeletion = null
+                                                },
+                                                shape = androidx.compose.foundation.shape.CircleShape,
+                                                color = MaterialTheme.colorScheme.error,
+                                                tonalElevation = 4.dp,
+                                                modifier = Modifier.fillMaxSize()
+                                            ) {
+                                                Box(contentAlignment = Alignment.Center) {
+                                                    Icon(
+                                                        imageVector = Icons.Default.Close,
+                                                        contentDescription = "Verbindung trennen",
+                                                        tint = MaterialTheme.colorScheme.onError,
+                                                        modifier = Modifier.size(16.dp)
+                                                    )
+                                                }
+                                            }
+                                        } else {
+                                            // Invisible touch target
+                                            Box(
+                                                modifier = Modifier
+                                                    .fillMaxSize()
+                                                    .clickable(
+                                                        interactionSource = remember { MutableInteractionSource() },
+                                                        indication = null
+                                                    ) {
+                                                        selectedEdgeForDeletion = matchingEdge
+                                                    }
+                                            )
+                                        }
+                                    }
                                 }
                             }
                         }
                     }
                 }
-            }
         }
     }
+}
 }

@@ -621,3 +621,8 @@ Alle drei klein/risikoarm, ein Commit. Danach: visueller Re-Check + Build.
 - **D11a** `EditablePageTitle.kt` ist nach D10 toter Code (0 Nutzung) → Datei + 2 Imports (PageEditorScreen/StructureEditorScreen) entfernen.
 - **D11b** Zahnrad öffnet `settings?isGlobal=true` → Titel „Globale Einstellungen". Da keine Unterscheidung mehr: auf `isGlobal=false` (Titel „Einstellungen") umstellen. Kosmetisch.
 - **D11c** „Sprechen" → „Benutzermodus" umbenennen (`nav_speak` de/en) + Nav-Item hervorheben (Akzentfarbe/Bold; testTag `start_card_user_mode` belassen). [= das frühere #1]
+
+### Manuelle Gerätesicht Runde 3 (Andreas, 2026-06-14)
+
+- **D12 — Bottom-NavBar Leerraum unter den Items:** Doppelter Bottom-Inset (wie M2). `BookShellScreen` (Z. ~136–139) gibt der `NavigationSuiteScaffold` `.padding(innerPadding)` inkl. **unterem** System-Nav-Inset, den die `NavigationBar` zusätzlich selbst anlegt → Leerraum unter Icons/Labels. **Fix:** den unteren `innerPadding` NICHT durchreichen (nur `top`/horizontal; die NavigationBar handhabt ihren Bottom-Inset selbst), z. B. `.padding(top = innerPadding.calculateTopPadding())`. Klein.
+- **D11c-Status:** Benutzermodus-**Highlight** (primary + Bold) ist bereits in `BookShellScreen` umgesetzt; **Rename fehlt noch** — `nav_speak` heißt weiter „Sprechen" statt „Benutzermodus" (de/en). → nur noch der String-Teil offen.

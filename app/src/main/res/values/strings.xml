@@ -630,6 +630,9 @@
     <string name="page_editor_delete_drop_zone">Zum Löschen hierher ziehen</string>
 
     <!-- Structure Editor -->
+    <string name="structure_view_mode_cards">Karten</string>
+    <string name="structure_view_mode_graph">Graph</string>
+    <string name="structure_connect_dialog_search_hint">Nach Seiten suchen...</string>
     <string name="structure_editor_title">Struktur-Editor</string>
     <string name="structure_editor_open">Struktur bearbeiten</string>
     <string name="structure_incoming">Führt hierher ("kommt von")</string>

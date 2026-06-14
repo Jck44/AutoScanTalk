@@ -626,6 +626,9 @@
     <string name="page_editor_delete_drop_zone">Drag here to delete</string>
 
     <!-- Structure Editor -->
+    <string name="structure_view_mode_cards">Cards</string>
+    <string name="structure_view_mode_graph">Graph</string>
+    <string name="structure_connect_dialog_search_hint">Search pages...</string>
     <string name="structure_editor_title">Structure Editor</string>
     <string name="structure_editor_open">Edit Structure</string>
     <string name="structure_incoming">Comes from</string>
