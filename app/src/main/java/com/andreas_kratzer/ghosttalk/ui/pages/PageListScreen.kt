@@ -388,13 +388,6 @@ fun PageListScreen(
                         )
                     }
                     Spacer(modifier = Modifier.width(8.dp))
-                    IconButton(onClick = onOpenStructureEditor) {
-                        Icon(
-                            imageVector = GhostTalkIcons.Link,
-                            contentDescription = stringResource(R.string.structure_editor_title)
-                        )
-                    }
-                    Spacer(modifier = Modifier.width(4.dp))
                     Box {
                         IconButton(onClick = { showSortMenu = true }) {
                             Icon(

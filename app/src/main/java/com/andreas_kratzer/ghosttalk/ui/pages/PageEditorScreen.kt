@@ -58,6 +58,10 @@ import com.andreas_kratzer.ghosttalk.core.ui.components.EditorTopBar
 import com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons
 import com.andreas_kratzer.ghosttalk.ui.components.GridEditorContent
 import com.andreas_kratzer.ghosttalk.ui.components.EditablePageTitle
+import androidx.compose.ui.text.style.TextOverflow
+import com.andreas_kratzer.ghosttalk.core.ui.R as CoreR
+import com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkDialog
+import com.andreas_kratzer.ghosttalk.ui.components.ValidatedTextField
 import com.andreas_kratzer.ghosttalk.ui.components.EditorAssistantButton
 import com.andreas_kratzer.ghosttalk.ui.pages.history.EditIcon
 import com.andreas_kratzer.ghosttalk.ui.pages.history.EditLabel
@@ -105,6 +109,8 @@ fun PageEditorScreen(
     }
 
     var localName by remember(page.name) { mutableStateOf(page.name) }
+    var showRenameDialog by remember { mutableStateOf(false) }
+    var tempName by remember(localName) { mutableStateOf(localName) }
     var showIncomingLinksDialog by remember { mutableStateOf(false) }
     var incomingUsages by remember { mutableStateOf<List<UsageLocation>>(emptyList()) }
     val context = LocalContext.current
@@ -144,37 +150,35 @@ fun PageEditorScreen(
 
     Scaffold(
         topBar = {
-            val isNarrow = LocalConfiguration.current.screenWidthDp < 600
             EditorTopBar(
                 titleContent = {
-                    EditablePageTitle(
-                        pageName = localName,
-                        onRename = { newName ->
-                            localName = newName
-                            gridEditorViewModel.updateGridSettings(
-                                itemId = page.id,
-                                update = GridSettingsUpdate(name = newName)
-                            )
-                        },
-                        modifier = Modifier.widthIn(max = 200.dp),
-                        testTag = "page_editor_name_field"
+                    Text(
+                        text = localName,
+                        style = MaterialTheme.typography.titleLarge,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier
+                            .weight(1f, fill = false)
+                            .testTag("page_editor_title")
                     )
                 },
                 onNavigateBack = handleNavigateBack,
-                onExitEditor = onExitEditor,
+                onExitEditor = null, // Disable top-right exit button in TopBar
                 modeSwitcher = modeSwitcher,
                 actions = {
                     val isEditPreviewActive by pageViewModel.isEditPreviewActive.collectAsState()
                     val historyState by gridEditorViewModel.historyState.collectAsState()
 
+                    // Inline Action 1: Assistent (icon)
                     EditorAssistantButton(
                         onClick = {
                             showLayoutAssistantDialog.value = true
                         },
-                        compact = isNarrow,
+                        compact = true,
                         testTag = "page_editor_split_wizard_trigger_menu"
                     )
 
+                    // Inline Action 2: Undo
                     IconButton(
                         onClick = {
                             gridEditorViewModel.undo { message ->
@@ -197,71 +201,6 @@ fun PageEditorScreen(
                         )
                     }
 
-                    if (!isNarrow) {
-                        IconButton(
-                            onClick = {
-                                gridEditorViewModel.redo { message ->
-                                    coroutineScope.launch { snackbarHostState.showSnackbar(message) }
-                                }
-                            },
-                            enabled = historyState.canRedo,
-                            modifier = Modifier.testTag("page_editor_redo_button")
-                        ) {
-                            val nextRedoLabel = historyState.nextRedoLabel?.let { resolveEditLabel(it) } ?: ""
-                            val tooltipText = if (nextRedoLabel.isNotEmpty()) {
-                                stringResource(R.string.history_redo_tooltip, nextRedoLabel)
-                            } else {
-                                stringResource(R.string.history_redo_action) // Fallback string
-                            }
-                            Icon(
-                                imageVector = GhostTalkIcons.Redo,
-                                contentDescription = tooltipText,
-                                tint = if (historyState.canRedo) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f)
-                            )
-                        }
-                        IconButton(
-                            onClick = { showHistoryPanel = true },
-                            modifier = Modifier.testTag("page_editor_history_button")
-                        ) {
-                            Icon(
-                                imageVector = GhostTalkIcons.History,
-                                contentDescription = stringResource(R.string.history_panel_title),
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-
-                        IconButton(
-                            onClick = { pageViewModel.toggleEditPreviewActive() },
-                            modifier = Modifier.testTag("page_editor_preview_toggle")
-                        ) {
-                            Icon(
-                                imageVector = if (isEditPreviewActive) GhostTalkIcons.Visibility else GhostTalkIcons.VisibilityOff,
-                                contentDescription = stringResource(R.string.page_editor_preview_toggle),
-                                tint = if (isEditPreviewActive) {
-                                    MaterialTheme.colorScheme.primary
-                                } else {
-                                    MaterialTheme.colorScheme.onSurfaceVariant
-                                }
-                            )
-                        }
-
-                        IconButton(
-                            onClick = {
-                                coroutineScope.launch {
-                                    incomingUsages = pageViewModel.getPageUsages(page.id)
-                                    showIncomingLinksDialog = true
-                                }
-                            },
-                            modifier = Modifier.testTag("page_editor_incoming_links")
-                        ) {
-                            Icon(
-                                imageVector = GhostTalkIcons.Link,
-                                contentDescription = stringResource(R.string.page_incoming_links_title),
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
-
                     Box {
                         IconButton(
                             onClick = { showOverflowMenu = true },
@@ -277,80 +216,89 @@ fun PageEditorScreen(
                             expanded = showOverflowMenu,
                             onDismissRequest = { showOverflowMenu = false }
                         ) {
-                            if (isNarrow) {
-                                DropdownMenuItem(
-                                    text = {
-                                        val nextRedoLabel = historyState.nextRedoLabel?.let { resolveEditLabel(it) } ?: ""
-                                        val labelText = if (nextRedoLabel.isNotEmpty()) {
-                                            stringResource(R.string.history_redo_tooltip, nextRedoLabel)
-                                        } else {
-                                            stringResource(R.string.history_redo_action)
-                                        }
-                                        Text(labelText)
-                                    },
-                                    onClick = {
-                                        showOverflowMenu = false
-                                        gridEditorViewModel.redo { message ->
-                                            coroutineScope.launch { snackbarHostState.showSnackbar(message) }
-                                        }
-                                    },
-                                    enabled = historyState.canRedo,
-                                    leadingIcon = {
-                                        Icon(
-                                            imageVector = GhostTalkIcons.Redo,
-                                            contentDescription = null,
-                                            tint = if (historyState.canRedo) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f)
-                                        )
-                                    },
-                                    modifier = Modifier.testTag("page_editor_redo_button")
-                                )
-                                DropdownMenuItem(
-                                    text = { Text(stringResource(R.string.page_editor_preview_toggle)) },
-                                    onClick = {
-                                        showOverflowMenu = false
-                                        pageViewModel.toggleEditPreviewActive()
-                                    },
-                                    leadingIcon = {
-                                        Icon(
-                                            imageVector = if (isEditPreviewActive) GhostTalkIcons.Visibility else GhostTalkIcons.VisibilityOff,
-                                            contentDescription = null,
-                                            tint = if (isEditPreviewActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
+                            // Redo (Always in ⋮)
+                            DropdownMenuItem(
+                                text = {
+                                    val nextRedoLabel = historyState.nextRedoLabel?.let { resolveEditLabel(it) } ?: ""
+                                    val labelText = if (nextRedoLabel.isNotEmpty()) {
+                                        stringResource(R.string.history_redo_tooltip, nextRedoLabel)
+                                    } else {
+                                        stringResource(R.string.history_redo_action)
                                     }
-                                )
-                                DropdownMenuItem(
-                                    text = { Text(stringResource(R.string.page_incoming_links_title)) },
-                                    onClick = {
-                                        showOverflowMenu = false
-                                        coroutineScope.launch {
-                                            incomingUsages = pageViewModel.getPageUsages(page.id)
-                                            showIncomingLinksDialog = true
-                                        }
-                                    },
-                                    leadingIcon = {
-                                        Icon(
-                                            imageVector = GhostTalkIcons.Link,
-                                            contentDescription = null,
-                                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
+                                    Text(labelText)
+                                },
+                                onClick = {
+                                    showOverflowMenu = false
+                                    gridEditorViewModel.redo { message ->
+                                        coroutineScope.launch { snackbarHostState.showSnackbar(message) }
                                     }
-                                )
-                                DropdownMenuItem(
-                                    text = { Text(stringResource(R.string.history_panel_title)) },
-                                    onClick = {
-                                        showOverflowMenu = false
-                                        showHistoryPanel = true
-                                    },
-                                    leadingIcon = {
-                                        Icon(
-                                            imageVector = GhostTalkIcons.History,
-                                            contentDescription = null,
-                                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
-                                    }
-                                )
-                            }
+                                },
+                                enabled = historyState.canRedo,
+                                leadingIcon = {
+                                    Icon(
+                                        imageVector = GhostTalkIcons.Redo,
+                                        contentDescription = null,
+                                        tint = if (historyState.canRedo) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f)
+                                    )
+                                },
+                                modifier = Modifier.testTag("page_editor_redo_button")
+                            )
 
+                            // Verlauf / History (Always in ⋮)
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.history_panel_title)) },
+                                onClick = {
+                                    showOverflowMenu = false
+                                    showHistoryPanel = true
+                                },
+                                leadingIcon = {
+                                    Icon(
+                                        imageVector = GhostTalkIcons.History,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                },
+                                modifier = Modifier.testTag("page_editor_history_button")
+                            )
+
+                            // Vorschau / Preview (Always in ⋮)
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.page_editor_preview_toggle)) },
+                                onClick = {
+                                    showOverflowMenu = false
+                                    pageViewModel.toggleEditPreviewActive()
+                                },
+                                leadingIcon = {
+                                    Icon(
+                                        imageVector = if (isEditPreviewActive) GhostTalkIcons.Visibility else GhostTalkIcons.VisibilityOff,
+                                        contentDescription = null,
+                                        tint = if (isEditPreviewActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                },
+                                modifier = Modifier.testTag("page_editor_preview_toggle")
+                            )
+
+                            // Eingehende Links / Incoming Links (Always in ⋮)
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.page_incoming_links_title)) },
+                                onClick = {
+                                    showOverflowMenu = false
+                                    coroutineScope.launch {
+                                        incomingUsages = pageViewModel.getPageUsages(page.id)
+                                        showIncomingLinksDialog = true
+                                    }
+                                },
+                                leadingIcon = {
+                                    Icon(
+                                        imageVector = GhostTalkIcons.Link,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                },
+                                modifier = Modifier.testTag("page_editor_incoming_links")
+                            )
+
+                            // Analytics Overlay (Always in ⋮)
                             val isAnalyticsEnabled by pageViewModel.isAnalyticsOverlayEnabled.collectAsState()
                             DropdownMenuItem(
                                 text = { Text(stringResource(R.string.page_editor_analytics_toggle)) },
@@ -368,6 +316,40 @@ fun PageEditorScreen(
                                 modifier = Modifier.testTag("page_editor_analytics_toggle_menu")
                             )
 
+                            // Umbenennen / Rename (Always in ⋮)
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.page_dialog_rename_title)) },
+                                onClick = {
+                                    showOverflowMenu = false
+                                    showRenameDialog = true
+                                },
+                                leadingIcon = {
+                                    Icon(
+                                        imageVector = GhostTalkIcons.Edit,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            )
+
+                            // Editor beenden / Exit Editor (Always in ⋮)
+                            if (onExitEditor != null) {
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(CoreR.string.editor_exit)) },
+                                    onClick = {
+                                        showOverflowMenu = false
+                                        onExitEditor()
+                                    },
+                                    leadingIcon = {
+                                        Icon(
+                                            imageVector = Icons.Default.Close,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    },
+                                    modifier = Modifier.testTag("page_editor_exit_button")
+                                )
+                            }
                         }
                     }
                 }
@@ -382,17 +364,6 @@ fun PageEditorScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            if (modeSwitcher != null) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 8.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    modeSwitcher()
-                }
-            }
-
             val startPageId by pageViewModel.defaultStartPageIdFlow.collectAsState(initial = null)
             Box(modifier = Modifier.weight(1f)) {
                 GridEditorContent(
@@ -495,6 +466,36 @@ fun PageEditorScreen(
                     }
                 }
             )
+        }
+
+        if (showRenameDialog) {
+            GhostTalkDialog(
+                title = stringResource(R.string.page_dialog_rename_title),
+                onDismiss = { showRenameDialog = false },
+                onConfirm = {
+                    if (tempName.isNotBlank()) {
+                        localName = tempName
+                        gridEditorViewModel.updateGridSettings(
+                            itemId = page.id,
+                            update = GridSettingsUpdate(name = tempName)
+                        )
+                        showRenameDialog = false
+                    }
+                },
+                confirmText = stringResource(R.string.action_save),
+                dismissText = stringResource(R.string.action_cancel)
+            ) {
+                ValidatedTextField(
+                    value = tempName,
+                    onValueChange = { tempName = it },
+                    isRequired = true,
+                    errorMessage = stringResource(R.string.error_page_name_required),
+                    placeholder = { Text(stringResource(R.string.page_name_label)) },
+                    modifier = Modifier
+                        .padding(vertical = 8.dp)
+                        .testTag("page_editor_name_field")
+                )
+            }
         }
 
         if (showHistoryPanel) {

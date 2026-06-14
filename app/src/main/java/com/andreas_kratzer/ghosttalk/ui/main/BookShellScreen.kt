@@ -13,6 +13,7 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -43,8 +44,7 @@ import com.andreas_kratzer.ghosttalk.feature.settings.R as SettingsR
 
 enum class BookShellTab {
     Inhalte,
-    Statistik,
-    Einstellungen
+    Statistik
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -116,14 +116,18 @@ fun BookShellScreen(
                                 },
                                 modifier = Modifier.testTag("book_switcher_back_to_books")
                             )
-                            DropdownMenuItem(
-                                text = { Text(stringResource(SettingsR.string.settings_global_settings)) },
-                                onClick = {
-                                    menuExpanded = false
-                                    onNavigateToGlobalSettings()
-                                }
-                            )
                         }
+                    }
+                },
+                actions = {
+                    IconButton(
+                        onClick = onNavigateToGlobalSettings,
+                        modifier = Modifier.testTag("book_shell_settings_button")
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Settings,
+                            contentDescription = stringResource(CoreR.string.settings_title_book)
+                        )
                     }
                 }
             )
@@ -153,12 +157,6 @@ fun BookShellScreen(
                     icon = { Icon(GhostTalkIcons.BarChart, contentDescription = stringResource(R.string.nav_stats)) },
                     label = { Text(stringResource(R.string.nav_stats)) }
                 )
-                item(
-                    selected = currentTab == BookShellTab.Einstellungen,
-                    onClick = { currentTab = BookShellTab.Einstellungen },
-                    icon = { Icon(Icons.Default.Settings, contentDescription = stringResource(CoreR.string.settings_title_book)) },
-                    label = { Text(stringResource(CoreR.string.settings_title_book)) }
-                )
             }
         ) {
             when (currentTab) {
@@ -179,14 +177,6 @@ fun BookShellScreen(
                         pageViewModel = pageViewModel,
                         onNavigateBack = null,
                         onEditPage = onEditPageWithAssistant,
-                        showTopBar = false
-                    )
-                }
-                BookShellTab.Einstellungen -> {
-                    SettingsScreen(
-                        viewModel = settingsViewModel,
-                        isGlobal = false,
-                        onNavigateBack = null,
                         showTopBar = false
                     )
                 }

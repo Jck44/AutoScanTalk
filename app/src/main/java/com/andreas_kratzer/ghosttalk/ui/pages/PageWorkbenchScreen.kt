@@ -100,7 +100,8 @@ fun PageWorkbenchScreen(
                 mode = EditorMode.RASTER
             },
             onNavigateBack = onNavigateBack,
-            modeSwitcher = modeSwitcher
+            modeSwitcher = modeSwitcher,
+            onExitEditor = onExitEditor
         )
     }
 }

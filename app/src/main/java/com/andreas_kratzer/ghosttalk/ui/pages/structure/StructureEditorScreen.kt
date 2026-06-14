@@ -64,6 +64,10 @@ import com.andreas_kratzer.ghosttalk.core.model.GridSettingsUpdate
 import com.andreas_kratzer.ghosttalk.core.model.NavigateToPageButtonAction
 import com.andreas_kratzer.ghosttalk.core.ui.components.EditorTopBar
 import com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons
+import androidx.compose.ui.text.style.TextOverflow
+import com.andreas_kratzer.ghosttalk.core.ui.R as CoreR
+import com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkDialog
+import com.andreas_kratzer.ghosttalk.ui.components.ValidatedTextField
 import com.andreas_kratzer.ghosttalk.ui.components.EditablePageTitle
 import com.andreas_kratzer.ghosttalk.ui.components.EditorAssistantButton
 import com.andreas_kratzer.ghosttalk.ui.pages.GridEditorViewModel
@@ -86,7 +90,8 @@ fun StructureEditorScreen(
     pageSplitViewModel: PageSplitViewModel = hiltViewModel(),
     onEditPageInGrid: (pageId: String) -> Unit,
     onNavigateBack: () -> Unit,
-    modeSwitcher: (@Composable () -> Unit)? = null
+    modeSwitcher: (@Composable () -> Unit)? = null,
+    onExitEditor: (() -> Unit)? = null
 ) {
     val pages by pageViewModel.unfilteredPages.collectAsState()
     val templates by pageViewModel.templates.collectAsState(initial = emptyList())
@@ -163,6 +168,8 @@ fun StructureEditorScreen(
 
     val focusedPage = remember(pages, focusedPageId) { pages.find { it.id == focusedPageId } }
     var localName by remember(focusedPage?.name) { mutableStateOf(focusedPage?.name ?: "") }
+    var showRenameDialog by remember { mutableStateOf(false) }
+    var tempName by remember(localName) { mutableStateOf(localName) }
 
     LaunchedEffect(localName) {
         if (focusedPage != null && localName != focusedPage.name && localName.isNotBlank()) {
@@ -295,29 +302,25 @@ fun StructureEditorScreen(
 
     Scaffold(
         topBar = {
-            val isNarrow = LocalConfiguration.current.screenWidthDp < 600
             EditorTopBar(
                 titleContent = {
-                    EditablePageTitle(
-                        pageName = localName,
-                        onRename = { newName ->
-                            localName = newName
-                            if (focusedPage != null) {
-                                gridEditorViewModel.updateGridSettings(
-                                    itemId = focusedPage.id,
-                                    update = GridSettingsUpdate(name = newName)
-                                )
-                            }
-                        },
-                        modifier = Modifier.widthIn(max = 200.dp),
-                        testTag = "structure_editor_name_field"
+                    Text(
+                        text = localName,
+                        style = MaterialTheme.typography.titleLarge,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier
+                            .weight(1f, fill = false)
+                            .testTag("structure_editor_title")
                     )
                 },
                 onNavigateBack = onNavigateBack,
+                onExitEditor = null, // Disable top-right exit button in TopBar
                 modeSwitcher = modeSwitcher,
                 actions = {
                     val historyState by gridEditorViewModel.historyState.collectAsState()
 
+                    // Inline Action 1: Assistent (icon)
                     EditorAssistantButton(
                         onClick = {
                             val accepted = pageSplitViewModel.hasAcceptedPageSplitOptIn
@@ -327,10 +330,11 @@ fun StructureEditorScreen(
                                 showOptInDialog.value = true
                             }
                         },
-                        compact = isNarrow,
+                        compact = true,
                         testTag = "structure_editor_split_wizard_trigger_menu"
                     )
 
+                    // Inline Action 2: Undo
                     IconButton(
                         onClick = {
                             gridEditorViewModel.undo { message ->
@@ -345,59 +349,6 @@ fun StructureEditorScreen(
                             contentDescription = stringResource(R.string.structure_action_undo),
                             tint = if (historyState.canUndo) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f)
                         )
-                    }
-
-                    if (!isNarrow) {
-                        IconButton(
-                            onClick = {
-                                gridEditorViewModel.redo { message ->
-                                    scope.launch { snackbarHostState.showSnackbar(message) }
-                                }
-                            },
-                            enabled = historyState.canRedo,
-                            modifier = Modifier.testTag("structure_editor_redo_button")
-                        ) {
-                            Icon(
-                                imageVector = GhostTalkIcons.Redo,
-                                contentDescription = stringResource(R.string.history_redo_action),
-                                tint = if (historyState.canRedo) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f)
-                            )
-                        }
-                        IconButton(
-                            onClick = { showHistoryPanel = true },
-                            modifier = Modifier.testTag("structure_editor_history_button")
-                        ) {
-                            Icon(
-                                imageVector = GhostTalkIcons.History,
-                                contentDescription = stringResource(R.string.history_panel_title),
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-
-                        IconButton(
-                            onClick = {
-                                scope.launch {
-                                    incomingUsages = pageViewModel.getPageUsages(focusedPageId)
-                                    showIncomingLinksDialog = true
-                                }
-                            },
-                            modifier = Modifier.testTag("structure_editor_incoming_links")
-                        ) {
-                            Icon(
-                                imageVector = GhostTalkIcons.Link,
-                                contentDescription = stringResource(R.string.page_incoming_links_title),
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-
-                        if (!isTablet) {
-                            IconButton(onClick = { showBottomSheet = true }) {
-                                Icon(
-                                    imageVector = Icons.Default.Menu,
-                                    contentDescription = stringResource(R.string.structure_tree_toggle)
-                                )
-                            }
-                        }
                     }
 
                     Box {
@@ -415,67 +366,37 @@ fun StructureEditorScreen(
                             expanded = showOverflowMenu,
                             onDismissRequest = { showOverflowMenu = false }
                         ) {
-                            if (isNarrow) {
-                                DropdownMenuItem(
-                                    text = { Text(stringResource(R.string.history_redo_action)) },
-                                    onClick = {
-                                        showOverflowMenu = false
-                                        gridEditorViewModel.redo { message ->
-                                            scope.launch { snackbarHostState.showSnackbar(message) }
-                                        }
-                                    },
-                                    enabled = historyState.canRedo,
-                                    leadingIcon = {
-                                        Icon(
-                                            imageVector = GhostTalkIcons.Redo,
-                                            contentDescription = null,
-                                            tint = if (historyState.canRedo) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f)
-                                        )
-                                    },
-                                    modifier = Modifier.testTag("structure_editor_redo_button")
-                                )
-                                if (!isTablet) {
-                                    DropdownMenuItem(
-                                        text = { Text(stringResource(R.string.structure_tree_toggle)) },
-                                        onClick = {
-                                            showOverflowMenu = false
-                                            showBottomSheet = true
-                                        },
-                                        leadingIcon = {
-                                            Icon(
-                                                imageVector = Icons.Default.Menu,
-                                                contentDescription = null,
-                                                tint = MaterialTheme.colorScheme.onSurfaceVariant
-                                            )
-                                        }
-                                    )
-                                }
-                                DropdownMenuItem(
-                                    text = { Text(stringResource(R.string.page_incoming_links_title)) },
-                                    onClick = {
-                                        showOverflowMenu = false
-                                        scope.launch {
-                                            incomingUsages = pageViewModel.getPageUsages(focusedPageId)
-                                            showIncomingLinksDialog = true
-                                        }
-                                    },
-                                    leadingIcon = {
-                                        Icon(
-                                            imageVector = GhostTalkIcons.Link,
-                                            contentDescription = null,
-                                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
+                            // Redo (Always in ⋮)
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.history_redo_action)) },
+                                onClick = {
+                                    showOverflowMenu = false
+                                    gridEditorViewModel.redo { message ->
+                                        scope.launch { snackbarHostState.showSnackbar(message) }
                                     }
-                                )
+                                },
+                                enabled = historyState.canRedo,
+                                leadingIcon = {
+                                    Icon(
+                                        imageVector = GhostTalkIcons.Redo,
+                                        contentDescription = null,
+                                        tint = if (historyState.canRedo) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f)
+                                    )
+                                },
+                                modifier = Modifier.testTag("structure_editor_redo_button")
+                            )
+
+                            // Tree Toggle (Always in ⋮ on phone)
+                            if (!isTablet) {
                                 DropdownMenuItem(
-                                    text = { Text(stringResource(R.string.history_panel_title)) },
+                                    text = { Text(stringResource(R.string.structure_tree_toggle)) },
                                     onClick = {
                                         showOverflowMenu = false
-                                        showHistoryPanel = true
+                                        showBottomSheet = true
                                     },
                                     leadingIcon = {
                                         Icon(
-                                            imageVector = GhostTalkIcons.History,
+                                            imageVector = Icons.Default.Menu,
                                             contentDescription = null,
                                             tint = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
@@ -483,7 +404,77 @@ fun StructureEditorScreen(
                                 )
                             }
 
+                            // Verlauf / History (Always in ⋮)
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.history_panel_title)) },
+                                onClick = {
+                                    showOverflowMenu = false
+                                    showHistoryPanel = true
+                                },
+                                leadingIcon = {
+                                    Icon(
+                                        imageVector = GhostTalkIcons.History,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                },
+                                modifier = Modifier.testTag("structure_editor_history_button")
+                            )
 
+                            // Eingehende Links / Incoming Links (Always in ⋮)
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.page_incoming_links_title)) },
+                                onClick = {
+                                    showOverflowMenu = false
+                                    scope.launch {
+                                        incomingUsages = pageViewModel.getPageUsages(focusedPageId)
+                                        showIncomingLinksDialog = true
+                                    }
+                                },
+                                leadingIcon = {
+                                    Icon(
+                                        imageVector = GhostTalkIcons.Link,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                },
+                                modifier = Modifier.testTag("structure_editor_incoming_links")
+                            )
+
+                            // Umbenennen / Rename (Always in ⋮)
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.page_dialog_rename_title)) },
+                                onClick = {
+                                    showOverflowMenu = false
+                                    showRenameDialog = true
+                                },
+                                leadingIcon = {
+                                    Icon(
+                                        imageVector = GhostTalkIcons.Edit,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            )
+
+                            // Editor beenden / Exit Editor (Always in ⋮)
+                            if (onExitEditor != null) {
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(CoreR.string.editor_exit)) },
+                                    onClick = {
+                                        showOverflowMenu = false
+                                        onExitEditor()
+                                    },
+                                    leadingIcon = {
+                                        Icon(
+                                            imageVector = Icons.Default.Close,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    },
+                                    modifier = Modifier.testTag("structure_editor_exit_button")
+                                )
+                            }
                         }
                     }
                 }
@@ -496,17 +487,6 @@ fun StructureEditorScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            if (modeSwitcher != null) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 8.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    modeSwitcher()
-                }
-            }
-
             Row(
                 modifier = Modifier
                     .fillMaxSize()
@@ -726,6 +706,38 @@ fun StructureEditorScreen(
             },
             onDismiss = { showManualPromptDialog.value = false }
         )
+    }
+
+    if (showRenameDialog) {
+        GhostTalkDialog(
+            title = stringResource(R.string.page_dialog_rename_title),
+            onDismiss = { showRenameDialog = false },
+            onConfirm = {
+                if (tempName.isNotBlank()) {
+                    localName = tempName
+                    if (focusedPage != null) {
+                        gridEditorViewModel.updateGridSettings(
+                            itemId = focusedPage.id,
+                            update = GridSettingsUpdate(name = tempName)
+                        )
+                    }
+                    showRenameDialog = false
+                }
+            },
+            confirmText = stringResource(R.string.action_save),
+            dismissText = stringResource(R.string.action_cancel)
+        ) {
+            ValidatedTextField(
+                value = tempName,
+                onValueChange = { tempName = it },
+                isRequired = true,
+                errorMessage = stringResource(R.string.error_page_name_required),
+                placeholder = { Text(stringResource(R.string.page_name_label)) },
+                modifier = Modifier
+                    .padding(vertical = 8.dp)
+                    .testTag("structure_editor_name_field")
+            )
+        }
     }
 
     if (showIncomingLinksDialog) {

@@ -585,3 +585,39 @@ Alle Batch-Review-Reste behoben, Build + `testDebugUnitTest` grün:
 - ◻️ D8(c): Legacy-Tag `start_card_user_mode` **bewusst belassen** (in ~18 Integrationstest-Stellen genutzt; Rename = reine Namenskosmetik, nicht den Test-Churn wert).
 
 **Teil D abgeschlossen** (D1–D8 ✅, D8(c) bewusst belassen). Gesamter Plan: Teil A ✅, Teil B ✅, Teil C ✅, Teil D ✅. Offen nur noch: separates `docs/i18n_backlog_plan.md` (I1–I4) sowie manuelle Gerätesicht (Freeform/Resize, PIN-Exit, adaptive Bar↔Rail, Doppel-TopBar visuell).
+
+### Manuelle Gerätesicht — Befunde (Andreas, 2026-06-14) → kleiner Fix-Batch „D9"
+
+Im laufenden UI gefundene Integrations-Reste (statisch/Unit nicht sichtbar):
+- **M1 Struktureditor doppelt** (Inhalte-Tab/Shell): Link-`IconButton` neben der Suche (`PageListScreen.kt:390-396`) **und** Pill in der Schnellaktions-Zeile (`:442-452`). → Link-IconButton (inkl. vorangehendem `Spacer`) entfernen; Pill behalten.
+- **M2 Leerraum zwischen Buch-Dropdown und Suche:** verschachteltes-Scaffold-Doppel-Inset. → `GhostTalkScaffold`: bei `showTopBar=false` `contentWindowInsets = WindowInsets(0.dp)` (sonst `ScaffoldDefaults.contentWindowInsets`).
+- **M3 Mode-Switcher doppelt** (beide Editoren): `modeSwitcher` rendert in `EditorTopBar` **und** im Body (`PageEditorScreen.kt:385-394`, `StructureEditorScreen.kt:499-506`). → Body-Block entfernen (Top-Bar behält ihn).
+
+Alle drei klein/risikoarm, ein Commit. Danach: visueller Re-Check + Build.
+
+### Manuelle Gerätesicht Runde 2 (Andreas, 2026-06-14) → Fix-Batch „D10: Editor-Header schlank + Settings-Zahnrad"
+
+5 Befunde, größtenteils ein überladener `EditorTopBar` + Settings-IA. Entscheidungen mit Andreas: **ein** Settings-Zahnrad oben rechts (keine Buch/Global-Trennung mehr); Inline-Leiste **ultraschlank**, Exit-X ebenfalls ins Overflow.
+
+**A — EditorTopBar/beide Editoren entlasten (löst #2 Querformat-Overflow, #3 Stift-Gedränge, #4 Name verdrängt Switcher, #1 Exit fehlt Struktur):**
+- Titel = **reines, ellipsiertes Text-Label** mit `weight(1f, fill=false)` in der Title-Row von `EditorTopBar` → Mode-Switcher bleibt immer sichtbar. `EditablePageTitle` (Tap+Stift) entfällt als Titel.
+- **Inline-Actions konsistent (keine `isNarrow`-Aufteilung mehr):** Assistent(Icon) · Undo · Mode-Switcher · ⋮.
+- **Ins ⋮ (immer):** Redo · Verlauf · Vorschau · eingehende Links · Analytics-Overlay · **Umbenennen** (öffnet Rename-Dialog, bestehende `ValidatedTextField`-Validierung wiederverwenden) · **Editor beenden** (`onExitEditor`).
+- Exit-`IconButton` aus `EditorTopBar.actions` entfernen → als ⋮-Eintrag „Editor beenden" in **beiden** Editoren (Struktur bekommt ihn dadurch automatisch → #1).
+
+**B — Settings als Zahnrad (löst #5):**
+- `BookShellScreen`: Zahnrad-`IconButton` oben rechts (TopAppBar `actions`) → öffnet Einstellungen (bestehende `settings`-Route).
+- `BookShellTab.Einstellungen` **entfernen** → Bottom-Bar = 3 (Sprechen · Inhalte · Statistik).
+- Dropdown-Eintrag „globale Einstellungen" **entfernen** (es gibt nur noch ein Settings). `isGlobal`-Nutzung prüfen: ein Settings-Screen, der alle bisherigen Sektionen zeigt — **nichts verlieren**.
+
+**Fertig wenn:** Build grün; in beiden Editoren identische schlanke Leiste, Switcher immer sichtbar (auch langer Name/Querformat), ⋮ enthält Redo/…/Umbenennen/Editor beenden; Zahnrad öffnet Settings, Bottom-Bar 3 Ziele, keine doppelten Settings-Wege; `testTag`s erhalten (page_editor_name_field jetzt am Rename-Dialogfeld; PageManagementIntegrationTest ggf. nachziehen).
+
+### Review D9 + D10, Claude, 2026-06-14 — uncommitted, Build+Tests grün
+
+**D9 ✅** M1 (Struktur-Doublette: Icon im Shell/else-Zweig entfernt, Pill bleibt; verbliebener Icon bei `:271` nur im standalone-`actions`-Slot, in der Shell nicht gerendert), M2 (`GhostTalkScaffold.contentWindowInsets = if(showTopBar) … else WindowInsets(0.dp)`), M3 (Mode-Switcher-Body-Doublette entfernt — 0 `modeSwitcher()`-Body-Aufrufe).
+**D10 ✅** Titel = plain `Text` + `weight(1f,fill=false)`+Ellipsis (#3/#4 gelöst); Inline schlank (Assistent·Undo·Switcher·⋮), Exit-X aus TopBar (`onExitEditor=null`); Overflow: Redo·Verlauf·Vorschau·Links·Analytics·**Umbenennen**·**Editor beenden**; Struktur-Exit via `onExitEditor` (PageWorkbench → beide); Zahnrad oben rechts, Bottom-Bar 3 Ziele; `isGlobal` ohne Sektions-Gating (nichts verloren). `PageManagementIntegrationTest` auf Overflow-Rename umgestellt.
+
+**→ Fix-Batch D11 (Reste, klein):**
+- **D11a** `EditablePageTitle.kt` ist nach D10 toter Code (0 Nutzung) → Datei + 2 Imports (PageEditorScreen/StructureEditorScreen) entfernen.
+- **D11b** Zahnrad öffnet `settings?isGlobal=true` → Titel „Globale Einstellungen". Da keine Unterscheidung mehr: auf `isGlobal=false` (Titel „Einstellungen") umstellen. Kosmetisch.
+- **D11c** „Sprechen" → „Benutzermodus" umbenennen (`nav_speak` de/en) + Nav-Item hervorheben (Akzentfarbe/Bold; testTag `start_card_user_mode` belassen). [= das frühere #1]

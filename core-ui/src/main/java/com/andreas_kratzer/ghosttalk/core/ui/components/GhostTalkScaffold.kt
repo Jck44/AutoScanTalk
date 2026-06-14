@@ -15,6 +15,9 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.ui.unit.dp
+import androidx.compose.material3.ScaffoldDefaults
 import com.andreas_kratzer.ghosttalk.core.ui.R
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -60,6 +63,7 @@ fun GhostTalkScaffold(
         },
         floatingActionButton = floatingActionButton,
         snackbarHost = snackbarHost,
+        contentWindowInsets = if (showTopBar) ScaffoldDefaults.contentWindowInsets else WindowInsets(0.dp),
         content = content
     )
 }

@@ -24,7 +24,7 @@ import com.andreas_kratzer.ghosttalk.core.ui.R
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EditorTopBar(
-    titleContent: @Composable () -> Unit,
+    titleContent: @Composable RowScope.() -> Unit,
     onNavigateBack: (() -> Unit)? = null,
     modeSwitcher: (@Composable () -> Unit)? = null,
     actions: @Composable RowScope.() -> Unit = {},
