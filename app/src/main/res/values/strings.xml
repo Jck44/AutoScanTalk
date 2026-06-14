@@ -703,7 +703,7 @@
     <string name="analytics_empty_stats_desc">Verwende die Anwendung im Nutzermodus, um Nutzungsstatistiken und KI-Empfehlungen zu generieren.</string>
     <string name="suggestions_no_active_buttons">Keine aktiven Buttons in dieser Zeile vorhanden.</string>
     <string name="smart_integration_please_pair">Bitte zuerst in den Einstellungen koppeln.</string>
-    <string name="nav_speak">Sprechen</string>
+    <string name="nav_speak">Benutzermodus</string>
     <string name="nav_content">Inhalte</string>
     <string name="nav_stats">Statistik</string>
 </resources>

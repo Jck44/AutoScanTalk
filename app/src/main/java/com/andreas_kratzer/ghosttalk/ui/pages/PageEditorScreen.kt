@@ -57,7 +57,6 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.andreas_kratzer.ghosttalk.core.ui.components.EditorTopBar
 import com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons
 import com.andreas_kratzer.ghosttalk.ui.components.GridEditorContent
-import com.andreas_kratzer.ghosttalk.ui.components.EditablePageTitle
 import androidx.compose.ui.text.style.TextOverflow
 import com.andreas_kratzer.ghosttalk.core.ui.R as CoreR
 import com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkDialog

@@ -68,7 +68,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import com.andreas_kratzer.ghosttalk.core.ui.R as CoreR
 import com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkDialog
 import com.andreas_kratzer.ghosttalk.ui.components.ValidatedTextField
-import com.andreas_kratzer.ghosttalk.ui.components.EditablePageTitle
 import com.andreas_kratzer.ghosttalk.ui.components.EditorAssistantButton
 import com.andreas_kratzer.ghosttalk.ui.pages.GridEditorViewModel
 import com.andreas_kratzer.ghosttalk.ui.pages.IncomingReferencesDialog

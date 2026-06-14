@@ -141,8 +141,20 @@ fun BookShellScreen(
                 item(
                     selected = false,
                     onClick = onNavigateToUserMode,
-                    icon = { Icon(Icons.Default.PlayArrow, contentDescription = stringResource(R.string.nav_speak)) },
-                    label = { Text(stringResource(R.string.nav_speak)) },
+                    icon = {
+                        Icon(
+                            imageVector = Icons.Default.PlayArrow,
+                            contentDescription = stringResource(R.string.nav_speak),
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    },
+                    label = {
+                        Text(
+                            text = stringResource(R.string.nav_speak),
+                            fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    },
                     modifier = Modifier.testTag("start_card_user_mode")
                 )
                 item(

@@ -246,7 +246,7 @@ fun GhostTalkNavHost(
                     }
                 },
                 onNavigateToBooks = { navController.safePopBackStack() },
-                onNavigateToGlobalSettings = { navigateWithSecurity("settings?isGlobal=true") },
+                onNavigateToGlobalSettings = { navigateWithSecurity("settings?isGlobal=false") },
                 onEditPage = { pageId ->
                     navController.safeNavigate("editor/$pageId?mode=${EditorMode.RASTER.route}")
                 },
