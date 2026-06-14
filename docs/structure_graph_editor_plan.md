@@ -61,3 +61,40 @@ Ziel: eine **graphische** Alternative zum bestehenden Karten-Fokus-Editor (`Stru
 
 ## Review-Notizen (Claude)
 _(leer bis zur Umsetzung)_
+
+---
+
+## Gerätesicht-Fixes „G-Batch" (Andreas-Feedback 2026-06-14)
+
+Nach Umsetzung E1–E6 am Gerät gefunden. Nur UI, in `app/.../ui/pages/structure/StructureGraphView.kt`. Ein Commit; `assembleDebug` grün; beide Modi/Orientierungen prüfen.
+
+### G1 — Portrait vertikal stapeln (statt in die Breite)
+**Ursache:** Der Portrait-Zweig (~Z. 364–403) ordnet **alle** Eingehenden bzw. Ausgehenden in **einer** horizontalen Reihe an (`currentX += width`) → bei vielen Zielen (Startseite: 22) massiver Breiten-Überlauf / abgeschnittene Karten. Der Landscape-Zweig (~303–363) chunkt dagegen in **Spalten** (vertikal) — daher sauber.
+- Portrait **transponieren**: Eingehend **und** Ausgehend **vertikal stapeln** (ein Knoten pro Zeile, nach unten). `layoutWidth = max(Knotenbreite incoming/center/outgoing)`; `layoutHeight = Summe Zeilenhöhen + Spacing`. Block-Reihenfolge: Eingehend oben → Center → Ausgehend unten.
+- Die Kanten-Pfade im Canvas (`if (isLandscape) … else …`) auf vertikal anpassen: Eingehend (oben) → Center-Oberkante; Center-Unterkante → jedes Ausgehende.
+- Vertikales Scrollen (`scrollStateY`) + bestehende „mehr"-Begrenzung bleiben.
+- **Fertig wenn:** Portrait läuft nicht mehr in die Breite (kein horizontaler Überlauf), Kinder stapeln nach unten, Pfeile treffen korrekt.
+
+### G2 — Armed-× zuverlässig zurücksetzen
+**Ursache:** `selectedEdgeForDeletion` (Z. 131) wird nur bei Tap/Löschen resettet (156/698), **nicht** beim Auf-/Zuklappen einer Karte → das × bleibt stehen und überlagert eine Karte.
+- `selectedEdgeForDeletion = null` setzen, sobald sich `expandedPageIds` **oder** `focusedPageId` ändert (idealerweise auch bei Scroll), z. B. `LaunchedEffect(expandedPageIds, focusedPageId) { selectedEdgeForDeletion = null }`.
+- **Fertig wenn:** Beim Auf-/Zuklappen / Fokuswechsel verschwindet das ×; überlagert nichts mehr.
+
+### G3 — Löschen über die Verbindungslinie (Dots entfernen) — Andreas wählte Variante B
+- **Dot-Indikatoren entfernen** (`drawCircle` ~Z. 546–583 + zugehörige Dot-Tap-Logik).
+- **Kante tippbar** via `pointerInput { detectTapGestures }` über der Graph-Fläche: für die Tap-Position die **Distanz zu jeder Kante** berechnen (Segment `incoming/outgoingPoint ↔ centerPoint` — Geometrie liegt vor) und die nächste Kante **innerhalb ~24dp** als `selectedEdgeForDeletion` setzen (kein per-Pfad-Composable).
+- **Feedback:** die ausgewählte Kante (`isSelected`) in `errorColor` + etwas dicker zeichnen (bestehende `isSelected`-Logik wiederverwenden). Dann erscheint das ×.
+- Zweistufig: Linie tippen → Kante hervorgehoben + × → × tippen → `onRemoveConnection`. Tap ins Leere → reset.
+- **Fertig wenn:** keine Dots mehr; Tippen nahe einer Verbindung hebt sie hervor + zeigt ×; Löschen funktioniert; G2-Reset greift.
+
+### Review-Schwerpunkte G (Claude)
+- [ ] Portrait stapelt nach unten, kein Breiten-Überlauf; Kanten/Pfeile korrekt in beiden Orientierungen.
+- [ ] Linien-Hit-Test trifft zuverlässig (auch eng beieinanderliegende Kanten); kein versehentliches Löschen (Zweistufigkeit).
+- [ ] × wird bei jeder anderen Interaktion zurückgesetzt; überlagert nie eine Karte.
+
+### G-Batch reviewt+abgenommen (Claude 2026-06-14, uncommitted) — Build+Tests grün
+- **G1 ✅** Portrait-Zweig „strictly vertical stacking" (`currentY += height`); Hit-Test/Kanten mit vertikaler Geometrie → kein Breiten-Überlauf.
+- **G2 ✅** `LaunchedEffect(expandedPageIds, focusedPageId){ selectedEdgeForDeletion = null }`.
+- **G3 ✅** keine Dots (`drawCircle` entfernt); Linie tippbar via `detectTapGestures` + `distanceToSegment` (pure Helfer in StructureCanvasLogic + 4 Testfälle, 24dp-Threshold); gewählte Kante errorColor+dicker (Feedback); Hit-Test korrekt nur auf ausgehende/löschbare Kanten.
+- Stray `build_output.log` entfernt.
+- Offen nur: **Gerätesicht** (Portrait stapelt nach unten, Linien-Tap trifft zuverlässig auch bei engen Kanten, × überlagert nichts).

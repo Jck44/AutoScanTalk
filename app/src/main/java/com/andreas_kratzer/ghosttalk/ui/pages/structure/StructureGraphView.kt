@@ -62,6 +62,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import android.content.res.Configuration
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.foundation.gestures.detectTapGestures
 import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.core.domain.pages.BookNavigationGraph
 import com.andreas_kratzer.ghosttalk.core.domain.pages.NavEdge
@@ -93,6 +96,12 @@ fun StructureGraphView(
         mutableStateOf(emptySet<String>())
     }
     var activeMoveButtonInfo by remember { mutableStateOf<Triple<String, Int, String>?>(null) }
+    var selectedEdgeForDeletion by remember { mutableStateOf<NavEdge?>(null) }
+
+    // Reset armed connection delete overlay when focused page or expanded pages change (G2)
+    LaunchedEffect(expandedPageIds, focusedPageId) {
+        selectedEdgeForDeletion = null
+    }
 
     val distinctIncoming = incomingSources.distinct()
     val distinctOutgoing = outgoingEdges.map { it.targetPageId }.distinct()
@@ -127,8 +136,6 @@ fun StructureGraphView(
 
     val configuration = LocalConfiguration.current
     val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
-
-    var selectedEdgeForDeletion by remember { mutableStateOf<NavEdge?>(null) }
 
     Card(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)),
@@ -345,7 +352,7 @@ fun StructureGraphView(
                         val col2StartX = if (incomingPlaceables.isNotEmpty()) (col1Width + hSpacingPx).toFloat() else 0f
                         centerPoint = Pair(col2StartX + col2Width / 2f, centerY)
 
-                        val col3StartX = col2StartX + (col2Width + hSpacingPx).toFloat()
+                        val col3StartX = col2StartX + col2Width + hSpacingPx
                         if (outgoingPlaceables.isNotEmpty()) {
                             var flatIndex = 0
                             outgoingColumnsPlaceables.forEachIndexed { colIdx, colPls ->
@@ -362,50 +369,104 @@ fun StructureGraphView(
                             }
                         }
                     } else {
-                        // Portrait arrangement: Top-to-Bottom
-                        val incomingTotalWidth = if (incomingPlaceables.isEmpty()) 0 else {
-                            incomingPlaceables.sumOf { it.width } + hSpacingPx * (incomingPlaceables.size - 1)
+                        // Portrait arrangement: Top-to-Bottom, strictly vertical stacking (G1)
+                        val incomingColWidth = with(density) { incomingWidthDp.roundToPx() }
+                        val centerColWidth = with(density) { centerWidthDp.roundToPx() }
+                        val outgoingColWidth = with(density) { outgoingColWidthDp.roundToPx() }
+                        
+                        layoutWidth = maxOf(incomingColWidth, centerColWidth, outgoingColWidth)
+
+                        val incomingTotalHeight = if (incomingPlaceables.isEmpty()) 0 else {
+                            incomingPlaceables.sumOf { it.height } + spacingPx * (incomingPlaceables.size - 1)
                         }
-                        val centerTotalWidth = centerPlaceable.width
-                        val outgoingTotalWidth = if (outgoingPlaceables.isEmpty()) 0 else {
-                            outgoingPlaceables.sumOf { it.width } + hSpacingPx * (outgoingPlaceables.size - 1)
+                        val centerTotalHeight = centerPlaceable.height
+                        val outgoingTotalHeight = if (outgoingPlaceables.isEmpty()) 0 else {
+                            outgoingPlaceables.sumOf { it.height } + spacingPx * (outgoingPlaceables.size - 1)
                         }
 
-                        layoutWidth = maxOf(incomingTotalWidth, centerTotalWidth, outgoingTotalWidth)
+                        val rowSpacingCount = (if (incomingPlaceables.isNotEmpty()) 1 else 0) + (if (outgoingPlaceables.isNotEmpty()) 1 else 0)
+                        layoutHeight = incomingTotalHeight + centerTotalHeight + outgoingTotalHeight + rowSpacingCount * spacingPx
 
-                        val rowSpacingCount = (if (incomingMaxHeight > 0) 1 else 0) + (if (outgoingMaxHeight > 0) 1 else 0)
-                        layoutHeight = incomingMaxHeight + centerMaxHeight + outgoingMaxHeight + rowSpacingCount * spacingPx
+                        val centerX = layoutWidth / 2f
 
                         // Compute points
-                        var currentRowY = 0f
+                        var currentY = 0f
                         if (incomingPlaceables.isNotEmpty()) {
-                            val startX = (layoutWidth - incomingTotalWidth) / 2f
-                            var currentX = startX
                             incomingPlaceables.forEach { p ->
-                                val cx = currentX + p.width / 2f
-                                incomingPoints.add(Pair(cx, currentRowY + incomingMaxHeight / 2f))
-                                currentX += p.width + hSpacingPx
+                                val cy = currentY + p.height / 2f
+                                incomingPoints.add(Pair(centerX, cy))
+                                currentY += p.height + spacingPx
                             }
-                            currentRowY += incomingMaxHeight + spacingPx
                         }
 
-                        centerPoint = Pair(layoutWidth / 2f, currentRowY + centerMaxHeight / 2f)
-                        currentRowY += centerMaxHeight + spacingPx
+                        centerPoint = Pair(centerX, currentY + centerTotalHeight / 2f)
+                        currentY += centerTotalHeight + spacingPx
 
                         if (outgoingPlaceables.isNotEmpty()) {
-                            val startX = (layoutWidth - outgoingTotalWidth) / 2f
-                            var currentX = startX
                             outgoingPlaceables.forEach { p ->
-                                val cx = currentX + p.width / 2f
-                                outgoingPoints.add(Pair(cx, currentRowY + outgoingMaxHeight / 2f))
-                                currentX += p.width + hSpacingPx
+                                val cy = currentY + p.height / 2f
+                                outgoingPoints.add(Pair(centerX, cy))
+                                currentY += p.height + spacingPx
                             }
                         }
                     }
 
-                    // Compose Canvas Curves & Overlay click buttons
+                    // Compose Canvas Curves & Tap handler directly on line (G3)
                     val canvasPlaceables = subcompose("canvas") {
-                        Canvas(modifier = Modifier.fillMaxSize()) {
+                        Canvas(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .pointerInput(focusedPageId, incomingPoints.size, outgoingPoints.size) {
+                                    detectTapGestures { tapOffset ->
+                                        var closestEdge: NavEdge? = null
+                                        var minDistance = Float.MAX_VALUE
+                                        val threshold = 24.dp.toPx()
+
+                                        var flatIndex = 0
+                                        outgoingColumns.forEach { colNodes ->
+                                            colNodes.forEach { targetId ->
+                                                if (flatIndex < outgoingPoints.size) {
+                                                    val pt = outgoingPoints[flatIndex]
+                                                    val startX: Float
+                                                    val startY: Float
+                                                    val endX: Float
+                                                    val endY: Float
+
+                                                    if (isLandscape) {
+                                                        startX = centerPoint.first + (centerWidthDp / 2).toPx()
+                                                        startY = centerPoint.second
+                                                        endX = pt.first - (outgoingColWidthDp / 2).toPx()
+                                                        endY = pt.second
+                                                    } else {
+                                                        startX = centerPoint.first
+                                                        startY = centerPoint.second + centerPlaceable.height / 2f
+                                                        endX = pt.first
+                                                        endY = pt.second - outgoingPlaceables[flatIndex].height / 2f
+                                                    }
+
+                                                    val dist = distanceToSegment(
+                                                        tapOffset,
+                                                        Offset(startX, startY),
+                                                        Offset(endX, endY)
+                                                    )
+                                                    val matchingEdge = outgoingEdges.find { it.targetPageId == targetId }
+                                                    if (matchingEdge != null && dist < threshold && dist < minDistance) {
+                                                        minDistance = dist
+                                                        closestEdge = matchingEdge
+                                                    }
+                                                }
+                                                flatIndex++
+                                            }
+                                        }
+
+                                        if (closestEdge != null) {
+                                            selectedEdgeForDeletion = closestEdge
+                                        } else {
+                                            selectedEdgeForDeletion = null
+                                        }
+                                    }
+                                }
+                        ) {
                             val arrowLength = 8.dp.toPx()
                             val arrowWidth = 5.dp.toPx()
 
@@ -430,9 +491,9 @@ fun StructureGraphView(
                                         )
                                     } else {
                                         val startX = pt.first
-                                        val startY = pt.second + (incomingMaxHeight / 2)
+                                        val startY = pt.second + incomingPlaceables[index].height / 2f
                                         val endX = centerPoint.first
-                                        val endY = centerPoint.second - (centerMaxHeight / 2)
+                                        val endY = centerPoint.second - centerPlaceable.height / 2f
 
                                         path.moveTo(startX, startY)
                                         path.cubicTo(
@@ -474,11 +535,16 @@ fun StructureGraphView(
                                         val isSelected = selectedEdgeForDeletion == matchingEdge
 
                                         val path = androidx.compose.ui.graphics.Path()
+                                        val startX: Float
+                                        val startY: Float
+                                        val endX: Float
+                                        val endY: Float
+
                                         if (isLandscape) {
-                                            val startX = centerPoint.first + (centerWidthDp / 2).toPx()
-                                            val startY = centerPoint.second
-                                            val endX = pt.first - (outgoingColWidthDp / 2).toPx()
-                                            val endY = pt.second
+                                            startX = centerPoint.first + (centerWidthDp / 2).toPx()
+                                            startY = centerPoint.second
+                                            endX = pt.first - (outgoingColWidthDp / 2).toPx()
+                                            endY = pt.second
 
                                             path.moveTo(startX, startY)
                                             path.cubicTo(
@@ -487,10 +553,10 @@ fun StructureGraphView(
                                                 endX, endY
                                             )
                                         } else {
-                                            val startX = centerPoint.first
-                                            val startY = centerPoint.second + (centerMaxHeight / 2)
-                                            val endX = pt.first
-                                            val endY = pt.second - (outgoingMaxHeight / 2)
+                                            startX = centerPoint.first
+                                            startY = centerPoint.second + centerPlaceable.height / 2f
+                                            endX = pt.first
+                                            endY = pt.second - outgoingPlaceables[flatIndex].height / 2f
 
                                             path.moveTo(startX, startY)
                                             path.cubicTo(
@@ -523,14 +589,10 @@ fun StructureGraphView(
                                         if (!isMoreNode) {
                                             val arrowPath = androidx.compose.ui.graphics.Path()
                                             if (isLandscape) {
-                                                val endX = pt.first - (outgoingColWidthDp / 2).toPx()
-                                                val endY = pt.second
                                                 arrowPath.moveTo(endX, endY)
                                                 arrowPath.lineTo(endX - arrowLength, endY - arrowWidth)
                                                 arrowPath.lineTo(endX - arrowLength, endY + arrowWidth)
                                             } else {
-                                                val endX = pt.first
-                                                val endY = pt.second - (outgoingMaxHeight / 2)
                                                 arrowPath.moveTo(endX, endY)
                                                 arrowPath.lineTo(endX - arrowWidth, endY - arrowLength)
                                                 arrowPath.lineTo(endX + arrowWidth, endY - arrowLength)
@@ -542,115 +604,10 @@ fun StructureGraphView(
                                     flatIndex++
                                 }
                             }
-
-                            // 3. Draw dot indicators for deletion
-                            if (onRemoveConnection != null) {
-                                var oIdx = 0
-                                outgoingColumns.forEach { colNodes ->
-                                    colNodes.forEach { targetId ->
-                                        if (oIdx < outgoingPoints.size) {
-                                            val pt = outgoingPoints[oIdx]
-                                            val isMoreNode = targetId.startsWith("more_")
-                                            if (!isMoreNode) {
-                                                val startX: Float
-                                                val startY: Float
-                                                val endX: Float
-                                                val endY: Float
-
-                                                if (isLandscape) {
-                                                    startX = centerPoint.first + (centerWidthDp / 2).toPx()
-                                                    startY = centerPoint.second
-                                                    endX = pt.first - (outgoingColWidthDp / 2).toPx()
-                                                    endY = pt.second
-                                                } else {
-                                                    startX = centerPoint.first
-                                                    startY = centerPoint.second + (centerMaxHeight / 2)
-                                                    endX = pt.first
-                                                    endY = pt.second - (outgoingMaxHeight / 2)
-                                                }
-
-                                                val curveEndX = startX + (endX - startX) * 0.7f
-                                                val endCurveY = startY + (endY - startY) * 0.7f
-
-                                                val matchingEdge = outgoingEdges.find { it.targetPageId == targetId }
-                                                if (matchingEdge != null) {
-                                                    val isSelected = selectedEdgeForDeletion == matchingEdge
-                                                    val dotRadius = if (isSelected) 6.dp.toPx() else 4.dp.toPx()
-                                                    val dotColor = if (isSelected) errorColor else secondaryColor
-
-                                                    drawCircle(
-                                                        color = dotColor,
-                                                        radius = dotRadius,
-                                                        center = androidx.compose.ui.geometry.Offset(curveEndX, endCurveY)
-                                                    )
-                                                }
-                                            }
-                                        }
-                                        oIdx++
-                                    }
-                                }
-                            }
                         }
                     }.map { it.measure(Constraints.fixed(layoutWidth, layoutHeight)) }
 
-                    // 4. Compose interactive deletion boxes
-                    val deletionPlaceables = subcompose("deletion") {
-                        if (onRemoveConnection != null) {
-                            var oIdx = 0
-                            outgoingColumns.forEach { colNodes ->
-                                colNodes.forEach { targetId ->
-                                    if (oIdx < outgoingPoints.size) {
-                                        val pt = outgoingPoints[oIdx]
-                                        val isMoreNode = targetId.startsWith("more_")
-                                        if (!isMoreNode) {
-                                            val startX: Float
-                                            val startY: Float
-                                            val endX: Float
-                                            val endY: Float
-
-                                            if (isLandscape) {
-                                                startX = centerPoint.first + with(density) { (centerWidthDp / 2).toPx() }
-                                                startY = centerPoint.second
-                                                endX = pt.first - with(density) { (outgoingColWidthDp / 2).toPx() }
-                                                endY = pt.second
-                                            } else {
-                                                startX = centerPoint.first
-                                                startY = centerPoint.second + (centerMaxHeight / 2)
-                                                endX = pt.first
-                                                endY = pt.second - (outgoingMaxHeight / 2)
-                                            }
-
-                                            val curveEndX = startX + (endX - startX) * 0.7f
-                                            val endCurveY = startY + (endY - startY) * 0.7f
-
-                                            val matchingEdge = outgoingEdges.find { it.targetPageId == targetId }
-                                            if (matchingEdge != null) {
-                                                Box(
-                                                    modifier = Modifier
-                                                        .offset {
-                                                            IntOffset(
-                                                                (curveEndX - with(density) { 16.dp.toPx() }).toInt(),
-                                                                (endCurveY - with(density) { 16.dp.toPx() }).toInt()
-                                                            )
-                                                        }
-                                                        .size(32.dp)
-                                                        .clickable(
-                                                            interactionSource = remember { MutableInteractionSource() },
-                                                            indication = null
-                                                        ) {
-                                                            selectedEdgeForDeletion = matchingEdge
-                                                        }
-                                                )
-                                            }
-                                        }
-                                    }
-                                    oIdx++
-                                }
-                            }
-                        }
-                    }.map { it.measure(constraints) }
-
-                    // 5. Compose active deletion tooltip dialog triggers
+                    // 5. Compose active deletion tooltip dialog triggers at exact midpoint (0.5f) (G3)
                     val tooltipPlaceables = subcompose("tooltip") {
                         if (onRemoveConnection != null && selectedEdgeForDeletion != null) {
                             val matchingEdge = selectedEdgeForDeletion!!
@@ -670,13 +627,13 @@ fun StructureGraphView(
                                     endY = pt.second
                                 } else {
                                     startX = centerPoint.first
-                                    startY = centerPoint.second + (centerMaxHeight / 2)
+                                    startY = centerPoint.second + centerPlaceable.height / 2f
                                     endX = pt.first
-                                    endY = pt.second - (outgoingMaxHeight / 2)
+                                    endY = pt.second - outgoingPlaceables[outgoingFlatIndex].height / 2f
                                 }
 
-                                val curveEndX = startX + (endX - startX) * 0.7f
-                                val endCurveY = startY + (endY - startY) * 0.7f
+                                val curveEndX = startX + (endX - startX) * 0.5f
+                                val endCurveY = startY + (endY - startY) * 0.5f
 
                                 val tooltipWidth = with(density) { 36.dp.toPx() }
                                 val tooltipHeight = with(density) { 24.dp.toPx() }
@@ -753,7 +710,6 @@ fun StructureGraphView(
                             }
                         }
 
-                        deletionPlaceables.forEach { it.place(0, 0) }
                         tooltipPlaceables.forEach { it.place(0, 0) }
                     }
                 }

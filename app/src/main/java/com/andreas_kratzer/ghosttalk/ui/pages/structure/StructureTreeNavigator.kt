@@ -299,13 +299,7 @@ fun StructureTreeNavigator(
                                     }
                                 }
 
-                                if (node.isReference) {
-                                    SuggestionChip(
-                                        onClick = { onFocus(node.pageId) },
-                                        label = { Text(stringResource(R.string.structure_reference_badge), style = MaterialTheme.typography.labelSmall) },
-                                        modifier = Modifier.padding(start = 4.dp)
-                                    )
-                                } else if (node.children.isNotEmpty()) {
+                                if (node.children.isNotEmpty()) {
                                     Badge {
                                         Text("${node.children.size}")
                                     }

@@ -645,7 +645,7 @@
     <string name="structure_no_page_selected">No page selected</string>
     <string name="structure_no_graph">No graph available</string>
     <string name="structure_grid_size">Grid: %1$d x %2$d</string>
-    <string name="structure_reference_badge">Ref</string>
+
     <string name="structure_collapse">Collapse</string>
     <string name="structure_expand">Expand</string>
     <string name="structure_target_full">Target page is full – enlarge grid or place elsewhere?</string>

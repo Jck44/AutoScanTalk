@@ -90,4 +90,22 @@ class StructureCanvasLogicTest {
         assertEquals(1, buttons[0].first)
         assertEquals("Outgoing Connection 2", buttons[0].second.label)
     }
+
+    @Test
+    fun testDistanceToSegment() {
+        val a = androidx.compose.ui.geometry.Offset(0f, 0f)
+        val b = androidx.compose.ui.geometry.Offset(10f, 0f)
+
+        // Point on the segment
+        assertEquals(0f, distanceToSegment(androidx.compose.ui.geometry.Offset(5f, 0f), a, b), 0.001f)
+
+        // Point above the segment midpoint
+        assertEquals(5f, distanceToSegment(androidx.compose.ui.geometry.Offset(5f, 5f), a, b), 0.001f)
+
+        // Point past end B (should project to B)
+        assertEquals(5f, distanceToSegment(androidx.compose.ui.geometry.Offset(15f, 0f), a, b), 0.001f)
+
+        // Point past start A (should project to A)
+        assertEquals(5f, distanceToSegment(androidx.compose.ui.geometry.Offset(-5f, 0f), a, b), 0.001f)
+    }
 }
