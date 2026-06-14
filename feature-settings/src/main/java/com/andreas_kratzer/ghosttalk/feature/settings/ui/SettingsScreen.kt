@@ -68,8 +68,8 @@ import com.andreas_kratzer.ghosttalk.core.ui.R as CoreR
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
-    onNavigateBack: () -> Unit,
-    onBookDeleted: () -> Unit = onNavigateBack,
+    onNavigateBack: (() -> Unit)? = null,
+    onBookDeleted: () -> Unit = { onNavigateBack?.invoke() },
     onNavigateToStart: () -> Unit = {},
     isGlobal: Boolean = false,
     viewModel: SettingsViewModel = hiltViewModel(),
@@ -172,7 +172,7 @@ fun SettingsScreen(
         searchQuery = ""
     }
 
-    val handleBack = {
+    val handleBack: () -> Unit = {
         if (editingProfileId != null) {
             if (!isLargeScreen && selectedSection != null) {
                 // On mobile edit mode, go back to the edit categories menu
@@ -186,14 +186,16 @@ fun SettingsScreen(
                 }
             }
         } else if (isLargeScreen || selectedSection == null) {
-            onNavigateBack()
+            onNavigateBack?.invoke()
         } else {
             selectedSection = null
         }
     }
 
-    BackHandler {
-        handleBack()
+    if (editingProfileId != null || (!isLargeScreen && selectedSection != null) || onNavigateBack != null) {
+        BackHandler {
+            handleBack()
+        }
     }
 
     val isProfileSyncing by viewModel.isProfileSyncing.collectAsState()
@@ -217,9 +219,12 @@ fun SettingsScreen(
         }
     }
 
+    val showBackIcon = editingProfileId != null || (!isLargeScreen && selectedSection != null) || onNavigateBack != null
+    val backCallback = if (editingProfileId != null || (!isLargeScreen && selectedSection != null)) handleBack else onNavigateBack
+
     GhostTalkScaffold(
         title = screenTitle,
-        onNavigateBack = handleBack
+        onNavigateBack = if (showBackIcon) backCallback else null
     ) { paddingValues ->
         Scaffold(
             contentWindowInsets = WindowInsets(0.dp),
@@ -367,7 +372,7 @@ fun SettingsScreen(
                                     padding = PaddingValues(0.dp),
                                     dimensions = dimensions,
                                     viewModel = viewModel,
-                                    onNavigateBack = onNavigateBack,
+                                    onNavigateBack = { onNavigateBack?.invoke() },
                                     onBookDeleted = onBookDeleted,
                                     onLockClicked = {
                                         viewModel.security.lock()
@@ -447,7 +452,7 @@ fun SettingsScreen(
                             padding = PaddingValues(0.dp),
                             dimensions = dimensions,
                             viewModel = viewModel,
-                            onNavigateBack = onNavigateBack,
+                            onNavigateBack = { onNavigateBack?.invoke() },
                             onBookDeleted = onBookDeleted,
                             onLockClicked = {
                                 viewModel.security.lock()

@@ -698,5 +698,8 @@
     <string name="analytics_empty_stats_desc">Use the app in user mode to generate usage statistics and AI recommendations.</string>
     <string name="suggestions_no_active_buttons">No active buttons present in this row.</string>
     <string name="smart_integration_please_pair">Please pair in settings first.</string>
+    <string name="nav_speak">Speak</string>
+    <string name="nav_content">Content</string>
+    <string name="nav_stats">Stats</string>
 </resources>
 

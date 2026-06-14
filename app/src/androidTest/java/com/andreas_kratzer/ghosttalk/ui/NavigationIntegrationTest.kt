@@ -94,8 +94,8 @@ class NavigationIntegrationTest {
         composeTestRule.onNodeWithTag("start_card_user_mode").assertExists()
         
         // 7. Navigate back to BookListScreen
-        val backDesc = composeTestRule.activity.getString(R.string.start_back_to_books)
-        composeTestRule.onNodeWithContentDescription(backDesc).performClick()
+        composeTestRule.onNodeWithTag("book_switcher_button").performClick()
+        composeTestRule.onNodeWithTag("book_switcher_back_to_books").performClick()
         
         // Wait until we return to "book_list" and it is resumed
         waitForRouteAndResumedState("book_list")
@@ -113,27 +113,12 @@ class NavigationIntegrationTest {
         }
         composeTestRule.onNodeWithText("Standardbuch", substring = true).performClick()
 
-        // 2. Click "Manage" (start_card_manage)
+        // 2. We are on Inhalte tab by default, verify page_add_fab exists
         composeTestRule.waitUntil(10000) {
-            composeTestRule.onAllNodesWithTag("start_card_manage")
+            composeTestRule.onAllNodesWithTag("page_add_fab")
                 .fetchSemanticsNodes().isNotEmpty()
         }
-        composeTestRule.onNodeWithTag("start_card_manage").performClick()
-
-        // 3. Verify ContentManagementScreen (checking for tag)
-        composeTestRule.waitUntil(10000) {
-            composeTestRule.onAllNodesWithTag("content_manage_pages")
-                .fetchSemanticsNodes().isNotEmpty()
-        }
-        
-        // 4. Navigate back to StartScreen (assume back button exists)
-        // PageListScreen uses CoreR.string.back_button_content_description
-        // Let's try to find a back button
-        composeTestRule.onNodeWithTag("content_management_back_button", useUnmergedTree = true).performClick()
-            .runCatching { performClick() } // Fallback to system back or other if tag missing
-
-        // Since I'm not sure about the tag for back button in ContentManagement, 
-        // I might need to add it or use content description.
+        composeTestRule.onNodeWithTag("page_add_fab").assertExists()
     }
 
     @Test
@@ -176,8 +161,8 @@ class NavigationIntegrationTest {
         composeTestRule.onNodeWithTag("start_card_user_mode").assertExists()
 
         // Navigate back to BookListScreen
-        val backDesc = composeTestRule.activity.getString(R.string.start_back_to_books)
-        composeTestRule.onNodeWithContentDescription(backDesc).performClick()
+        composeTestRule.onNodeWithTag("book_switcher_button").performClick()
+        composeTestRule.onNodeWithTag("book_switcher_back_to_books").performClick()
 
         // Wait until we return to "book_list" and it is resumed
         waitForRouteAndResumedState("book_list")

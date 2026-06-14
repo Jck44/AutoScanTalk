@@ -44,16 +44,18 @@ Parallel wird eine **neue Navigationsseite / Informationsarchitektur** geplant. 
 | B3 | Modus-Container + Route-Konsolidierung (`editor/{pageId}?mode=`) | **hoch** | ✅ umgesetzt+reviewt (Nav-Plan nachgezogen) |
 | B4 | Baum-Navigator als geteiltes Element in beiden Modi | mittel | ✅ umgesetzt+reviewt (Phone-Raster ohne Inline-Baum, s. Notiz) |
 | B5 | Übergänge/Terminologie entschlacken + Undo-Konsistenz | klein | ✅ umgesetzt+reviewt |
-| C1 | Assistent-Promotion in die EditorTopBar (sofort) | klein | ✅ umgesetzt+reviewt (Dedup/Dichte → D6) |
-| C2 | Vorschlags-Einstieg aus der Statistik | mittel | ✅ umgesetzt+reviewt (Konsum-Guard → D7) |
+| C1 | Assistent-Promotion in die EditorTopBar (sofort) | klein | ✅ umgesetzt+reviewt (Dedup/Dichte → D3) |
+| C2 | Vorschlags-Einstieg aus der Statistik | mittel | ✅ umgesetzt+reviewt (Konsum-Guard → D4) |
 | C3 | Inhalte=Seitenliste direkt + ruhigere Tokens (gekoppelt an Nav-Redesign) | mittel | offen |
-| D1 | `EditorMode`-Enum statt Magic-Strings „raster"/„struktur" | klein | offen |
-| D2 | Import-Hygiene in Teil-B-Dateien | trivial | offen |
-| D3 | `EditorTopBar` entkoppeln (testTag-Param + String) | klein | offen |
-| D4 | `onExitEditor` robust (page_list-Fallback) | klein | offen |
-| D5 | Rest-Kleinigkeiten (imePadding, B4-Phone, i18n-Verweis) | trivial | offen |
-| D6 | EditorTopBar verdichten: Titel-Label+Dialog, Icon-Modus-Umschalter, adaptive Actions (Redo→⋮), Assistent-Dedup | mittel | offen (nach D1; berührt EditorTopBar wie D3) |
-| D7 | `openAssistant`-Intent einmalig konsumieren (kein Re-Open bei Modus-Round-Trip) | klein | offen |
+_(Teil D strikt in Reihenfolge D1 → D7 abarbeiten — Nummern = Ausführungsreihenfolge.)_
+
+| D1 | `EditorMode`-Enum statt Magic-Strings „raster"/„struktur" (Fundament für D3) | klein | offen |
+| D2 | `EditorTopBar` entkoppeln (testTag-Param + String) — Header-Vorarbeit | klein | offen |
+| D3 | EditorTopBar verdichten: Titel-Label+Dialog, Icon-Modus-Umschalter, adaptive Actions (Redo→⋮), Assistent-Dedup | mittel | offen |
+| D4 | `openAssistant`-Intent einmalig konsumieren (kein Re-Open bei Modus-Round-Trip) | klein | offen |
+| D5 | `onExitEditor` robust (page_list-Fallback) | klein | offen |
+| D6 | Import-Hygiene in Teil-B-Dateien (nach D3, da Header-Umbau churnt) | trivial | offen |
+| D7 | Rest-Kleinigkeiten (imePadding, B4-Phone, i18n-Verweis) | trivial | offen |
 
 ---
 
@@ -373,34 +375,21 @@ bisherigen Funktionen beider Editoren erreichbar; Tests grün; Build grün. **Vo
 
 ## Teil D — Feinschliff (Stufe D)
 
-> **Sammel-AP** für die OOP-/Tech-Debt-Befunde aus dem Teil-B-Nachreview (2026-06-13) **plus** verbliebene Kleinigkeiten aus früheren Phasen. **Reine Qualität/Robustheit, kein neues Verhalten.** Ein AP = ein Commit; `assembleDebug` + Tests nach jedem AP grün; `testTag`s erhalten.
+> **Sammel-AP** für die OOP-/Tech-Debt-Befunde aus dem Teil-B-Nachreview (2026-06-13) **plus** verbliebene Kleinigkeiten aus früheren Phasen. **Reine Qualität/Robustheit, kein neues Verhalten** (Ausnahme: D3). Ein AP = ein Commit; `assembleDebug` + Tests nach jedem AP grün; `testTag`s erhalten.
+>
+> ⚠️ **Die AP-Nummern = Ausführungsreihenfolge: D1 → D7 strikt der Reihe nach.** Nicht umsortieren — D3 braucht D1, baut auf D2; D6 (Import-Hygiene) kommt bewusst **nach** den Header-Umbauten.
 
-### AP D1 — `EditorMode` statt Magic-Strings (klein)
+### AP D1 — `EditorMode` statt Magic-Strings (klein) — Fundament für D3
 `"raster"`/`"struktur"` sind aktuell rohe String-Literale in `GhostTalkNavHost` (Routenliterale `editor/...?mode=…`, `navArgument`-Default, `getString`-Fallback) und `PageWorkbenchScreen` (Vergleiche/Zuweisungen) — ≥ 10 Stellen, typo-anfällig (ein falsch geschriebenes „struktur" schaltet still in den Default).
 - `enum class EditorMode { RASTER, STRUKTUR }` mit `val route: String` + `companion fun fromRoute(s: String?): EditorMode` einführen. Das NavHost-Route-Arg bleibt `StringType`; Mapping enum↔String **an genau einer Stelle**. Alle Vergleiche/Zuweisungen über das Enum.
 - **Fertig wenn:** keine rohen `"raster"/"struktur"`-Literale mehr außer der Mapping-Stelle; Build + Tests grün.
 
-### AP D2 — Import-Hygiene in den Teil-B-Dateien (trivial)
-Fully-qualified Inline-Referenzen durch Imports ersetzen: `PageEditorScreen` (9×, u. a. `…BookNavigationGraph`, `…structure.StructureTreeNavigator`, `androidx.compose.foundation.layout.Row/Spacer/Card`), `GridButton` (`…ActionVisualTokens.getColors`), `PageWorkbenchScreen` (`…hiltViewModel`).
-- Rein kosmetisch, keine Verhaltensänderung.
-- **Fertig wenn:** keine `com.andreas_kratzer…`/`androidx…`-Vollpfade mehr inline in diesen Dateien; Build grün.
-
-### AP D3 — `EditorTopBar` entkoppeln (klein)
+### AP D2 — `EditorTopBar` entkoppeln (klein) — Header-Vorarbeit vor D3
 Die generische core-ui-Komponente `EditorTopBar` hardcodet `testTag("page_editor_exit_button")` und `contentDescription = "Editor beenden"` → leaky Abstraktion + hartcodierter String.
 - Exit-`testTag` als Parameter (Default = `page_editor_exit_button`, damit bestehende Tests grün bleiben). `contentDescription` über String-Ressource (Konvention `docs/i18n_backlog_plan.md`) bzw. Parameter.
 - **Fertig wenn:** kein page_editor-spezifischer Tag mehr fix in core-ui; „Editor beenden" lokalisiert; Tests grün.
 
-### AP D4 — `onExitEditor` robust gegen fehlendes `page_list` (klein)
-`popBackStack("page_list", inclusive=false)` läuft ins Leere, wenn der Editor aus ContentManagement (Statische Zeile) oder Analytics betreten wurde (`page_list` nicht im Back-Stack) → „Editor beenden" tut nichts. Altlast, hier mit-fixen.
-- Fallback: wenn `page_list` nicht im Back-Stack ist, auf das nächste sinnvolle Ziel poppen (z. B. einfaches `popBackStack()` / bis zur Inhalte-Ebene). Idealerweise nach dem Nav-Redesign auf das Shell-/Inhalte-Ziel abstimmen.
-- **Fertig wenn:** „Editor beenden" führt aus **jedem** Einstieg zu einem sinnvollen Ziel; manuell geprüft.
-
-### AP D5 — Rest-Kleinigkeiten (trivial)
-- **AP5-Insets:** `.imePadding()` am Profil-bottomBar ist redundant (`safeDrawing` enthält `ime` bereits) → entfernen **oder** als bewusst belassen kommentieren.
-- **B4 Phone-Raster:** kein Inline-Baum im Raster-Modus am Telefon — optional Sheet-Zugang wie im Struktur-Modus ergänzen **oder** bewusst lassen (Baum via Moduswechsel).
-- **i18n der neuen Teil-B/C-Strings** („Raster"/„Struktur", „Editor beenden", „Mehr Optionen", Assistent-Label, Snackbar „Magische Bereinigung…") → laufen über `docs/i18n_backlog_plan.md`, **nicht** hier doppelt tracken (nur Verweis).
-
-### AP D6 — EditorTopBar verdichten (kompakter Header, Hoch- + Querformat)
+### AP D3 — EditorTopBar verdichten (kompakter Header, Hoch- + Querformat) — braucht D1, baut auf D2
 Aus dem C1-Review + Andreas-Feedback (2026-06-13): Der Header ist im Portrait überladen (Titel-Textfeld + Assistent-Label + 6 Icons + Overflow + Modus-Umschalter, der dadurch auf eine eigene Zeile rutscht). Vorlage: Mock-ups `editor_topbar_compact_mode_toggle` + `editor_topbar_portrait_title_label`.
 > **Bewusste kleine Verhaltensänderung** (Ausnahme zur Teil-D-Regel „kein Verhalten"): Umbenennen läuft künftig über einen Dialog statt inline.
 
@@ -426,15 +415,30 @@ Vier zusammengehörige Änderungen an `EditorTopBar` (core-ui) + beiden Nutzern 
 
 **Fertig wenn:** Modus-Umschalter nie auf eigener Zeile; Header läuft auf einem Telefon (Portrait) nicht über; Umbenennen-Dialog funktioniert mit Validierung; `EditorMode` + geteiltes Assistent-Composable genutzt; `PageManagementIntegrationTest` angepasst und grün; Build grün; visuell Hoch-/Querformat + Light/Dark geprüft.
 
-### AP D7 — `openAssistant`-Intent einmalig konsumieren (klein, aus C2-Review)
+### AP D4 — `openAssistant`-Intent einmalig konsumieren (klein, aus C2-Review)
 C2 reicht `openAssistant` als Back-Stack-Arg → `PageWorkbenchScreen.initialOpenAssistant` → `PageEditorScreen` durch. Da das Arg `true` bleibt, öffnet ein Moduswechsel Raster→Struktur→Raster (Neukomposition von `PageEditorScreen`) den Assistent-Dialog **erneut**.
 - Flag **einmalig konsumieren** auf `PageWorkbenchScreen`-Ebene (bleibt über Moduswechsel bestehen): z. B. `var assistantPending by rememberSaveable { mutableStateOf(initialOpenAssistant) }`, nur beim ersten Eintritt in den Raster-Modus an `PageEditorScreen` durchreichen und danach auf `false` setzen.
 - **Fertig wenn:** Deep-Link aus der Statistik öffnet den Assistenten **einmal**; Raster↔Struktur-Round-Trip öffnet ihn nicht erneut; Build grün.
 
+### AP D5 — `onExitEditor` robust gegen fehlendes `page_list` (klein)
+`popBackStack("page_list", inclusive=false)` läuft ins Leere, wenn der Editor aus ContentManagement (Statische Zeile) oder Analytics betreten wurde (`page_list` nicht im Back-Stack) → „Editor beenden" tut nichts. Altlast, hier mit-fixen.
+- Fallback: wenn `page_list` nicht im Back-Stack ist, auf das nächste sinnvolle Ziel poppen (z. B. einfaches `popBackStack()` / bis zur Inhalte-Ebene). Idealerweise nach dem Nav-Redesign auf das Shell-/Inhalte-Ziel abstimmen.
+- **Fertig wenn:** „Editor beenden" führt aus **jedem** Einstieg zu einem sinnvollen Ziel; manuell geprüft.
+
+### AP D6 — Import-Hygiene in den Teil-B-Dateien (trivial) — nach den Header-Umbauten
+Fully-qualified Inline-Referenzen durch Imports ersetzen: `PageEditorScreen` (u. a. `…BookNavigationGraph`, `…structure.StructureTreeNavigator`, `androidx.compose.foundation.layout.Row/Spacer/Card`), `GridButton` (`…ActionVisualTokens.getColors`), `PageWorkbenchScreen` (`…hiltViewModel`). **(Stellen/Zahl nach D3 erneut per Grep prüfen — der Header-Umbau ändert PageEditorScreen.)**
+- Rein kosmetisch, keine Verhaltensänderung.
+- **Fertig wenn:** keine `com.andreas_kratzer…`/`androidx…`-Vollpfade mehr inline in diesen Dateien; Build grün.
+
+### AP D7 — Rest-Kleinigkeiten (trivial)
+- **AP5-Insets:** `.imePadding()` am Profil-bottomBar ist redundant (`safeDrawing` enthält `ime` bereits) → entfernen **oder** als bewusst belassen kommentieren.
+- **B4 Phone-Raster:** kein Inline-Baum im Raster-Modus am Telefon — optional Sheet-Zugang wie im Struktur-Modus ergänzen **oder** bewusst lassen (Baum via Moduswechsel).
+- **i18n der neuen Teil-B/C-Strings** („Raster"/„Struktur", „Editor beenden", „Mehr Optionen", Assistent-Label, Snackbar „Magische Bereinigung…") → laufen über `docs/i18n_backlog_plan.md`, **nicht** hier doppelt tracken (nur Verweis).
+
 ### Review-Schwerpunkte Teil D (Claude)
 - [ ] D1: kein Magic-String mehr; Route-Mapping an genau einer Stelle; kein Verhaltensbruch beim Moduswechsel.
-- [ ] D6: Modus-Umschalter nie eigene Zeile; Portrait-Header kein Überlauf; Umbenennen-Dialog mit Validierung; `page_editor_name_field`-Tag im Dialog + Test angepasst; Modus-Segmente mit `contentDescription`.
-- [ ] Sonst reiner Feinschliff — keine ungewollte Semantikänderung, bestehende `testTag`s/Tests grün (D6 ist die bewusste Ausnahme: Umbenennen via Dialog).
+- [ ] D3: Modus-Umschalter nie eigene Zeile; Portrait-Header kein Überlauf; Umbenennen-Dialog mit Validierung; `page_editor_name_field`-Tag im Dialog + Test angepasst; Modus-Segmente mit `contentDescription`.
+- [ ] Sonst reiner Feinschliff — keine ungewollte Semantikänderung, bestehende `testTag`s/Tests grün (D3 ist die bewusste Ausnahme: Umbenennen via Dialog).
 
 ---
 
@@ -476,13 +480,13 @@ C2 reicht `openAssistant` als Back-Stack-Arg → `PageWorkbenchScreen.initialOpe
 **Befunde (keine Blocker):**
 - **Koordination B3↔Nav-Plan (erledigt):** `navigation_redesign_plan.md` referenzierte noch `page_editor`/`structure_editor`. Da B3 zuerst kam, **Nav-Plan auf `editor/{pageId}?mode=` nachgezogen** (Ist-Diagramm + AP 2/AP 5). Kein Code-Konflikt (Nav-Redesign noch nicht implementiert).
 - **Neue hartcodierte UI-Strings durch Teil B** → ins i18n-Sammelticket aufgenommen: `PageWorkbenchScreen` „Raster"/„Struktur", `EditorTopBar` „Editor beenden".
-- **Pre-existing/minor:** `onExitEditor` macht `popBackStack("page_list")` — wenn der Editor aus ContentManagement (Statische Zeile) o. Analytics betreten wird, ist `page_list` evtl. nicht im Back-Stack (Altlast, nicht durch B3 verursacht). → Teil D / AP D4.
+- **Pre-existing/minor:** `onExitEditor` macht `popBackStack("page_list")` — wenn der Editor aus ContentManagement (Statische Zeile) o. Analytics betreten wird, ist `page_list` evtl. nicht im Back-Stack (Altlast, nicht durch B3 verursacht). → Teil D / AP D5.
 
 **OOP-/Tech-Debt-Nachreview Teil B (Claude, 2026-06-13):** Überwiegend **sauber**, kaum neue Schuld.
 - ✅ DRY: Start-Seiten-Auflösung als `private suspend fun resolveStartPage(...)` extrahiert (4 Aufrufer) — **nicht** dupliziert (frühere Notiz korrigiert).
 - ✅ `ActionVisualTokens` zentralisiert (erschöpfendes `when`, kein `else`; wiederverwendet vorhandene Color.kt-Tokens; `GridButton`/`DraggableChip` delegieren; keine Farb-Duplikate).
 - ✅ `EditorTopBar`/`PageWorkbenchScreen` saubere Extraktion/Wiederverwendung; geteilte `GridEditorViewModel` korrekt durchgereicht.
-- 🔧 **Debt (→ Teil D):** D1 Magic-Strings `"raster"/"struktur"` (kein Enum); D2 Import-Hygiene (fully-qualified Inline-Refs); D3 `EditorTopBar` hardcodet page_editor-Tag + dt. String (leaky); D4 `onExitEditor`-Altlast.
+- 🔧 **Debt (→ Teil D):** D1 Magic-Strings `"raster"/"struktur"` (kein Enum); D2 `EditorTopBar` hardcodet page_editor-Tag + dt. String (leaky); D5 `onExitEditor`-Altlast; D6 Import-Hygiene (fully-qualified Inline-Refs).
 
 ### Review Teil C — AP C1 (Assistent-Promotion), Claude, 2026-06-13 — uncommitteter Working Tree
 
@@ -491,8 +495,8 @@ C2 reicht `openAssistant` als Back-Stack-Arg → `PageWorkbenchScreen.initialOpe
 - ✅ Verhalten unverändert (Raster öffnet `PageLayoutAssistantDialog`; Struktur startet Opt-in/`generatePageSplitProposal`). Overflow-Menüs **nicht** leer (Analytics bzw. 3 Einträge bleiben). Imports sauber (kein fully-qualified).
 
 **Befunde (keine Blocker, → Teil D / Sichtprüfung):**
-- 🔧 **Duplikation:** Der Assistent-`TextButton`-Block (Icon+Spacer+Label) ist in beiden Editoren nahezu identisch (nur `onClick`) → als geteiltes Composable extrahieren. **→ Teil D / AP D6.**
-- ⚠️ **Top-Bar-Dichte:** Die Action-Zeile in `PageEditorScreen` hat jetzt 1 beschrifteten Button + 6 Icons + Overflow, dazu der Modus-Umschalter in der Titelzeile → auf Telefonen eng; widerspricht leicht dem „ruhiger"-Ziel (C3). Sichtprüfung schmale Breite; ggf. Assistent **icon-only auf schmal** (`isNarrow`-Flag in StructureEditorScreen existiert bereits). **→ Teil D / AP D6.**
+- 🔧 **Duplikation:** Der Assistent-`TextButton`-Block (Icon+Spacer+Label) ist in beiden Editoren nahezu identisch (nur `onClick`) → als geteiltes Composable extrahieren. **→ Teil D / AP D3.**
+- ⚠️ **Top-Bar-Dichte:** Die Action-Zeile in `PageEditorScreen` hat jetzt 1 beschrifteten Button + 6 Icons + Overflow, dazu der Modus-Umschalter in der Titelzeile → auf Telefonen eng; widerspricht leicht dem „ruhiger"-Ziel (C3). Sichtprüfung schmale Breite; ggf. Assistent **icon-only auf schmal** (`isNarrow`-Flag in StructureEditorScreen existiert bereits). **→ Teil D / AP D3.**
 - hartcodierte „Assistent"/„Layout- & Struktur-Assistent" → i18n-Ticket (löst sich mit der Composable-Extraktion).
 
 ### Review Teil C — AP C2 (Vorschlags-Einstieg aus Statistik), Claude, 2026-06-13 — uncommitted
@@ -502,5 +506,5 @@ C2 reicht `openAssistant` als Back-Stack-Arg → `PageWorkbenchScreen.initialOpe
 - ✅ Saubere Durchreichung: `RecommendationsState`-Callback → `AnalyticsDashboardScreen.onEditPage(String, Boolean)` → NavHost-Route `…&openAssistant={openAssistant}` (BoolType, Default false) → `PageWorkbenchScreen.initialOpenAssistant` → `PageEditorScreen`. `rememberSaveable` für den Dialog-State (rotationssicher).
 
 **Befund (klein, → Teil D):**
-- ⚠️ **`openAssistant` nicht einmalig konsumiert:** Flag bleibt am Back-Stack-Eintrag; Moduswechsel Raster→Struktur→Raster komponiert `PageEditorScreen` neu und **öffnet den Assistenten erneut**. Guard auf `PageWorkbenchScreen`-Ebene (Flag nach erstem Öffnen löschen). → **Teil D / AP D7.**
+- ⚠️ **`openAssistant` nicht einmalig konsumiert:** Flag bleibt am Back-Stack-Eintrag; Moduswechsel Raster→Struktur→Raster komponiert `PageEditorScreen` neu und **öffnet den Assistenten erneut**. Guard auf `PageWorkbenchScreen`-Ebene (Flag nach erstem Öffnen löschen). → **Teil D / AP D4.**
 - trivial: positionaler `Boolean` in `onEditPage` (Lesbarkeit); Magic-String `"raster"` → D1.

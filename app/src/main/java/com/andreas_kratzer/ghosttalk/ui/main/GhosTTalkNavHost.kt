@@ -230,37 +230,34 @@ fun GhostTalkNavHost(
             )
         }
         composable("start") {
-            val activeBookId by pageViewModel.activeBookId.collectAsState()
-            val allBooks by bookViewModel.allBooks.collectAsState()
-            val activeBook = allBooks.find { it.id == activeBookId }
-            StartScreen(
-                bookName = activeBook?.name ?: "GhostTalk",
+            BookShellScreen(
+                bookViewModel = bookViewModel,
+                pageViewModel = pageViewModel,
+                settingsViewModel = settingsViewModel,
+                settingsRepository = settingsRepository,
                 onNavigateToUserMode = {
                     coroutineScope.launch {
-                        val finalPage = resolveStartPage(activeBookId ?: "book-default", settingsRepository, pageRepository)
+                        val activeBookId = pageViewModel.activeBookId.value ?: "book-default"
+                        val finalPage = resolveStartPage(activeBookId, settingsRepository, pageRepository)
                         if (finalPage != null) {
                             pageViewModel.loadPage(finalPage)
                             navigateWithSecurity("main")
                         }
                     }
                 },
-                onNavigateToSettings = { navigateWithSecurity("settings?isGlobal=false") },
-                onNavigateToContentManagement = { navigateWithSecurity("content_management") },
-                onNavigateToAnalyticsDashboard = { navigateWithSecurity("analytics_dashboard") },
-                onNavigateToBooks = { navController.safePopBackStack() }
-            )
-        }
-        composable("content_management") {
-            val activeBookId by pageViewModel.activeBookId.collectAsState()
-            ContentManagementScreen(
-                onNavigateToPageManager = { navController.safeNavigate("page_list") },
-                onNavigateToTemplateManager = { navController.safeNavigate("templates") },
-                onNavigateToStaticRowEditor = {
-                    val bookId = activeBookId ?: "book-default"
-                    navController.safeNavigate("editor/static_row_$bookId?mode=raster")
+                onNavigateToBooks = { navController.safePopBackStack() },
+                onNavigateToGlobalSettings = { navigateWithSecurity("settings?isGlobal=true") },
+                onEditPage = { pageId ->
+                    navController.safeNavigate("editor/$pageId?mode=raster")
                 },
-                onNavigateToStructureEditor = {
-                    val bookId = activeBookId ?: "book-default"
+                onEditPageWithAssistant = { pageId, openAssistant ->
+                    navController.safeNavigate("editor/$pageId?mode=raster&openAssistant=$openAssistant")
+                },
+                onEditTemplate = { templateId ->
+                    navController.safeNavigate("template_editor/$templateId")
+                },
+                onOpenStructureEditor = {
+                    val bookId = pageViewModel.activeBookId.value ?: "book-default"
                     coroutineScope.launch {
                         val finalPage = resolveStartPage(bookId, settingsRepository, pageRepository)
                         if (finalPage != null) {
@@ -270,24 +267,47 @@ fun GhostTalkNavHost(
                         }
                     }
                 },
-                onNavigateBack = { navController.safePopBackStack() }
-            )
-        }
-        composable("analytics_dashboard") {
-            AnalyticsDashboardScreen(
-                pageViewModel = pageViewModel,
-                onNavigateBack = { navController.safePopBackStack() },
-                onEditPage = { pageId, openAssistant ->
-                    navController.safeNavigate("editor/$pageId?mode=raster&openAssistant=$openAssistant")
+                onNavigateToTemplates = { navController.safeNavigate("templates") },
+                onNavigateToStaticRow = {
+                    val bookId = pageViewModel.activeBookId.value ?: "book-default"
+                    navController.safeNavigate("editor/static_row_$bookId?mode=raster")
                 }
             )
         }
         composable("main") {
             val callViewModel = hiltViewModel<com.andreas_kratzer.ghosttalk.ui.pages.CallViewModel>()
+            val showExitSecurityDialog = remember { mutableStateOf(false) }
+
+            LaunchedEffect(Unit) {
+                if (securityManager.isPinSet()) {
+                    securityManager.lock()
+                }
+            }
+
+            if (showExitSecurityDialog.value) {
+                SecurityEntryDialog(
+                    onDismiss = { showExitSecurityDialog.value = false },
+                    onConfirm = { success ->
+                        showExitSecurityDialog.value = false
+                        if (success) {
+                            navController.safePopBackStack()
+                        }
+                    },
+                    securityManager = securityManager,
+                    isBiometricEnabled = settingsRepository.isBiometricEnabled
+                )
+            }
+
             PageScreen(
                 pageViewModel = pageViewModel,
                 callViewModel = callViewModel,
-                onNavigateBack = { navController.safePopBackStack() },
+                onNavigateBack = {
+                    if (securityManager.isPinSet()) {
+                        showExitSecurityDialog.value = true
+                    } else {
+                        navController.safePopBackStack()
+                    }
+                },
                 modifier = Modifier.fillMaxSize()
             )
         }

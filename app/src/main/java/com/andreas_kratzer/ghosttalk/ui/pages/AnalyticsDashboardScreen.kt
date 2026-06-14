@@ -65,7 +65,7 @@ fun AnalyticsDashboardScreen(
     pageViewModel: PageViewModel,
     pageSplitViewModel: PageSplitViewModel = androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel(),
     bookRestructureViewModel: BookRestructureViewModel = androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel(),
-    onNavigateBack: () -> Unit,
+    onNavigateBack: (() -> Unit)? = null,
     onEditPage: (String, Boolean) -> Unit
 ) {
     val context = LocalContext.current
@@ -451,7 +451,7 @@ fun AnalyticsDashboardScreen(
                             layoutProposalsActions = layoutProposalsActions,
                             aiRestructureState = aiRestructureState,
                             aiRestructureActions = aiRestructureActions,
-                            onNavigateBack = onNavigateBack
+                            onNavigateBack = { onNavigateBack?.invoke() }
                         )
                     }
                     2 -> {

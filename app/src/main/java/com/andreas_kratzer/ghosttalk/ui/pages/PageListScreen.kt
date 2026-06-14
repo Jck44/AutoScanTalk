@@ -67,15 +67,18 @@ import kotlinx.coroutines.launch
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import com.andreas_kratzer.ghosttalk.core.ui.R as CoreR
+import com.andreas_kratzer.ghosttalk.feature.settings.R as SettingsR
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PageListScreen(
     pageViewModel: PageViewModel,
-    onNavigateBack: () -> Unit,
+    onNavigateBack: (() -> Unit)? = null,
     onEditPage: (String) -> Unit,
     onEditTemplate: (String) -> Unit,
-    onOpenStructureEditor: () -> Unit
+    onOpenStructureEditor: () -> Unit,
+    onNavigateToTemplates: () -> Unit = {},
+    onNavigateToStaticRow: () -> Unit = {}
 ) {
     val allPages by pageViewModel.filteredPages.collectAsState()
     val templates by pageViewModel.templates.collectAsState()
@@ -126,8 +129,10 @@ fun PageListScreen(
 
     val gridState = androidx.compose.foundation.lazy.grid.rememberLazyGridState()
 
-    BackHandler {
-        onNavigateBack()
+    if (onNavigateBack != null) {
+        BackHandler {
+            onNavigateBack()
+        }
     }
 
     if (pageToActivate.value != null) {
@@ -351,6 +356,50 @@ fun PageListScreen(
                     .padding(horizontal = dimensions.screenPaddingHorizontal, vertical = dimensions.paddingMedium),
                 singleLine = true
             )
+
+            if (onNavigateBack == null) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = dimensions.screenPaddingHorizontal, vertical = dimensions.paddingSmall),
+                    horizontalArrangement = Arrangement.spacedBy(dimensions.paddingMedium)
+                ) {
+                    val buttonModifier = Modifier.weight(1f)
+                    androidx.compose.material3.OutlinedButton(
+                        onClick = onOpenStructureEditor,
+                        modifier = buttonModifier
+                    ) {
+                        Icon(GhostTalkIcons.Link, contentDescription = null, modifier = Modifier.padding(end = 4.dp))
+                        Text(
+                            text = stringResource(R.string.structure_editor_title),
+                            maxLines = 1,
+                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                        )
+                    }
+                    androidx.compose.material3.OutlinedButton(
+                        onClick = onNavigateToTemplates,
+                        modifier = buttonModifier
+                    ) {
+                        Icon(GhostTalkIcons.GridView, contentDescription = null, modifier = Modifier.padding(end = 4.dp))
+                        Text(
+                            text = stringResource(CoreR.string.template_manage_title),
+                            maxLines = 1,
+                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                        )
+                    }
+                    androidx.compose.material3.OutlinedButton(
+                        onClick = onNavigateToStaticRow,
+                        modifier = buttonModifier
+                    ) {
+                        Icon(GhostTalkIcons.GridView, contentDescription = null, modifier = Modifier.padding(end = 4.dp))
+                        Text(
+                            text = stringResource(SettingsR.string.content_manage_configure_static_row),
+                            maxLines = 1,
+                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                        )
+                    }
+                }
+            }
 
             if (allPages.isEmpty()) {
                 com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkEmptyState(
