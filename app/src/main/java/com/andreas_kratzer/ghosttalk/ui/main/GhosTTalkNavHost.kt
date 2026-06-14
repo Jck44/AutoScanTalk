@@ -277,8 +277,8 @@ fun GhostTalkNavHost(
             AnalyticsDashboardScreen(
                 pageViewModel = pageViewModel,
                 onNavigateBack = { navController.safePopBackStack() },
-                onEditPage = { pageId ->
-                    navController.safeNavigate("editor/$pageId?mode=raster")
+                onEditPage = { pageId, openAssistant ->
+                    navController.safeNavigate("editor/$pageId?mode=raster&openAssistant=$openAssistant")
                 }
             )
         }
@@ -364,18 +364,20 @@ fun GhostTalkNavHost(
             )
         }
         composable(
-            "editor/{pageId}?mode={mode}&buttonId={buttonId}&triggerSplit={triggerSplit}",
+            "editor/{pageId}?mode={mode}&buttonId={buttonId}&triggerSplit={triggerSplit}&openAssistant={openAssistant}",
             arguments = listOf(
                 navArgument("pageId") { type = NavType.StringType },
                 navArgument("mode") { type = NavType.StringType; defaultValue = "raster" },
                 navArgument("buttonId") { type = NavType.StringType; nullable = true; defaultValue = null },
-                navArgument("triggerSplit") { type = NavType.BoolType; defaultValue = false }
+                navArgument("triggerSplit") { type = NavType.BoolType; defaultValue = false },
+                navArgument("openAssistant") { type = NavType.BoolType; defaultValue = false }
             )
         ) { backStackEntry ->
             val pageId = backStackEntry.arguments?.getString("pageId")
             val mode = backStackEntry.arguments?.getString("mode") ?: "raster"
             val buttonId = backStackEntry.arguments?.getString("buttonId")
             val triggerSplit = backStackEntry.arguments?.getBoolean("triggerSplit") ?: false
+            val openAssistant = backStackEntry.arguments?.getBoolean("openAssistant") ?: false
             val gridEditorViewModel = hiltViewModel<com.andreas_kratzer.ghosttalk.ui.pages.GridEditorViewModel>()
             if (pageId != null) {
                 PageWorkbenchScreen(
@@ -383,6 +385,7 @@ fun GhostTalkNavHost(
                     initialMode = mode,
                     initialButtonId = buttonId,
                     initialTriggerSplit = triggerSplit,
+                    initialOpenAssistant = openAssistant,
                     pageViewModel = pageViewModel,
                     gridEditorViewModel = gridEditorViewModel,
                     onNavigateBack = { navController.safePopBackStack() },

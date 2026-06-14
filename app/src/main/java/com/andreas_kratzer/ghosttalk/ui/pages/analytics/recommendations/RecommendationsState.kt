@@ -35,7 +35,8 @@ data class LayoutProposalsActions(
     val onGeneratePageSplitProposal: (String) -> Unit,
     val onChangePageScanPattern: (String, String) -> Unit,
     val onChangeScanDelay: (Long) -> Unit,
-    val onApplySpacerRelocate: (String, String, String) -> Unit
+    val onApplySpacerRelocate: (String, String, String) -> Unit,
+    val onNavigateToEditorWithAssistant: (String) -> Unit
 )
 
 @Immutable

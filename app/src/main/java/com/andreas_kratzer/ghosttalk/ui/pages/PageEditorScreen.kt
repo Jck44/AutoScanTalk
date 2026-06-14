@@ -29,6 +29,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -60,7 +61,8 @@ fun PageEditorScreen(
     onEditPage: ((String, String?) -> Unit)? = null,
     onExitEditor: (() -> Unit)? = null,
     onOpenStructureEditor: ((String, Boolean) -> Unit)? = null,
-    modeSwitcher: (@Composable () -> Unit)? = null
+    modeSwitcher: (@Composable () -> Unit)? = null,
+    initialOpenAssistant: Boolean = false
 ) {
     val allPages by pageViewModel.allPages.collectAsState()
     val unfilteredPages by pageViewModel.unfilteredPages.collectAsState()
@@ -86,7 +88,7 @@ fun PageEditorScreen(
     val context = LocalContext.current
     
     // Layout & Page Split Dialog States
-    val showLayoutAssistantDialog = remember { mutableStateOf(false) }
+    val showLayoutAssistantDialog = rememberSaveable(initialOpenAssistant) { mutableStateOf(initialOpenAssistant) }
     var showOverflowMenu by remember { mutableStateOf(false) }
     var showHistoryPanel by remember { mutableStateOf(false) }
 

@@ -221,7 +221,7 @@ fun LayoutOptimizationSection(
                                 Button(
                                     onClick = {
                                         actions.onGeneratePageSplitProposal(proposal.pageId)
-                                        Toast.makeText(context, "Aufteilungs-Vorschlag generiert! Öffne den Assistenten im Editor.", Toast.LENGTH_LONG).show()
+                                        actions.onNavigateToEditorWithAssistant(proposal.pageId)
                                     },
                                     modifier = Modifier.align(Alignment.End),
                                     shape = MaterialTheme.shapes.small

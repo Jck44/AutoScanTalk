@@ -45,14 +45,15 @@ Parallel wird eine **neue Navigationsseite / Informationsarchitektur** geplant. 
 | B4 | Baum-Navigator als geteiltes Element in beiden Modi | mittel | ✅ umgesetzt+reviewt (Phone-Raster ohne Inline-Baum, s. Notiz) |
 | B5 | Übergänge/Terminologie entschlacken + Undo-Konsistenz | klein | ✅ umgesetzt+reviewt |
 | C1 | Assistent-Promotion in die EditorTopBar (sofort) | klein | ✅ umgesetzt+reviewt (Dedup/Dichte → D6) |
-| C2 | Vorschlags-Einstieg aus der Statistik | mittel | offen |
+| C2 | Vorschlags-Einstieg aus der Statistik | mittel | ✅ umgesetzt+reviewt (Konsum-Guard → D7) |
 | C3 | Inhalte=Seitenliste direkt + ruhigere Tokens (gekoppelt an Nav-Redesign) | mittel | offen |
 | D1 | `EditorMode`-Enum statt Magic-Strings „raster"/„struktur" | klein | offen |
 | D2 | Import-Hygiene in Teil-B-Dateien | trivial | offen |
 | D3 | `EditorTopBar` entkoppeln (testTag-Param + String) | klein | offen |
 | D4 | `onExitEditor` robust (page_list-Fallback) | klein | offen |
 | D5 | Rest-Kleinigkeiten (imePadding, B4-Phone, i18n-Verweis) | trivial | offen |
-| D6 | Assistent-Button als geteiltes Composable + Top-Bar-Dichte (icon-only auf schmal) | klein | offen |
+| D6 | EditorTopBar verdichten: Titel-Label+Dialog, Icon-Modus-Umschalter, adaptive Actions (Redo→⋮), Assistent-Dedup | mittel | offen (nach D1; berührt EditorTopBar wie D3) |
+| D7 | `openAssistant`-Intent einmalig konsumieren (kein Re-Open bei Modus-Round-Trip) | klein | offen |
 
 ---
 
@@ -399,15 +400,41 @@ Die generische core-ui-Komponente `EditorTopBar` hardcodet `testTag("page_editor
 - **B4 Phone-Raster:** kein Inline-Baum im Raster-Modus am Telefon — optional Sheet-Zugang wie im Struktur-Modus ergänzen **oder** bewusst lassen (Baum via Moduswechsel).
 - **i18n der neuen Teil-B/C-Strings** („Raster"/„Struktur", „Editor beenden", „Mehr Optionen", Assistent-Label, Snackbar „Magische Bereinigung…") → laufen über `docs/i18n_backlog_plan.md`, **nicht** hier doppelt tracken (nur Verweis).
 
-### AP D6 — Assistent-Button vereinheitlichen + Top-Bar entdichten (klein, aus C1-Review)
-Aus dem C1-Review: Der Assistent-`TextButton` (Icon + „Assistent") ist in `PageEditorScreen` und `StructureEditorScreen` nahezu identisch dupliziert; die Action-Zeile ist dadurch dicht (1 beschrifteter Button + 6 Icons + Overflow + Modus-Umschalter in der Titelzeile).
-- Den Button als **ein geteiltes Composable** extrahieren (z. B. `EditorAssistantButton(onClick)` in `core-ui` oder `ui/pages`), in beiden Editoren verwenden — beseitigt Duplikat **und** die doppelte hartcodierte Beschriftung (eine String-Ressource).
-- **Top-Bar entdichten:** auf schmaler Breite (`isNarrow`/`screenWidthDp < 600`) den Assistenten **icon-only** zeigen (Label weg) — passt zum „ruhiger"-Ziel (C3). Touchziel ≥ 48 dp wahren.
-- **Fertig wenn:** ein Assistent-Composable für beide Editoren; auf Telefon kein Überlauf der Action-Zeile; Build + Tests grün.
+### AP D6 — EditorTopBar verdichten (kompakter Header, Hoch- + Querformat)
+Aus dem C1-Review + Andreas-Feedback (2026-06-13): Der Header ist im Portrait überladen (Titel-Textfeld + Assistent-Label + 6 Icons + Overflow + Modus-Umschalter, der dadurch auf eine eigene Zeile rutscht). Vorlage: Mock-ups `editor_topbar_compact_mode_toggle` + `editor_topbar_portrait_title_label`.
+> **Bewusste kleine Verhaltensänderung** (Ausnahme zur Teil-D-Regel „kein Verhalten"): Umbenennen läuft künftig über einen Dialog statt inline.
+
+Vier zusammengehörige Änderungen an `EditorTopBar` (core-ui) + beiden Nutzern (`PageEditorScreen`, `StructureEditorScreen`):
+
+**(a) Titel = antippbares Label statt Dauer-Eingabefeld.**
+- `titleContent` zeigt den Seitennamen als Text (ellipsiert) + dezenten Stift-Hinweis; **Tap öffnet einen Umbenennen-Dialog** (`GhostTalkDialog` mit der **bestehenden `ValidatedTextField`-Validierung** — Pflichtfeld, Fehlermeldung, `gridEditorViewModel.updateGridSettings(name=…)` beim Bestätigen).
+- **Test-Impact (wichtig):** `PageManagementIntegrationTest` macht `onNodeWithTag("page_editor_name_field").performTextReplacement(...)`. Der Tag `page_editor_name_field` **wandert auf das Feld im Dialog**; der Test muss den Flow anpassen (Titel-Label tippen → Feld im Dialog editieren). Tag-Name **beibehalten**.
+
+**(b) Modus-Umschalter als Icon-Segmented statt Text-Pill.**
+- `SingleChoiceSegmentedButtonRow` mit **zwei Icon-Segmenten**: Raster = `layout-grid`, Struktur = `sitemap` (GhostTalkIcons-Pendants). Je Segment `contentDescription`/Tooltip „Raster" / „Struktur".
+- Liegt **in der Header-Zeile** (nie eigene Zeile), **konsistent gleich** in Hoch- und Querformat. Nutzt `EditorMode` aus AP D1.
+
+**(c) Adaptive Action-Dichte.**
+- Schwelle `screenWidthDp < 600` (Helper aus StructureEditorScreen wiederverwenden).
+- **Portrait sichtbar:** Assistent (**icon-only**), Undo, Modus-Umschalter, ⋮. **Ins ⋮:** Redo, Verlauf, Vorschau, eingehende Links, Analytics-Overlay.
+- **Landscape inline:** zusätzlich Redo, Verlauf, Vorschau, eingehende Links; Assistent **mit Label**.
+
+**(d) Assistent als geteiltes Composable.**
+- Den in C1 doppelten Assistent-Button als **ein** Composable (z. B. `EditorAssistantButton(onClick, compact)`) extrahieren, in beiden Editoren nutzen → kein Duplikat, **eine** String-Ressource. `compact=true` = icon-only (Portrait).
+
+**Barrierefreiheit:** alle Icon-Aktionen + Modus-Segmente mit `contentDescription`; Touchziele ≥ 48 dp.
+
+**Fertig wenn:** Modus-Umschalter nie auf eigener Zeile; Header läuft auf einem Telefon (Portrait) nicht über; Umbenennen-Dialog funktioniert mit Validierung; `EditorMode` + geteiltes Assistent-Composable genutzt; `PageManagementIntegrationTest` angepasst und grün; Build grün; visuell Hoch-/Querformat + Light/Dark geprüft.
+
+### AP D7 — `openAssistant`-Intent einmalig konsumieren (klein, aus C2-Review)
+C2 reicht `openAssistant` als Back-Stack-Arg → `PageWorkbenchScreen.initialOpenAssistant` → `PageEditorScreen` durch. Da das Arg `true` bleibt, öffnet ein Moduswechsel Raster→Struktur→Raster (Neukomposition von `PageEditorScreen`) den Assistent-Dialog **erneut**.
+- Flag **einmalig konsumieren** auf `PageWorkbenchScreen`-Ebene (bleibt über Moduswechsel bestehen): z. B. `var assistantPending by rememberSaveable { mutableStateOf(initialOpenAssistant) }`, nur beim ersten Eintritt in den Raster-Modus an `PageEditorScreen` durchreichen und danach auf `false` setzen.
+- **Fertig wenn:** Deep-Link aus der Statistik öffnet den Assistenten **einmal**; Raster↔Struktur-Round-Trip öffnet ihn nicht erneut; Build grün.
 
 ### Review-Schwerpunkte Teil D (Claude)
 - [ ] D1: kein Magic-String mehr; Route-Mapping an genau einer Stelle; kein Verhaltensbruch beim Moduswechsel.
-- [ ] Reiner Feinschliff — keine Semantikänderung, alle bestehenden `testTag`s/Tests grün.
+- [ ] D6: Modus-Umschalter nie eigene Zeile; Portrait-Header kein Überlauf; Umbenennen-Dialog mit Validierung; `page_editor_name_field`-Tag im Dialog + Test angepasst; Modus-Segmente mit `contentDescription`.
+- [ ] Sonst reiner Feinschliff — keine ungewollte Semantikänderung, bestehende `testTag`s/Tests grün (D6 ist die bewusste Ausnahme: Umbenennen via Dialog).
 
 ---
 
@@ -467,3 +494,13 @@ Aus dem C1-Review: Der Assistent-`TextButton` (Icon + „Assistent") ist in `Pag
 - 🔧 **Duplikation:** Der Assistent-`TextButton`-Block (Icon+Spacer+Label) ist in beiden Editoren nahezu identisch (nur `onClick`) → als geteiltes Composable extrahieren. **→ Teil D / AP D6.**
 - ⚠️ **Top-Bar-Dichte:** Die Action-Zeile in `PageEditorScreen` hat jetzt 1 beschrifteten Button + 6 Icons + Overflow, dazu der Modus-Umschalter in der Titelzeile → auf Telefonen eng; widerspricht leicht dem „ruhiger"-Ziel (C3). Sichtprüfung schmale Breite; ggf. Assistent **icon-only auf schmal** (`isNarrow`-Flag in StructureEditorScreen existiert bereits). **→ Teil D / AP D6.**
 - hartcodierte „Assistent"/„Layout- & Struktur-Assistent" → i18n-Ticket (löst sich mit der Composable-Extraktion).
+
+### Review Teil C — AP C2 (Vorschlags-Einstieg aus Statistik), Claude, 2026-06-13 — uncommitted
+
+**Funktional sauber, abnahmefähig.** `assembleDebug` + `testDebugUnitTest` grün.
+- ✅ `LayoutOptimizationSection` navigiert jetzt echt in den Editor mit geöffnetem Assistenten (`onNavigateToEditorWithAssistant(proposal.pageId)`) statt nur Toast — der hartcodierte Toast „…Öffne den Assistenten im Editor." entfällt (Bonus i18n).
+- ✅ Saubere Durchreichung: `RecommendationsState`-Callback → `AnalyticsDashboardScreen.onEditPage(String, Boolean)` → NavHost-Route `…&openAssistant={openAssistant}` (BoolType, Default false) → `PageWorkbenchScreen.initialOpenAssistant` → `PageEditorScreen`. `rememberSaveable` für den Dialog-State (rotationssicher).
+
+**Befund (klein, → Teil D):**
+- ⚠️ **`openAssistant` nicht einmalig konsumiert:** Flag bleibt am Back-Stack-Eintrag; Moduswechsel Raster→Struktur→Raster komponiert `PageEditorScreen` neu und **öffnet den Assistenten erneut**. Guard auf `PageWorkbenchScreen`-Ebene (Flag nach erstem Öffnen löschen). → **Teil D / AP D7.**
+- trivial: positionaler `Boolean` in `onEditPage` (Lesbarkeit); Magic-String `"raster"` → D1.

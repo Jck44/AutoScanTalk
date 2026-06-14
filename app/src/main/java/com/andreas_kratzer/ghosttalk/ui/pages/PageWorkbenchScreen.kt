@@ -23,6 +23,7 @@ fun PageWorkbenchScreen(
     initialMode: String = "raster",
     initialButtonId: String? = null,
     initialTriggerSplit: Boolean = false,
+    initialOpenAssistant: Boolean = false,
     pageViewModel: PageViewModel,
     gridEditorViewModel: GridEditorViewModel = androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel(),
     onNavigateBack: () -> Unit,
@@ -56,6 +57,7 @@ fun PageWorkbenchScreen(
         PageEditorScreen(
             pageId = focusedPageId,
             initialButtonId = currentButtonId,
+            initialOpenAssistant = initialOpenAssistant,
             pageViewModel = pageViewModel,
             gridEditorViewModel = gridEditorViewModel,
             onNavigateBack = onNavigateBack,

@@ -66,7 +66,7 @@ fun AnalyticsDashboardScreen(
     pageSplitViewModel: PageSplitViewModel = androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel(),
     bookRestructureViewModel: BookRestructureViewModel = androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel(),
     onNavigateBack: () -> Unit,
-    onEditPage: (String) -> Unit
+    onEditPage: (String, Boolean) -> Unit
 ) {
     val context = LocalContext.current
     val dimensions = LocalDimensions.current
@@ -400,7 +400,8 @@ fun AnalyticsDashboardScreen(
                                 onGeneratePageSplitProposal = { pageSplitViewModel.generatePageSplitProposal(it) },
                                 onChangePageScanPattern = { id, pat -> pageSplitViewModel.changePageScanPattern(id, pat) },
                                 onChangeScanDelay = { pageSplitViewModel.changeScanDelay(it) },
-                                onApplySpacerRelocate = { pageId, b1, b2 -> pageSplitViewModel.applySpacerRelocate(pageId, b1, b2) }
+                                onApplySpacerRelocate = { pageId, b1, b2 -> pageSplitViewModel.applySpacerRelocate(pageId, b1, b2) },
+                                onNavigateToEditorWithAssistant = { onEditPage(it, true) }
                             )
                         }
                         val aiRestructureState = remember(
@@ -461,7 +462,7 @@ fun AnalyticsDashboardScreen(
                             userModeSessions = userModeSessions,
                             historyEvents = historyEvents,
                             onClearSessions = { pageViewModel.clearUserModeSessions() },
-                            onEditPage = onEditPage,
+                            onEditPage = { onEditPage(it, false) },
                             onDeletePageRequested = { unusedPage ->
                                 coroutineScope.launch {
                                     val usages = pageViewModel.getPageUsages(unusedPage.id)
