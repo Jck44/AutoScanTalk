@@ -8,10 +8,11 @@ fun <T : ListableItem> List<T>.filterAndSort(
     sortOrder: SortOrder,
     activeIds: Set<String> = emptySet()
 ): List<T> {
-    val filtered = if (query.isBlank()) {
+    val trimmedQuery = query.trim()
+    val filtered = if (trimmedQuery.isBlank()) {
         this
     } else {
-        this.filter { it.name.contains(query, ignoreCase = true) }
+        this.filter { it.name.contains(trimmedQuery, ignoreCase = true) }
     }
 
     return when (sortOrder) {

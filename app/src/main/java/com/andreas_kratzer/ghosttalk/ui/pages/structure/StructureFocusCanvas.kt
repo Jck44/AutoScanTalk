@@ -5,7 +5,6 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.scrollBy
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -47,7 +46,6 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -242,26 +240,6 @@ fun StructureFocusCanvas(
                     .verticalScroll(scrollState),
                 verticalArrangement = Arrangement.spacedBy(20.dp)
             ) {
-                val configuration = androidx.compose.ui.platform.LocalConfiguration.current
-                val isTablet = configuration.screenWidthDp >= 600
-                val showGraph = isTablet && (incomingSources.isNotEmpty() || outgoingEdges.isNotEmpty())
-                if (showGraph) {
-                    StructureGraphView(
-                        focusedPageId = focusedPageId,
-                        focusedPageName = page.name,
-                        incomingSources = incomingSources,
-                        outgoingEdges = outgoingEdges,
-                        graph = graph,
-                        pageNames = pageNames,
-                        onFocus = onFocus,
-                        onRemoveConnection = null,
-                        isFullView = false,
-                        pages = pages,
-                        dragDropState = dragDropState,
-                        onMoveButton = onMoveButton
-                    )
-                }
-
             // Top Section: Incoming
             val dimensions = LocalDimensions.current
             Card(

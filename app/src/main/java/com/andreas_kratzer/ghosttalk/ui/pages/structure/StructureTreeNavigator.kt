@@ -25,7 +25,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -92,12 +91,13 @@ fun StructureTreeNavigator(
     val orphans = remember(graph) { graph.orphans() }
 
     val searchResults = remember(searchQuery, graph.allPageIds, pageNames) {
-        if (searchQuery.isBlank()) {
+        val trimmedQuery = searchQuery.trim()
+        if (trimmedQuery.isBlank()) {
             emptyList()
         } else {
             graph.allPageIds.filter { pageId ->
                 val pageName = pageNames[pageId] ?: pageId
-                pageName.contains(searchQuery, ignoreCase = true)
+                pageName.contains(trimmedQuery, ignoreCase = true)
             }.sortedBy { pageNames[it] ?: it }
         }
     }

@@ -98,3 +98,9 @@ Nach Umsetzung E1–E6 am Gerät gefunden. Nur UI, in `app/.../ui/pages/structur
 - **G3 ✅** keine Dots (`drawCircle` entfernt); Linie tippbar via `detectTapGestures` + `distanceToSegment` (pure Helfer in StructureCanvasLogic + 4 Testfälle, 24dp-Threshold); gewählte Kante errorColor+dicker (Feedback); Hit-Test korrekt nur auf ausgehende/löschbare Kanten.
 - Stray `build_output.log` entfernt.
 - Offen nur: **Gerätesicht** (Portrait stapelt nach unten, Linien-Tap trifft zuverlässig auch bei engen Kanten, × überlagert nichts).
+
+### Crash-Fix (Claude, 2026-06-14) — Querformat + Wechsel auf Karten
+**Stacktrace:** `IllegalStateException: Vertically scrollable component measured with infinity maximum height` (verschachtelte Scrolls). **Ursache:** Der Card-Modus (`StructureFocusCanvas`, else-Zweig) hatte nur im Querformat (`isTablet`) eine **eingebettete `StructureGraphView`** (eigener Scroll) **innerhalb** des `Column(verticalScroll)` → Überbleibsel aus der Zeit vor dem „Karten | Graph"-Umschalter. **Fix:** den `isTablet`/`showGraph`/`StructureGraphView`-Block aus dem Card-Modus entfernt (Graph-Modus-Render `if viewMode==GRAPH` bleibt); tote Imports LazyColumn/horizontalScroll raus. Build grün. **Gerätesicht:** Wechsel auf Karten im Querformat crasht nicht mehr.
+
+### Pfeil-Ausrichtung-Fix (Claude, 2026-06-14, umgesetzt, Build grün)
+Pfeilköpfe waren achsen-fest (Landscape waagerecht / Portrait senkrecht), die Cubic-Kurve näherte sich aber diagonal (erzwungen waagerechter End-Tangens via c2.y=endY) → Pfeil lag nicht auf der Linie. Fix in `StructureGraphView` (ausgehende Kanten): (1) c2 trägt jetzt Y-Anteil (`c2 = end − 0.4·(end−start)`) → diagonaler End-Anflug in Linienrichtung; (2) Pfeilkopf entlang Tangens `end−c2` rotiert (eine Formel statt Landscape/Portrait-Zweige) → liegt immer auf der Linie. Eingehende Kanten ohne Pfeil, unverändert. Gerätesicht: Pfeil-Optik gegenchecken.

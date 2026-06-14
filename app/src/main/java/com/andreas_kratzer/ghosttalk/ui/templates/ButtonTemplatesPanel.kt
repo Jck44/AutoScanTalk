@@ -72,12 +72,13 @@ fun ButtonTemplatesPanel(
 
     // Filtered templates
     val filteredTemplates = remember(templates, searchQuery) {
-        if (searchQuery.isBlank()) {
+        val trimmedQuery = searchQuery.trim()
+        if (trimmedQuery.isBlank()) {
             templates
         } else {
             templates.filter {
-                it.name.contains(searchQuery, ignoreCase = true) ||
-                it.buttonConfig.label.contains(searchQuery, ignoreCase = true)
+                it.name.contains(trimmedQuery, ignoreCase = true) ||
+                it.buttonConfig.label.contains(trimmedQuery, ignoreCase = true)
             }
         }
     }

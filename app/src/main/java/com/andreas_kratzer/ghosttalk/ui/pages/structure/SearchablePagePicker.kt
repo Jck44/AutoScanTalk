@@ -37,9 +37,10 @@ fun SearchablePagePicker(
 ) {
     var searchQuery by remember { mutableStateOf("") }
     val filteredPages = remember(searchQuery, pages, excludePageId) {
+        val trimmedQuery = searchQuery.trim()
         pages.filter { it.id != excludePageId }
             .filter { page ->
-                searchQuery.isBlank() || page.name.contains(searchQuery, ignoreCase = true)
+                trimmedQuery.isBlank() || page.name.contains(trimmedQuery, ignoreCase = true)
             }
             .sortedBy { it.name }
     }

@@ -45,8 +45,10 @@ import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.saveable.listSaver
+import kotlinx.coroutines.flow.first
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.SubcomposeLayout
@@ -124,8 +126,12 @@ fun StructureGraphView(
     val scrollStateX = rememberScrollState()
     val scrollStateY = rememberScrollState()
 
-    // Auto-scrolling to center the focused node when it changes
-    LaunchedEffect(focusedPageId, scrollStateX.maxValue, scrollStateY.maxValue) {
+    // Center the focused node once, after layout settles. Keyed on focusedPageId only,
+    // so expanding/collapsing a card (which changes maxValue) does NOT re-scroll the view.
+    LaunchedEffect(focusedPageId) {
+        // Wait until the layout has been measured (at least one axis has scroll range).
+        snapshotFlow { scrollStateX.maxValue to scrollStateY.maxValue }
+            .first { (x, y) -> x > 0 || y > 0 }
         if (scrollStateX.maxValue > 0) {
             scrollStateX.animateScrollTo(scrollStateX.maxValue / 2)
         }
@@ -320,9 +326,13 @@ fun StructureGraphView(
                         }
                         val maxOutgoingHeight = outgoingColumnHeights.maxOrNull() ?: 0
 
+                        // Slight vertical stagger between adjacent target columns so their
+                        // connecting lines/arrows don't align and stay distinguishable.
+                        val columnStaggerPx = if (targetColumnsCount > 1) with(density) { 24.dp.roundToPx() } else 0
+
                         val maxColumnHeight = maxOf(incomingTotalHeight, centerTotalHeight, maxOutgoingHeight)
-                        layoutHeight = if (isFullView) maxOf(maxColumnHeight, with(density) { 450.dp.roundToPx() })
-                                       else maxOf(maxColumnHeight, with(density) { 240.dp.roundToPx() })
+                        layoutHeight = if (isFullView) maxOf(maxColumnHeight + columnStaggerPx, with(density) { 450.dp.roundToPx() })
+                                       else maxOf(maxColumnHeight + columnStaggerPx, with(density) { 240.dp.roundToPx() })
 
                         val incomingColWidth = with(density) { incomingWidthDp.roundToPx() }
                         val centerColWidth = with(density) { centerWidthDp.roundToPx() }
@@ -330,7 +340,7 @@ fun StructureGraphView(
 
                         val col1Width = if (incomingPlaceables.isNotEmpty()) incomingColWidth else 0
                         val col2Width = centerColWidth
-                        val col3Width = if (outgoingPlaceables.isNotEmpty()) outgoingColWidth * targetColumnsCount else 0
+                        val col3Width = if (outgoingPlaceables.isNotEmpty()) outgoingColWidth * targetColumnsCount + hSpacingPx * (targetColumnsCount - 1) else 0
 
                         val spacingCount = (if (col1Width > 0) 1 else 0) + (if (col3Width > 0) 1 else 0)
                         layoutWidth = col1Width + col2Width + col3Width + spacingCount * hSpacingPx
@@ -357,10 +367,11 @@ fun StructureGraphView(
                             var flatIndex = 0
                             outgoingColumnsPlaceables.forEachIndexed { colIdx, colPls ->
                                 val colH = outgoingColumnHeights[colIdx]
-                                val startY = (layoutHeight - colH) / 2f
+                                val colStagger = if (colIdx % 2 == 0) -columnStaggerPx / 2f else columnStaggerPx / 2f
+                                val startY = (layoutHeight - colH) / 2f + colStagger
                                 var currentY = startY
                                 colPls.forEach { p ->
-                                    val cx = col3StartX + colIdx * outgoingColWidth + outgoingColWidth / 2f
+                                    val cx = col3StartX + colIdx * (outgoingColWidth + hSpacingPx) + outgoingColWidth / 2f
                                     val cy = currentY + p.height / 2f
                                     outgoingPoints.add(Pair(cx, cy))
                                     currentY += p.height + spacingPx
@@ -374,7 +385,10 @@ fun StructureGraphView(
                         val centerColWidth = with(density) { centerWidthDp.roundToPx() }
                         val outgoingColWidth = with(density) { outgoingColWidthDp.roundToPx() }
                         
-                        layoutWidth = maxOf(incomingColWidth, centerColWidth, outgoingColWidth)
+                        // Slight horizontal stagger between adjacent target rows so their
+                        // connecting lines/arrows fan out and stay distinguishable.
+                        val rowStaggerPx = if (outgoingPlaceables.size > 1) with(density) { 24.dp.roundToPx() } else 0
+                        layoutWidth = maxOf(incomingColWidth, centerColWidth, outgoingColWidth) + rowStaggerPx
 
                         val incomingTotalHeight = if (incomingPlaceables.isEmpty()) 0 else {
                             incomingPlaceables.sumOf { it.height } + spacingPx * (incomingPlaceables.size - 1)
@@ -403,9 +417,10 @@ fun StructureGraphView(
                         currentY += centerTotalHeight + spacingPx
 
                         if (outgoingPlaceables.isNotEmpty()) {
-                            outgoingPlaceables.forEach { p ->
+                            outgoingPlaceables.forEachIndexed { idx, p ->
+                                val rowStagger = if (idx % 2 == 0) -rowStaggerPx / 2f else rowStaggerPx / 2f
                                 val cy = currentY + p.height / 2f
-                                outgoingPoints.add(Pair(centerX, cy))
+                                outgoingPoints.add(Pair(centerX + rowStagger, cy))
                                 currentY += p.height + spacingPx
                             }
                         }
@@ -539,6 +554,8 @@ fun StructureGraphView(
                                         val startY: Float
                                         val endX: Float
                                         val endY: Float
+                                        val c2x: Float
+                                        val c2y: Float
 
                                         if (isLandscape) {
                                             startX = centerPoint.first + (centerWidthDp / 2).toPx()
@@ -546,10 +563,13 @@ fun StructureGraphView(
                                             endX = pt.first - (outgoingColWidthDp / 2).toPx()
                                             endY = pt.second
 
+                                            // smooth horizontal exit from center, diagonal approach into the node
+                                            c2x = endX - (endX - startX) * 0.4f
+                                            c2y = endY - (endY - startY) * 0.4f
                                             path.moveTo(startX, startY)
                                             path.cubicTo(
                                                 startX + (endX - startX) * 0.6f, startY,
-                                                endX - (endX - startX) * 0.6f, endY,
+                                                c2x, c2y,
                                                 endX, endY
                                             )
                                         } else {
@@ -558,10 +578,12 @@ fun StructureGraphView(
                                             endX = pt.first
                                             endY = pt.second - outgoingPlaceables[flatIndex].height / 2f
 
+                                            c2x = endX - (endX - startX) * 0.4f
+                                            c2y = endY - (endY - startY) * 0.4f
                                             path.moveTo(startX, startY)
                                             path.cubicTo(
                                                 startX, startY + (endY - startY) * 0.6f,
-                                                endX, endY - (endY - startY) * 0.6f,
+                                                c2x, c2y,
                                                 endX, endY
                                             )
                                         }
@@ -587,16 +609,17 @@ fun StructureGraphView(
                                         )
 
                                         if (!isMoreNode) {
+                                            // arrowhead oriented along the curve's end tangent (end - c2)
+                                            var tx = endX - c2x
+                                            var ty = endY - c2y
+                                            val tl = kotlin.math.sqrt(tx * tx + ty * ty).coerceAtLeast(0.0001f)
+                                            tx /= tl; ty /= tl
+                                            val baseX = endX - tx * arrowLength
+                                            val baseY = endY - ty * arrowLength
                                             val arrowPath = androidx.compose.ui.graphics.Path()
-                                            if (isLandscape) {
-                                                arrowPath.moveTo(endX, endY)
-                                                arrowPath.lineTo(endX - arrowLength, endY - arrowWidth)
-                                                arrowPath.lineTo(endX - arrowLength, endY + arrowWidth)
-                                            } else {
-                                                arrowPath.moveTo(endX, endY)
-                                                arrowPath.lineTo(endX - arrowWidth, endY - arrowLength)
-                                                arrowPath.lineTo(endX + arrowWidth, endY - arrowLength)
-                                            }
+                                            arrowPath.moveTo(endX, endY)
+                                            arrowPath.lineTo(baseX - ty * arrowWidth, baseY + tx * arrowWidth)
+                                            arrowPath.lineTo(baseX + ty * arrowWidth, baseY - tx * arrowWidth)
                                             arrowPath.close()
                                             drawPath(arrowPath, color = color.copy(alpha = 0.8f))
                                         }

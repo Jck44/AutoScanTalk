@@ -40,9 +40,6 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -96,6 +93,7 @@ fun StructureEditorScreen(
     pageSplitViewModel: PageSplitViewModel = hiltViewModel(),
     onEditPageInGrid: (pageId: String) -> Unit,
     onNavigateBack: () -> Unit,
+    viewMode: StructureViewMode = StructureViewMode.CARDS,
     modeSwitcher: (@Composable () -> Unit)? = null,
     onExitEditor: (() -> Unit)? = null
 ) {
@@ -122,10 +120,6 @@ fun StructureEditorScreen(
 
     var focusedPageId by rememberSaveable {
         mutableStateOf(initialFocusedPageId ?: "")
-    }
-
-    var viewMode by rememberSaveable {
-        mutableStateOf(StructureViewMode.CARDS)
     }
 
     var focusHistory by rememberSaveable {
@@ -497,32 +491,6 @@ fun StructureEditorScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                horizontalArrangement = Arrangement.Center
-            ) {
-                SingleChoiceSegmentedButtonRow {
-                    SegmentedButton(
-                        selected = viewMode == StructureViewMode.CARDS,
-                        onClick = { viewMode = StructureViewMode.CARDS },
-                        shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2),
-                        icon = {}
-                    ) {
-                        Text(stringResource(R.string.structure_view_mode_cards))
-                    }
-                    SegmentedButton(
-                        selected = viewMode == StructureViewMode.GRAPH,
-                        onClick = { viewMode = StructureViewMode.GRAPH },
-                        shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2),
-                        icon = {}
-                    ) {
-                        Text(stringResource(R.string.structure_view_mode_graph))
-                    }
-                }
-            }
-
             Row(
                 modifier = Modifier
                     .fillMaxSize()

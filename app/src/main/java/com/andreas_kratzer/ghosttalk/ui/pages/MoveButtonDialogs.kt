@@ -46,8 +46,9 @@ fun TargetPageSelectionDialog(
     
     var searchQuery by remember { mutableStateOf("") }
     val filteredPages = remember(searchQuery, availablePages) {
-        if (searchQuery.isBlank()) availablePages
-        else availablePages.filter { it.name.contains(searchQuery, ignoreCase = true) }
+        val trimmedQuery = searchQuery.trim()
+        if (trimmedQuery.isBlank()) availablePages
+        else availablePages.filter { it.name.contains(trimmedQuery, ignoreCase = true) }
     }
     
     val currentPage = remember(currentPageId, availablePages) {
