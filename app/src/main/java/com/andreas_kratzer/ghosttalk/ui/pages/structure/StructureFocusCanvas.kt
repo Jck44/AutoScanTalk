@@ -1,6 +1,7 @@
 package com.andreas_kratzer.ghosttalk.ui.pages.structure
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.border
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.scrollBy
@@ -52,6 +53,8 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -81,8 +84,10 @@ import com.andreas_kratzer.ghosttalk.core.model.PageTemplate
 import com.andreas_kratzer.ghosttalk.ui.components.DraggableChip
 import com.andreas_kratzer.ghosttalk.ui.components.chipDropTarget
 import com.andreas_kratzer.ghosttalk.ui.components.rememberChipDragDropState
-import com.andreas_kratzer.ghosttalk.ui.pages.actions.NavigationActionFields
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
+import androidx.compose.ui.unit.Dp
+import com.andreas_kratzer.ghosttalk.ui.components.ChipDragDropState
+import com.andreas_kratzer.ghosttalk.ui.pages.actions.NavigationActionFields
 import kotlin.math.roundToInt
 
 private const val MAX_VISIBLE_TARGETS = 12
@@ -225,7 +230,10 @@ fun StructureFocusCanvas(
                 onFocus = onFocus,
                 onRemoveConnection = onRemoveConnection,
                 isFullView = true,
-                modifier = Modifier.fillMaxSize()
+                modifier = Modifier.fillMaxSize(),
+                pages = pages,
+                dragDropState = dragDropState,
+                onMoveButton = onMoveButton
             )
         } else {
             Column(
@@ -248,7 +256,10 @@ fun StructureFocusCanvas(
                         pageNames = pageNames,
                         onFocus = onFocus,
                         onRemoveConnection = null,
-                        isFullView = false
+                        isFullView = false,
+                        pages = pages,
+                        dragDropState = dragDropState,
+                        onMoveButton = onMoveButton
                     )
                 }
 
@@ -924,97 +935,6 @@ fun StructureFocusCanvas(
     }
 }
 
-@Composable
-fun ConnectPageDialog(
-    focusedPageId: String,
-    pages: List<Page>,
-    pageNames: Map<String, String>,
-    onDismissRequest: () -> Unit,
-    onPageSelected: (String) -> Unit
-) {
-    var searchQuery by remember { mutableStateOf("") }
-    val filteredPages = remember(searchQuery, pages, focusedPageId) {
-        pages.filter { it.id != focusedPageId }
-            .filter { page ->
-                searchQuery.isBlank() || page.name.contains(searchQuery, ignoreCase = true)
-            }
-            .sortedBy { it.name }
-    }
-
-    androidx.compose.material3.AlertDialog(
-        onDismissRequest = onDismissRequest,
-        title = {
-            Text(
-                text = stringResource(R.string.structure_add_connection_title),
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
-            )
-        },
-        text = {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(max = 400.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                androidx.compose.material3.OutlinedTextField(
-                    value = searchQuery,
-                    onValueChange = { searchQuery = it },
-                    placeholder = { Text(stringResource(R.string.structure_connect_dialog_search_hint)) },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = MaterialTheme.shapes.large,
-                    singleLine = true
-                )
-
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    items(filteredPages.size) { index ->
-                        val pageOption = filteredPages[index]
-                        Surface(
-                            onClick = {
-                                onPageSelected(pageOption.id)
-                            },
-                            shape = MaterialTheme.shapes.medium,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text(
-                                text = pageOption.name,
-                                style = MaterialTheme.typography.bodyLarge,
-                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
-                            )
-                        }
-                    }
-                    if (filteredPages.isEmpty()) {
-                        item {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = 24.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    text = stringResource(R.string.page_none_found),
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        confirmButton = {},
-        dismissButton = {
-            TextButton(onClick = onDismissRequest) {
-                Text(stringResource(R.string.action_cancel))
-            }
-        }
-    )
-}
 
 @Composable
 private fun LocalNavigationViewGraph(
@@ -1027,8 +947,15 @@ private fun LocalNavigationViewGraph(
     onFocus: (String) -> Unit,
     onRemoveConnection: ((pageId: String, buttonIndex: Int, targetPageName: String) -> Unit)? = null,
     isFullView: Boolean = false,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    pages: List<Page>,
+    dragDropState: ChipDragDropState,
+    onMoveButton: (String, Int, String) -> Unit
 ) {
+    var expandedPageIds by remember { mutableStateOf(emptySet<String>()) }
+    var activeMoveButtonInfo by remember { mutableStateOf<Triple<String, Int, String>?>(null) }
+    val nodeHeights = remember { mutableStateMapOf<String, Dp>() }
+
     val distinctIncoming = incomingSources.distinct()
     val distinctOutgoing = outgoingEdges.map { it.targetPageId }.distinct()
 
@@ -1037,6 +964,7 @@ private fun LocalNavigationViewGraph(
     val showIncomingMore = distinctIncoming.size > incomingLimit
     val visibleIncoming = if (showIncomingMore) distinctIncoming.take(incomingLimit - 1) else distinctIncoming
     val incomingCount = visibleIncoming.size + (if (showIncomingMore) 1 else 0)
+    val incomingNodeIds = if (showIncomingMore) visibleIncoming + "more_incoming" else visibleIncoming
 
     val maxOutgoingRows = if (isFullView) 8 else 4
     val maxOutgoingColumns = if (isFullView) 2 else 1
@@ -1045,24 +973,55 @@ private fun LocalNavigationViewGraph(
     val showOutgoingMore = distinctOutgoing.size > outgoingTotalLimit
     val visibleOutgoing = if (showOutgoingMore) distinctOutgoing.take(outgoingTotalLimit - 1) else distinctOutgoing
     val outgoingCount = visibleOutgoing.size + (if (showOutgoingMore) 1 else 0)
+    val outgoingNodeIds = if (showOutgoingMore) visibleOutgoing + "more_outgoing" else visibleOutgoing
+    val outgoingColumns = outgoingNodeIds.chunked(maxOutgoingRows)
+
+    fun getNodeWidthDp(pageId: String, isCenter: Boolean): Dp {
+        val isExpanded = expandedPageIds.contains(pageId)
+        return if (isCenter) {
+            if (isExpanded) 180.dp else 140.dp
+        } else {
+            if (isExpanded) 160.dp else 120.dp
+        }
+    }
+
+    fun getNodeHeightDp(pageId: String, isCenter: Boolean): Dp {
+        val isExpanded = expandedPageIds.contains(pageId)
+        if (!isExpanded) {
+            return if (isCenter) 44.dp else 36.dp
+        }
+        return nodeHeights[pageId] ?: (if (isCenter) 120.dp else 100.dp)
+    }
+
     // Dynamically calculate column count based on visible count
     val targetColumnsCount = ((outgoingCount + maxOutgoingRows - 1) / maxOutgoingRows).coerceAtLeast(1)
 
-    val incomingRows = incomingCount
-    val maxOutgoingRowsInAnyCol = if (outgoingCount == 0) 0 else {
-        if (outgoingCount <= maxOutgoingRows) outgoingCount else maxOutgoingRows
-    }
-    val maxRows = maxOf(incomingRows, maxOutgoingRowsInAnyCol, 1)
-    val rowHeight = if (isFullView) 64 else 52
-    val dynamicHeight = if (isFullView) {
-        (maxRows * rowHeight).coerceAtLeast(450).dp
-    } else {
-        (maxRows * rowHeight).coerceIn(160, 320).dp
+    val verticalSpacing = 16.dp
+    val incomingHeights = incomingNodeIds.map { id -> getNodeHeightDp(id, isCenter = false) }
+    val incomingColumnHeight = if (incomingHeights.isEmpty()) 0.dp else {
+        incomingHeights.reduce { acc, dp -> acc + dp } + verticalSpacing * (incomingHeights.size - 1)
     }
 
-    val incomingWidthDp = 160.dp
-    val centerWidthDp = 190.dp
-    val outgoingColWidthDp = 170.dp
+    val centerColumnHeight = getNodeHeightDp(focusedPageId, isCenter = true)
+
+    val outgoingColumnHeights = outgoingColumns.map { colNodes ->
+        val heights = colNodes.map { id -> getNodeHeightDp(id, isCenter = false) }
+        if (heights.isEmpty()) 0.dp else {
+            heights.reduce { acc, dp -> acc + dp } + verticalSpacing * (heights.size - 1)
+        }
+    }
+    val maxOutgoingColumnHeight = outgoingColumnHeights.maxOrNull() ?: 0.dp
+
+    val maxColumnHeight = maxOf(incomingColumnHeight, centerColumnHeight, maxOutgoingColumnHeight)
+    val dynamicHeight = if (isFullView) {
+        maxColumnHeight.coerceAtLeast(450.dp)
+    } else {
+        maxColumnHeight.coerceAtLeast(240.dp)
+    }
+
+    val incomingWidthDp = 200.dp
+    val centerWidthDp = 240.dp
+    val outgoingColWidthDp = 210.dp
     val virtualWidthDp = incomingWidthDp + centerWidthDp + (outgoingColWidthDp * targetColumnsCount)
 
     var selectedEdgeForDeletion by remember { mutableStateOf<NavEdge?>(null) }
@@ -1093,6 +1052,7 @@ private fun LocalNavigationViewGraph(
                         selectedEdgeForDeletion = null
                     }
                     .horizontalScroll(rememberScrollState())
+                    .verticalScroll(rememberScrollState())
             ) {
                 Box(
                     modifier = Modifier
@@ -1105,13 +1065,13 @@ private fun LocalNavigationViewGraph(
 
                     val nodeWidthDp = 120.dp
                     val nodeHeightDp = 36.dp
-                    val centerNodeWidthDp = 140.dp
-                    val centerNodeHeightDp = 44.dp
+                    val centerNodeWidth = getNodeWidthDp(focusedPageId, isCenter = true)
+                    val centerNodeHeight = getNodeHeightDp(focusedPageId, isCenter = true)
 
                     val nodeWidthPx = with(density) { nodeWidthDp.toPx() }
                     val nodeHeightPx = with(density) { nodeHeightDp.toPx() }
-                    val centerNodeWidthPx = with(density) { centerNodeWidthDp.toPx() }
-                    val centerNodeHeightPx = with(density) { centerNodeHeightDp.toPx() }
+                    val centerNodeWidthPx = with(density) { centerNodeWidth.toPx() }
+                    val centerNodeHeightPx = with(density) { centerNodeHeight.toPx() }
 
                     val arrowLength = with(density) { 8.dp.toPx() }
                     val arrowWidth = with(density) { 5.dp.toPx() }
@@ -1123,30 +1083,35 @@ private fun LocalNavigationViewGraph(
                     val leftX = with(density) { (incomingWidthDp / 2).toPx() }
                     val rightAreaStart = with(density) { (incomingWidthDp + centerWidthDp).toPx() }
 
-                    fun getNodesInColumn(col: Int): Int {
-                        val fullCols = outgoingCount / maxOutgoingRows
-                        val remainder = outgoingCount % maxOutgoingRows
-                        return if (col < fullCols) {
-                            maxOutgoingRows
-                        } else {
-                            if (remainder == 0) maxOutgoingRows else remainder
+                    val incomingHeightsPx = incomingHeights.map { with(density) { it.toPx() } }
+                    val spacingPx = with(density) { verticalSpacing.toPx() }
+                    val incomingStartY = (heightPx - with(density) { incomingColumnHeight.toPx() }) / 2
+
+                    var currentIncomingY = incomingStartY
+                    val incomingPoints = incomingHeightsPx.map { h ->
+                        val centerY = currentIncomingY + h / 2
+                        currentIncomingY += h + spacingPx
+                        Pair(leftX, centerY)
+                    }
+
+                    val outgoingPoints = outgoingColumns.flatMapIndexed { col, colNodes ->
+                        val colHeights = colNodes.map { id -> getNodeHeightDp(id, isCenter = false) }
+                        val colHeightsPx = colHeights.map { with(density) { it.toPx() } }
+                        val colTotalHeight = if (colHeights.isEmpty()) 0.dp else {
+                            colHeights.reduce { acc, dp -> acc + dp } + verticalSpacing * (colHeights.size - 1)
                         }
-                    }
-
-                    val incomingPoints = (0 until incomingCount).map { index ->
-                        val y = heightPx * ((index + 0.5f) / incomingCount)
-                        Pair(leftX, y)
-                    }
-
-                    val outgoingPoints = (0 until outgoingCount).map { index ->
-                        val col = index / maxOutgoingRows
-                        val row = index % maxOutgoingRows
-                        val totalRowsInCol = getNodesInColumn(col)
+                        val colTotalHeightPx = with(density) { colTotalHeight.toPx() }
+                        val colStartY = (heightPx - colTotalHeightPx) / 2
                         
                         val colWidthPx = with(density) { outgoingColWidthDp.toPx() }
                         val x = rightAreaStart + (col + 0.5f) * colWidthPx
-                        val y = heightPx * ((row + 0.5f) / totalRowsInCol)
-                        Pair(x, y)
+                        
+                        var currentY = colStartY
+                        colHeightsPx.map { h ->
+                            val centerY = currentY + h / 2
+                            currentY += h + spacingPx
+                            Pair(x, centerY)
+                        }
                     }
 
                     val primaryColor = MaterialTheme.colorScheme.primary
@@ -1231,8 +1196,10 @@ private fun LocalNavigationViewGraph(
                         }
 
                         outgoingPoints.forEachIndexed { index, pt ->
-                            val isMoreNode = showOutgoingMore && index == outgoingCount - 1
-                            val endX = pt.first - nodeWidthPx / 2
+                            val pageId = outgoingColumns[index / maxOutgoingRows][index % maxOutgoingRows]
+                            val isMoreNode = pageId.startsWith("more_")
+                            val nodeWidth = with(density) { getNodeWidthDp(pageId, isCenter = false).toPx() }
+                            val endX = pt.first - nodeWidth / 2
                             val endY = pt.second
                             val curveEndX = if (isMoreNode) endX else endX - arrowLength
                             
@@ -1267,7 +1234,7 @@ private fun LocalNavigationViewGraph(
                                 style = stroke
                             )
 
-                            // Arrowhead at the target node input (only for actual pages, not 'more' placeholder)
+                            // Arrowhead at the target node input
                             if (!isMoreNode) {
                                 val arrowPath = androidx.compose.ui.graphics.Path().apply {
                                     moveTo(endX, endY)
@@ -1281,15 +1248,19 @@ private fun LocalNavigationViewGraph(
                     }
 
                     // Render Incoming Nodes
-                    for (index in 0 until incomingCount) {
+                    incomingNodeIds.forEachIndexed { index, sourceId ->
                         val pt = incomingPoints[index]
-                        val isMoreNode = showIncomingMore && index == incomingCount - 1
+                        val isMoreNode = sourceId.startsWith("more_")
+                        val nodeWidth = getNodeWidthDp(sourceId, isCenter = false)
+                        val nodeHeight = getNodeHeightDp(sourceId, isCenter = false)
+                        val nodeWidthPx = with(density) { nodeWidth.toPx() }
+                        val nodeHeightPx = with(density) { nodeHeight.toPx() }
                         
                         Box(
                             modifier = Modifier
                                 .offset { IntOffset((pt.first - nodeWidthPx / 2).toInt(), (pt.second - nodeHeightPx / 2).toInt()) }
-                                .width(nodeWidthDp)
-                                .height(nodeHeightDp)
+                                .width(nodeWidth)
+                                .height(nodeHeight)
                         ) {
                             if (isMoreNode) {
                                 val moreCount = distinctIncoming.size - (incomingLimit - 1)
@@ -1310,23 +1281,158 @@ private fun LocalNavigationViewGraph(
                                     }
                                 }
                             } else {
-                                val sourceId = visibleIncoming[index]
                                 val sourceName = pageNames[sourceId] ?: sourceId
+                                val isExpanded = expandedPageIds.contains(sourceId)
                                 Surface(
                                     onClick = { onFocus(sourceId) },
                                     shape = MaterialTheme.shapes.medium,
                                     color = MaterialTheme.colorScheme.surface,
                                     border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
                                     tonalElevation = 2.dp,
-                                    modifier = Modifier.fillMaxSize()
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .chipDropTarget(dragDropState, sourceId)
                                 ) {
-                                    Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(horizontal = 8.dp)) {
-                                        Text(
-                                            text = sourceName,
-                                            style = MaterialTheme.typography.labelMedium,
-                                            maxLines = 1,
-                                            overflow = TextOverflow.Ellipsis
-                                        )
+                                    if (isExpanded) {
+                                        Column(
+                                            modifier = Modifier
+                                                .padding(6.dp)
+                                                .fillMaxWidth()
+                                                .onSizeChanged { size ->
+                                                    val heightDp = with(density) { size.height.toDp() }
+                                                    val neededHeight = heightDp + 12.dp
+                                                    if (nodeHeights[sourceId] != neededHeight) {
+                                                        nodeHeights[sourceId] = neededHeight
+                                                    }
+                                                },
+                                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                                        ) {
+                                            Row(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                horizontalArrangement = Arrangement.SpaceBetween,
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                Text(
+                                                    text = sourceName,
+                                                    style = MaterialTheme.typography.labelMedium,
+                                                    fontWeight = FontWeight.Bold,
+                                                    maxLines = 1,
+                                                    overflow = TextOverflow.Ellipsis,
+                                                    modifier = Modifier.weight(1f)
+                                                )
+                                                IconButton(
+                                                    onClick = { expandedPageIds = expandedPageIds - sourceId },
+                                                    modifier = Modifier.size(20.dp)
+                                                ) {
+                                                    Icon(
+                                                        imageVector = Icons.Default.KeyboardArrowUp,
+                                                        contentDescription = "Einklappen",
+                                                        modifier = Modifier.size(16.dp)
+                                                    )
+                                                }
+                                            }
+                                            val sourcePage = pages.find { it.id == sourceId }
+                                            val pageOutgoingIndices = graph.outgoing[sourceId]?.map { it.sourceButtonIndex }?.toSet() ?: emptySet()
+                                            val effectiveStartPageId = graph.startPageId ?: pages.minByOrNull { it.orderIndex }?.id
+                                            val activeButtons = sourcePage?.buttonConfigs?.mapIndexedNotNull { btnIdx, btn ->
+                                                if (btn != null && btn.isActive && btn.label.isNotBlank()) {
+                                                    val action = btn.buttonAction
+                                                    val isSelfLoop = when (action) {
+                                                        is NavigateToPageButtonAction -> {
+                                                            val target = action.pageId.ifEmpty { effectiveStartPageId }
+                                                            target == sourceId
+                                                        }
+                                                        is NavigateToStartPageButtonAction -> {
+                                                            effectiveStartPageId == sourceId
+                                                        }
+                                                        else -> false
+                                                    }
+                                                    if (btnIdx !in pageOutgoingIndices && !isSelfLoop) {
+                                                        btnIdx to btn
+                                                    } else null
+                                                } else null
+                                            } ?: emptyList()
+
+                                            Column(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                verticalArrangement = Arrangement.spacedBy(4.dp)
+                                            ) {
+                                                activeButtons.forEach { (btnIdx, btn) ->
+                                                    val dragKey = "${sourceId}_${btnIdx}"
+                                                    DraggableChip(
+                                                        label = btn.label,
+                                                        action = btn.buttonAction,
+                                                        isDragged = dragDropState.draggedKey == dragKey,
+                                                        onDragStart = { initialCenter, size ->
+                                                            dragDropState.onDragStart(dragKey, btn.label, sourceId, initialCenter, size)
+                                                        },
+                                                        onDrag = { amount -> dragDropState.onDrag(amount) },
+                                                        onDragEnd = {
+                                                            if (dragDropState.draggedKey == dragKey) {
+                                                                val targetPageId = dragDropState.targetBounds.entries.find { entry ->
+                                                                    entry.value.contains(dragDropState.dragGlobalPos)
+                                                                }?.key
+                                                                if (targetPageId != null && targetPageId != sourceId) {
+                                                                    onMoveButton(sourceId, btnIdx, targetPageId)
+                                                                }
+                                                                dragDropState.clear()
+                                                            }
+                                                        },
+                                                        onDragCancel = {
+                                                            if (dragDropState.draggedKey == dragKey) {
+                                                                dragDropState.clear()
+                                                            }
+                                                        },
+                                                        onClick = {
+                                                            activeMoveButtonInfo = Triple(sourceId, btnIdx, btn.label)
+                                                        }
+                                                    )
+                                                }
+                                                if (dragDropState.draggedKey != null) {
+                                                    Box(
+                                                        modifier = Modifier
+                                                            .fillMaxWidth()
+                                                            .height(32.dp)
+                                                            .border(
+                                                                BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)),
+                                                                MaterialTheme.shapes.small
+                                                            )
+                                                            .chipDropTarget(dragDropState, sourceId),
+                                                        contentAlignment = Alignment.Center
+                                                    ) {
+                                                        Text(
+                                                            text = "+",
+                                                            style = MaterialTheme.typography.bodySmall,
+                                                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
+                                                        )
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    } else {
+                                        Row(
+                                            modifier = Modifier.fillMaxSize().padding(horizontal = 8.dp),
+                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Text(
+                                                text = sourceName,
+                                                style = MaterialTheme.typography.labelMedium,
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis,
+                                                modifier = Modifier.weight(1f)
+                                            )
+                                            IconButton(
+                                                onClick = { expandedPageIds = expandedPageIds + sourceId },
+                                                modifier = Modifier.size(20.dp)
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Default.KeyboardArrowDown,
+                                                    contentDescription = "Ausklappen",
+                                                    modifier = Modifier.size(16.dp)
+                                                )
+                                            }
+                                        }
                                     }
                                 }
                             }
@@ -1334,79 +1440,361 @@ private fun LocalNavigationViewGraph(
                     }
 
                     // Center Node (Focused Page)
+                    val isCenterExpanded = expandedPageIds.contains(focusedPageId)
+
                     Box(
                         modifier = Modifier
                             .offset { IntOffset((centerX - centerNodeWidthPx / 2).toInt(), (centerY - centerNodeHeightPx / 2).toInt()) }
-                            .width(centerNodeWidthDp)
-                            .height(centerNodeHeightDp)
+                            .width(centerNodeWidth)
+                            .height(centerNodeHeight)
                     ) {
                         Surface(
                             shape = MaterialTheme.shapes.medium,
                             color = MaterialTheme.colorScheme.primaryContainer,
                             border = BorderStroke(2.dp, MaterialTheme.colorScheme.primary),
                             tonalElevation = 4.dp,
-                            modifier = Modifier.fillMaxSize()
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .chipDropTarget(dragDropState, focusedPageId)
                         ) {
-                            Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(horizontal = 8.dp)) {
-                                Text(
-                                    text = focusedPageName,
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onPrimaryContainer,
-                                    maxLines = 2,
-                                    overflow = TextOverflow.Ellipsis
-                                )
+                            if (isCenterExpanded) {
+                                Column(
+                                    modifier = Modifier
+                                        .padding(6.dp)
+                                        .fillMaxWidth()
+                                        .onSizeChanged { size ->
+                                            val heightDp = with(density) { size.height.toDp() }
+                                            val neededHeight = heightDp + 12.dp
+                                            if (nodeHeights[focusedPageId] != neededHeight) {
+                                                nodeHeights[focusedPageId] = neededHeight
+                                            }
+                                        },
+                                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                                ) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(
+                                            text = focusedPageName,
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis,
+                                            modifier = Modifier.weight(1f)
+                                        )
+                                        IconButton(
+                                            onClick = { expandedPageIds = expandedPageIds - focusedPageId },
+                                            modifier = Modifier.size(20.dp)
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.KeyboardArrowUp,
+                                                contentDescription = "Einklappen",
+                                                tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                                modifier = Modifier.size(16.dp)
+                                            )
+                                        }
+                                    }
+                                    val centerPage = pages.find { it.id == focusedPageId }
+                                    val pageOutgoingIndices = graph.outgoing[focusedPageId]?.map { it.sourceButtonIndex }?.toSet() ?: emptySet()
+                                    val effectiveStartPageId = graph.startPageId ?: pages.minByOrNull { it.orderIndex }?.id
+                                    val activeButtons = centerPage?.buttonConfigs?.mapIndexedNotNull { btnIdx, btn ->
+                                        if (btn != null && btn.isActive && btn.label.isNotBlank()) {
+                                            val action = btn.buttonAction
+                                            val isSelfLoop = when (action) {
+                                                is NavigateToPageButtonAction -> {
+                                                    val target = action.pageId.ifEmpty { effectiveStartPageId }
+                                                    target == focusedPageId
+                                                }
+                                                is NavigateToStartPageButtonAction -> {
+                                                    effectiveStartPageId == focusedPageId
+                                                }
+                                                else -> false
+                                            }
+                                            if (btnIdx !in pageOutgoingIndices && !isSelfLoop) {
+                                                btnIdx to btn
+                                            } else null
+                                        } else null
+                                    } ?: emptyList()
+
+                                    Column(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                                    ) {
+                                        activeButtons.forEach { (btnIdx, btn) ->
+                                            val dragKey = "${focusedPageId}_${btnIdx}"
+                                            DraggableChip(
+                                                label = btn.label,
+                                                action = btn.buttonAction,
+                                                isDragged = dragDropState.draggedKey == dragKey,
+                                                onDragStart = { initialCenter, size ->
+                                                    dragDropState.onDragStart(dragKey, btn.label, focusedPageId, initialCenter, size)
+                                                },
+                                                onDrag = { amount -> dragDropState.onDrag(amount) },
+                                                onDragEnd = {
+                                                    if (dragDropState.draggedKey == dragKey) {
+                                                        val targetPageId = dragDropState.targetBounds.entries.find { entry ->
+                                                            entry.value.contains(dragDropState.dragGlobalPos)
+                                                        }?.key
+                                                        if (targetPageId != null && targetPageId != focusedPageId) {
+                                                                onMoveButton(focusedPageId, btnIdx, targetPageId)
+                                                        }
+                                                        dragDropState.clear()
+                                                    }
+                                                },
+                                                onDragCancel = {
+                                                    if (dragDropState.draggedKey == dragKey) {
+                                                        dragDropState.clear()
+                                                    }
+                                                },
+                                                onClick = {
+                                                    activeMoveButtonInfo = Triple(focusedPageId, btnIdx, btn.label)
+                                                }
+                                            )
+                                        }
+                                        if (dragDropState.draggedKey != null) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .height(32.dp)
+                                                    .border(
+                                                        BorderStroke(1.dp, MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.3f)),
+                                                        MaterialTheme.shapes.small
+                                                    )
+                                                    .chipDropTarget(dragDropState, focusedPageId),
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                Text(
+                                                    text = "+",
+                                                    style = MaterialTheme.typography.bodySmall,
+                                                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.4f)
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                            } else {
+                                Row(
+                                    modifier = Modifier.fillMaxSize().padding(horizontal = 8.dp),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = focusedPageName,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                        modifier = Modifier.weight(1f)
+                                    )
+                                    IconButton(
+                                        onClick = { expandedPageIds = expandedPageIds + focusedPageId },
+                                        modifier = Modifier.size(20.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.KeyboardArrowDown,
+                                            contentDescription = "Ausklappen",
+                                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                    }
+                                }
                             }
                         }
                     }
 
                     // Render Outgoing Nodes
-                    for (index in 0 until outgoingCount) {
-                        val pt = outgoingPoints[index]
-                        val isMoreNode = showOutgoingMore && index == outgoingCount - 1
-                        
-                        Box(
-                            modifier = Modifier
-                                .offset { IntOffset((pt.first - nodeWidthPx / 2).toInt(), (pt.second - nodeHeightPx / 2).toInt()) }
-                                .width(nodeWidthDp)
-                                .height(nodeHeightDp)
-                        ) {
-                            if (isMoreNode) {
-                                val moreCount = distinctOutgoing.size - (outgoingTotalLimit - 1)
-                                Surface(
-                                    onClick = { outgoingTotalLimit += 8 },
-                                    shape = MaterialTheme.shapes.medium,
-                                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)),
-                                    modifier = Modifier.fillMaxSize()
-                                ) {
-                                    Box(contentAlignment = Alignment.Center) {
-                                        Text(
-                                            text = "+ $moreCount weitere",
-                                            style = MaterialTheme.typography.labelMedium,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
-                                            fontWeight = FontWeight.Bold
-                                        )
+                    outgoingColumns.forEachIndexed { colIndex, colNodes ->
+                        colNodes.forEachIndexed { rowIndex, targetId ->
+                            val index = colIndex * maxOutgoingRows + rowIndex
+                            val pt = outgoingPoints[index]
+                            val isMoreNode = targetId.startsWith("more_")
+                            val nodeWidth = getNodeWidthDp(targetId, isCenter = false)
+                            val nodeHeight = getNodeHeightDp(targetId, isCenter = false)
+                            val nodeWidthPx = with(density) { nodeWidth.toPx() }
+                            val nodeHeightPx = with(density) { nodeHeight.toPx() }
+                            
+                            Box(
+                                modifier = Modifier
+                                    .offset { IntOffset((pt.first - nodeWidthPx / 2).toInt(), (pt.second - nodeHeightPx / 2).toInt()) }
+                                    .width(nodeWidth)
+                                    .height(nodeHeight)
+                            ) {
+                                if (isMoreNode) {
+                                    val moreCount = distinctOutgoing.size - (outgoingTotalLimit - 1)
+                                    Surface(
+                                        onClick = { outgoingTotalLimit += 8 },
+                                        shape = MaterialTheme.shapes.medium,
+                                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)),
+                                        modifier = Modifier.fillMaxSize()
+                                    ) {
+                                        Box(contentAlignment = Alignment.Center) {
+                                            Text(
+                                                text = "+ $moreCount weitere",
+                                                style = MaterialTheme.typography.labelMedium,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
+                                                fontWeight = FontWeight.Bold
+                                            )
+                                        }
                                     }
-                                }
-                            } else {
-                                val targetId = visibleOutgoing[index]
-                                val targetName = pageNames[targetId] ?: targetId
-                                Surface(
-                                    onClick = { onFocus(targetId) },
-                                    shape = MaterialTheme.shapes.medium,
-                                    color = MaterialTheme.colorScheme.surface,
-                                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-                                    tonalElevation = 2.dp,
-                                    modifier = Modifier.fillMaxSize()
-                                ) {
-                                    Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(horizontal = 8.dp)) {
-                                        Text(
-                                            text = targetName,
-                                            style = MaterialTheme.typography.labelMedium,
-                                            maxLines = 1,
-                                            overflow = TextOverflow.Ellipsis
-                                        )
+                                } else {
+                                    val targetName = pageNames[targetId] ?: targetId
+                                    val isExpanded = expandedPageIds.contains(targetId)
+                                    Surface(
+                                        onClick = { onFocus(targetId) },
+                                        shape = MaterialTheme.shapes.medium,
+                                        color = MaterialTheme.colorScheme.surface,
+                                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                                        tonalElevation = 2.dp,
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .chipDropTarget(dragDropState, targetId)
+                                    ) {
+                                        if (isExpanded) {
+                                            Column(
+                                                modifier = Modifier
+                                                    .padding(6.dp)
+                                                    .fillMaxWidth()
+                                                    .onSizeChanged { size ->
+                                                        val heightDp = with(density) { size.height.toDp() }
+                                                        val neededHeight = heightDp + 12.dp
+                                                        if (nodeHeights[targetId] != neededHeight) {
+                                                            nodeHeights[targetId] = neededHeight
+                                                        }
+                                                    },
+                                                verticalArrangement = Arrangement.spacedBy(4.dp)
+                                            ) {
+                                                Row(
+                                                    modifier = Modifier.fillMaxWidth(),
+                                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                                    verticalAlignment = Alignment.CenterVertically
+                                                ) {
+                                                    Text(
+                                                        text = targetName,
+                                                        style = MaterialTheme.typography.labelMedium,
+                                                        fontWeight = FontWeight.Bold,
+                                                        maxLines = 1,
+                                                        overflow = TextOverflow.Ellipsis,
+                                                        modifier = Modifier.weight(1f)
+                                                    )
+                                                    IconButton(
+                                                        onClick = { expandedPageIds = expandedPageIds - targetId },
+                                                        modifier = Modifier.size(20.dp)
+                                                    ) {
+                                                        Icon(
+                                                            imageVector = Icons.Default.KeyboardArrowUp,
+                                                            contentDescription = "Einklappen",
+                                                            modifier = Modifier.size(16.dp)
+                                                        )
+                                                    }
+                                                }
+                                                val targetPage = pages.find { it.id == targetId }
+                                                val pageOutgoingIndices = graph.outgoing[targetId]?.map { it.sourceButtonIndex }?.toSet() ?: emptySet()
+                                                val effectiveStartPageId = graph.startPageId ?: pages.minByOrNull { it.orderIndex }?.id
+                                                val activeButtons = targetPage?.buttonConfigs?.mapIndexedNotNull { btnIdx, btn ->
+                                                    if (btn != null && btn.isActive && btn.label.isNotBlank()) {
+                                                        val action = btn.buttonAction
+                                                        val isSelfLoop = when (action) {
+                                                            is NavigateToPageButtonAction -> {
+                                                                val target = action.pageId.ifEmpty { effectiveStartPageId }
+                                                                target == targetId
+                                                            }
+                                                            is NavigateToStartPageButtonAction -> {
+                                                                effectiveStartPageId == targetId
+                                                            }
+                                                            else -> false
+                                                        }
+                                                        if (btnIdx !in pageOutgoingIndices && !isSelfLoop) {
+                                                            btnIdx to btn
+                                                        } else null
+                                                    } else null
+                                                } ?: emptyList()
+
+                                                Column(
+                                                    modifier = Modifier.fillMaxWidth(),
+                                                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                                                ) {
+                                                    activeButtons.forEach { (btnIdx, btn) ->
+                                                        val dragKey = "${targetId}_${btnIdx}"
+                                                        DraggableChip(
+                                                            label = btn.label,
+                                                            action = btn.buttonAction,
+                                                            isDragged = dragDropState.draggedKey == dragKey,
+                                                            onDragStart = { initialCenter, size ->
+                                                                dragDropState.onDragStart(dragKey, btn.label, targetId, initialCenter, size)
+                                                            },
+                                                            onDrag = { amount -> dragDropState.onDrag(amount) },
+                                                            onDragEnd = {
+                                                                if (dragDropState.draggedKey == dragKey) {
+                                                                    val targetPageId = dragDropState.targetBounds.entries.find { entry ->
+                                                                        entry.value.contains(dragDropState.dragGlobalPos)
+                                                                    }?.key
+                                                                    if (targetPageId != null && targetPageId != targetId) {
+                                                                        onMoveButton(targetId, btnIdx, targetPageId)
+                                                                    }
+                                                                    dragDropState.clear()
+                                                                }
+                                                            },
+                                                            onDragCancel = {
+                                                                if (dragDropState.draggedKey == dragKey) {
+                                                                    dragDropState.clear()
+                                                                }
+                                                            },
+                                                            onClick = {
+                                                                activeMoveButtonInfo = Triple(targetId, btnIdx, btn.label)
+                                                            }
+                                                        )
+                                                    }
+                                                    if (dragDropState.draggedKey != null) {
+                                                        Box(
+                                                            modifier = Modifier
+                                                                .fillMaxWidth()
+                                                                .height(32.dp)
+                                                                .border(
+                                                                    BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)),
+                                                                    MaterialTheme.shapes.small
+                                                                )
+                                                                .chipDropTarget(dragDropState, targetId),
+                                                            contentAlignment = Alignment.Center
+                                                        ) {
+                                                            Text(
+                                                                text = "+",
+                                                                style = MaterialTheme.typography.bodySmall,
+                                                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
+                                                            )
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        } else {
+                                            Row(
+                                                modifier = Modifier.fillMaxSize().padding(horizontal = 8.dp),
+                                                horizontalArrangement = Arrangement.SpaceBetween,
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                Text(
+                                                    text = targetName,
+                                                    style = MaterialTheme.typography.labelMedium,
+                                                    maxLines = 1,
+                                                    overflow = TextOverflow.Ellipsis,
+                                                    modifier = Modifier.weight(1f)
+                                                )
+                                                IconButton(
+                                                    onClick = { expandedPageIds = expandedPageIds + targetId },
+                                                    modifier = Modifier.size(20.dp)
+                                                ) {
+                                                    Icon(
+                                                        imageVector = Icons.Default.KeyboardArrowDown,
+                                                        contentDescription = "Ausklappen",
+                                                        modifier = Modifier.size(16.dp)
+                                                    )
+                                                }
+                                            }
+                                        }
                                     }
                                 }
                             }
@@ -1415,10 +1803,12 @@ private fun LocalNavigationViewGraph(
 
                     if (onRemoveConnection != null) {
                         for (index in 0 until incomingCount) {
-                            val isMoreNode = showIncomingMore && index == incomingCount - 1
+                            val isMoreNode = incomingNodeIds[index].startsWith("more_")
                             if (!isMoreNode) {
                                 val sourceId = visibleIncoming[index]
                                 val pt = incomingPoints[index]
+                                val nodeWidth = getNodeWidthDp(sourceId, isCenter = false)
+                                val nodeWidthPx = with(density) { nodeWidth.toPx() }
                                 val startX = pt.first + nodeWidthPx / 2
                                 val startY = pt.second
                                 val endX = centerX - centerNodeWidthPx / 2
@@ -1458,7 +1848,6 @@ private fun LocalNavigationViewGraph(
                                                 }
                                             }
                                         } else {
-                                            // Invisible touch target
                                             Box(
                                                 modifier = Modifier
                                                     .fillMaxSize()
@@ -1481,6 +1870,8 @@ private fun LocalNavigationViewGraph(
                             if (!isMoreNode) {
                                 val targetId = visibleOutgoing[index]
                                 val pt = outgoingPoints[index]
+                                val nodeWidth = getNodeWidthDp(targetId, isCenter = false)
+                                val nodeWidthPx = with(density) { nodeWidth.toPx() }
                                 val endX = pt.first - nodeWidthPx / 2
                                 val endY = pt.second
                                 val curveEndX = endX - arrowLength
@@ -1521,7 +1912,6 @@ private fun LocalNavigationViewGraph(
                                                 }
                                             }
                                         } else {
-                                            // Invisible touch target
                                             Box(
                                                 modifier = Modifier
                                                     .fillMaxSize()
@@ -1539,7 +1929,117 @@ private fun LocalNavigationViewGraph(
                         }
                     }
                 }
+            }
         }
     }
+
+    activeMoveButtonInfo?.let { info ->
+        MoveButtonDialog(
+            buttonLabel = info.third,
+            sourcePageId = info.first,
+            pages = pages,
+            onDismissRequest = { activeMoveButtonInfo = null },
+            onPageSelected = { targetPageId ->
+                onMoveButton(info.first, info.second, targetPageId)
+                activeMoveButtonInfo = null
+            }
+        )
+    }
 }
+
+@Composable
+fun MoveButtonDialog(
+    buttonLabel: String,
+    sourcePageId: String,
+    pages: List<Page>,
+    onDismissRequest: () -> Unit,
+    onPageSelected: (String) -> Unit
+) {
+    var searchQuery by remember { mutableStateOf("") }
+    val filteredPages = remember(searchQuery, pages, sourcePageId) {
+        pages.filter { it.id != sourcePageId }
+            .filter { page ->
+                searchQuery.isBlank() || page.name.contains(searchQuery, ignoreCase = true)
+            }
+            .sortedBy { it.name }
+    }
+
+    androidx.compose.material3.AlertDialog(
+        onDismissRequest = onDismissRequest,
+        title = {
+            Text(
+                text = "Button verschieben: $buttonLabel",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
+            )
+        },
+        text = {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = 400.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text(
+                    text = "Wähle die Ziel-Seite für diesen Button:",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                androidx.compose.material3.OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = { searchQuery = it },
+                    placeholder = { Text(stringResource(R.string.structure_connect_dialog_search_hint)) },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = MaterialTheme.shapes.large,
+                    singleLine = true
+                )
+
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    items(filteredPages.size) { index ->
+                        val pageOption = filteredPages[index]
+                        Surface(
+                            onClick = {
+                                onPageSelected(pageOption.id)
+                            },
+                            shape = MaterialTheme.shapes.medium,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(
+                                text = pageOption.name,
+                                style = MaterialTheme.typography.bodyLarge,
+                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
+                            )
+                        }
+                    }
+                    if (filteredPages.isEmpty()) {
+                        item {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 24.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = stringResource(R.string.page_none_found),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {},
+        dismissButton = {
+            TextButton(onClick = onDismissRequest) {
+                Text(stringResource(android.R.string.cancel))
+            }
+        }
+    )
 }

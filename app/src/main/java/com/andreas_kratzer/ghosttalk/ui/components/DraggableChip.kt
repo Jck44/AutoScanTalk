@@ -1,6 +1,7 @@
 package com.andreas_kratzer.ghosttalk.ui.components
 
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
@@ -33,7 +34,8 @@ fun DraggableChip(
     onDrag: (Offset) -> Unit,      // liefert das Drag-Delta
     onDragEnd: () -> Unit,
     onDragCancel: () -> Unit = {},
-    action: ButtonAction? = null
+    action: ButtonAction? = null,
+    onClick: (() -> Unit)? = null
 ) {
     var globalPos by remember { mutableStateOf(Offset.Zero) }
     var chipSize by remember { mutableStateOf(Offset.Zero) }
@@ -62,6 +64,13 @@ fun DraggableChip(
                 globalPos = bounds.center
                 chipSize = Offset(bounds.width, bounds.height)
             }
+            .then(
+                if (onClick != null) {
+                    Modifier.clickable(onClick = onClick)
+                } else {
+                    Modifier
+                }
+            )
             .pointerInput(Unit) {
                 detectDragGesturesAfterLongPress(
                     onDragStart = { _ -> currentOnDragStart(globalPos, chipSize) },
