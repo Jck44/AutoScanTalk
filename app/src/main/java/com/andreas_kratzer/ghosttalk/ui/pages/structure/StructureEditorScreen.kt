@@ -64,7 +64,6 @@ import com.andreas_kratzer.ghosttalk.core.model.GridSettingsUpdate
 import com.andreas_kratzer.ghosttalk.core.model.NavigateToPageButtonAction
 import com.andreas_kratzer.ghosttalk.core.ui.components.EditorTopBar
 import com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons
-import com.andreas_kratzer.ghosttalk.ui.components.ValidatedTextField
 import com.andreas_kratzer.ghosttalk.ui.components.EditablePageTitle
 import com.andreas_kratzer.ghosttalk.ui.components.EditorAssistantButton
 import com.andreas_kratzer.ghosttalk.ui.pages.GridEditorViewModel

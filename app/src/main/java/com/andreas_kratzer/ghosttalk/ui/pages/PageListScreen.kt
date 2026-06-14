@@ -63,6 +63,9 @@ import com.andreas_kratzer.ghosttalk.core.ui.components.adaptiveCardHeight
 import com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
 import com.andreas_kratzer.ghosttalk.ui.components.UsageLocationRow
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.width
 import kotlinx.coroutines.launch
 import java.io.BufferedReader
 import java.io.InputStreamReader
@@ -78,7 +81,8 @@ fun PageListScreen(
     onEditTemplate: (String) -> Unit,
     onOpenStructureEditor: () -> Unit,
     onNavigateToTemplates: () -> Unit = {},
-    onNavigateToStaticRow: () -> Unit = {}
+    onNavigateToStaticRow: () -> Unit = {},
+    showTopBar: Boolean = true
 ) {
     val allPages by pageViewModel.filteredPages.collectAsState()
     val templates by pageViewModel.templates.collectAsState()
@@ -96,6 +100,9 @@ fun PageListScreen(
     val coroutineScope = rememberCoroutineScope()
     val context = LocalContext.current
     val dimensions = LocalDimensions.current
+    
+    var showSortMenu by remember { mutableStateOf(false) }
+    val pageSortOrder by pageViewModel.pageSortOrderFlow.collectAsState("MANUAL")
     
     val importSuccessMsg = stringResource(CoreR.string.page_import_success)
     stringResource(CoreR.string.page_export_success)
@@ -257,11 +264,9 @@ fun PageListScreen(
     GhostTalkScaffold(
         title = stringResource(CoreR.string.page_list_title),
         onNavigateBack = onNavigateBack,
+        showTopBar = showTopBar,
         actions = {
             val isLandscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
-            
-            var showSortMenu by remember { mutableStateOf(false) }
-            val pageSortOrder by pageViewModel.pageSortOrderFlow.collectAsState("MANUAL")
             
             IconButton(onClick = onOpenStructureEditor) {
                 Icon(
@@ -338,24 +343,93 @@ fun PageListScreen(
                 .fillMaxSize()
         ) {
             val searchQuery by pageViewModel.searchQuery.collectAsState()
-            OutlinedTextField(
-                value = searchQuery,
-                onValueChange = { pageViewModel.updateSearchQuery(it) },
-                placeholder = { Text(stringResource(R.string.action_search)) },
-                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
-                trailingIcon = {
-                    if (searchQuery.isNotEmpty()) {
-                        IconButton(onClick = { pageViewModel.updateSearchQuery("") }) {
-                            Icon(Icons.Default.Clear, contentDescription = "Löschen")
+            if (showTopBar) {
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = { pageViewModel.updateSearchQuery(it) },
+                    placeholder = { Text(stringResource(R.string.action_search)) },
+                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                    trailingIcon = {
+                        if (searchQuery.isNotEmpty()) {
+                            IconButton(onClick = { pageViewModel.updateSearchQuery("") }) {
+                                Icon(Icons.Default.Clear, contentDescription = "Löschen")
+                            }
+                        }
+                    },
+                    shape = MaterialTheme.shapes.large,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = dimensions.screenPaddingHorizontal, vertical = dimensions.paddingMedium),
+                    singleLine = true
+                )
+            } else {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = dimensions.screenPaddingHorizontal, vertical = dimensions.paddingMedium),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(modifier = Modifier.weight(1f)) {
+                        OutlinedTextField(
+                            value = searchQuery,
+                            onValueChange = { pageViewModel.updateSearchQuery(it) },
+                            placeholder = { Text(stringResource(R.string.action_search)) },
+                            leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                            trailingIcon = {
+                                if (searchQuery.isNotEmpty()) {
+                                    IconButton(onClick = { pageViewModel.updateSearchQuery("") }) {
+                                        Icon(Icons.Default.Clear, contentDescription = "Löschen")
+                                    }
+                                }
+                            },
+                            shape = MaterialTheme.shapes.large,
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    IconButton(onClick = onOpenStructureEditor) {
+                        Icon(
+                            imageVector = GhostTalkIcons.Link,
+                            contentDescription = stringResource(R.string.structure_editor_title)
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Box {
+                        IconButton(onClick = { showSortMenu = true }) {
+                            Icon(
+                                imageVector = GhostTalkIcons.Sort,
+                                contentDescription = stringResource(R.string.action_sort)
+                            )
+                        }
+                        DropdownMenu(expanded = showSortMenu, onDismissRequest = { showSortMenu = false }) {
+                            SortOrder.entries.filter { it != SortOrder.MANUAL }.forEach { order ->
+                                val label = when(order) {
+                                    SortOrder.MANUAL -> stringResource(R.string.sort_manual)
+                                    SortOrder.NEWEST -> stringResource(R.string.sort_newest)
+                                    SortOrder.OLDEST -> stringResource(R.string.sort_oldest)
+                                    SortOrder.A_Z -> stringResource(R.string.sort_a_z)
+                                    SortOrder.Z_A -> stringResource(R.string.sort_z_a)
+                                    SortOrder.ACTIVE_FIRST -> stringResource(R.string.sort_active_first)
+                                    SortOrder.INACTIVE_FIRST -> stringResource(R.string.sort_inactive_first)
+                                }
+                                DropdownMenuItem(
+                                    text = { Text(label) },
+                                    onClick = {
+                                        pageViewModel.pageSortOrder = order.name
+                                        showSortMenu = false
+                                    },
+                                    trailingIcon = {
+                                        if (pageSortOrder == order.name) {
+                                            Icon(Icons.Default.Check, contentDescription = null)
+                                        }
+                                    }
+                                )
+                            }
                         }
                     }
-                },
-                shape = MaterialTheme.shapes.large,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = dimensions.screenPaddingHorizontal, vertical = dimensions.paddingMedium),
-                singleLine = true
-            )
+                }
+            }
 
             if (onNavigateBack == null) {
                 Row(

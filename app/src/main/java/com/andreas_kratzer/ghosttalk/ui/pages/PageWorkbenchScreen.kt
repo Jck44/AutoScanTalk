@@ -11,6 +11,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import com.andreas_kratzer.ghosttalk.core.ui.components.EditorMode
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.andreas_kratzer.ghosttalk.ui.pages.structure.StructureEditorScreen
 
 import androidx.compose.material3.Icon
@@ -29,7 +30,7 @@ fun PageWorkbenchScreen(
     initialTriggerSplit: Boolean = false,
     initialOpenAssistant: Boolean = false,
     pageViewModel: PageViewModel,
-    gridEditorViewModel: GridEditorViewModel = androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel(),
+    gridEditorViewModel: GridEditorViewModel = hiltViewModel(),
     onNavigateBack: () -> Unit,
     onExitEditor: () -> Unit
 ) {
@@ -37,6 +38,7 @@ fun PageWorkbenchScreen(
     var focusedPageId by rememberSaveable { mutableStateOf(pageId) }
     var currentButtonId by rememberSaveable { mutableStateOf(initialButtonId) }
     var triggerSplit by rememberSaveable { mutableStateOf(initialTriggerSplit) }
+    var assistantPending by rememberSaveable { mutableStateOf(initialOpenAssistant) }
 
     val modeSwitcher = @Composable {
         SingleChoiceSegmentedButtonRow {
@@ -69,7 +71,8 @@ fun PageWorkbenchScreen(
         PageEditorScreen(
             pageId = focusedPageId,
             initialButtonId = currentButtonId,
-            initialOpenAssistant = initialOpenAssistant,
+            initialOpenAssistant = assistantPending,
+            onAssistantConsumed = { assistantPending = false },
             pageViewModel = pageViewModel,
             gridEditorViewModel = gridEditorViewModel,
             onNavigateBack = onNavigateBack,

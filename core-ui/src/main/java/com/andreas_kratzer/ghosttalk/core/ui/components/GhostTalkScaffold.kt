@@ -23,6 +23,7 @@ fun GhostTalkScaffold(
     title: String,
     onNavigateBack: (() -> Unit)? = null,
     actions: @Composable RowScope.() -> Unit = {},
+    showTopBar: Boolean = true,
     floatingActionButton: @Composable () -> Unit = {},
     snackbarHost: @Composable () -> Unit = {},
     titleContent: @Composable () -> Unit = {
@@ -37,7 +38,8 @@ fun GhostTalkScaffold(
 ) {
     Scaffold(
         topBar = {
-            CenterAlignedTopAppBar(
+            if (showTopBar) {
+                CenterAlignedTopAppBar(
                 title = titleContent,
                 navigationIcon = {
                     if (onNavigateBack != null) {
@@ -54,6 +56,7 @@ fun GhostTalkScaffold(
                     containerColor = MaterialTheme.colorScheme.surface
                 )
             )
+            }
         },
         floatingActionButton = floatingActionButton,
         snackbarHost = snackbarHost,

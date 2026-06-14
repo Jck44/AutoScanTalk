@@ -24,6 +24,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
@@ -63,7 +64,7 @@ fun BookShellScreen(
     onNavigateToTemplates: () -> Unit,
     onNavigateToStaticRow: () -> Unit
 ) {
-    var currentTab by remember { mutableStateOf(BookShellTab.Inhalte) }
+    var currentTab by rememberSaveable { mutableStateOf(BookShellTab.Inhalte) }
     var menuExpanded by remember { mutableStateOf(false) }
 
     val activeBookId by pageViewModel.activeBookId.collectAsState()
@@ -169,21 +170,24 @@ fun BookShellScreen(
                         onEditTemplate = onEditTemplate,
                         onOpenStructureEditor = onOpenStructureEditor,
                         onNavigateToTemplates = onNavigateToTemplates,
-                        onNavigateToStaticRow = onNavigateToStaticRow
+                        onNavigateToStaticRow = onNavigateToStaticRow,
+                        showTopBar = false
                     )
                 }
                 BookShellTab.Statistik -> {
                     AnalyticsDashboardScreen(
                         pageViewModel = pageViewModel,
                         onNavigateBack = null,
-                        onEditPage = onEditPageWithAssistant
+                        onEditPage = onEditPageWithAssistant,
+                        showTopBar = false
                     )
                 }
                 BookShellTab.Einstellungen -> {
                     SettingsScreen(
                         viewModel = settingsViewModel,
                         isGlobal = false,
-                        onNavigateBack = null
+                        onNavigateBack = null,
+                        showTopBar = false
                     )
                 }
             }

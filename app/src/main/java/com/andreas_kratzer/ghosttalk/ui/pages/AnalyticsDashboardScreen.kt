@@ -66,7 +66,8 @@ fun AnalyticsDashboardScreen(
     pageSplitViewModel: PageSplitViewModel = androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel(),
     bookRestructureViewModel: BookRestructureViewModel = androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel(),
     onNavigateBack: (() -> Unit)? = null,
-    onEditPage: (String, Boolean) -> Unit
+    onEditPage: (String, Boolean) -> Unit,
+    showTopBar: Boolean = true
 ) {
     val context = LocalContext.current
     val dimensions = LocalDimensions.current
@@ -309,7 +310,8 @@ fun AnalyticsDashboardScreen(
 
     GhostTalkScaffold(
         title = stringResource(R.string.settings_analytics_dashboard),
-        onNavigateBack = onNavigateBack
+        onNavigateBack = onNavigateBack,
+        showTopBar = showTopBar
     ) { paddingValues ->
         if (historyEvents.isEmpty() && userModeSessions.isEmpty()) {
             GhostTalkEmptyState(

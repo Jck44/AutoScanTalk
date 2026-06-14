@@ -40,12 +40,25 @@ import androidx.compose.ui.unit.dp
 import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.core.domain.pages.UsageLocation
 import com.andreas_kratzer.ghosttalk.core.model.GridSettingsUpdate
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarResult
+import androidx.compose.material3.Surface
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.andreas_kratzer.ghosttalk.core.ui.components.EditorTopBar
 import com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons
 import com.andreas_kratzer.ghosttalk.ui.components.GridEditorContent
 import com.andreas_kratzer.ghosttalk.ui.components.EditablePageTitle
 import com.andreas_kratzer.ghosttalk.ui.components.EditorAssistantButton
-import com.andreas_kratzer.ghosttalk.ui.components.ValidatedTextField
 import com.andreas_kratzer.ghosttalk.ui.pages.history.EditIcon
 import com.andreas_kratzer.ghosttalk.ui.pages.history.EditLabel
 import kotlinx.coroutines.delay
@@ -57,19 +70,26 @@ fun PageEditorScreen(
     pageId: String,
     initialButtonId: String? = null,
     pageViewModel: PageViewModel,
-    gridEditorViewModel: GridEditorViewModel = androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel(),
-    pageSplitViewModel: PageSplitViewModel = androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel(),
+    gridEditorViewModel: GridEditorViewModel = hiltViewModel(),
+    pageSplitViewModel: PageSplitViewModel = hiltViewModel(),
     onNavigateBack: () -> Unit,
     onEditPage: ((String, String?) -> Unit)? = null,
     onExitEditor: (() -> Unit)? = null,
     onOpenStructureEditor: ((String, Boolean) -> Unit)? = null,
     modeSwitcher: (@Composable () -> Unit)? = null,
-    initialOpenAssistant: Boolean = false
+    initialOpenAssistant: Boolean = false,
+    onAssistantConsumed: () -> Unit = {}
 ) {
     val allPages by pageViewModel.allPages.collectAsState()
     val unfilteredPages by pageViewModel.unfilteredPages.collectAsState()
     val bookDefaultScanPattern by pageViewModel.defaultScanPattern.collectAsState()
     val page = allPages.find { it.id == pageId }
+
+    LaunchedEffect(initialOpenAssistant) {
+        if (initialOpenAssistant) {
+            onAssistantConsumed()
+        }
+    }
 
     LaunchedEffect(page) {
         if (page != null) {
@@ -104,8 +124,8 @@ fun PageEditorScreen(
         handleNavigateBack()
     }
 
-    val snackbarHostState = remember { androidx.compose.material3.SnackbarHostState() }
-    val coroutineScope = androidx.compose.runtime.rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
+    val coroutineScope = rememberCoroutineScope()
 
     val resolvedPage by pageViewModel.resolvedPage.collectAsState()
     LaunchedEffect(resolvedPage) {
@@ -124,7 +144,7 @@ fun PageEditorScreen(
 
     Scaffold(
         topBar = {
-            val isNarrow = androidx.compose.ui.platform.LocalConfiguration.current.screenWidthDp < 600
+            val isNarrow = LocalConfiguration.current.screenWidthDp < 600
             EditorTopBar(
                 titleContent = {
                     EditablePageTitle(
@@ -353,7 +373,7 @@ fun PageEditorScreen(
                 }
             )
         },
-        snackbarHost = { androidx.compose.material3.SnackbarHost(snackbarHostState) }
+        snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { paddingValues ->
         val templates by pageViewModel.templates.collectAsState()
 
@@ -404,9 +424,9 @@ fun PageEditorScreen(
                             val result = snackbarHostState.showSnackbar(
                                 message = "Magische Bereinigung erfolgreich abgeschlossen!",
                                 actionLabel = "Rückgängig",
-                                duration = androidx.compose.material3.SnackbarDuration.Long
+                                duration = SnackbarDuration.Long
                             )
-                            if (result == androidx.compose.material3.SnackbarResult.ActionPerformed) {
+                            if (result == SnackbarResult.ActionPerformed) {
                                 gridEditorViewModel.undo { undoMsg ->
                                     coroutineScope.launch {
                                         snackbarHostState.showSnackbar(undoMsg)
@@ -423,38 +443,38 @@ fun PageEditorScreen(
         val magicCleanupProgress by pageSplitViewModel.magicCleanupProgress.collectAsState()
 
         magicCleanupProgress?.let { progressMessage ->
-            androidx.compose.ui.window.Dialog(
+            Dialog(
                 onDismissRequest = {},
-                properties = androidx.compose.ui.window.DialogProperties(
+                properties = DialogProperties(
                     dismissOnBackPress = false,
                     dismissOnClickOutside = false
                 )
             ) {
-                androidx.compose.material3.Surface(
+                Surface(
                     shape = MaterialTheme.shapes.medium,
                     color = MaterialTheme.colorScheme.surface,
                     tonalElevation = 6.dp,
                     modifier = Modifier.width(280.dp)
                 ) {
-                    androidx.compose.foundation.layout.Column(
+                    Column(
                         modifier = Modifier.padding(24.dp),
                         horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(16.dp)
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        androidx.compose.material3.CircularProgressIndicator(
+                        CircularProgressIndicator(
                             color = MaterialTheme.colorScheme.primary
                         )
                         Text(
                             text = "Magische Bereinigung läuft...",
                             style = MaterialTheme.typography.titleMedium,
-                            fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+                            fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
                             text = progressMessage,
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                            textAlign = TextAlign.Center
                         )
                     }
                 }

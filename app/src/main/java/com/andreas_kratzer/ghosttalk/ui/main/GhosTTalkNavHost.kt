@@ -64,7 +64,6 @@ fun GhostTalkNavHost(
             route.startsWith("settings") -> securityManager.isSecurityRequiredForSettings()
             route == "analytics_dashboard" -> securityManager.isSecurityRequiredForAnalytics()
             route == "content_management" || 
-            route == "page_list" || 
             route == "templates" || 
             route.startsWith("editor") || 
             route.startsWith("template_editor") -> securityManager.isSecurityRequiredForEdit()
@@ -361,29 +360,6 @@ fun GhostTalkNavHost(
                 )
             }
         }
-        composable("page_list") {
-            PageListScreen(
-                pageViewModel = pageViewModel,
-                onNavigateBack = { navController.safePopBackStack() },
-                onEditPage = { pageId: String ->
-                    navController.safeNavigate("editor/$pageId?mode=${EditorMode.RASTER.route}")
-                },
-                onEditTemplate = { templateId: String ->
-                    navController.safeNavigate("template_editor/$templateId")
-                },
-                onOpenStructureEditor = {
-                    val bookId = pageViewModel.activeBookId.value ?: "book-default"
-                    coroutineScope.launch {
-                        val finalPage = resolveStartPage(bookId, settingsRepository, pageRepository)
-                        if (finalPage != null) {
-                            runOnMainThread {
-                                navigateWithSecurity("editor/${finalPage.id}?mode=${EditorMode.STRUKTUR.route}")
-                            }
-                        }
-                    }
-                }
-            )
-        }
         composable(
             "editor/{pageId}?mode={mode}&buttonId={buttonId}&triggerSplit={triggerSplit}&openAssistant={openAssistant}",
             arguments = listOf(
@@ -411,7 +387,7 @@ fun GhostTalkNavHost(
                     gridEditorViewModel = gridEditorViewModel,
                     onNavigateBack = { navController.safePopBackStack() },
                     onExitEditor = {
-                        val popped = navController.popBackStack("page_list", inclusive = false)
+                        val popped = navController.popBackStack("start", inclusive = false)
                         if (!popped) {
                             navController.safePopBackStack()
                         }

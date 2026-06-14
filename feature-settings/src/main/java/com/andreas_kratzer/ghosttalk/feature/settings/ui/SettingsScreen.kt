@@ -73,7 +73,8 @@ fun SettingsScreen(
     onNavigateToStart: () -> Unit = {},
     isGlobal: Boolean = false,
     viewModel: SettingsViewModel = hiltViewModel(),
-    onNavigateToVocalTraining: () -> Unit = {}
+    onNavigateToVocalTraining: () -> Unit = {},
+    showTopBar: Boolean = true
 ) {
     val context = LocalContext.current
     val dimensions = LocalDimensions.current
@@ -224,7 +225,8 @@ fun SettingsScreen(
 
     GhostTalkScaffold(
         title = screenTitle,
-        onNavigateBack = if (showBackIcon) backCallback else null
+        onNavigateBack = if (showBackIcon) backCallback else null,
+        showTopBar = showTopBar
     ) { paddingValues ->
         Scaffold(
             contentWindowInsets = WindowInsets(0.dp),
@@ -241,6 +243,7 @@ fun SettingsScreen(
                                 .windowInsetsPadding(
                                     WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal + WindowInsetsSides.Bottom)
                                 )
+                                // Redundant since safeDrawing contains ime, but kept explicitly for robust keyboard interaction
                                 .imePadding()
                                 .padding(dimensions.paddingMedium),
                             horizontalArrangement = Arrangement.End

@@ -52,11 +52,11 @@ _(Teil D strikt in Reihenfolge D1 → D7 abarbeiten — Nummern = Ausführungsre
 | D1 | `EditorMode`-Enum statt Magic-Strings „raster"/„struktur" (Fundament für D3) | klein | ✅ umgesetzt+reviewt (uncommitted; Mini-Nit `initialMode`-Default-Literal) |
 | D2 | `EditorTopBar` entkoppeln (testTag-Param + String) — Header-Vorarbeit | klein | ✅ umgesetzt+reviewt (uncommitted) |
 | D3 | EditorTopBar verdichten: Titel-Label+Dialog, Icon-Modus-Umschalter, adaptive Actions (Redo→⋮), Assistent-Dedup | mittel | ✅ umgesetzt+reviewt (2. Anlauf vollständig; uncommitted) |
-| D4 | `openAssistant`-Intent einmalig konsumieren (kein Re-Open bei Modus-Round-Trip) | klein | offen |
-| D5 | `onExitEditor` robust (page_list-Fallback) | klein | offen |
-| D6 | Import-Hygiene in Teil-B-Dateien (nach D3, da Header-Umbau churnt) | trivial | offen |
-| D7 | Rest-Kleinigkeiten (imePadding, B4-Phone, i18n-Verweis) | trivial | offen |
-| D8 | Shell-Header bereinigen: Panes ohne eigenes Scaffold (Doppel-TopBar weg), `currentTab` rememberSaveable, Legacy-Tag→`nav_item_speak`, tote `page_list`-Route | mittel | offen |
+| D4 | `openAssistant`-Intent einmalig konsumieren (kein Re-Open bei Modus-Round-Trip) | klein | ✅ umgesetzt+reviewt |
+| D5 | `onExitEditor` robust (page_list-Fallback) | klein | ✅ umgesetzt+reviewt (Route auf „start" + Fallback; page_list-Route weg) |
+| D6 | Import-Hygiene in Teil-B-Dateien (nach D3, da Header-Umbau churnt) | trivial | ✅ umgesetzt+reviewt (toter `ValidatedTextField`-Import entfernt) |
+| D7 | Rest-Kleinigkeiten (imePadding, B4-Phone, i18n-Verweis) + Restbefunde | trivial | ✅ umgesetzt+reviewt (imePadding bewusst belassen+kommentiert; `route=="page_list"` entfernt) |
+| D8 | Shell-Header bereinigen | mittel | ✅ umgesetzt+reviewt (a/b/d ✅; (c) Tag-Rename bewusst belassen, 18 Test-Refs) |
 
 ---
 
@@ -560,3 +560,28 @@ Build + `testDebugUnitTest` grün.
 - **(d) ✅** `EditorAssistantButton` geteiltes Composable (`compact`-Param = icon-only), in beiden Editoren; testTag `page_editor_split_wizard_trigger_menu` erhalten.
 
 **Kleinkram (→ D6/D7, kein Blocker):** `ValidatedTextField` jetzt toter Import in beiden Editoren (D6); `EditorAssistantButton.description`/Label hartcodiert dt. (i18n/D7); fully-qualified `LocalConfiguration`-Inline (D6); StructureEditor-Header zeigt jetzt den Seitennamen statt „Struktur-Editor" (bewusst, Kohäsion).
+
+### Review Teil D — D4–D8, Claude, 2026-06-14 — uncommitteter Working Tree (D1–D3 committet `acddb72b`)
+
+Build + `testDebugUnitTest` grün.
+- **D4 ✅** `assistantPending` (rememberSaveable) in `PageWorkbenchScreen` + `onAssistantConsumed`-Callback; `PageEditorScreen` feuert per `LaunchedEffect(initialOpenAssistant)`. Round-Trip-Re-Open behoben.
+- **D5 ✅** `onExitEditor` → `popBackStack("start", false)` + Fallback `safePopBackStack()`; `composable("page_list")` entfernt.
+- **D6 ✅ (überwiegend)** viele fully-qualified Inline-Refs in `PageEditorScreen` → Imports. **Offen:** toter `import …ValidatedTextField` in `PageEditorScreen` + `StructureEditorScreen` (0 Nutzung seit D3) — gerade von D6 zu fangen gewesen.
+- **D7 ⚠️ offen** `.imePadding()` am Profil-bottomBar unverändert (weder entfernt noch kommentiert). B4/i18n waren ohnehin optional/Verweis.
+- **D8 teilweise:** **(a) ✅ Doppel-TopBar behoben** — neuer `GhostTalkScaffold(showTopBar=…)`; BookShell gibt allen 3 Panes `showTopBar=false`. **(d) ✅** page_list-Route weg. **(b) ❌ `currentTab` weiter `remember`** (nicht `rememberSaveable`) → Tab-Reset bei Rotation. **(c) Tag-Rename nicht gemacht** — `start_card_user_mode` wird in ~18 Integrationstest-Stellen genutzt → Rename invasiv; **Empfehlung: bewusst belassen + dokumentieren** statt 18 Tests zu churnen.
+
+**`gradle/libs.versions.toml` (Bumps `appcompat 1.7.0→1.7.1`, `okhttp 5.3.2→5.4.0`):** **bewusst von Andreas** eingebracht — kein Gemini-Scope-Drift, ok. Da `okhttp` Netz/Cloud-Sync berührt: bei Gelegenheit Sync-Smoke-Test; idealerweise in eigenem Commit halten.
+
+**Restpunkte → klein, bündeln (D7-Rest):** toter ValidatedTextField-Import (2 Dateien), D8(b) currentTab rememberSaveable (1 Zeile), vestigiales `route=="page_list"` im Security-Check, imePadding-Entscheidung. D8(c) als „bewusst belassen" schließen (sofern Andreas zustimmt).
+
+### Review Teil D — D-Abschluss (Restpunkte), Claude, 2026-06-14 — uncommitted, verifiziert
+
+Alle Batch-Review-Reste behoben, Build + `testDebugUnitTest` grün:
+- ✅ `libs.versions.toml`-Bumps (appcompat/okhttp) zurückgesetzt (waren ohnehin bewusst von Andreas — jetzt wieder auf 1.7.0/5.3.2, Scope sauber).
+- ✅ D8(b) `currentTab` → `rememberSaveable` (BookShellTab-Enum, Default-Saver) — überlebt Rotation.
+- ✅ D6-Rest: toter `ValidatedTextField`-Import aus beiden Editoren entfernt.
+- ✅ D8(d)-Rest: vestigiales `route == "page_list"` aus dem Security-Check entfernt.
+- ✅ D7: `.imePadding()` bewusst belassen + Kommentar.
+- ◻️ D8(c): Legacy-Tag `start_card_user_mode` **bewusst belassen** (in ~18 Integrationstest-Stellen genutzt; Rename = reine Namenskosmetik, nicht den Test-Churn wert).
+
+**Teil D abgeschlossen** (D1–D8 ✅, D8(c) bewusst belassen). Gesamter Plan: Teil A ✅, Teil B ✅, Teil C ✅, Teil D ✅. Offen nur noch: separates `docs/i18n_backlog_plan.md` (I1–I4) sowie manuelle Gerätesicht (Freeform/Resize, PIN-Exit, adaptive Bar↔Rail, Doppel-TopBar visuell).
