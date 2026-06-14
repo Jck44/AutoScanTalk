@@ -85,3 +85,18 @@ E1 → E2 → E3 (mit Größen-Fix) → E4 (→ E5 bei Bedarf). Nach jedem Schri
 - E2: toter Import `NavigationActionFields` in StructureFocusCanvas entfernen.
 - E4: `MoveButtonDialog` (Z. ~1950) dupliziert die durchsuchbare Picker-UI von `ConnectPageDialog` → in **einen** generischen `SearchablePagePicker` (Titel/Untertitel/`excludePageId`/`onSelected`) vereinen; dessen hartcodierte Strings („Button verschieben…", „Wähle die Ziel-Seite…") → i18n.
 - Größen-Bug weiterhin offen → E3 (erwartet).
+
+### E2–E4 reviewt (2026-06-14, uncommitted) — Build+Tests grün
+Dateien: `StructureGraphView.kt` (873), `StructureGraphNode.kt` (182), `StructureCanvasLogic.kt` (31) + `StructureCanvasLogicTest`; `StructureFocusCanvas` 2136→918.
+- **E2 ✅** Graph ausgelagert. **Offen:** toter Import `NavigationActionFields` (FocusCanvas:90) noch da → entfernen.
+- **E3 ✅ (Kern):** `SubcomposeLayout` (GraphView:175), alter `nodeHeights`/`onSizeChanged`/`.height()`-Hack **entfernt**, adaptiv (`isLandscape`), `rememberSaveable`+Saver für `expandedPageIds`, Scroll-to-Center. Größen-Bug strukturell behoben — **Gerätesicht offen** (Knotengröße, beide Orientierungen, leeres Band Startseite, Rotation).
+- **E4 ⚠️ teilweise:** `navigableButtons` entdupliziert (Node+FocusCanvas) + 1 Test ✅. **Offen:** `SearchablePagePicker` nicht erstellt; `MoveButtonDialog` dupliziert weiter die Picker-UI + hartcodierte Strings (GraphView:800/813) → vereinen + i18n. Test um Fälle erweitern.
+- **Größenziele verfehlt:** FocusCanvas 918 (<400), GraphView 873 (<450) → optional E5 (weitere Splits).
+
+**Restbatch „E6" (klein):** (1) toten Import raus, (2) `SearchablePagePicker` + MoveButton i18n, (3) optional E5-Splits + mehr Testfälle.
+
+### E6-Rest reviewt+abgenommen (2026-06-14, uncommitted) — Build+Tests grün
+- ✅ Toter `NavigationActionFields`-Import entfernt.
+- ✅ `SearchablePagePicker.kt` (generisch: title/subtitle/excludePageId/onPageSelected) — genutzt von Connect (FocusCanvas:906) **und** MoveButton (GraphView:766); `ConnectPageDialog.kt` gelöscht → kein Picker-Duplikat mehr.
+- ✅ MoveButton-Strings → `strings.xml` de+en (`structure_move_button_dialog_*`).
+**Gesamter Refactor E1–E6 abgenommen.** Offen nur: optional E5 (Größenziele FocusCanvas 918/<400, GraphView 778/<450) + Gerätesicht des Größen-Fixes (E3).

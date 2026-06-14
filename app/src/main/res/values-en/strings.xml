@@ -626,6 +626,8 @@
     <string name="page_editor_delete_drop_zone">Drag here to delete</string>
 
     <!-- Structure Editor -->
+    <string name="structure_move_button_dialog_title">Move button: %1$s</string>
+    <string name="structure_move_button_dialog_select_target">Select the target page for this button:</string>
     <string name="structure_view_mode_cards">Cards</string>
     <string name="structure_view_mode_graph">Graph</string>
     <string name="structure_connect_dialog_search_hint">Search pages...</string>

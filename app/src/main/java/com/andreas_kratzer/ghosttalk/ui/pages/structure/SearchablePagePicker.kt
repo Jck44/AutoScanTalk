@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
@@ -26,16 +27,17 @@ import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.core.model.Page
 
 @Composable
-fun ConnectPageDialog(
-    focusedPageId: String,
+fun SearchablePagePicker(
+    title: String,
+    subtitle: String? = null,
+    excludePageId: String,
     pages: List<Page>,
-    pageNames: Map<String, String>,
     onDismissRequest: () -> Unit,
     onPageSelected: (String) -> Unit
 ) {
     var searchQuery by remember { mutableStateOf("") }
-    val filteredPages = remember(searchQuery, pages, focusedPageId) {
-        pages.filter { it.id != focusedPageId }
+    val filteredPages = remember(searchQuery, pages, excludePageId) {
+        pages.filter { it.id != excludePageId }
             .filter { page ->
                 searchQuery.isBlank() || page.name.contains(searchQuery, ignoreCase = true)
             }
@@ -46,7 +48,7 @@ fun ConnectPageDialog(
         onDismissRequest = onDismissRequest,
         title = {
             Text(
-                text = stringResource(R.string.structure_add_connection_title),
+                text = title,
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )
@@ -58,6 +60,13 @@ fun ConnectPageDialog(
                     .heightIn(max = 400.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
+                if (subtitle != null) {
+                    Text(
+                        text = subtitle,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
                 OutlinedTextField(
                     value = searchQuery,
                     onValueChange = { searchQuery = it },
@@ -73,8 +82,7 @@ fun ConnectPageDialog(
                         .weight(1f),
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
-                    items(filteredPages.size) { index ->
-                        val pageOption = filteredPages[index]
+                    items(filteredPages) { pageOption ->
                         Surface(
                             onClick = {
                                 onPageSelected(pageOption.id)
