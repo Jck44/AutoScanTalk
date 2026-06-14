@@ -38,14 +38,16 @@ Dieser Plan **ersetzt den `StartScreen`** und fasst `content_management` / `anal
 
 ## Status
 
+> **Update 2026-06-14:** AP 1–5 wurden gebündelt in **einem** Commit `efb495c5` umgesetzt (zusammen mit Consistency-Plan C3). Reviewt im Consistency-Plan, Abschnitt 5 (C3-Review). Build + Tests grün. **Offener Folgepunkt: Doppel-TopBar in der Shell → Consistency-Plan Teil D / AP D8.**
+
 | AP | Thema | Risiko | Stand |
 |----|-------|--------|-------|
-| 1 | Dependency `material3-adaptive-navigation-suite` + Nav-Strings | klein | offen |
-| 2 | `BookShellScreen` mit `NavigationSuiteScaffold` (Inhalte/Statistik/Einstellungen + „Sprechen") | **groß** | offen |
-| 3 | Buch-Umschalter in der Shell-Top-Bar | mittel | offen |
-| 4 | Nutzermodus-Isolation absichern + Exit-Sperre (PIN/Biometrie) | mittel | offen |
-| 5 | Aufräumen: tote Routen/Screens entfernen, Auto-Nav + Tests angleichen | mittel | offen |
-| R | Abschluss-Review (Claude) | — | offen |
+| 1 | Dependency `material3-adaptive-navigation-suite` + Nav-Strings | klein | ✅ umgesetzt (`efb495c5`) |
+| 2 | `BookShellScreen` mit `NavigationSuiteScaffold` (Inhalte/Statistik/Einstellungen + „Sprechen") | **groß** | ✅ umgesetzt+reviewt (Doppel-TopBar → D8) |
+| 3 | Buch-Umschalter in der Shell-Top-Bar | mittel | ✅ umgesetzt+reviewt |
+| 4 | Nutzermodus-Isolation absichern + Exit-Sperre (PIN/Biometrie) | mittel | ✅ umgesetzt+reviewt |
+| 5 | Aufräumen: tote Routen/Screens entfernen, Auto-Nav + Tests angleichen | mittel | ⚠️ größtenteils (tote `page_list`-Route bleibt → D8) |
+| R | Abschluss-Review (Claude) | — | ✅ via C3-Review (Doppel-TopBar offen → D8) |
 
 ---
 

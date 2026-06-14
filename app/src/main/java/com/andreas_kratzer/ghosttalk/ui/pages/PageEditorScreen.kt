@@ -43,6 +43,8 @@ import com.andreas_kratzer.ghosttalk.core.model.GridSettingsUpdate
 import com.andreas_kratzer.ghosttalk.core.ui.components.EditorTopBar
 import com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons
 import com.andreas_kratzer.ghosttalk.ui.components.GridEditorContent
+import com.andreas_kratzer.ghosttalk.ui.components.EditablePageTitle
+import com.andreas_kratzer.ghosttalk.ui.components.EditorAssistantButton
 import com.andreas_kratzer.ghosttalk.ui.components.ValidatedTextField
 import com.andreas_kratzer.ghosttalk.ui.pages.history.EditIcon
 import com.andreas_kratzer.ghosttalk.ui.pages.history.EditLabel
@@ -122,53 +124,36 @@ fun PageEditorScreen(
 
     Scaffold(
         topBar = {
+            val isNarrow = androidx.compose.ui.platform.LocalConfiguration.current.screenWidthDp < 600
             EditorTopBar(
                 titleContent = {
-                    ValidatedTextField(
-                        value = localName,
-                        onValueChange = { localName = it },
-                        isRequired = true,
-                        errorMessage = stringResource(R.string.error_page_name_required),
-                        onFocusLost = {
-                            if (it.isNotBlank() && it != page.name) {
-                                gridEditorViewModel.updateGridSettings(
-                                    itemId = page.id,
-                                    update = GridSettingsUpdate(name = it)
-                                )
-                            }
+                    EditablePageTitle(
+                        pageName = localName,
+                        onRename = { newName ->
+                            localName = newName
+                            gridEditorViewModel.updateGridSettings(
+                                itemId = page.id,
+                                update = GridSettingsUpdate(name = newName)
+                            )
                         },
-                        placeholder = { Text(stringResource(R.string.page_name_label)) },
-                        modifier = Modifier
-                            .widthIn(max = 200.dp)
-                            .padding(vertical = 4.dp) // Reduce vertical impact
-                            .testTag("page_editor_name_field")
+                        modifier = Modifier.widthIn(max = 200.dp),
+                        testTag = "page_editor_name_field"
                     )
                 },
                 onNavigateBack = handleNavigateBack,
                 onExitEditor = onExitEditor,
+                modeSwitcher = modeSwitcher,
                 actions = {
                     val isEditPreviewActive by pageViewModel.isEditPreviewActive.collectAsState()
                     val historyState by gridEditorViewModel.historyState.collectAsState()
 
-                    TextButton(
+                    EditorAssistantButton(
                         onClick = {
                             showLayoutAssistantDialog.value = true
                         },
-                        modifier = Modifier.testTag("page_editor_split_wizard_trigger_menu")
-                    ) {
-                        Icon(
-                            imageVector = GhostTalkIcons.AutoAwesome,
-                            contentDescription = "Layout- & Struktur-Assistent",
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(20.dp)
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(
-                            text = "Assistent",
-                            style = MaterialTheme.typography.labelLarge,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
+                        compact = isNarrow,
+                        testTag = "page_editor_split_wizard_trigger_menu"
+                    )
 
                     IconButton(
                         onClick = {
@@ -192,31 +177,28 @@ fun PageEditorScreen(
                         )
                     }
 
-                    IconButton(
-                        onClick = {
-                            gridEditorViewModel.redo { message ->
-                                coroutineScope.launch { snackbarHostState.showSnackbar(message) }
-                            }
-                        },
-                        enabled = historyState.canRedo,
-                        modifier = Modifier.testTag("page_editor_redo_button")
-                    ) {
-                        val nextRedoLabel = historyState.nextRedoLabel?.let { resolveEditLabel(it) } ?: ""
-                        val tooltipText = if (nextRedoLabel.isNotEmpty()) {
-                            stringResource(R.string.history_redo_tooltip, nextRedoLabel)
-                        } else {
-                            stringResource(R.string.history_redo_action) // Fallback string
-                        }
-                        Icon(
-                            imageVector = GhostTalkIcons.Redo,
-                            contentDescription = tooltipText,
-                            tint = if (historyState.canRedo) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f)
-                        )
-                    }
-
-                    val isNarrow = androidx.compose.ui.platform.LocalConfiguration.current.screenWidthDp < 600
-
                     if (!isNarrow) {
+                        IconButton(
+                            onClick = {
+                                gridEditorViewModel.redo { message ->
+                                    coroutineScope.launch { snackbarHostState.showSnackbar(message) }
+                                }
+                            },
+                            enabled = historyState.canRedo,
+                            modifier = Modifier.testTag("page_editor_redo_button")
+                        ) {
+                            val nextRedoLabel = historyState.nextRedoLabel?.let { resolveEditLabel(it) } ?: ""
+                            val tooltipText = if (nextRedoLabel.isNotEmpty()) {
+                                stringResource(R.string.history_redo_tooltip, nextRedoLabel)
+                            } else {
+                                stringResource(R.string.history_redo_action) // Fallback string
+                            }
+                            Icon(
+                                imageVector = GhostTalkIcons.Redo,
+                                contentDescription = tooltipText,
+                                tint = if (historyState.canRedo) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f)
+                            )
+                        }
                         IconButton(
                             onClick = { showHistoryPanel = true },
                             modifier = Modifier.testTag("page_editor_history_button")
@@ -276,6 +258,32 @@ fun PageEditorScreen(
                             onDismissRequest = { showOverflowMenu = false }
                         ) {
                             if (isNarrow) {
+                                DropdownMenuItem(
+                                    text = {
+                                        val nextRedoLabel = historyState.nextRedoLabel?.let { resolveEditLabel(it) } ?: ""
+                                        val labelText = if (nextRedoLabel.isNotEmpty()) {
+                                            stringResource(R.string.history_redo_tooltip, nextRedoLabel)
+                                        } else {
+                                            stringResource(R.string.history_redo_action)
+                                        }
+                                        Text(labelText)
+                                    },
+                                    onClick = {
+                                        showOverflowMenu = false
+                                        gridEditorViewModel.redo { message ->
+                                            coroutineScope.launch { snackbarHostState.showSnackbar(message) }
+                                        }
+                                    },
+                                    enabled = historyState.canRedo,
+                                    leadingIcon = {
+                                        Icon(
+                                            imageVector = GhostTalkIcons.Redo,
+                                            contentDescription = null,
+                                            tint = if (historyState.canRedo) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f)
+                                        )
+                                    },
+                                    modifier = Modifier.testTag("page_editor_redo_button")
+                                )
                                 DropdownMenuItem(
                                     text = { Text(stringResource(R.string.page_editor_preview_toggle)) },
                                     onClick = {

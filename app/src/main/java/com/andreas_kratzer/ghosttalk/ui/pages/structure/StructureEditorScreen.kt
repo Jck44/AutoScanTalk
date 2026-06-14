@@ -65,6 +65,8 @@ import com.andreas_kratzer.ghosttalk.core.model.NavigateToPageButtonAction
 import com.andreas_kratzer.ghosttalk.core.ui.components.EditorTopBar
 import com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons
 import com.andreas_kratzer.ghosttalk.ui.components.ValidatedTextField
+import com.andreas_kratzer.ghosttalk.ui.components.EditablePageTitle
+import com.andreas_kratzer.ghosttalk.ui.components.EditorAssistantButton
 import com.andreas_kratzer.ghosttalk.ui.pages.GridEditorViewModel
 import com.andreas_kratzer.ghosttalk.ui.pages.IncomingReferencesDialog
 import com.andreas_kratzer.ghosttalk.ui.pages.PageSplitViewModel
@@ -294,34 +296,30 @@ fun StructureEditorScreen(
 
     Scaffold(
         topBar = {
+            val isNarrow = LocalConfiguration.current.screenWidthDp < 600
             EditorTopBar(
                 titleContent = {
-                    ValidatedTextField(
-                        value = localName,
-                        onValueChange = { localName = it },
-                        isRequired = true,
-                        errorMessage = stringResource(R.string.error_page_name_required),
-                        onFocusLost = {
-                            if (focusedPage != null && it.isNotBlank() && it != focusedPage.name) {
+                    EditablePageTitle(
+                        pageName = localName,
+                        onRename = { newName ->
+                            localName = newName
+                            if (focusedPage != null) {
                                 gridEditorViewModel.updateGridSettings(
                                     itemId = focusedPage.id,
-                                    update = GridSettingsUpdate(name = it)
+                                    update = GridSettingsUpdate(name = newName)
                                 )
                             }
                         },
-                        placeholder = { Text(stringResource(R.string.page_name_label)) },
-                        modifier = Modifier
-                            .widthIn(max = 200.dp)
-                            .padding(vertical = 4.dp)
-                            .testTag("structure_editor_name_field")
+                        modifier = Modifier.widthIn(max = 200.dp),
+                        testTag = "structure_editor_name_field"
                     )
                 },
                 onNavigateBack = onNavigateBack,
+                modeSwitcher = modeSwitcher,
                 actions = {
                     val historyState by gridEditorViewModel.historyState.collectAsState()
-                    val isNarrow = LocalConfiguration.current.screenWidthDp < 600
 
-                    TextButton(
+                    EditorAssistantButton(
                         onClick = {
                             val accepted = pageSplitViewModel.hasAcceptedPageSplitOptIn
                             if (accepted) {
@@ -330,21 +328,9 @@ fun StructureEditorScreen(
                                 showOptInDialog.value = true
                             }
                         },
-                        modifier = Modifier.testTag("structure_editor_split_wizard_trigger_menu")
-                    ) {
-                        Icon(
-                            imageVector = GhostTalkIcons.AutoAwesome,
-                            contentDescription = "Layout- & Struktur-Assistent",
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(20.dp)
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(
-                            text = "Assistent",
-                            style = MaterialTheme.typography.labelLarge,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
+                        compact = isNarrow,
+                        testTag = "structure_editor_split_wizard_trigger_menu"
+                    )
 
                     IconButton(
                         onClick = {
@@ -362,23 +348,22 @@ fun StructureEditorScreen(
                         )
                     }
 
-                    IconButton(
-                        onClick = {
-                            gridEditorViewModel.redo { message ->
-                                scope.launch { snackbarHostState.showSnackbar(message) }
-                            }
-                        },
-                        enabled = historyState.canRedo,
-                        modifier = Modifier.testTag("structure_editor_redo_button")
-                    ) {
-                        Icon(
-                            imageVector = GhostTalkIcons.Redo,
-                            contentDescription = stringResource(R.string.history_redo_action),
-                            tint = if (historyState.canRedo) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f)
-                        )
-                    }
-
                     if (!isNarrow) {
+                        IconButton(
+                            onClick = {
+                                gridEditorViewModel.redo { message ->
+                                    scope.launch { snackbarHostState.showSnackbar(message) }
+                                }
+                            },
+                            enabled = historyState.canRedo,
+                            modifier = Modifier.testTag("structure_editor_redo_button")
+                        ) {
+                            Icon(
+                                imageVector = GhostTalkIcons.Redo,
+                                contentDescription = stringResource(R.string.history_redo_action),
+                                tint = if (historyState.canRedo) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f)
+                            )
+                        }
                         IconButton(
                             onClick = { showHistoryPanel = true },
                             modifier = Modifier.testTag("structure_editor_history_button")
@@ -432,6 +417,24 @@ fun StructureEditorScreen(
                             onDismissRequest = { showOverflowMenu = false }
                         ) {
                             if (isNarrow) {
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(R.string.history_redo_action)) },
+                                    onClick = {
+                                        showOverflowMenu = false
+                                        gridEditorViewModel.redo { message ->
+                                            scope.launch { snackbarHostState.showSnackbar(message) }
+                                        }
+                                    },
+                                    enabled = historyState.canRedo,
+                                    leadingIcon = {
+                                        Icon(
+                                            imageVector = GhostTalkIcons.Redo,
+                                            contentDescription = null,
+                                            tint = if (historyState.canRedo) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f)
+                                        )
+                                    },
+                                    modifier = Modifier.testTag("structure_editor_redo_button")
+                                )
                                 if (!isTablet) {
                                     DropdownMenuItem(
                                         text = { Text(stringResource(R.string.structure_tree_toggle)) },

@@ -10,7 +10,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import com.andreas_kratzer.ghosttalk.core.ui.components.EditorMode
 import com.andreas_kratzer.ghosttalk.ui.pages.structure.StructureEditorScreen
+
+import androidx.compose.material3.Icon
+import com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons
 
 /**
  * Unified Workbench Screen hosting both the Grid Page Editor ("Raster")
@@ -29,7 +33,7 @@ fun PageWorkbenchScreen(
     onNavigateBack: () -> Unit,
     onExitEditor: () -> Unit
 ) {
-    var mode by rememberSaveable { mutableStateOf(initialMode) }
+    var mode by rememberSaveable { mutableStateOf(EditorMode.fromRoute(initialMode)) }
     var focusedPageId by rememberSaveable { mutableStateOf(pageId) }
     var currentButtonId by rememberSaveable { mutableStateOf(initialButtonId) }
     var triggerSplit by rememberSaveable { mutableStateOf(initialTriggerSplit) }
@@ -37,23 +41,31 @@ fun PageWorkbenchScreen(
     val modeSwitcher = @Composable {
         SingleChoiceSegmentedButtonRow {
             SegmentedButton(
-                selected = mode == "raster",
-                onClick = { mode = "raster" },
-                shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2)
+                selected = mode == EditorMode.RASTER,
+                onClick = { mode = EditorMode.RASTER },
+                shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2),
+                icon = {}
             ) {
-                Text("Raster")
+                Icon(
+                    imageVector = GhostTalkIcons.GridView,
+                    contentDescription = "Raster"
+                )
             }
             SegmentedButton(
-                selected = mode == "struktur",
-                onClick = { mode = "struktur" },
-                shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2)
+                selected = mode == EditorMode.STRUKTUR,
+                onClick = { mode = EditorMode.STRUKTUR },
+                shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2),
+                icon = {}
             ) {
-                Text("Struktur")
+                Icon(
+                    imageVector = GhostTalkIcons.Sitemap,
+                    contentDescription = "Struktur"
+                )
             }
         }
     }
 
-    if (mode == "raster") {
+    if (mode == EditorMode.RASTER) {
         PageEditorScreen(
             pageId = focusedPageId,
             initialButtonId = currentButtonId,
@@ -69,7 +81,7 @@ fun PageWorkbenchScreen(
             onOpenStructureEditor = { targetPageId, isSplit ->
                 focusedPageId = targetPageId
                 triggerSplit = isSplit
-                mode = "struktur"
+                mode = EditorMode.STRUKTUR
             },
             modeSwitcher = modeSwitcher
         )
@@ -82,7 +94,7 @@ fun PageWorkbenchScreen(
             onEditPageInGrid = { targetPageId ->
                 focusedPageId = targetPageId
                 currentButtonId = null
-                mode = "raster"
+                mode = EditorMode.RASTER
             },
             onNavigateBack = onNavigateBack,
             modeSwitcher = modeSwitcher

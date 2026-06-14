@@ -46,16 +46,17 @@ Parallel wird eine **neue Navigationsseite / Informationsarchitektur** geplant. 
 | B5 | Übergänge/Terminologie entschlacken + Undo-Konsistenz | klein | ✅ umgesetzt+reviewt |
 | C1 | Assistent-Promotion in die EditorTopBar (sofort) | klein | ✅ umgesetzt+reviewt (Dedup/Dichte → D3) |
 | C2 | Vorschlags-Einstieg aus der Statistik | mittel | ✅ umgesetzt+reviewt (Konsum-Guard → D4) |
-| C3 | Inhalte=Seitenliste direkt + ruhigere Tokens (gekoppelt an Nav-Redesign) | mittel | offen |
+| C3 | Inhalte=Seitenliste direkt + ruhigere Tokens (gekoppelt an Nav-Redesign) | mittel | ✅ umgesetzt+reviewt (committet `efb495c5`; Doppel-TopBar → D8) |
 _(Teil D strikt in Reihenfolge D1 → D7 abarbeiten — Nummern = Ausführungsreihenfolge.)_
 
-| D1 | `EditorMode`-Enum statt Magic-Strings „raster"/„struktur" (Fundament für D3) | klein | offen |
-| D2 | `EditorTopBar` entkoppeln (testTag-Param + String) — Header-Vorarbeit | klein | offen |
-| D3 | EditorTopBar verdichten: Titel-Label+Dialog, Icon-Modus-Umschalter, adaptive Actions (Redo→⋮), Assistent-Dedup | mittel | offen |
+| D1 | `EditorMode`-Enum statt Magic-Strings „raster"/„struktur" (Fundament für D3) | klein | ✅ umgesetzt+reviewt (uncommitted; Mini-Nit `initialMode`-Default-Literal) |
+| D2 | `EditorTopBar` entkoppeln (testTag-Param + String) — Header-Vorarbeit | klein | ✅ umgesetzt+reviewt (uncommitted) |
+| D3 | EditorTopBar verdichten: Titel-Label+Dialog, Icon-Modus-Umschalter, adaptive Actions (Redo→⋮), Assistent-Dedup | mittel | ✅ umgesetzt+reviewt (2. Anlauf vollständig; uncommitted) |
 | D4 | `openAssistant`-Intent einmalig konsumieren (kein Re-Open bei Modus-Round-Trip) | klein | offen |
 | D5 | `onExitEditor` robust (page_list-Fallback) | klein | offen |
 | D6 | Import-Hygiene in Teil-B-Dateien (nach D3, da Header-Umbau churnt) | trivial | offen |
 | D7 | Rest-Kleinigkeiten (imePadding, B4-Phone, i18n-Verweis) | trivial | offen |
+| D8 | Shell-Header bereinigen: Panes ohne eigenes Scaffold (Doppel-TopBar weg), `currentTab` rememberSaveable, Legacy-Tag→`nav_item_speak`, tote `page_list`-Route | mittel | offen |
 
 ---
 
@@ -435,8 +436,18 @@ Fully-qualified Inline-Referenzen durch Imports ersetzen: `PageEditorScreen` (u.
 - **B4 Phone-Raster:** kein Inline-Baum im Raster-Modus am Telefon — optional Sheet-Zugang wie im Struktur-Modus ergänzen **oder** bewusst lassen (Baum via Moduswechsel).
 - **i18n der neuen Teil-B/C-Strings** („Raster"/„Struktur", „Editor beenden", „Mehr Optionen", Assistent-Label, Snackbar „Magische Bereinigung…") → laufen über `docs/i18n_backlog_plan.md`, **nicht** hier doppelt tracken (nur Verweis).
 
+### AP D8 — Shell-Header bereinigen (mittel, aus C3-Review)
+Aus dem C3-Review (`efb495c5`): Die Shell-Panes bringen ihr eigenes Chrome mit → doppelte/dreifache App-Bars und kleinere Folgepunkte.
+- **(a) Doppel-TopBar weg (Kern):** `PageListScreen`, `AnalyticsDashboardScreen`, `SettingsScreen` rendern in der Shell ihr eigenes `GhostTalkScaffold` (TopAppBar), obwohl `BookShellScreen` schon eine TopAppBar (Buch-Switcher) hat. Den **Inhalt** dieser Screens als Scaffold-lose Composable-Funktion herauslösen (`…Content(...)`) und in der Pane einbetten; die Standalone-Variante (mit Scaffold) nur noch außerhalb der Shell nutzen. Settings: die verschachtelten Scaffolds (inkl. bottomBar-Insets B6) dabei sauber halten.
+- **(b) `BookShellScreen.currentTab`** von `remember` auf `rememberSaveable` (Tab überlebt Rotation/Prozess-Tod).
+- **(c) Legacy-Tag:** `testTag("start_card_user_mode")` am „Sprechen"-Nav-Item → `nav_item_speak` umbenennen und `NavigationIntegrationTest` entsprechend anpassen.
+- **(d) Tote Route:** `composable("page_list")` entfernen (nichts navigiert mehr dorthin) und `onExitEditor` auf reines `safePopBackStack()` vereinfachen (deckt sich mit D5 — zusammen erledigen). Security-Check-Eintrag `route == "page_list"` mit aufräumen.
+- optional: Pane-State über Tab-Wechsel via `rememberSaveableStateHolder` erhalten.
+- **Fertig wenn:** in der Shell genau **eine** TopAppBar; Tab überlebt Rotation; keine tote `page_list`-Route; Tags/Tests grün; Build grün; visuell Hoch-/Querformat geprüft.
+
 ### Review-Schwerpunkte Teil D (Claude)
 - [ ] D1: kein Magic-String mehr; Route-Mapping an genau einer Stelle; kein Verhaltensbruch beim Moduswechsel.
+- [ ] D8: in der Shell nur eine TopAppBar (kein Doppel-Header); Panes ohne eigenes Scaffold; Tab rememberSaveable; keine tote page_list-Route.
 - [ ] D3: Modus-Umschalter nie eigene Zeile; Portrait-Header kein Überlauf; Umbenennen-Dialog mit Validierung; `page_editor_name_field`-Tag im Dialog + Test angepasst; Modus-Segmente mit `contentDescription`.
 - [ ] Sonst reiner Feinschliff — keine ungewollte Semantikänderung, bestehende `testTag`s/Tests grün (D3 ist die bewusste Ausnahme: Umbenennen via Dialog).
 
@@ -508,3 +519,44 @@ Fully-qualified Inline-Referenzen durch Imports ersetzen: `PageEditorScreen` (u.
 **Befund (klein, → Teil D):**
 - ⚠️ **`openAssistant` nicht einmalig konsumiert:** Flag bleibt am Back-Stack-Eintrag; Moduswechsel Raster→Struktur→Raster komponiert `PageEditorScreen` neu und **öffnet den Assistenten erneut**. Guard auf `PageWorkbenchScreen`-Ebene (Flag nach erstem Öffnen löschen). → **Teil D / AP D4.**
 - trivial: positionaler `Boolean` in `onEditPage` (Lesbarkeit); Magic-String `"raster"` → D1.
+
+### Review Teil C — AP C3 (committet `efb495c5`), Claude, 2026-06-14
+
+**Achtung Scope:** Der „C3"-Commit `efb495c5` enthält faktisch das **gesamte Nav-Redesign** (AP1 Dependency `material3-adaptive-navigation-suite`, AP2 `BookShellScreen`, AP3 Buch-Switcher, AP4 PIN-Exit-Sperre im Nutzermodus, AP5 `StartScreen`/`content_management`/`analytics_dashboard` entfernt) **plus** C3 (Inhalte=Seitenliste) **plus** `EditorMode`-Enum (= Teil D / D1). Ein sehr großer Commit — Build + `testDebugUnitTest` grün, `NavigationIntegrationTest` angepasst (nicht ausgehöhlt).
+
+**Korrekt:**
+- ✅ AP4 PIN-Exit: `main` ruft beim Eintritt `securityManager.lock()` (wenn `isPinSet()`), Zurück (BackHandler + Top-Bar) über `SecurityEntryDialog` gated, erst bei Erfolg `safePopBackStack()`. Nutzt vorhandenes `isPinSet()` (kein neuer Core-Code).
+- ✅ AP3 Buch-Switcher (Dropdown: Bücher + „Zu Büchern" + globale Einstellungen). ✅ Nutzermodus-Isolation (eigene Route, kein Shell-Chrome). ✅ `EditorMode.RASTER.route` in Routen (D1 erledigt). ✅ `onExitEditor` mit Fallback (`if(!popped) safePopBackStack()`).
+
+**🐛 Befund 1 (mittel, → Teil D / AP D8): Doppelte TopAppBar in der Shell.** Die Panes (`PageListScreen`, `AnalyticsDashboardScreen`, `SettingsScreen`) rendern **ihr eigenes `GhostTalkScaffold`** (TopAppBar), obwohl `BookShellScreen` bereits eine TopAppBar (Buch-Switcher) hat → zwei gestapelte App-Bars (Settings: dreifach verschachtelte Scaffolds). Verschwendet vertikalen Platz, widerspricht dem „ruhiger"-Ziel. Nav-Plan AP2 wollte genau das vermeiden (Inhalt **ohne** eigenes Scaffold einbetten).
+
+**Befunde (klein):**
+- `BookShellScreen.currentTab` ist `remember` statt `rememberSaveable` → Tab-Reset bei Rotation/Prozess-Tod. → D8.
+- Tote Route `composable("page_list")` (nichts navigiert mehr dorthin) + vestigialer `popBackStack("page_list")`-Zielpunkt → entfernen, `onExitEditor` auf `safePopBackStack()` vereinfachen. → D5.
+- Legacy-`testTag("start_card_user_mode")` klebt auf dem neuen „Sprechen"-Nav-Item (irreführend) → auf `nav_item_speak` umbenennen + Test anpassen. → D8.
+- Panes werden beim Tab-Wechsel neu komponiert (kein State-Erhalt) — optional `rememberSaveableStateHolder`. → D8 (optional).
+
+**Manuell offen (headless):** adaptive Bar↔Rail (Hoch/Quer/Tablet), PIN-Exit-Flow auf Gerät, Doppel-Bar visuell.
+
+### Review Teil D — D1–D3, Claude, 2026-06-14 — uncommitteter Working Tree
+
+Build + `testDebugUnitTest` grün.
+- **D1 ✅** `EditorMode { RASTER, STRUKTUR }` (+`fromRoute`/`route`) neu in `core-ui`, verdrahtet in `GhostTalkNavHost` + `PageWorkbenchScreen`. Keine rohen Mode-Magic-Strings mehr außer dem Default-Literal `initialMode: String = "raster"` (PageWorkbenchScreen:24) — Mini-Nit, via `fromRoute` konvertiert.
+- **D2 ✅** `EditorTopBar`: `exitTestTag`-Parameter (Default `page_editor_exit_button` → Tests grün) + `exitContentDescription` via `R.string.editor_exit`. Leaky-Hardcodes weg.
+
+**🚧 D3 ist NICHT umgesetzt — es existiert nur ungenutztes Gerüst (Build grün, weil nichts integriert wurde):**
+- `app/.../ui/components/EditablePageTitle.kt` (vollständige Tap→Rename-Dialog-Komponente) — **0× verwendet**; beide Editoren nutzen weiter `ValidatedTextField` als Titel (PageEditorScreen:127, StructureEditorScreen:299). → D3(a) Titel-Label **offen**.
+- `GhostTalkIcons.Sitemap` neu — **0× verwendet**; der Modus-Umschalter in `PageWorkbenchScreen` zeigt weiter `Text("Raster")`/`Text("Struktur")` (Text-Pill). → D3(b) Icon-Umschalter **offen**.
+- `PageEditorScreen`/`StructureEditorScreen` **unverändert** → D3(c) adaptive Actions (Redo→⋮) und D3(d) Assistent-Dedup **offen**.
+
+**Empfehlung:** D3 vor dem Commit **fertigstellen** (sonst wandert totes `EditablePageTitle` + ungenutztes Sitemap-Icon in die History): EditablePageTitle in beiden Editoren als `titleContent` verdrahten (ersetzt ValidatedTextField), Modus-Umschalter auf Icon-Segmented (`layout-grid`/`Sitemap`) umstellen, adaptive Action-Verlagerung + geteiltes Assistent-Composable in den Editoren umsetzen. D3 bleibt **offen**.
+
+### Review Teil D — D3 Nachreview (2. Anlauf), Claude, 2026-06-14 — uncommitted
+
+**D3 jetzt vollständig & sauber umgesetzt** (ersetzt den vorherigen „nur totes Gerüst"-Befund). Build + `testDebugUnitTest` grün.
+- **(a) ✅** `EditablePageTitle` als `titleContent` in **beiden** Editoren (PageEditorScreen:130, StructureEditorScreen:302); Tap → `GhostTalkDialog` mit `ValidatedTextField` (Validierung wiederverwendet); `onRename` → `updateGridSettings(name=…)`. `PageManagementIntegrationTest` korrekt umgestellt (Row-Tag `editable_page_title_row` klicken → Feld-Tag `page_editor_name_field` im Dialog `performTextReplacement` → Speichern).
+- **(b) ✅** Modus-Umschalter Icon-Segmented (`GhostTalkIcons.GridView`/`Sitemap`), Text-Pill weg.
+- **(c) ✅** adaptive Actions: `isNarrow = screenWidthDp < 600` → Redo inline (`!isNarrow`) bzw. im ⋮ (`isNarrow`); Assistent `compact = isNarrow`.
+- **(d) ✅** `EditorAssistantButton` geteiltes Composable (`compact`-Param = icon-only), in beiden Editoren; testTag `page_editor_split_wizard_trigger_menu` erhalten.
+
+**Kleinkram (→ D6/D7, kein Blocker):** `ValidatedTextField` jetzt toter Import in beiden Editoren (D6); `EditorAssistantButton.description`/Label hartcodiert dt. (i18n/D7); fully-qualified `LocalConfiguration`-Inline (D6); StructureEditor-Header zeigt jetzt den Seitennamen statt „Struktur-Editor" (bewusst, Kohäsion).

@@ -30,6 +30,7 @@ import com.andreas_kratzer.ghosttalk.ui.books.BookListScreen
 import com.andreas_kratzer.ghosttalk.ui.books.BookViewModel
 import com.andreas_kratzer.ghosttalk.ui.pages.AnalyticsDashboardScreen
 import com.andreas_kratzer.ghosttalk.ui.pages.PageListScreen
+import com.andreas_kratzer.ghosttalk.core.ui.components.EditorMode
 import com.andreas_kratzer.ghosttalk.ui.pages.PageScreen
 import com.andreas_kratzer.ghosttalk.ui.pages.PageViewModel
 import com.andreas_kratzer.ghosttalk.ui.pages.PageWorkbenchScreen
@@ -148,10 +149,10 @@ fun GhostTalkNavHost(
             runOnMainThread {
                 when (event) {
                     is SettingsViewModel.SettingsNavigationEvent.EditButton -> {
-                        navController.navigate("editor/${event.pageId}?mode=raster&buttonId=${event.buttonId}")
+                        navController.navigate("editor/${event.pageId}?mode=${EditorMode.RASTER.route}&buttonId=${event.buttonId}")
                     }
                     is SettingsViewModel.SettingsNavigationEvent.JumpToPage -> {
-                        navController.navigate("editor/${event.pageId}?mode=raster")
+                        navController.navigate("editor/${event.pageId}?mode=${EditorMode.RASTER.route}")
                     }
                     is SettingsViewModel.SettingsNavigationEvent.StartSetup -> {
                         settingsRepository.isSetupCompleted = false
@@ -248,10 +249,10 @@ fun GhostTalkNavHost(
                 onNavigateToBooks = { navController.safePopBackStack() },
                 onNavigateToGlobalSettings = { navigateWithSecurity("settings?isGlobal=true") },
                 onEditPage = { pageId ->
-                    navController.safeNavigate("editor/$pageId?mode=raster")
+                    navController.safeNavigate("editor/$pageId?mode=${EditorMode.RASTER.route}")
                 },
                 onEditPageWithAssistant = { pageId, openAssistant ->
-                    navController.safeNavigate("editor/$pageId?mode=raster&openAssistant=$openAssistant")
+                    navController.safeNavigate("editor/$pageId?mode=${EditorMode.RASTER.route}&openAssistant=$openAssistant")
                 },
                 onEditTemplate = { templateId ->
                     navController.safeNavigate("template_editor/$templateId")
@@ -262,7 +263,7 @@ fun GhostTalkNavHost(
                         val finalPage = resolveStartPage(bookId, settingsRepository, pageRepository)
                         if (finalPage != null) {
                             runOnMainThread {
-                                navigateWithSecurity("editor/${finalPage.id}?mode=struktur")
+                                navigateWithSecurity("editor/${finalPage.id}?mode=${EditorMode.STRUKTUR.route}")
                             }
                         }
                     }
@@ -270,7 +271,7 @@ fun GhostTalkNavHost(
                 onNavigateToTemplates = { navController.safeNavigate("templates") },
                 onNavigateToStaticRow = {
                     val bookId = pageViewModel.activeBookId.value ?: "book-default"
-                    navController.safeNavigate("editor/static_row_$bookId?mode=raster")
+                    navController.safeNavigate("editor/static_row_$bookId?mode=${EditorMode.RASTER.route}")
                 }
             )
         }
@@ -365,7 +366,7 @@ fun GhostTalkNavHost(
                 pageViewModel = pageViewModel,
                 onNavigateBack = { navController.safePopBackStack() },
                 onEditPage = { pageId: String ->
-                    navController.safeNavigate("editor/$pageId?mode=raster")
+                    navController.safeNavigate("editor/$pageId?mode=${EditorMode.RASTER.route}")
                 },
                 onEditTemplate = { templateId: String ->
                     navController.safeNavigate("template_editor/$templateId")
@@ -376,7 +377,7 @@ fun GhostTalkNavHost(
                         val finalPage = resolveStartPage(bookId, settingsRepository, pageRepository)
                         if (finalPage != null) {
                             runOnMainThread {
-                                navigateWithSecurity("editor/${finalPage.id}?mode=struktur")
+                                navigateWithSecurity("editor/${finalPage.id}?mode=${EditorMode.STRUKTUR.route}")
                             }
                         }
                     }
@@ -387,14 +388,14 @@ fun GhostTalkNavHost(
             "editor/{pageId}?mode={mode}&buttonId={buttonId}&triggerSplit={triggerSplit}&openAssistant={openAssistant}",
             arguments = listOf(
                 navArgument("pageId") { type = NavType.StringType },
-                navArgument("mode") { type = NavType.StringType; defaultValue = "raster" },
+                navArgument("mode") { type = NavType.StringType; defaultValue = EditorMode.RASTER.route },
                 navArgument("buttonId") { type = NavType.StringType; nullable = true; defaultValue = null },
                 navArgument("triggerSplit") { type = NavType.BoolType; defaultValue = false },
                 navArgument("openAssistant") { type = NavType.BoolType; defaultValue = false }
             )
         ) { backStackEntry ->
             val pageId = backStackEntry.arguments?.getString("pageId")
-            val mode = backStackEntry.arguments?.getString("mode") ?: "raster"
+            val mode = backStackEntry.arguments?.getString("mode") ?: EditorMode.RASTER.route
             val buttonId = backStackEntry.arguments?.getString("buttonId")
             val triggerSplit = backStackEntry.arguments?.getBoolean("triggerSplit") ?: false
             val openAssistant = backStackEntry.arguments?.getBoolean("openAssistant") ?: false

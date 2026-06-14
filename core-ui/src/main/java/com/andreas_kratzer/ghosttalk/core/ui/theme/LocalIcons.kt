@@ -1587,4 +1587,34 @@ object GhostTalkIcons {
                 close()
             }
         }
+
+    val Sitemap: ImageVector
+        get() = materialIcon(name = "Filled.AccountTree") {
+            materialPath {
+                moveTo(22f, 11f)
+                verticalLineTo(3f)
+                horizontalLineTo(15f)
+                verticalLineToRelative(3f)
+                horizontalLineTo(9f)
+                verticalLineTo(3f)
+                horizontalLineTo(2f)
+                verticalLineToRelative(8f)
+                horizontalLineToRelative(7f)
+                verticalLineTo(8f)
+                horizontalLineToRelative(2f)
+                verticalLineToRelative(10f)
+                horizontalLineToRelative(4f)
+                verticalLineToRelative(3f)
+                horizontalLineToRelative(7f)
+                verticalLineToRelative(-8f)
+                horizontalLineToRelative(-7f)
+                verticalLineToRelative(3f)
+                horizontalLineToRelative(-2f)
+                verticalLineTo(8f)
+                horizontalLineToRelative(2f)
+                verticalLineToRelative(3f)
+                horizontalLineToRelative(7f)
+                close()
+            }
+        }
 }

@@ -28,8 +28,11 @@ fun EditorTopBar(
     onNavigateBack: (() -> Unit)? = null,
     modeSwitcher: (@Composable () -> Unit)? = null,
     actions: @Composable RowScope.() -> Unit = {},
-    onExitEditor: (() -> Unit)? = null
+    onExitEditor: (() -> Unit)? = null,
+    exitTestTag: String = "page_editor_exit_button",
+    exitContentDescription: String? = null
 ) {
+    val resolvedExitContentDescription = exitContentDescription ?: stringResource(R.string.editor_exit)
     TopAppBar(
         title = {
             Row(
@@ -57,11 +60,11 @@ fun EditorTopBar(
             if (onExitEditor != null) {
                 IconButton(
                     onClick = onExitEditor,
-                    modifier = Modifier.testTag("page_editor_exit_button")
+                    modifier = Modifier.testTag(exitTestTag)
                 ) {
                     Icon(
                         imageVector = Icons.Default.Close,
-                        contentDescription = "Editor beenden"
+                        contentDescription = resolvedExitContentDescription
                     )
                 }
             }

@@ -76,12 +76,12 @@ class PageManagementIntegrationTest {
         val createText = composeTestRule.activity.getString(CoreR.string.action_create)
         composeTestRule.onNodeWithText(createText, substring = false).performClick()
 
-        // 4. Verify we are in the Editor (page_editor_name_field should exist)
+        // 4. Verify we are in the Editor (editable_page_title_row should exist and contain the title)
         composeTestRule.waitUntil(10000) {
-            composeTestRule.onAllNodesWithTag("page_editor_name_field")
+            composeTestRule.onAllNodesWithTag("editable_page_title_row")
                 .fetchSemanticsNodes().isNotEmpty()
         }
-        composeTestRule.onNodeWithTag("page_editor_name_field").assertTextContains("Testseite")
+        composeTestRule.onNodeWithTag("editable_page_title_row").assertTextContains("Testseite")
     }
 
     @Test
@@ -95,8 +95,13 @@ class PageManagementIntegrationTest {
         }
         composeTestRule.onNodeWithText("Hauptseite", substring = true).performClick()
 
-        // 2. Change name in editor
+        // 2. Change name in editor via rename dialog
+        composeTestRule.onNodeWithTag("editable_page_title_row").performClick()
         composeTestRule.onNodeWithTag("page_editor_name_field").performTextReplacement("Ueberschriebene Seite")
+        
+        // Confirm rename
+        val saveText = composeTestRule.activity.getString(CoreR.string.action_save)
+        composeTestRule.onNodeWithText(saveText).performClick()
 
         // 3. Go back
         val backDesc = composeTestRule.activity.getString(CoreR.string.back_button_content_description)

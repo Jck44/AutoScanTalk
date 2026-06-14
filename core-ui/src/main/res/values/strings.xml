@@ -32,4 +32,5 @@
     <string name="dialog_back">Zurück</string>
     <string name="common_back">Zurück</string>
     <string name="structure_editor_title">Struktur-Editor</string>
+    <string name="editor_exit">Editor beenden</string>
 </resources>

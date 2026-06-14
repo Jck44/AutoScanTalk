@@ -18,7 +18,7 @@
     <string name="book_favorite_description">Favorit festlegen</string>
     <string name="book_dialog_new_title">Neues Buch erstellen</string>
     <string name="book_dialog_rename_title">Buch umbenennen</string>
-
+    <string name="page_dialog_rename_title">Seite umbenennen</string>
     <string name="book_name_label">Name des Buches</string>
 
     
