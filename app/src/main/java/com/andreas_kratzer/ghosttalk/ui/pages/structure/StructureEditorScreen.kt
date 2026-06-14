@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -320,6 +321,31 @@ fun StructureEditorScreen(
                     val historyState by gridEditorViewModel.historyState.collectAsState()
                     val isNarrow = LocalConfiguration.current.screenWidthDp < 600
 
+                    TextButton(
+                        onClick = {
+                            val accepted = pageSplitViewModel.hasAcceptedPageSplitOptIn
+                            if (accepted) {
+                                pageSplitViewModel.generatePageSplitProposal(focusedPageId)
+                            } else {
+                                showOptInDialog.value = true
+                            }
+                        },
+                        modifier = Modifier.testTag("structure_editor_split_wizard_trigger_menu")
+                    ) {
+                        Icon(
+                            imageVector = GhostTalkIcons.AutoAwesome,
+                            contentDescription = "Layout- & Struktur-Assistent",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = "Assistent",
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+
                     IconButton(
                         onClick = {
                             gridEditorViewModel.undo { message ->
@@ -455,26 +481,7 @@ fun StructureEditorScreen(
                                 )
                             }
 
-                            DropdownMenuItem(
-                                text = { Text("Layout- & Struktur-Assistent") },
-                                onClick = {
-                                    showOverflowMenu = false
-                                    val accepted = pageSplitViewModel.hasAcceptedPageSplitOptIn
-                                    if (accepted) {
-                                        pageSplitViewModel.generatePageSplitProposal(focusedPageId)
-                                    } else {
-                                        showOptInDialog.value = true
-                                    }
-                                },
-                                leadingIcon = {
-                                    Icon(
-                                        imageVector = GhostTalkIcons.AutoAwesome,
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                },
-                                modifier = Modifier.testTag("structure_editor_split_wizard_trigger_menu")
-                            )
+
                         }
                     }
                 }

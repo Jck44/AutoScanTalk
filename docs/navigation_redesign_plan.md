@@ -164,6 +164,7 @@ fun BookShellScreen(
 
 Vorgehen:
 - Die **Inhalte** der bisherigen `ContentManagementScreen`, `AnalyticsDashboardScreen` und `SettingsScreen(isGlobal=false)` als Panes wiederverwenden. Bevorzugt deren Composables so refaktorieren, dass der **Inhalt** (ohne eigenes `Scaffold`/`TopAppBar`) als eigene Funktion aufrufbar ist, und ihn im Shell-Pane einbetten. Die Tiefen-Navigation (`editor/{pageId}?mode=` etc.) läuft über die durchgereichten Callbacks weiter auf dem **äußeren** NavHost.
+- **Inhalte-Pane = direkt die Seitenliste** (kein `content_management`-Zwischenhub) — spart den „Seite verwalten"-Schritt. Vorlagen / Statische Zeile als **sekundärer** Zugang (Segmented Control / sekundäre Aktion). Dazu **ruhigere Tokens** (Akzent sparsam, dezenter Buch-Switcher, Weißraum). Anforderung + Begründung: Consistency-Plan **Teil C / AP C3** (Mock-up `adaptive_nav_v2_calm_with_assistant`). Diese Flachung ist jetzt **Standard**, nicht optional.
 - **Neue stabile testTags:** `nav_item_speak`, `nav_item_content`, `nav_item_stats`, `nav_item_settings`, `book_shell`. Die alten `start_card_*` / `content_manage_*` entfallen.
 - Im NavHost: Route **`start` rendert jetzt `BookShellScreen`** statt `StartScreen`. Die Callbacks (onLaunchUserMode = bestehende User-Mode-Lade-Logik aus `onNavigateToUserMode`; onEditPage/onEditTemplate/onEditStaticRow/onOpenVocalTraining = bestehende `safeNavigate(...)`-Ziele) 1:1 aus den heutigen `composable("start"|"content_management"|"analytics_dashboard"|"settings")`-Blöcken übernehmen.
 - `BackHandler` der Shell: zurück zu `book_list` (wie heute `StartScreen`).
@@ -233,7 +234,7 @@ Sichtprüfung (Light + Dark, Hoch- + Querformat, Phone + Tablet):
 
 ## 5. Bewusst nicht in diesem Plan (mögliche Folgepakete)
 
-- **Inhalte-Pane flacher:** „Inhalte" direkt als Seitenliste mit Segmented-Control (Seiten/Vorlagen) statt Zwischen-Hub — spart einen weiteren Tap, aber höheres Risiko. Erst nach stabilem v1.
+- ~~**Inhalte-Pane flacher**~~ → **hochgestuft zu Standard** (siehe AP 2 + Consistency-Plan Teil C / AP C3).
 - **Konfigurierbarer Exit-Schutz** (keine/Bestätigung/PIN) als Einstellung — berührt `core-data`.
 - **Globale Einstellungen** als eigenes Ziel statt Umschalter-Eintrag.
 

@@ -44,6 +44,15 @@ Parallel wird eine **neue Navigationsseite / Informationsarchitektur** geplant. 
 | B3 | Modus-Container + Route-Konsolidierung (`editor/{pageId}?mode=`) | **hoch** | ✅ umgesetzt+reviewt (Nav-Plan nachgezogen) |
 | B4 | Baum-Navigator als geteiltes Element in beiden Modi | mittel | ✅ umgesetzt+reviewt (Phone-Raster ohne Inline-Baum, s. Notiz) |
 | B5 | Übergänge/Terminologie entschlacken + Undo-Konsistenz | klein | ✅ umgesetzt+reviewt |
+| C1 | Assistent-Promotion in die EditorTopBar (sofort) | klein | ✅ umgesetzt+reviewt (Dedup/Dichte → D6) |
+| C2 | Vorschlags-Einstieg aus der Statistik | mittel | offen |
+| C3 | Inhalte=Seitenliste direkt + ruhigere Tokens (gekoppelt an Nav-Redesign) | mittel | offen |
+| D1 | `EditorMode`-Enum statt Magic-Strings „raster"/„struktur" | klein | offen |
+| D2 | Import-Hygiene in Teil-B-Dateien | trivial | offen |
+| D3 | `EditorTopBar` entkoppeln (testTag-Param + String) | klein | offen |
+| D4 | `onExitEditor` robust (page_list-Fallback) | klein | offen |
+| D5 | Rest-Kleinigkeiten (imePadding, B4-Phone, i18n-Verweis) | trivial | offen |
+| D6 | Assistent-Button als geteiltes Composable + Top-Bar-Dichte (icon-only auf schmal) | klein | offen |
 
 ---
 
@@ -328,6 +337,80 @@ bisherigen Funktionen beider Editoren erreichbar; Tests grün; Build grün. **Vo
 
 ---
 
+## Teil C — Editor-Assistent & verschlankte Inhalte (Stufe C)
+
+> **Anlass (Nutzung 2026-06-13):** Drei Wünsche aus dem Caregiver-Editing: (a) den „Seite verwalten"-Zwischenschritt einsparen, (b) den Layout-/Struktur-Assistenten **besser einbinden** (raus aus dem ⋮-Menü), (c) die adaptive Shell **ruhiger/aufgeräumter**. Visuelle Vorlage: Mock-up `adaptive_nav_v2_calm_with_assistant` (in der Session gezeigt).
+
+### C.0 Regeln für Teil C (erweitern Abschnitt 0)
+- **C1 ist sofort umsetzbar** (nur Editor, baut auf Teil B `EditorTopBar` auf).
+- **C2** berührt die `editor/...`-Route → konsistent mit Teil B/Nav-Plan halten.
+- **C3 ist an das Nav-Redesign gekoppelt** (braucht die Shell aus `navigation_redesign_plan.md` AP 2) → dort als Anforderung verankert; zusammen mit/nach Nav-AP 2 umsetzen.
+- `testTag`s erhalten/durchreichen; ein AP = ein Commit; nach jedem AP `assembleDebug` grün.
+
+### AP C1 — Assistent-Promotion in die EditorTopBar (klein, sofort)
+- Den „Layout- & Struktur-Assistent" aus dem `page_editor`-Overflow (`page_editor_split_wizard_trigger_menu`) in eine **sichtbare, beschriftete Aktion** in der `EditorTopBar` heben (Icon `AutoAwesome`/Funkeln + Label), in **beiden** Modi (Raster + Struktur) sichtbar.
+- Verhalten unverändert (öffnet `PageLayoutAssistantDialog`). Den Overflow-Eintrag entfernen; den bestehenden `testTag` an die neue Aktion **durchreichen** (`page_editor_split_wizard_trigger_menu` beibehalten) oder neuen `page_editor_assistant_action` ergänzen **und** betroffene Tests anpassen.
+- **Fertig wenn:** Assistent in Raster + Struktur prominent sichtbar/auslösbar; kein Overflow-Eintrag mehr; Tests grün; Build grün.
+
+### AP C2 — Vorschlags-Einstieg aus der Statistik (mittel)
+- Aus der Statistik-/Empfehlungs-Ansicht (`AnalyticsDashboardScreen` / `analytics/recommendations/LayoutOptimizationSection`) den Assistenten **kontextnah** für die jeweils empfohlene Seite starten — dort entstehen die Layout-Vorschläge ohnehin.
+- Umsetzung: in den Editor der Seite navigieren und den Assistenten direkt öffnen, z. B. neuer optionaler Query-Param `editor/{pageId}?mode=raster&openAssistant=true` (in `PageWorkbenchScreen`/`PageEditorScreen` auswerten) — **konsistent mit der Teil-B-Route halten**.
+- **Fertig wenn:** aus der Statistik heraus lässt sich der Assistent für eine empfohlene Seite öffnen; Build grün.
+
+### AP C3 — Inhalte verschlanken + ruhigere Shell-Tokens (gekoppelt an Nav-Redesign)
+- **„Inhalte"-Tab der neuen Shell landet direkt auf der Seitenliste** (kein `content_management`-Zwischenhub) → spart den „Seite verwalten"-Schritt; kombiniert mit dem Baum-Navigator (Teil B/B4) entfällt der Umweg für Seitenwechsel ganz. Vorlagen / Statische Zeile als **sekundärer** Zugang (z. B. Segmented Control oder sekundäre Aktion), nicht als eigener Hub.
+- **Ruhigere Tokens:** Akzentfarbe sparsam (nur aktives Nav-Ziel + Assistent), **dezenter Buch-Switcher** (Text + Chevron statt gefülltem Chip), mehr Weißraum, dünne Trenner. Als Gestaltungsleitlinie für die Shell.
+- **Abhängigkeit:** setzt die Shell aus `navigation_redesign_plan.md` AP 2 voraus → dort als Anforderung vermerkt; dieser AP wird **mit/nach** Nav-AP 2 umgesetzt.
+- **Fertig wenn:** „Inhalte" = Seitenliste (max. 1 Tap bis Editor); Shell folgt den ruhigen Tokens; Build grün.
+
+### Review-Schwerpunkte Teil C (Claude)
+- [ ] C1: Assistent in beiden Modi sichtbar; `testTag`-Durchreichung + Tests angepasst; Dialog-Verhalten unverändert.
+- [ ] C2: Route-Param sauber (kein Aufbrechen der Teil-B-Route); kein Doppel-Öffnen des Dialogs.
+- [ ] C3: Inhalte-Flachung ohne Funktionsverlust (Vorlagen/Statische Zeile weiter erreichbar); Tokens konsistent Light/Dark.
+
+---
+
+## Teil D — Feinschliff (Stufe D)
+
+> **Sammel-AP** für die OOP-/Tech-Debt-Befunde aus dem Teil-B-Nachreview (2026-06-13) **plus** verbliebene Kleinigkeiten aus früheren Phasen. **Reine Qualität/Robustheit, kein neues Verhalten.** Ein AP = ein Commit; `assembleDebug` + Tests nach jedem AP grün; `testTag`s erhalten.
+
+### AP D1 — `EditorMode` statt Magic-Strings (klein)
+`"raster"`/`"struktur"` sind aktuell rohe String-Literale in `GhostTalkNavHost` (Routenliterale `editor/...?mode=…`, `navArgument`-Default, `getString`-Fallback) und `PageWorkbenchScreen` (Vergleiche/Zuweisungen) — ≥ 10 Stellen, typo-anfällig (ein falsch geschriebenes „struktur" schaltet still in den Default).
+- `enum class EditorMode { RASTER, STRUKTUR }` mit `val route: String` + `companion fun fromRoute(s: String?): EditorMode` einführen. Das NavHost-Route-Arg bleibt `StringType`; Mapping enum↔String **an genau einer Stelle**. Alle Vergleiche/Zuweisungen über das Enum.
+- **Fertig wenn:** keine rohen `"raster"/"struktur"`-Literale mehr außer der Mapping-Stelle; Build + Tests grün.
+
+### AP D2 — Import-Hygiene in den Teil-B-Dateien (trivial)
+Fully-qualified Inline-Referenzen durch Imports ersetzen: `PageEditorScreen` (9×, u. a. `…BookNavigationGraph`, `…structure.StructureTreeNavigator`, `androidx.compose.foundation.layout.Row/Spacer/Card`), `GridButton` (`…ActionVisualTokens.getColors`), `PageWorkbenchScreen` (`…hiltViewModel`).
+- Rein kosmetisch, keine Verhaltensänderung.
+- **Fertig wenn:** keine `com.andreas_kratzer…`/`androidx…`-Vollpfade mehr inline in diesen Dateien; Build grün.
+
+### AP D3 — `EditorTopBar` entkoppeln (klein)
+Die generische core-ui-Komponente `EditorTopBar` hardcodet `testTag("page_editor_exit_button")` und `contentDescription = "Editor beenden"` → leaky Abstraktion + hartcodierter String.
+- Exit-`testTag` als Parameter (Default = `page_editor_exit_button`, damit bestehende Tests grün bleiben). `contentDescription` über String-Ressource (Konvention `docs/i18n_backlog_plan.md`) bzw. Parameter.
+- **Fertig wenn:** kein page_editor-spezifischer Tag mehr fix in core-ui; „Editor beenden" lokalisiert; Tests grün.
+
+### AP D4 — `onExitEditor` robust gegen fehlendes `page_list` (klein)
+`popBackStack("page_list", inclusive=false)` läuft ins Leere, wenn der Editor aus ContentManagement (Statische Zeile) oder Analytics betreten wurde (`page_list` nicht im Back-Stack) → „Editor beenden" tut nichts. Altlast, hier mit-fixen.
+- Fallback: wenn `page_list` nicht im Back-Stack ist, auf das nächste sinnvolle Ziel poppen (z. B. einfaches `popBackStack()` / bis zur Inhalte-Ebene). Idealerweise nach dem Nav-Redesign auf das Shell-/Inhalte-Ziel abstimmen.
+- **Fertig wenn:** „Editor beenden" führt aus **jedem** Einstieg zu einem sinnvollen Ziel; manuell geprüft.
+
+### AP D5 — Rest-Kleinigkeiten (trivial)
+- **AP5-Insets:** `.imePadding()` am Profil-bottomBar ist redundant (`safeDrawing` enthält `ime` bereits) → entfernen **oder** als bewusst belassen kommentieren.
+- **B4 Phone-Raster:** kein Inline-Baum im Raster-Modus am Telefon — optional Sheet-Zugang wie im Struktur-Modus ergänzen **oder** bewusst lassen (Baum via Moduswechsel).
+- **i18n der neuen Teil-B/C-Strings** („Raster"/„Struktur", „Editor beenden", „Mehr Optionen", Assistent-Label, Snackbar „Magische Bereinigung…") → laufen über `docs/i18n_backlog_plan.md`, **nicht** hier doppelt tracken (nur Verweis).
+
+### AP D6 — Assistent-Button vereinheitlichen + Top-Bar entdichten (klein, aus C1-Review)
+Aus dem C1-Review: Der Assistent-`TextButton` (Icon + „Assistent") ist in `PageEditorScreen` und `StructureEditorScreen` nahezu identisch dupliziert; die Action-Zeile ist dadurch dicht (1 beschrifteter Button + 6 Icons + Overflow + Modus-Umschalter in der Titelzeile).
+- Den Button als **ein geteiltes Composable** extrahieren (z. B. `EditorAssistantButton(onClick)` in `core-ui` oder `ui/pages`), in beiden Editoren verwenden — beseitigt Duplikat **und** die doppelte hartcodierte Beschriftung (eine String-Ressource).
+- **Top-Bar entdichten:** auf schmaler Breite (`isNarrow`/`screenWidthDp < 600`) den Assistenten **icon-only** zeigen (Label weg) — passt zum „ruhiger"-Ziel (C3). Touchziel ≥ 48 dp wahren.
+- **Fertig wenn:** ein Assistent-Composable für beide Editoren; auf Telefon kein Überlauf der Action-Zeile; Build + Tests grün.
+
+### Review-Schwerpunkte Teil D (Claude)
+- [ ] D1: kein Magic-String mehr; Route-Mapping an genau einer Stelle; kein Verhaltensbruch beim Moduswechsel.
+- [ ] Reiner Feinschliff — keine Semantikänderung, alle bestehenden `testTag`s/Tests grün.
+
+---
+
 ## 5. Review-Notizen (Claude — wird während des Reviews gefüllt)
 
 ### Review Teil A (AP 1–6), Claude, 2026-06-13 — gegen uncommitteten Working Tree
@@ -366,4 +449,21 @@ bisherigen Funktionen beider Editoren erreichbar; Tests grün; Build grün. **Vo
 **Befunde (keine Blocker):**
 - **Koordination B3↔Nav-Plan (erledigt):** `navigation_redesign_plan.md` referenzierte noch `page_editor`/`structure_editor`. Da B3 zuerst kam, **Nav-Plan auf `editor/{pageId}?mode=` nachgezogen** (Ist-Diagramm + AP 2/AP 5). Kein Code-Konflikt (Nav-Redesign noch nicht implementiert).
 - **Neue hartcodierte UI-Strings durch Teil B** → ins i18n-Sammelticket aufgenommen: `PageWorkbenchScreen` „Raster"/„Struktur", `EditorTopBar` „Editor beenden".
-- **Pre-existing/minor:** `onExitEditor` macht `popBackStack("page_list")` — wenn der Editor aus ContentManagement (Statische Zeile) o. Analytics betreten wird, ist `page_list` evtl. nicht im Back-Stack (Altlast, nicht durch B3 verursacht). Start-Seiten-Auflösung für den Struktur-Einstieg 3× dupliziert im NavHost (DRY, trivial).
+- **Pre-existing/minor:** `onExitEditor` macht `popBackStack("page_list")` — wenn der Editor aus ContentManagement (Statische Zeile) o. Analytics betreten wird, ist `page_list` evtl. nicht im Back-Stack (Altlast, nicht durch B3 verursacht). → Teil D / AP D4.
+
+**OOP-/Tech-Debt-Nachreview Teil B (Claude, 2026-06-13):** Überwiegend **sauber**, kaum neue Schuld.
+- ✅ DRY: Start-Seiten-Auflösung als `private suspend fun resolveStartPage(...)` extrahiert (4 Aufrufer) — **nicht** dupliziert (frühere Notiz korrigiert).
+- ✅ `ActionVisualTokens` zentralisiert (erschöpfendes `when`, kein `else`; wiederverwendet vorhandene Color.kt-Tokens; `GridButton`/`DraggableChip` delegieren; keine Farb-Duplikate).
+- ✅ `EditorTopBar`/`PageWorkbenchScreen` saubere Extraktion/Wiederverwendung; geteilte `GridEditorViewModel` korrekt durchgereicht.
+- 🔧 **Debt (→ Teil D):** D1 Magic-Strings `"raster"/"struktur"` (kein Enum); D2 Import-Hygiene (fully-qualified Inline-Refs); D3 `EditorTopBar` hardcodet page_editor-Tag + dt. String (leaky); D4 `onExitEditor`-Altlast.
+
+### Review Teil C — AP C1 (Assistent-Promotion), Claude, 2026-06-13 — uncommitteter Working Tree
+
+**Gesamt: funktional sauber, abnahmefähig.** `assembleDebug` + `testDebugUnitTest` grün.
+- ✅ Assistent jetzt als sichtbarer `TextButton` (Icon + „Assistent") in **beiden** Editoren (`PageEditorScreen` = Raster, `StructureEditorScreen` = Struktur); Overflow-Einträge entfernt; **bestehende `testTag`s durchgereicht** (`page_editor_split_wizard_trigger_menu`, `structure_editor_split_wizard_trigger_menu`) → Tests bleiben grün.
+- ✅ Verhalten unverändert (Raster öffnet `PageLayoutAssistantDialog`; Struktur startet Opt-in/`generatePageSplitProposal`). Overflow-Menüs **nicht** leer (Analytics bzw. 3 Einträge bleiben). Imports sauber (kein fully-qualified).
+
+**Befunde (keine Blocker, → Teil D / Sichtprüfung):**
+- 🔧 **Duplikation:** Der Assistent-`TextButton`-Block (Icon+Spacer+Label) ist in beiden Editoren nahezu identisch (nur `onClick`) → als geteiltes Composable extrahieren. **→ Teil D / AP D6.**
+- ⚠️ **Top-Bar-Dichte:** Die Action-Zeile in `PageEditorScreen` hat jetzt 1 beschrifteten Button + 6 Icons + Overflow, dazu der Modus-Umschalter in der Titelzeile → auf Telefonen eng; widerspricht leicht dem „ruhiger"-Ziel (C3). Sichtprüfung schmale Breite; ggf. Assistent **icon-only auf schmal** (`isNarrow`-Flag in StructureEditorScreen existiert bereits). **→ Teil D / AP D6.**
+- hartcodierte „Assistent"/„Layout- & Struktur-Assistent" → i18n-Ticket (löst sich mit der Composable-Extraktion).

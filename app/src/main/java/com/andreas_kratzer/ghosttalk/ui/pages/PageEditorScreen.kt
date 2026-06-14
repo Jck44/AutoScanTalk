@@ -20,6 +20,9 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -144,6 +147,26 @@ fun PageEditorScreen(
                 actions = {
                     val isEditPreviewActive by pageViewModel.isEditPreviewActive.collectAsState()
                     val historyState by gridEditorViewModel.historyState.collectAsState()
+
+                    TextButton(
+                        onClick = {
+                            showLayoutAssistantDialog.value = true
+                        },
+                        modifier = Modifier.testTag("page_editor_split_wizard_trigger_menu")
+                    ) {
+                        Icon(
+                            imageVector = GhostTalkIcons.AutoAwesome,
+                            contentDescription = "Layout- & Struktur-Assistent",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = "Assistent",
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
 
                     IconButton(
                         onClick = {
@@ -314,21 +337,7 @@ fun PageEditorScreen(
                                 },
                                 modifier = Modifier.testTag("page_editor_analytics_toggle_menu")
                             )
-                            DropdownMenuItem(
-                                text = { Text("Layout- & Struktur-Assistent") },
-                                onClick = {
-                                    showOverflowMenu = false
-                                    showLayoutAssistantDialog.value = true
-                                },
-                                leadingIcon = {
-                                    Icon(
-                                        imageVector = GhostTalkIcons.AutoAwesome,
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                },
-                                modifier = Modifier.testTag("page_editor_split_wizard_trigger_menu")
-                            )
+
                         }
                     }
                 }
