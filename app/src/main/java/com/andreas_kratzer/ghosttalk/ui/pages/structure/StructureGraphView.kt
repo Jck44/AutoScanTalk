@@ -385,10 +385,17 @@ fun StructureGraphView(
                         val centerColWidth = with(density) { centerWidthDp.roundToPx() }
                         val outgoingColWidth = with(density) { outgoingColWidthDp.roundToPx() }
                         
-                        // Slight horizontal stagger between adjacent target rows so their
-                        // connecting lines/arrows fan out and stay distinguishable.
-                        val rowStaggerPx = if (outgoingPlaceables.size > 1) with(density) { 24.dp.roundToPx() } else 0
-                        layoutWidth = maxOf(incomingColWidth, centerColWidth, outgoingColWidth) + rowStaggerPx
+                        // Rooted-tree layout: a vertical trunk at the focused node's centre,
+                        // child nodes offset to the right with elbow connectors (uses the
+                        // horizontal space and avoids a bundle of overlapping vertical curves).
+                        val branchGapPx = with(density) { 36.dp.roundToPx() }
+                        val trunkX = centerColWidth / 2f
+                        val childLeftX = trunkX + branchGapPx
+                        layoutWidth = maxOf(
+                            centerColWidth,
+                            (childLeftX + incomingColWidth).toInt(),
+                            (childLeftX + outgoingColWidth).toInt()
+                        )
 
                         val incomingTotalHeight = if (incomingPlaceables.isEmpty()) 0 else {
                             incomingPlaceables.sumOf { it.height } + spacingPx * (incomingPlaceables.size - 1)
@@ -401,26 +408,23 @@ fun StructureGraphView(
                         val rowSpacingCount = (if (incomingPlaceables.isNotEmpty()) 1 else 0) + (if (outgoingPlaceables.isNotEmpty()) 1 else 0)
                         layoutHeight = incomingTotalHeight + centerTotalHeight + outgoingTotalHeight + rowSpacingCount * spacingPx
 
-                        val centerX = layoutWidth / 2f
-
                         // Compute points
                         var currentY = 0f
                         if (incomingPlaceables.isNotEmpty()) {
                             incomingPlaceables.forEach { p ->
                                 val cy = currentY + p.height / 2f
-                                incomingPoints.add(Pair(centerX, cy))
+                                incomingPoints.add(Pair(childLeftX + incomingColWidth / 2f, cy))
                                 currentY += p.height + spacingPx
                             }
                         }
 
-                        centerPoint = Pair(centerX, currentY + centerTotalHeight / 2f)
+                        centerPoint = Pair(trunkX, currentY + centerTotalHeight / 2f)
                         currentY += centerTotalHeight + spacingPx
 
                         if (outgoingPlaceables.isNotEmpty()) {
-                            outgoingPlaceables.forEachIndexed { idx, p ->
-                                val rowStagger = if (idx % 2 == 0) -rowStaggerPx / 2f else rowStaggerPx / 2f
+                            outgoingPlaceables.forEach { p ->
                                 val cy = currentY + p.height / 2f
-                                outgoingPoints.add(Pair(centerX + rowStagger, cy))
+                                outgoingPoints.add(Pair(childLeftX + outgoingColWidth / 2f, cy))
                                 currentY += p.height + spacingPx
                             }
                         }
@@ -453,10 +457,11 @@ fun StructureGraphView(
                                                         endX = pt.first - (outgoingColWidthDp / 2).toPx()
                                                         endY = pt.second
                                                     } else {
+                                                        // Horizontal stub of the elbow connector (unique per edge).
                                                         startX = centerPoint.first
-                                                        startY = centerPoint.second + centerPlaceable.height / 2f
-                                                        endX = pt.first
-                                                        endY = pt.second - outgoingPlaceables[flatIndex].height / 2f
+                                                        startY = pt.second
+                                                        endX = pt.first - (outgoingColWidthDp / 2).toPx()
+                                                        endY = pt.second
                                                     }
 
                                                     val dist = distanceToSegment(
@@ -505,17 +510,15 @@ fun StructureGraphView(
                                             endX, endY
                                         )
                                     } else {
-                                        val startX = pt.first
-                                        val startY = pt.second + incomingPlaceables[index].height / 2f
-                                        val endX = centerPoint.first
+                                        // Elbow: from the source's left edge across to the trunk, then down to the centre node.
+                                        val startX = pt.first - (incomingWidthDp / 2).toPx()
+                                        val startY = pt.second
+                                        val trunkX = centerPoint.first
                                         val endY = centerPoint.second - centerPlaceable.height / 2f
 
                                         path.moveTo(startX, startY)
-                                        path.cubicTo(
-                                            startX, startY + (endY - startY) * 0.6f,
-                                            endX, endY - (endY - startY) * 0.6f,
-                                            endX, endY
-                                        )
+                                        path.lineTo(trunkX, startY)
+                                        path.lineTo(trunkX, endY)
                                     }
 
                                     val stroke = if (isMoreNode) {
@@ -573,19 +576,18 @@ fun StructureGraphView(
                                                 endX, endY
                                             )
                                         } else {
+                                            // Elbow: trunk down from the centre node, then a short stub into the target's left edge.
                                             startX = centerPoint.first
                                             startY = centerPoint.second + centerPlaceable.height / 2f
-                                            endX = pt.first
-                                            endY = pt.second - outgoingPlaceables[flatIndex].height / 2f
+                                            endX = pt.first - (outgoingColWidthDp / 2).toPx()
+                                            endY = pt.second
 
-                                            c2x = endX - (endX - startX) * 0.4f
-                                            c2y = endY - (endY - startY) * 0.4f
+                                            // Control point left of the end so the arrowhead points horizontally into the node.
+                                            c2x = startX
+                                            c2y = endY
                                             path.moveTo(startX, startY)
-                                            path.cubicTo(
-                                                startX, startY + (endY - startY) * 0.6f,
-                                                c2x, c2y,
-                                                endX, endY
-                                            )
+                                            path.lineTo(startX, endY)
+                                            path.lineTo(endX, endY)
                                         }
 
                                         val stroke = if (isMoreNode) {
@@ -650,9 +652,9 @@ fun StructureGraphView(
                                     endY = pt.second
                                 } else {
                                     startX = centerPoint.first
-                                    startY = centerPoint.second + centerPlaceable.height / 2f
-                                    endX = pt.first
-                                    endY = pt.second - outgoingPlaceables[outgoingFlatIndex].height / 2f
+                                    startY = pt.second
+                                    endX = pt.first - with(density) { (outgoingColWidthDp / 2).toPx() }
+                                    endY = pt.second
                                 }
 
                                 val curveEndX = startX + (endX - startX) * 0.5f

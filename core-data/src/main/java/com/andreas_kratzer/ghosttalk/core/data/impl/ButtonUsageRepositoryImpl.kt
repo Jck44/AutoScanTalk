@@ -3,11 +3,13 @@ package com.andreas_kratzer.ghosttalk.core.data.impl
 import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
+import android.location.Location
 import android.net.ConnectivityManager
 import android.net.Network
 import android.net.NetworkCapabilities
 import android.net.NetworkRequest
 import android.net.wifi.WifiInfo
+import android.os.Looper
 import androidx.core.content.ContextCompat
 import androidx.room.withTransaction
 import com.andreas_kratzer.ghosttalk.core.data.ButtonUsageRepository
@@ -17,7 +19,11 @@ import com.andreas_kratzer.ghosttalk.core.database.ButtonUsageHistoryEntity
 import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.core.model.ButtonUsageStat
 import com.andreas_kratzer.ghosttalk.core.model.GroupedButtonUsageStat
+import com.google.android.gms.location.LocationCallback
+import com.google.android.gms.location.LocationRequest
+import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.Priority
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.StateFlow
@@ -25,7 +31,6 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.tasks.await
 import kotlinx.serialization.json.Json
 import javax.inject.Inject
 
@@ -52,6 +57,18 @@ class ButtonUsageRepositoryImpl @Inject constructor(
 
     @Volatile
     private var currentWifiSsid: String? = null
+
+    // Proactively cached location, updated every 5 minutes (passive — only when permission granted).
+    // Max age 30 min; older fixes are treated as unknown to avoid misleading location scoring.
+    @Volatile
+    private var cachedLocation: Location? = null
+    private val locationMaxAgeMs = 30 * 60 * 1000L
+
+    private val locationCallback = object : LocationCallback() {
+        override fun onLocationResult(result: LocationResult) {
+            cachedLocation = result.lastLocation
+        }
+    }
 
     init {
         try {
@@ -85,6 +102,26 @@ class ButtonUsageRepositoryImpl @Inject constructor(
             // Safe fallback
         }
 
+        // Register a passive location listener so cachedLocation stays current.
+        // Uses PRIORITY_LOW_POWER (network/cell) with 5 min interval — enough precision for context matching.
+        try {
+            val hasFine = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+            val hasCoarse = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
+            if (hasFine || hasCoarse) {
+                val locationRequest = LocationRequest.Builder(
+                    Priority.PRIORITY_LOW_POWER,
+                    5 * 60 * 1000L
+                ).setMinUpdateIntervalMillis(60 * 1000L).build()
+                fusedLocationClient.requestLocationUpdates(locationRequest, locationCallback, Looper.getMainLooper())
+                // Seed cache with last known location immediately
+                fusedLocationClient.lastLocation.addOnSuccessListener { loc ->
+                    if (loc != null) cachedLocation = loc
+                }
+            }
+        } catch (_: Exception) {
+            // Safe fallback — location stays null
+        }
+
         scope.launch {
             settingsRepository.lateClickThresholdFlow.collect { threshold ->
                 try {
@@ -92,6 +129,11 @@ class ButtonUsageRepositoryImpl @Inject constructor(
                 } catch (_: Exception) {}
             }
         }
+    }
+
+    private fun currentLocation(): Location? {
+        val loc = cachedLocation ?: return null
+        return if (System.currentTimeMillis() - loc.time <= locationMaxAgeMs) loc else null
     }
 
     override val buttonHistory: StateFlow<List<ButtonUsageRepository.ButtonUsageEvent>> = 
@@ -125,25 +167,13 @@ class ButtonUsageRepositoryImpl @Inject constructor(
         isHardwareTriggered: Boolean,
         scanCyclesBeforeClick: Int?,
         isAccidental: Boolean,
-        intendedButtonId: String?
+        intendedButtonId: String?,
+        timeSinceFocusChangeMs: Long?
     ) {
         val hasFine = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
         val hasCoarse = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
-        val lastLocation = if (hasFine || hasCoarse) {
-            try {
-                fusedLocationClient.lastLocation.await()
-            } catch (_: Exception) {
-                null
-            }
-        } else {
-            null
-        }
-
-        val wifiSsid = if (hasFine || hasCoarse) {
-            currentWifiSsid
-        } else {
-            null
-        }
+        val lastLocation = if (hasFine || hasCoarse) currentLocation() else null
+        val wifiSsid = if (hasFine || hasCoarse) currentWifiSsid else null
 
         appDatabase.withTransaction {
             val existing = dao.getStatForButton(bookId, buttonConfig.id)
@@ -186,7 +216,8 @@ class ButtonUsageRepositoryImpl @Inject constructor(
                 isHardwareTriggered = isHardwareTriggered,
                 scanCyclesBeforeClick = scanCyclesBeforeClick,
                 isAccidental = isAccidental,
-                intendedButtonId = intendedButtonId
+                intendedButtonId = intendedButtonId,
+                timeSinceFocusChangeMs = timeSinceFocusChangeMs
             )
             dao.insertHistoryEvent(event)
 
@@ -326,11 +357,7 @@ class ButtonUsageRepositoryImpl @Inject constructor(
         val sqliteDayOfWeek = if (nowDateTime.dayOfWeek.value == 7) 0 else nowDateTime.dayOfWeek.value
         val activeTimeBin = currentHour / 6 // 4 bins of 6 hours
 
-        val lastLocation = if (hasFine || hasCoarse) {
-            try {
-                fusedLocationClient.lastLocation.await()
-            } catch (_: Exception) { null }
-        } else null
+        val lastLocation = if (hasFine || hasCoarse) currentLocation() else null
 
         val activeLocKey = if (lastLocation != null) {
             val roundedLat = Math.round(lastLocation.latitude * 1000.0) / 1000.0
@@ -349,15 +376,14 @@ class ButtonUsageRepositoryImpl @Inject constructor(
             "$day:$bin"
         }
         val timeGroups = recentEvents.groupBy { getTimeBinKey(it.timestamp) }
-        // 3. Location grouping
-        val getLocKey = { lat: Double?, lng: Double? ->
-            if (lat != null && lng != null) {
-                val roundedLat = Math.round(lat * 1000.0) / 1000.0
-                val roundedLng = Math.round(lng * 1000.0) / 1000.0
+        // 3. Location grouping (only events with actual coordinates)
+        val locGroups = recentEvents
+            .filter { it.latitude != null && it.longitude != null }
+            .groupBy {
+                val roundedLat = Math.round(it.latitude!! * 1000.0) / 1000.0
+                val roundedLng = Math.round(it.longitude!! * 1000.0) / 1000.0
                 "$roundedLat,$roundedLng"
-            } else "null"
-        }
-        val locGroups = recentEvents.groupBy { getLocKey(it.latitude, it.longitude) }
+            }
         // 4. Markov grouping (Transitions: Predecessor -> Successor)
         val transitions = recentEvents.zipWithNext().mapNotNull { (successor, predecessor) ->
             val predId = predecessor.buttonId
@@ -412,10 +438,9 @@ class ButtonUsageRepositoryImpl @Inject constructor(
                 timeScore = tfTime * idf
             }
 
-            // Location Score
+            // Location Score (only when actual location is available)
             var locScore = 0.0
-            val activeLoc = activeLocKey ?: "null"
-            val activeLocEvents = locGroups[activeLoc] ?: emptyList()
+            val activeLocEvents = if (activeLocKey != null) locGroups[activeLocKey] ?: emptyList() else emptyList()
             val tfLoc = activeLocEvents.count { it.buttonId == btnId }
             if (tfLoc > 0) {
                 val df = locGroups.values.count { grp -> grp.any { it.buttonId == btnId } }

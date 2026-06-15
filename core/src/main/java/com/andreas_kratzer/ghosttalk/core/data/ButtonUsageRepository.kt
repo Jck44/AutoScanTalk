@@ -24,7 +24,8 @@ interface ButtonUsageRepository : ButtonUsageProvider {
         isHardwareTriggered: Boolean = false,
         scanCyclesBeforeClick: Int? = null,
         isAccidental: Boolean = false,
-        intendedButtonId: String? = null
+        intendedButtonId: String? = null,
+        timeSinceFocusChangeMs: Long? = null
     )
     suspend fun markLastUsageAsAccidental(bookId: String): Boolean
     suspend fun clearStats(bookId: String)

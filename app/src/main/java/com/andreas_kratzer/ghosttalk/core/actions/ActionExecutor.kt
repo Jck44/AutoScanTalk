@@ -113,23 +113,26 @@ class ActionExecutor @Inject constructor(
                 // Pressed button within threshold milliseconds since last focus change OR predecessor speech audio is still playing.
                 var isAccidental = false
                 var intendedButtonId: String? = null
+                var timeSinceFocusChangeMs: Long? = null
                 try {
                     val scanCoord = scanCoordinatorProvider.get()
                     val threshold = settingsRepository.lateClickThresholdMillis
                     val timeSinceFocus = scanCoord.getTimeSinceLastFocusChangeMs()
                     val isTtsSpeaking = ttsHelper.isSpeaking()
                     val prevFocused = scanCoord.getPreviousFocusedButton()
-                    
-                    intendedButtonId = prevFocused
-                    
-                    android.util.Log.d("ActionExecutorHeuristic", "Heuristic calculation: threshold=$threshold, timeSinceFocus=$timeSinceFocus, isTtsSpeaking=$isTtsSpeaking, prevFocused=$prevFocused, currentButtonId=${buttonConfig.id}")
-                    
-                    if (timeSinceFocus <= threshold || isTtsSpeaking) {
-                        if (intendedButtonId != null && intendedButtonId != buttonConfig.id) {
-                            isAccidental = true
+
+                    // Only record scanning-context fields when scanning was actually active
+                    if (isScanningActive && timeSinceFocus != Long.MAX_VALUE) {
+                        timeSinceFocusChangeMs = timeSinceFocus
+                        if (timeSinceFocus <= threshold || isTtsSpeaking) {
+                            if (prevFocused != null && prevFocused != buttonConfig.id) {
+                                isAccidental = true
+                                intendedButtonId = prevFocused
+                            }
                         }
                     }
-                    android.util.Log.d("ActionExecutorHeuristic", "Heuristic result: isAccidental=$isAccidental, intendedButtonId=$intendedButtonId")
+
+                    android.util.Log.d("ActionExecutorHeuristic", "Heuristic: threshold=$threshold, timeSinceFocus=$timeSinceFocus, isTtsSpeaking=$isTtsSpeaking, prevFocused=$prevFocused, currentButtonId=${buttonConfig.id}, isAccidental=$isAccidental")
                 } catch (e: Exception) {
                     android.util.Log.e("ActionExecutorHeuristic", "Error calculating heuristic", e)
                 }
@@ -154,7 +157,8 @@ class ActionExecutor @Inject constructor(
                             isHardwareTriggered = isHardwareTriggered,
                             scanCyclesBeforeClick = scanCycles,
                             isAccidental = isAccidental,
-                            intendedButtonId = intendedButtonId
+                            intendedButtonId = intendedButtonId,
+                            timeSinceFocusChangeMs = timeSinceFocusChangeMs
                         )
                     } catch (_: Exception) { }
                 }

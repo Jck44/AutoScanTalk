@@ -63,11 +63,12 @@ interface ButtonUsageDao {
     suspend fun markEventAsAccidental(id: Long, intendedButtonId: String?)
 
     @Query("""
-        UPDATE button_usage_history 
-        SET isAccidental = CASE 
-            WHEN (intendedButtonId IS NOT NULL AND intendedButtonId != buttonId AND (reactionTimeMs IS NOT NULL AND reactionTimeMs <= :threshold)) THEN 1 
-            ELSE 0 
+        UPDATE button_usage_history
+        SET isAccidental = CASE
+            WHEN (intendedButtonId != buttonId AND timeSinceFocusChangeMs IS NOT NULL AND timeSinceFocusChangeMs <= :threshold) THEN 1
+            ELSE 0
         END
+        WHERE intendedButtonId IS NOT NULL
     """)
     suspend fun updateAccidentalFlags(threshold: Long)
 

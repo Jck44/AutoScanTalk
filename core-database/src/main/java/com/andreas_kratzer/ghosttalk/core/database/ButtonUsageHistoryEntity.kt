@@ -30,5 +30,9 @@ data class ButtonUsageHistoryEntity(
     val isHardwareTriggered: Boolean = false,
     val scanCyclesBeforeClick: Int? = null,
     val isAccidental: Boolean = false,
-    val intendedButtonId: String? = null
+    val intendedButtonId: String? = null,
+    // Time between the scanner moving away from the previous button and the click being registered.
+    // Unlike reactionTimeMs (= dwell time on the current button), this is always set when scanning is active
+    // and is the correct metric for detecting late clicks during threshold re-evaluation.
+    val timeSinceFocusChangeMs: Long? = null
 )

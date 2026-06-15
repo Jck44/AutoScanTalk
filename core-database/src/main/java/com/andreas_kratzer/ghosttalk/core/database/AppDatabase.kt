@@ -35,7 +35,7 @@ import java.util.UUID
         UserModeSessionEntity::class, VocalProfileEntity::class, DeletedEntity::class,
         SettingsProfileEntity::class
     ],
-    version = 34,
+    version = 35,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -62,6 +62,12 @@ abstract class AppDatabase : RoomDatabase() {
 
         fun resetMigrationErrorsCount() {
             migrationErrorsCount = 0
+        }
+
+        val MIGRATION_34_35: Migration = object : Migration(34, 35) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE `button_usage_history` ADD COLUMN `timeSinceFocusChangeMs` INTEGER")
+            }
         }
 
         val MIGRATION_33_34: Migration = object : Migration(33, 34) {
@@ -599,7 +605,8 @@ abstract class AppDatabase : RoomDatabase() {
                     MIGRATION_30_31,
                     MIGRATION_31_32,
                     MIGRATION_32_33,
-                    MIGRATION_33_34
+                    MIGRATION_33_34,
+                    MIGRATION_34_35
                 )
                 .build()
                 INSTANCE = instance
