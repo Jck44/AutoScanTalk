@@ -70,6 +70,7 @@ fun GridButton(
     isFocused: Boolean = false,
     isRowFocused: Boolean = false,
     isEditorMode: Boolean = !LocalIsUserModeActive.current,
+    isMultiSelectMode: Boolean = false,
     overrideLabel: String? = null,
     targetPageName: String? = null,
     heatmapIntensity: Float? = null,
@@ -146,33 +147,35 @@ fun GridButton(
                             val isDark = isSystemInDarkTheme()
                             val (badgeBgColor, badgeTxtColor) = GridButtonColors.getBadgeColors(buttonConfig.buttonAction, isDark)
                             
-                            Surface(
-                                color = badgeBgColor,
-                                contentColor = badgeTxtColor,
-                                shape = MaterialTheme.shapes.extraSmall,
-                                modifier = Modifier
-                                    .align(Alignment.Start)
-                                    .padding(start = 8.dp, top = 8.dp)
-                                    .padding(end = 8.dp)
-                            ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    modifier = Modifier.padding(horizontal = 3.dp, vertical = 1.dp)
+                            if (!isMultiSelectMode) {
+                                Surface(
+                                    color = badgeBgColor,
+                                    contentColor = badgeTxtColor,
+                                    shape = MaterialTheme.shapes.extraSmall,
+                                    modifier = Modifier
+                                        .align(Alignment.Start)
+                                        .padding(start = 8.dp, top = 8.dp)
+                                        .padding(end = 8.dp)
                                 ) {
-                                    Icon(
-                                        imageVector = actionIcon,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(10.dp)
-                                    )
-                                    
-                                    if (actionBadgeText != null) {
-                                        Spacer(modifier = Modifier.width(3.dp))
-                                        Text(
-                                            text = actionBadgeText,
-                                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 8.sp),
-                                            maxLines = 1,
-                                            overflow = TextOverflow.Ellipsis
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        modifier = Modifier.padding(horizontal = 3.dp, vertical = 1.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = actionIcon,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(10.dp)
                                         )
+                                        
+                                        if (actionBadgeText != null) {
+                                            Spacer(modifier = Modifier.width(3.dp))
+                                            Text(
+                                                text = actionBadgeText,
+                                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 8.sp),
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis
+                                            )
+                                        }
                                     }
                                 }
                             }
@@ -225,7 +228,7 @@ fun GridButton(
 
                     // --- Visual Analytics Overlays (Heatmap & F-Index) ---
                     // Heatmap Overlay
-                    if (heatmapIntensity != null && heatmapIntensity > 0f) {
+                    if (!isMultiSelectMode && heatmapIntensity != null && heatmapIntensity > 0f) {
                         Surface(
                             color = MaterialTheme.colorScheme.primary.copy(alpha = heatmapIntensity * 0.35f),
                             modifier = Modifier.fillMaxSize()
@@ -233,7 +236,7 @@ fun GridButton(
                     }
 
                     // Access Effort Badge (F-Index based color code)
-                    if (effortMetrics != null) {
+                    if (!isMultiSelectMode && effortMetrics != null) {
                         val isDark = isSystemInDarkTheme()
                         val badgeColor = when {
                             effortMetrics.frustrationIndex < 0.3f -> if (isDark) FrustrationNeutralDark else FrustrationNeutralLight

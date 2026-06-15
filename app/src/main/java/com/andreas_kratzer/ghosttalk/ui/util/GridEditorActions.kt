@@ -42,14 +42,14 @@ interface GridEditorActions {
     fun executeButtonAction(config: ButtonConfig)
     fun moveButtonToPage(
         fromPageId: String,
-        fromIndex: Int,
+        fromIndices: List<Int>,
         toPageId: String,
         forceMove: Boolean = false,
         onResult: (com.andreas_kratzer.ghosttalk.core.domain.pages.MoveButtonToPageUseCase.MoveResult) -> Unit
     )
     fun duplicateButtonToPage(
         fromPageId: String,
-        fromIndex: Int,
+        fromIndices: List<Int>,
         toPageId: String,
         forceMove: Boolean = false,
         onResult: (com.andreas_kratzer.ghosttalk.core.domain.pages.MoveButtonToPageUseCase.MoveResult) -> Unit

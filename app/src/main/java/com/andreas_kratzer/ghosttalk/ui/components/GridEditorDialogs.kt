@@ -43,6 +43,8 @@ fun EditorDialogs(
     editingRowIndex: Int?,
     showRowEditDialog: Boolean,
     selectedButtonIndex: Int?,
+    selectedButtonIndices: Set<Int> = emptySet(),
+    onClearSelectedButtonIndices: () -> Unit = {},
     showDialog: Boolean,
     showMoveDialog: Boolean,
     showDuplicateDialog: Boolean,
@@ -187,44 +189,89 @@ fun EditorDialogs(
         )
     }
 
-    if (showMoveDialog && selectedButtonIndex != null) {
+    if (showMoveDialog && (selectedButtonIndex != null || selectedButtonIndices.isNotEmpty())) {
         TargetPageSelectionDialog(
             availablePages = availablePages.filter { it.id != item.id },
+            templates = templates,
+            onCreatePage = { name, r, c, t, callback ->
+                val bookId = (item as? Page)?.bookId
+                if (bookId != null) {
+                    actions.createNewPage(name, r, c, bookId, t, callback)
+                }
+            },
             onPageSelected = { targetPage ->
                 val sourceIndex = selectedButtonIndex
                 onShowMoveDialog(false)
-                // We DON'T clear selectedButtonIndex yet, because we might need it for forceMove
-                actions.moveButtonToPage(item.id, sourceIndex, targetPage.id) { result -> 
-                    when (result) {
-                        is com.andreas_kratzer.ghosttalk.core.domain.pages.MoveButtonToPageUseCase.MoveResult.Success -> {
-                            onDismissButtonDialog()
-                            scope.launch {
-                                snackbarHostState.currentSnackbarData?.dismiss()
-                                val result = snackbarHostState.showSnackbar(
-                                    message = moveSuccessText,
-                                    actionLabel = "Rückgängig",
-                                    duration = androidx.compose.material3.SnackbarDuration.Long
-                                )
-                                if (result == androidx.compose.material3.SnackbarResult.ActionPerformed) {
-                                    actions.undo { undoMsg ->
-                                        scope.launch {
-                                            snackbarHostState.showSnackbar(undoMsg)
+                if (sourceIndex != null) {
+                    // We DON'T clear selectedButtonIndex yet, because we might need it for forceMove
+                    actions.moveButtonToPage(item.id, listOf(sourceIndex), targetPage.id) { result -> 
+                        when (result) {
+                            is com.andreas_kratzer.ghosttalk.core.domain.pages.MoveButtonToPageUseCase.MoveResult.Success -> {
+                                onDismissButtonDialog()
+                                scope.launch {
+                                    snackbarHostState.currentSnackbarData?.dismiss()
+                                    val result = snackbarHostState.showSnackbar(
+                                        message = moveSuccessText,
+                                        actionLabel = "Rückgängig",
+                                        duration = androidx.compose.material3.SnackbarDuration.Long
+                                    )
+                                    if (result == androidx.compose.material3.SnackbarResult.ActionPerformed) {
+                                        actions.undo { undoMsg ->
+                                            scope.launch {
+                                                snackbarHostState.showSnackbar(undoMsg)
+                                            }
                                         }
                                     }
                                 }
                             }
-                        }
-                        is com.andreas_kratzer.ghosttalk.core.domain.pages.MoveButtonToPageUseCase.MoveResult.NeedsConfirmation -> {
-                            onShowHiddenPrompt(result)
-                        }
-                        is com.andreas_kratzer.ghosttalk.core.domain.pages.MoveButtonToPageUseCase.MoveResult.TargetFull -> {
-                            onDismissButtonDialog()
-                            scope.launch {
-                                snackbarHostState.showSnackbar("Zielseite ist voll")
+                            is com.andreas_kratzer.ghosttalk.core.domain.pages.MoveButtonToPageUseCase.MoveResult.NeedsConfirmation -> {
+                                onShowHiddenPrompt(result)
+                            }
+                            is com.andreas_kratzer.ghosttalk.core.domain.pages.MoveButtonToPageUseCase.MoveResult.TargetFull -> {
+                                onDismissButtonDialog()
+                                scope.launch {
+                                    snackbarHostState.showSnackbar("Zielseite ist voll")
+                                }
+                            }
+                            else -> {
+                                onDismissButtonDialog()
                             }
                         }
-                        else -> {
-                            onDismissButtonDialog()
+                    }
+                } else if (selectedButtonIndices.isNotEmpty()) {
+                    actions.moveButtonToPage(item.id, selectedButtonIndices.toList(), targetPage.id) { result ->
+                        when (result) {
+                            is com.andreas_kratzer.ghosttalk.core.domain.pages.MoveButtonToPageUseCase.MoveResult.Success -> {
+                                onClearSelectedButtonIndices()
+                                onDismissButtonDialog()
+                                scope.launch {
+                                    snackbarHostState.currentSnackbarData?.dismiss()
+                                    val snackResult = snackbarHostState.showSnackbar(
+                                        message = moveSuccessText,
+                                        actionLabel = "Rückgängig",
+                                        duration = androidx.compose.material3.SnackbarDuration.Long
+                                    )
+                                    if (snackResult == androidx.compose.material3.SnackbarResult.ActionPerformed) {
+                                        actions.undo { undoMsg ->
+                                            scope.launch {
+                                                snackbarHostState.showSnackbar(undoMsg)
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            is com.andreas_kratzer.ghosttalk.core.domain.pages.MoveButtonToPageUseCase.MoveResult.NeedsConfirmation -> {
+                                onShowHiddenPrompt(result)
+                            }
+                            is com.andreas_kratzer.ghosttalk.core.domain.pages.MoveButtonToPageUseCase.MoveResult.TargetFull -> {
+                                onDismissButtonDialog()
+                                scope.launch {
+                                    snackbarHostState.showSnackbar("Zielseite ist voll")
+                                }
+                            }
+                            else -> {
+                                onDismissButtonDialog()
+                            }
                         }
                     }
                 }
@@ -236,44 +283,89 @@ fun EditorDialogs(
         )
     }
 
-    if (showDuplicateDialog && selectedButtonIndex != null) {
+    if (showDuplicateDialog && (selectedButtonIndex != null || selectedButtonIndices.isNotEmpty())) {
         TargetPageSelectionDialog(
             availablePages = availablePages,
+            templates = templates,
+            onCreatePage = { name, r, c, t, callback ->
+                val bookId = (item as? Page)?.bookId
+                if (bookId != null) {
+                    actions.createNewPage(name, r, c, bookId, t, callback)
+                }
+            },
             currentPageId = item.id,
             onPageSelected = { targetPage ->
                 val sourceIndex = selectedButtonIndex
                 onShowDuplicateDialog(false)
-                actions.duplicateButtonToPage(item.id, sourceIndex, targetPage.id) { result -> 
-                    when (result) {
-                        is com.andreas_kratzer.ghosttalk.core.domain.pages.MoveButtonToPageUseCase.MoveResult.Success -> {
-                            onDismissButtonDialog()
-                            scope.launch {
-                                snackbarHostState.currentSnackbarData?.dismiss()
-                                val result = snackbarHostState.showSnackbar(
-                                    message = duplicateSuccessText,
-                                    actionLabel = "Rückgängig",
-                                    duration = androidx.compose.material3.SnackbarDuration.Long
-                                )
-                                if (result == androidx.compose.material3.SnackbarResult.ActionPerformed) {
-                                    actions.undo { undoMsg ->
-                                        scope.launch {
-                                            snackbarHostState.showSnackbar(undoMsg)
+                if (sourceIndex != null) {
+                    actions.duplicateButtonToPage(item.id, listOf(sourceIndex), targetPage.id) { result -> 
+                        when (result) {
+                            is com.andreas_kratzer.ghosttalk.core.domain.pages.MoveButtonToPageUseCase.MoveResult.Success -> {
+                                onDismissButtonDialog()
+                                scope.launch {
+                                    snackbarHostState.currentSnackbarData?.dismiss()
+                                    val result = snackbarHostState.showSnackbar(
+                                        message = duplicateSuccessText,
+                                        actionLabel = "Rückgängig",
+                                        duration = androidx.compose.material3.SnackbarDuration.Long
+                                    )
+                                    if (result == androidx.compose.material3.SnackbarResult.ActionPerformed) {
+                                        actions.undo { undoMsg ->
+                                            scope.launch {
+                                                snackbarHostState.showSnackbar(undoMsg)
+                                            }
                                         }
                                     }
                                 }
                             }
-                        }
-                        is com.andreas_kratzer.ghosttalk.core.domain.pages.MoveButtonToPageUseCase.MoveResult.NeedsConfirmation -> {
-                            onShowHiddenPrompt(result)
-                        }
-                        is com.andreas_kratzer.ghosttalk.core.domain.pages.MoveButtonToPageUseCase.MoveResult.TargetFull -> {
-                            onDismissButtonDialog()
-                            scope.launch {
-                                snackbarHostState.showSnackbar("Zielseite ist voll")
+                            is com.andreas_kratzer.ghosttalk.core.domain.pages.MoveButtonToPageUseCase.MoveResult.NeedsConfirmation -> {
+                                onShowHiddenPrompt(result)
+                            }
+                            is com.andreas_kratzer.ghosttalk.core.domain.pages.MoveButtonToPageUseCase.MoveResult.TargetFull -> {
+                                onDismissButtonDialog()
+                                scope.launch {
+                                    snackbarHostState.showSnackbar("Zielseite ist voll")
+                                }
+                            }
+                            else -> {
+                                onDismissButtonDialog()
                             }
                         }
-                        else -> {
-                            onDismissButtonDialog()
+                    }
+                } else if (selectedButtonIndices.isNotEmpty()) {
+                    actions.duplicateButtonToPage(item.id, selectedButtonIndices.toList(), targetPage.id) { result ->
+                        when (result) {
+                            is com.andreas_kratzer.ghosttalk.core.domain.pages.MoveButtonToPageUseCase.MoveResult.Success -> {
+                                onClearSelectedButtonIndices()
+                                onDismissButtonDialog()
+                                scope.launch {
+                                    snackbarHostState.currentSnackbarData?.dismiss()
+                                    val snackResult = snackbarHostState.showSnackbar(
+                                        message = duplicateSuccessText,
+                                        actionLabel = "Rückgängig",
+                                        duration = androidx.compose.material3.SnackbarDuration.Long
+                                    )
+                                    if (snackResult == androidx.compose.material3.SnackbarResult.ActionPerformed) {
+                                        actions.undo { undoMsg ->
+                                            scope.launch {
+                                                snackbarHostState.showSnackbar(undoMsg)
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            is com.andreas_kratzer.ghosttalk.core.domain.pages.MoveButtonToPageUseCase.MoveResult.NeedsConfirmation -> {
+                                onShowHiddenPrompt(result)
+                            }
+                            is com.andreas_kratzer.ghosttalk.core.domain.pages.MoveButtonToPageUseCase.MoveResult.TargetFull -> {
+                                onDismissButtonDialog()
+                                scope.launch {
+                                    snackbarHostState.showSnackbar("Zielseite ist voll")
+                                }
+                            }
+                            else -> {
+                                onDismissButtonDialog()
+                            }
                         }
                     }
                 }
@@ -293,8 +385,10 @@ fun EditorDialogs(
             onConfirm = {
                 val targetId = promptData.targetPage.id
                 onShowHiddenPrompt(null)
+                val indices = if (selectedButtonIndex != null) listOf(selectedButtonIndex) else selectedButtonIndices.toList()
                 if (isDuplicating) {
-                    actions.duplicateButtonToPage(item.id, selectedButtonIndex!!, targetId, forceMove = true) { result ->
+                    actions.duplicateButtonToPage(item.id, indices, targetId, forceMove = true) { result ->
+                        onClearSelectedButtonIndices()
                         onDismissButtonDialog()
                         if (result is com.andreas_kratzer.ghosttalk.core.domain.pages.MoveButtonToPageUseCase.MoveResult.Success) {
                             scope.launch {
@@ -303,7 +397,8 @@ fun EditorDialogs(
                         }
                     }
                 } else {
-                    actions.moveButtonToPage(item.id, selectedButtonIndex!!, targetId, forceMove = true) { result ->
+                    actions.moveButtonToPage(item.id, indices, targetId, forceMove = true) { result ->
+                        onClearSelectedButtonIndices()
                         onDismissButtonDialog()
                         if (result is com.andreas_kratzer.ghosttalk.core.domain.pages.MoveButtonToPageUseCase.MoveResult.Success) {
                             scope.launch {

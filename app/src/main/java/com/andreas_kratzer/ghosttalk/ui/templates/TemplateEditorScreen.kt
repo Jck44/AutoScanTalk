@@ -14,11 +14,15 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Delete
 import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkScaffold
 import com.andreas_kratzer.ghosttalk.ui.components.GridEditorContent
@@ -60,7 +64,93 @@ fun TemplateEditorScreen(
         }
     }
 
-    GhostTalkScaffold(
+    val isMultiSelectModeState = rememberSaveable { mutableStateOf(false) }
+    val selectedButtonIndicesState = rememberSaveable { mutableStateOf(emptySet<Int>()) }
+    val showMoveDialogState = rememberSaveable { mutableStateOf(false) }
+    val showDuplicateDialogState = rememberSaveable { mutableStateOf(false) }
+    val showConfirmDeleteDialogState = rememberSaveable { mutableStateOf(false) }
+
+    var isMultiSelectMode by isMultiSelectModeState
+    var selectedButtonIndices by selectedButtonIndicesState
+
+    if (isMultiSelectMode) {
+        androidx.compose.material3.Scaffold(
+            topBar = {
+                androidx.compose.material3.TopAppBar(
+                    title = {
+                        Text(
+                            text = stringResource(R.string.bulk_action_selected_count, selectedButtonIndices.size),
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                    },
+                    navigationIcon = {
+                        androidx.compose.material3.IconButton(onClick = {
+                            isMultiSelectMode = false
+                            selectedButtonIndices = emptySet()
+                        }) {
+                            androidx.compose.material3.Icon(
+                                imageVector = androidx.compose.material.icons.Icons.Default.Close,
+                                contentDescription = stringResource(R.string.bulk_action_cancel)
+                            )
+                        }
+                    },
+                    actions = {
+                        if (selectedButtonIndices.isNotEmpty()) {
+                            androidx.compose.material3.IconButton(onClick = { showMoveDialogState.value = true }) {
+                                androidx.compose.material3.Icon(
+                                    imageVector = com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons.ArrowForward,
+                                    contentDescription = stringResource(R.string.bulk_action_move)
+                                )
+                            }
+                            androidx.compose.material3.IconButton(onClick = { showDuplicateDialogState.value = true }) {
+                                androidx.compose.material3.Icon(
+                                    imageVector = com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons.Copy,
+                                    contentDescription = stringResource(R.string.bulk_action_copy)
+                                )
+                            }
+                            androidx.compose.material3.IconButton(onClick = { showConfirmDeleteDialogState.value = true }) {
+                                androidx.compose.material3.Icon(
+                                    imageVector = androidx.compose.material.icons.Icons.Default.Delete,
+                                    contentDescription = stringResource(R.string.bulk_action_delete)
+                                )
+                            }
+                        }
+                    },
+                    colors = androidx.compose.material3.TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer,
+                        titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                        actionIconContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                        navigationIconContentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                )
+            }
+        ) { paddingValues ->
+            GridEditorContent(
+                item = template,
+                actions = templateViewModel,
+                availablePages = unfilteredPages,
+                templates = templates, // Local templates from templateViewModel
+                featureGuard = pageViewModel.featureGuard,
+                bookDefaultScanPattern = bookDefaultScanPattern,
+                paddingValues = paddingValues,
+                onEditPage = { pageId: String, _ ->
+                    scope.launch {
+                        val target = pageViewModel.getPageById(pageId)
+                        if (target != null) {
+                            onNavigateBack() // Close Template Editor
+                            pageViewModel.loadPage(target)
+                        }
+                    }
+                },
+                isMultiSelectModeState = isMultiSelectModeState,
+                selectedButtonIndicesState = selectedButtonIndicesState,
+                showMoveDialogState = showMoveDialogState,
+                showDuplicateDialogState = showDuplicateDialogState,
+                showConfirmDeleteDialogState = showConfirmDeleteDialogState
+            )
+        }
+    } else {
+        GhostTalkScaffold(
         title = "",
         onNavigateBack = onNavigateBack,
         titleContent = {
@@ -91,7 +181,13 @@ fun TemplateEditorScreen(
                         pageViewModel.loadPage(target)
                     }
                 }
-            }
-        )
+            },
+            isMultiSelectModeState = isMultiSelectModeState,
+                selectedButtonIndicesState = selectedButtonIndicesState,
+                showMoveDialogState = showMoveDialogState,
+                showDuplicateDialogState = showDuplicateDialogState,
+                showConfirmDeleteDialogState = showConfirmDeleteDialogState
+            )
+        }
     }
 }

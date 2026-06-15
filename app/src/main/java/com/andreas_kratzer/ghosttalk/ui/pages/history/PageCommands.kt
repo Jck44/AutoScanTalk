@@ -197,7 +197,7 @@ class DeletePageCommand(
 class MoveButtonToPageCommand(
     private val delegate: PageManagementDelegate,
     private val fromPageId: String,
-    private val fromIndex: Int,
+    private val fromIndices: List<Int>,
     private val toPageId: String,
     private val forceMove: Boolean,
     override val label: EditLabel,
@@ -217,7 +217,7 @@ class MoveButtonToPageCommand(
             oldFromPage = delegate.pageRepository.getPageById(fromPageId)
             oldToPage = delegate.pageRepository.getPageById(toPageId)
         }
-        val result = delegate.moveButtonToPageUseCase.execute(fromPageId, fromIndex, toPageId, forceMove)
+        val result = delegate.moveButtonToPageUseCase.execute(fromPageId, fromIndices, toPageId, forceMove)
         if (result is MoveButtonToPageUseCase.MoveResult.Success) {
             newFromPage = result.fromPage
             newToPage = result.toPage
@@ -252,7 +252,7 @@ class MoveButtonToPageCommand(
 class DuplicateButtonToPageCommand(
     private val delegate: PageManagementDelegate,
     private val fromPageId: String,
-    private val fromIndex: Int,
+    private val fromIndices: List<Int>,
     private val toPageId: String,
     private val forceMove: Boolean,
     override val label: EditLabel,
@@ -269,7 +269,7 @@ class DuplicateButtonToPageCommand(
         if (oldToPage == null) {
             oldToPage = delegate.pageRepository.getPageById(toPageId)
         }
-        val result = delegate.duplicateButtonToPageUseCase.execute(fromPageId, fromIndex, toPageId, forceMove)
+        val result = delegate.duplicateButtonToPageUseCase.execute(fromPageId, fromIndices, toPageId, forceMove)
         if (result is MoveButtonToPageUseCase.MoveResult.Success) {
             newToPage = result.toPage
             if (delegate.currentPage.value?.id == toPageId) {

@@ -84,7 +84,12 @@ fun GridEditorContent(
     paddingValues: PaddingValues,
     onEditPage: ((String, String?) -> Unit)? = null,
     initialButtonId: String? = null,
-    defaultStartPageId: String? = null
+    defaultStartPageId: String? = null,
+    isMultiSelectModeState: androidx.compose.runtime.MutableState<Boolean>? = null,
+    selectedButtonIndicesState: androidx.compose.runtime.MutableState<Set<Int>>? = null,
+    showMoveDialogState: androidx.compose.runtime.MutableState<Boolean>? = null,
+    showDuplicateDialogState: androidx.compose.runtime.MutableState<Boolean>? = null,
+    showConfirmDeleteDialogState: androidx.compose.runtime.MutableState<Boolean>? = null
 ) {
     CompositionLocalProvider(
         LocalCurrentPageId provides item.id,
@@ -98,10 +103,29 @@ fun GridEditorContent(
 
         var selectedButtonIndex by rememberSaveable { mutableStateOf<Int?>(null) }
         var showDialog by rememberSaveable { mutableStateOf(false) }
+        val fallbackIsMultiSelectModeState = rememberSaveable { mutableStateOf(false) }
+        val fallbackSelectedButtonIndicesState = rememberSaveable { mutableStateOf(emptySet<Int>()) }
+
+        val actualMultiSelectState = isMultiSelectModeState ?: fallbackIsMultiSelectModeState
+        val actualSelectedIndicesState = selectedButtonIndicesState ?: fallbackSelectedButtonIndicesState
+
+        var isMultiSelectMode by actualMultiSelectState
+        var selectedButtonIndices by actualSelectedIndicesState
         var editingRowIndex by rememberSaveable { mutableStateOf<Int?>(null) }
         var showRowEditDialog by rememberSaveable { mutableStateOf(false) }
-        var showMoveDialog by rememberSaveable { mutableStateOf(false) }
-        var showDuplicateDialog by rememberSaveable { mutableStateOf(false) }
+
+        val fallbackMoveState = rememberSaveable { mutableStateOf(false) }
+        val fallbackDupState = rememberSaveable { mutableStateOf(false) }
+        val fallbackDeleteState = rememberSaveable { mutableStateOf(false) }
+
+        val actualMoveState = showMoveDialogState ?: fallbackMoveState
+        val actualDupState = showDuplicateDialogState ?: fallbackDupState
+        val actualDeleteState = showConfirmDeleteDialogState ?: fallbackDeleteState
+
+        var showMoveDialog by actualMoveState
+        var showDuplicateDialog by actualDupState
+        var showConfirmDeleteDialog by actualDeleteState
+
         var isDuplicating by rememberSaveable { mutableStateOf(false) }
         var showHiddenPrompt by remember { 
             mutableStateOf<com.andreas_kratzer.ghosttalk.core.domain.pages.MoveButtonToPageUseCase.MoveResult.NeedsConfirmation?>(null) 
@@ -330,6 +354,13 @@ fun GridEditorContent(
                     GridEditorHeader(
                         item = item,
                         isEditPreviewActive = isEditPreviewActive,
+                        isMultiSelectMode = isMultiSelectMode,
+                        onMultiSelectModeChange = { active ->
+                            isMultiSelectMode = active
+                            if (!active) {
+                                selectedButtonIndices = emptySet()
+                            }
+                        },
                         onSummaryClick = { showLayoutSettingsSheet = true }
                     )
 
@@ -368,10 +399,23 @@ fun GridEditorContent(
                             actions = actions,
                             buttonReorderState = buttonReorderState,
                             rowReorderState = rowReorderState,
+                            isMultiSelectMode = isMultiSelectMode,
+                            selectedButtonIndices = selectedButtonIndices,
                             onEditRow = { editingRowIndex = it; showRowEditDialog = true },
                             onEditButton = { index ->
-                                selectedButtonIndex = index
-                                showDialog = true
+                                val buttonExists = item.buttonConfigs.getOrNull(index) != null
+                                if (isMultiSelectMode) {
+                                    if (buttonExists) {
+                                        selectedButtonIndices = if (selectedButtonIndices.contains(index)) {
+                                            selectedButtonIndices - index
+                                        } else {
+                                            selectedButtonIndices + index
+                                        }
+                                    }
+                                } else {
+                                    selectedButtonIndex = index
+                                    showDialog = true
+                                }
                             }
                         )
                     }
@@ -399,13 +443,54 @@ fun GridEditorContent(
                 }
             }
 
+            // Confirm Delete Dialog
+            if (showConfirmDeleteDialog) {
+                androidx.compose.material3.AlertDialog(
+                    onDismissRequest = { showConfirmDeleteDialog = false },
+                    title = { Text(stringResource(R.string.bulk_action_delete)) },
+                    text = { Text(stringResource(R.string.bulk_action_confirm_delete)) },
+                    confirmButton = {
+                        androidx.compose.material3.TextButton(
+                            onClick = {
+                                showConfirmDeleteDialog = false
+                                val currentItem = item as? Page
+                                if (currentItem != null) {
+                                    scope.launch {
+                                        selectedButtonIndices.forEach { index ->
+                                            actions.updateButtonConfig(currentItem.id, index, null)
+                                        }
+                                        selectedButtonIndices = emptySet()
+                                        isMultiSelectMode = false
+                                    }
+                                }
+                            }
+                        ) {
+                            Text(stringResource(R.string.bulk_action_delete))
+                        }
+                    },
+                    dismissButton = {
+                        androidx.compose.material3.TextButton(
+                            onClick = { showConfirmDeleteDialog = false }
+                        ) {
+                            Text(stringResource(R.string.bulk_action_cancel))
+                        }
+                    }
+                )
+            }
+
             Box(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(dimensions.paddingLarge),
                 contentAlignment = Alignment.BottomCenter
             ) {
-                SnackbarHost(hostState = snackbarHostState)
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.zIndex(5f)
+                ) {
+                    SnackbarHost(hostState = snackbarHostState)
+                }
             }
 
             EditorDialogs(
@@ -417,6 +502,8 @@ fun GridEditorContent(
                 editingRowIndex = editingRowIndex,
                 showRowEditDialog = showRowEditDialog,
                 selectedButtonIndex = selectedButtonIndex,
+                selectedButtonIndices = selectedButtonIndices,
+                onClearSelectedButtonIndices = { selectedButtonIndices = emptySet(); isMultiSelectMode = false },
                 showDialog = showDialog,
                 showMoveDialog = showMoveDialog,
                 showDuplicateDialog = showDuplicateDialog,

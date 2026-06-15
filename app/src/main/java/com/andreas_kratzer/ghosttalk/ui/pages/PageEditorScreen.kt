@@ -1,6 +1,8 @@
 package com.andreas_kratzer.ghosttalk.ui.pages
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.background
+import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -11,6 +13,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
@@ -114,6 +118,15 @@ fun PageEditorScreen(
     var showOverflowMenu by remember { mutableStateOf(false) }
     var showHistoryPanel by remember { mutableStateOf(false) }
 
+    val isMultiSelectModeState = rememberSaveable { mutableStateOf(false) }
+    val selectedButtonIndicesState = rememberSaveable { mutableStateOf(emptySet<Int>()) }
+    val showMoveDialogState = rememberSaveable { mutableStateOf(false) }
+    val showDuplicateDialogState = rememberSaveable { mutableStateOf(false) }
+    val showConfirmDeleteDialogState = rememberSaveable { mutableStateOf(false) }
+    
+    var isMultiSelectMode by isMultiSelectModeState
+    var selectedButtonIndices by selectedButtonIndicesState
+
     val handleNavigateBack = {
         if (localName.isNotBlank()) {
             onNavigateBack()
@@ -144,20 +157,69 @@ fun PageEditorScreen(
 
     Scaffold(
         topBar = {
-            EditorTopBar(
-                titleContent = {
-                    Text(
-                        text = localName,
-                        style = MaterialTheme.typography.titleLarge,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier
-                            .weight(1f, fill = false)
-                            .testTag("page_editor_title")
+            if (isMultiSelectMode) {
+                androidx.compose.material3.TopAppBar(
+                    title = {
+                        Text(
+                            text = stringResource(R.string.bulk_action_selected_count, selectedButtonIndices.size),
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                    },
+                    navigationIcon = {
+                        androidx.compose.material3.IconButton(onClick = {
+                            isMultiSelectMode = false
+                            selectedButtonIndices = emptySet()
+                        }) {
+                            androidx.compose.material3.Icon(
+                                imageVector = androidx.compose.material.icons.Icons.Default.Close,
+                                contentDescription = stringResource(R.string.bulk_action_cancel)
+                            )
+                        }
+                    },
+                    actions = {
+                        if (selectedButtonIndices.isNotEmpty()) {
+                            androidx.compose.material3.IconButton(onClick = { showMoveDialogState.value = true }) {
+                                androidx.compose.material3.Icon(
+                                    imageVector = com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons.ArrowForward,
+                                    contentDescription = stringResource(R.string.bulk_action_move)
+                                )
+                            }
+                            androidx.compose.material3.IconButton(onClick = { showDuplicateDialogState.value = true }) {
+                                androidx.compose.material3.Icon(
+                                    imageVector = com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons.Copy,
+                                    contentDescription = stringResource(R.string.bulk_action_copy)
+                                )
+                            }
+                            androidx.compose.material3.IconButton(onClick = { showConfirmDeleteDialogState.value = true }) {
+                                androidx.compose.material3.Icon(
+                                    imageVector = androidx.compose.material.icons.Icons.Default.Delete,
+                                    contentDescription = stringResource(R.string.bulk_action_delete)
+                                )
+                            }
+                        }
+                    },
+                    colors = androidx.compose.material3.TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer,
+                        titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                        actionIconContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                        navigationIconContentColor = MaterialTheme.colorScheme.onPrimaryContainer
                     )
-                },
-                onNavigateBack = handleNavigateBack,
-                onExitEditor = null, // Disable top-right exit button in TopBar
+                )
+            } else {
+                EditorTopBar(
+                    titleContent = {
+                        Text(
+                            text = localName,
+                            style = MaterialTheme.typography.titleLarge,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier
+                                .weight(1f, fill = false)
+                                .testTag("page_editor_title")
+                        )
+                    },
+                    onNavigateBack = handleNavigateBack,
+                    onExitEditor = null, // Disable top-right exit button in TopBar
                 modeSwitcher = modeSwitcher,
                 actions = {
                     val isEditPreviewActive by pageViewModel.isEditPreviewActive.collectAsState()
@@ -171,6 +233,30 @@ fun PageEditorScreen(
                         compact = true,
                         testTag = "page_editor_split_wizard_trigger_menu"
                     )
+
+                    // Inline Action: Multi-Select Mode Toggle
+                    if (!isEditPreviewActive) {
+                        IconButton(
+                            onClick = {
+                                isMultiSelectMode = !isMultiSelectMode
+                                if (!isMultiSelectMode) {
+                                    selectedButtonIndices = emptySet()
+                                }
+                            },
+                            modifier = Modifier
+                                .padding(end = 4.dp)
+                                .background(
+                                    if (isMultiSelectMode) MaterialTheme.colorScheme.primaryContainer else Color.Transparent,
+                                    shape = androidx.compose.foundation.shape.CircleShape
+                                )
+                        ) {
+                            Icon(
+                                imageVector = com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons.CheckCircle,
+                                contentDescription = "Mehrfachauswahl umschalten",
+                                tint = if (isMultiSelectMode) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
 
                     // Inline Action 2: Undo
                     IconButton(
@@ -346,8 +432,8 @@ fun PageEditorScreen(
                             }
                         }
                     }
-                }
-            )
+                }) // Close EditorTopBar
+            } // Close `if` / `else` for topBar
         },
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { paddingValues ->
@@ -370,7 +456,12 @@ fun PageEditorScreen(
                     paddingValues = PaddingValues(0.dp),
                     onEditPage = onEditPage,
                     initialButtonId = initialButtonId,
-                    defaultStartPageId = startPageId
+                    defaultStartPageId = startPageId,
+                    isMultiSelectModeState = isMultiSelectModeState,
+                    selectedButtonIndicesState = selectedButtonIndicesState,
+                    showMoveDialogState = showMoveDialogState,
+                    showDuplicateDialogState = showDuplicateDialogState,
+                    showConfirmDeleteDialogState = showConfirmDeleteDialogState
                 )
             }
         }

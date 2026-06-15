@@ -40,6 +40,9 @@ import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
 
+import com.andreas_kratzer.ghosttalk.core.domain.pages.InsertButtonConfigUseCase
+import com.andreas_kratzer.ghosttalk.core.domain.pages.MoveButtonWithInsertUseCase
+
 @OptIn(ExperimentalCoroutinesApi::class)
 class PageManagementDelegateTest {
 
@@ -116,7 +119,9 @@ class PageManagementDelegateTest {
             updateMultipleButtonsUseCase,
             identifyActivePageLinksUseCase,
             appStateRepository,
-            settingsRepository
+            settingsRepository,
+            InsertButtonConfigUseCase(),
+            MoveButtonWithInsertUseCase()
         )
     }
 
@@ -202,15 +207,15 @@ class PageManagementDelegateTest {
         val result = MoveButtonToPageUseCase.MoveResult.Success(mockk(), mockk())
         
         coEvery { 
-            moveButtonToPageUseCase.execute("p1", 0, "p2", false) 
+            moveButtonToPageUseCase.execute("p1", listOf(0), "p2", false) 
         } returns result
         
         var receivedResult: MoveButtonToPageUseCase.MoveResult? = null
-        delegate.moveButtonToPage("p1", 0, "p2", false) {
+        delegate.moveButtonToPage("p1", listOf(0), "p2", false) {
             receivedResult = it
         }
         
-        coVerify { moveButtonToPageUseCase.execute("p1", 0, "p2", false) }
+        coVerify { moveButtonToPageUseCase.execute("p1", listOf(0), "p2", false) }
         assertEquals(result, receivedResult)
     }
 
@@ -220,15 +225,15 @@ class PageManagementDelegateTest {
         val result = MoveButtonToPageUseCase.MoveResult.Success(mockk(), mockk())
         
         coEvery { 
-            duplicateButtonToPageUseCase.execute("p1", 0, "p2", false) 
+            duplicateButtonToPageUseCase.execute("p1", listOf(0), "p2", false) 
         } returns result
         
         var receivedResult: MoveButtonToPageUseCase.MoveResult? = null
-        delegate.duplicateButtonToPage("p1", 0, "p2", false) {
+        delegate.duplicateButtonToPage("p1", listOf(0), "p2", false) {
             receivedResult = it
         }
         
-        coVerify { duplicateButtonToPageUseCase.execute("p1", 0, "p2", false) }
+        coVerify { duplicateButtonToPageUseCase.execute("p1", listOf(0), "p2", false) }
         assertEquals(result, receivedResult)
     }
 

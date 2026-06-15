@@ -30,6 +30,8 @@ import com.andreas_kratzer.ghosttalk.core.domain.pages.MoveRowUseCase
 import com.andreas_kratzer.ghosttalk.core.domain.pages.UpdateButtonConfigUseCase
 import com.andreas_kratzer.ghosttalk.core.domain.pages.UpdatePageSettingsUseCase
 import com.andreas_kratzer.ghosttalk.core.domain.pages.UpdateRowNameUseCase
+import com.andreas_kratzer.ghosttalk.core.domain.pages.InsertButtonConfigUseCase
+import com.andreas_kratzer.ghosttalk.core.domain.pages.MoveButtonWithInsertUseCase
 import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.core.model.NavigateToPageButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.NavigateToStartPageButtonAction
@@ -244,7 +246,9 @@ class PageViewModelTest {
             updateMultipleButtonsUseCase = updateMultipleButtonsUseCase,
             identifyActivePageLinksUseCase = identifyActivePageLinksUseCase,
             appStateRepository = appStateRepository,
-            settingsRepository = settingsRepository
+            settingsRepository = settingsRepository,
+            insertButtonConfigUseCase = InsertButtonConfigUseCase(),
+            moveButtonWithInsertUseCase = MoveButtonWithInsertUseCase()
         )
         val interactionDelegate = InteractionDelegate(
             application = application,

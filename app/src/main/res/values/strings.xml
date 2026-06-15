@@ -715,5 +715,13 @@
     <string name="nav_speak">Nutzermodus</string>
     <string name="nav_content">Inhalte</string>
     <string name="nav_stats">Statistik</string>
+
+    <!-- Bulk Edit/Multi-Select Strings -->
+    <string name="bulk_action_move">Verschieben</string>
+    <string name="bulk_action_copy">Kopieren</string>
+    <string name="bulk_action_delete">Löschen</string>
+    <string name="bulk_action_cancel">Abbrechen</string>
+    <string name="bulk_action_selected_count">%1$d ausgewählt</string>
+    <string name="bulk_action_confirm_delete">Ausgewählte Knöpfe wirklich löschen?</string>
 </resources>
 

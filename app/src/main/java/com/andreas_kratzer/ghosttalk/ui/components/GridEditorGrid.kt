@@ -31,6 +31,9 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.Surface
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -67,6 +70,8 @@ fun GridEditorGrid(
     actions: GridEditorActions,
     buttonReorderState: ReorderableState,
     rowReorderState: ReorderableState,
+    isMultiSelectMode: Boolean = false,
+    selectedButtonIndices: Set<Int> = emptySet(),
     onEditRow: (Int) -> Unit,
     onEditButton: (Int) -> Unit
 ) {
@@ -94,6 +99,8 @@ fun GridEditorGrid(
                 availablePages = availablePages,
                 pageMetrics = pageMetrics,
                 isEditPreviewActive = isEditPreviewActive,
+                isMultiSelectMode = isMultiSelectMode,
+                selectedButtonIndices = selectedButtonIndices,
                 onEditRow = onEditRow,
                 onEditButton = onEditButton
             )
@@ -110,6 +117,8 @@ fun GridEditorGrid(
                 availablePages = availablePages,
                 pageMetrics = pageMetrics,
                 isEditPreviewActive = isEditPreviewActive,
+                isMultiSelectMode = isMultiSelectMode,
+                selectedButtonIndices = selectedButtonIndices,
                 onEditButton = onEditButton
             )
         }
@@ -131,6 +140,8 @@ private fun EditorButtonCell(
     heatmapIntensity: Float? = null,
     effortMetrics: com.andreas_kratzer.ghosttalk.core.model.ButtonEffortMetrics? = null,
     isEditPreviewActive: Boolean = false,
+    isMultiSelectMode: Boolean = false,
+    isSelected: Boolean = false,
     onDragEnd: (Int) -> Unit,
     onClick: () -> Unit
 ) {
@@ -156,11 +167,11 @@ private fun EditorButtonCell(
             .width(width)
             .height(height)
             .run {
-                if (!isEditPreviewActive) reorderableItemVisuals(reorderState, localIndex)
+                if (!isEditPreviewActive && !isMultiSelectMode) reorderableItemVisuals(reorderState, localIndex)
                 else this
             }
             .run {
-                if (!isEditPreviewActive) {
+                if (!isEditPreviewActive && !isMultiSelectMode) {
                     dragHandle(
                         state = reorderState,
                         index = localIndex,
@@ -173,11 +184,11 @@ private fun EditorButtonCell(
                 } else this
             }
             .run {
-                if (!isEditPreviewActive) dropTarget(key = GridCellTarget(globalIndex))
+                if (!isEditPreviewActive && !isMultiSelectMode) dropTarget(key = GridCellTarget(globalIndex))
                 else this
             }
             .run {
-                if (buttonConfig != null && !isEditPreviewActive) {
+                if (buttonConfig != null && !isEditPreviewActive && !isMultiSelectMode) {
                     dragSource(item = DraggedGridCell(globalIndex, buttonConfig), longPress = true)
                 } else this
             }
@@ -188,21 +199,43 @@ private fun EditorButtonCell(
             targetPageName = targetPageName,
             heatmapIntensity = heatmapIntensity,
             effortMetrics = effortMetrics,
+            isMultiSelectMode = isMultiSelectMode,
             onClick = onClick,
             modifier = Modifier
                 .fillMaxSize()
                 .background(
-                    if (isHighlighted) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.15f)
+                    if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
+                    else if (isHighlighted) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.15f)
                     else Color.Transparent
                 )
                 .border(
-                    width = if (isDraggedHovered) 3.dp else if (isTarget) 2.dp else 0.dp,
-                    color = if (isDraggedHovered) MaterialTheme.colorScheme.primary.copy(alpha = pulseAlpha)
+                    width = if (isSelected) 3.dp else if (isDraggedHovered) 3.dp else if (isTarget) 2.dp else 0.dp,
+                    color = if (isSelected) MaterialTheme.colorScheme.primary
+                            else if (isDraggedHovered) MaterialTheme.colorScheme.primary.copy(alpha = pulseAlpha)
                             else if (isTarget) MaterialTheme.colorScheme.primary
                             else Color.Transparent,
                     shape = MaterialTheme.shapes.small
                 )
         )
+
+        if (isMultiSelectMode && buttonConfig != null) {
+            Surface(
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(4.dp)
+                    .size(20.dp),
+                shape = androidx.compose.foundation.shape.CircleShape,
+                color = MaterialTheme.colorScheme.surfaceVariant,
+                shadowElevation = 1.dp
+            ) {
+                Icon(
+                    imageVector = if (isSelected) com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons.CheckCircle else com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons.RadioButtonUnchecked,
+                    contentDescription = if (isSelected) "Selected" else "Unselected",
+                    tint = if (isSelected) MaterialTheme.colorScheme.primary else Color.Gray.copy(alpha = 0.6f),
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
+        }
 
         if (isDragging) {
             val leftTarget = InsertTarget(globalIndex)
@@ -275,6 +308,8 @@ private fun LazyGridScope.renderRowByRowGrid(
     availablePages: List<Page>,
     pageMetrics: Map<String, com.andreas_kratzer.ghosttalk.core.model.ButtonEffortMetrics>,
     isEditPreviewActive: Boolean,
+    isMultiSelectMode: Boolean,
+    selectedButtonIndices: Set<Int>,
     onEditRow: (Int) -> Unit,
     onEditButton: (Int) -> Unit
 ) {
@@ -370,6 +405,7 @@ private fun LazyGridScope.renderRowByRowGrid(
                             }
                             
                             val metrics = buttonConfig?.let { pageMetrics[it.id] }
+                            val isSelected = selectedButtonIndices.contains(globalIndex)
                             EditorButtonCell(
                                 localIndex = globalIndex,
                                 globalIndex = globalIndex,
@@ -384,6 +420,8 @@ private fun LazyGridScope.renderRowByRowGrid(
                                 heatmapIntensity = metrics?.heatmapIntensity,
                                 effortMetrics = metrics,
                                 isEditPreviewActive = isEditPreviewActive,
+                                isMultiSelectMode = isMultiSelectMode,
+                                isSelected = isSelected,
                                 onDragEnd = { fromIdx ->
                                     val to = buttonReorderState.findTargetButtonIndex(
                                         gridState = gridState,
@@ -397,10 +435,14 @@ private fun LazyGridScope.renderRowByRowGrid(
                                     }
                                 },
                                 onClick = {
-                                    if (!isEditPreviewActive) {
+                                    if (isMultiSelectMode) {
                                         onEditButton(globalIndex)
-                                    } else if (buttonConfig != null) {
-                                        actions.executeButtonAction(buttonConfig)
+                                    } else {
+                                        if (!isEditPreviewActive) {
+                                            onEditButton(globalIndex)
+                                        } else if (buttonConfig != null) {
+                                            actions.executeButtonAction(buttonConfig)
+                                        }
                                     }
                                 }
                             )
@@ -424,6 +466,8 @@ private fun LazyGridScope.renderLinearGrid(
     availablePages: List<Page>,
     pageMetrics: Map<String, com.andreas_kratzer.ghosttalk.core.model.ButtonEffortMetrics>,
     isEditPreviewActive: Boolean,
+    isMultiSelectMode: Boolean,
+    selectedButtonIndices: Set<Int>,
     onEditButton: (Int) -> Unit
 ) {
     val buttonTargetIndex = if (isEditPreviewActive) -1 else buttonReorderState.findTargetButtonIndex(
@@ -443,6 +487,7 @@ private fun LazyGridScope.renderLinearGrid(
         }
 
         val metrics = buttonConfig?.let { pageMetrics[it.id] }
+        val isSelected = selectedButtonIndices.contains(globalIndex)
         EditorButtonCell(
             localIndex = localIndex,
             globalIndex = globalIndex,
@@ -457,6 +502,8 @@ private fun LazyGridScope.renderLinearGrid(
             heatmapIntensity = metrics?.heatmapIntensity,
             effortMetrics = metrics,
             isEditPreviewActive = isEditPreviewActive,
+            isMultiSelectMode = isMultiSelectMode,
+            isSelected = isSelected,
             onDragEnd = { fromLocalIdx ->
                 val toGlobal = buttonReorderState.findTargetButtonIndex(
                     gridState = gridState,
@@ -473,10 +520,14 @@ private fun LazyGridScope.renderLinearGrid(
                 }
             },
             onClick = {
-                if (!isEditPreviewActive) {
+                if (isMultiSelectMode) {
                     onEditButton(globalIndex)
-                } else if (buttonConfig != null) {
-                    actions.executeButtonAction(buttonConfig)
+                } else {
+                    if (!isEditPreviewActive) {
+                        onEditButton(globalIndex)
+                    } else if (buttonConfig != null) {
+                        actions.executeButtonAction(buttonConfig)
+                    }
                 }
             }
         )

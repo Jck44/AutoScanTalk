@@ -367,7 +367,7 @@ class TemplateViewModel @Inject constructor(
 
     override fun moveButtonToPage(
         fromPageId: String,
-        fromIndex: Int,
+        fromIndices: List<Int>,
         toPageId: String,
         forceMove: Boolean,
         onResult: (com.andreas_kratzer.ghosttalk.core.domain.pages.MoveButtonToPageUseCase.MoveResult) -> Unit
@@ -377,7 +377,7 @@ class TemplateViewModel @Inject constructor(
 
     override fun duplicateButtonToPage(
         fromPageId: String,
-        fromIndex: Int,
+        fromIndices: List<Int>,
         toPageId: String,
         forceMove: Boolean,
         onResult: (com.andreas_kratzer.ghosttalk.core.domain.pages.MoveButtonToPageUseCase.MoveResult) -> Unit

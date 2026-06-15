@@ -35,106 +35,85 @@ import com.andreas_kratzer.ghosttalk.core.model.Page
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
 import com.andreas_kratzer.ghosttalk.core.ui.R as CoreR
 
+import com.andreas_kratzer.ghosttalk.core.model.PageTemplate
+import com.andreas_kratzer.ghosttalk.ui.pages.actions.NavigationActionFields
+
 @Composable
 fun TargetPageSelectionDialog(
     availablePages: List<Page>,
+    templates: List<PageTemplate>,
     onPageSelected: (Page) -> Unit,
+    onCreatePage: ((String, Int, Int, String?, (String) -> Unit) -> Unit)?,
     onDismiss: () -> Unit,
     currentPageId: String? = null
 ) {
     val dimensions = LocalDimensions.current
-    
-    var searchQuery by remember { mutableStateOf("") }
-    val filteredPages = remember(searchQuery, availablePages) {
-        val trimmedQuery = searchQuery.trim()
-        if (trimmedQuery.isBlank()) availablePages
-        else availablePages.filter { it.name.contains(trimmedQuery, ignoreCase = true) }
-    }
-    
-    val currentPage = remember(currentPageId, availablePages) {
-        if (currentPageId != null) availablePages.find { it.id == currentPageId } else null
-    }
+    var selectedPageId by remember { mutableStateOf("") }
     
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.button_move_target_title)) },
         text = {
-            Column {
-                if (currentPage != null) {
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(bottom = dimensions.paddingMedium)
-                            .clickable { onPageSelected(currentPage) },
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.primaryContainer,
-                            contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                        ),
-                        shape = MaterialTheme.shapes.medium
-                    ) {
-                        Row(
+            Column(
+                verticalArrangement = Arrangement.spacedBy(dimensions.paddingMedium)
+            ) {
+                if (currentPageId != null) {
+                    val currentPage = availablePages.find { it.id == currentPageId }
+                    if (currentPage != null) {
+                        Card(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(dimensions.paddingMedium),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(dimensions.paddingSmall)
+                                .clickable { onPageSelected(currentPage) },
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                            ),
+                            shape = MaterialTheme.shapes.medium
                         ) {
-                            Icon(
-                                imageVector = Icons.Default.Add,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                            Column {
-                                Text(
-                                    text = "Auf aktueller Seite duplizieren",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold
-                                )
-                                Text(
-                                    text = "Erstellt ein Duplikat auf dieser Seite (${currentPage.name})",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
-                                )
-                            }
-                        }
-                    }
-                }
-
-                OutlinedTextField(
-                    value = searchQuery,
-                    onValueChange = { searchQuery = it },
-                    label = { Text(stringResource(R.string.search_hint)) },
-                    modifier = Modifier.fillMaxWidth().padding(bottom = dimensions.paddingMedium),
-                    singleLine = true,
-                    shape = MaterialTheme.shapes.large,
-                    keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(imeAction = androidx.compose.ui.text.input.ImeAction.Done)
-                )
-
-                if (filteredPages.isEmpty()) {
-                    Text(
-                        stringResource(R.string.page_none_found),
-                        modifier = Modifier.padding(vertical = dimensions.paddingMedium)
-                    )
-                } else {
-                    LazyColumn(modifier = Modifier.height(300.dp)) {
-                        items(filteredPages) { page ->
-                            Column(
+                            Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .clickable { onPageSelected(page) }
-                                    .padding(vertical = dimensions.paddingMedium)
+                                    .padding(dimensions.paddingMedium),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(dimensions.paddingSmall)
                             ) {
-                                Text(page.name, style = MaterialTheme.typography.bodyLarge)
-                                Text(
-                                    stringResource(R.string.page_grid_info, page.rows, page.columns),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                Icon(
+                                    imageVector = Icons.Default.Add,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary
                                 )
+                                Column {
+                                    Text(
+                                        text = "Auf aktueller Seite duplizieren",
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    Text(
+                                        text = "Erstellt ein Duplikat auf dieser Seite (${currentPage.name})",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
+                                    )
+                                }
                             }
-                            HorizontalDivider()
                         }
                     }
                 }
+
+                NavigationActionFields(
+                    navigateToPageId = selectedPageId,
+                    onPageSelected = { pageId ->
+                        selectedPageId = pageId
+                        val page = availablePages.find { it.id == pageId }
+                        if (page != null) {
+                            onPageSelected(page)
+                        }
+                    },
+                    availablePages = availablePages,
+                    templates = templates,
+                    onNavigateToPage = null,
+                    onCreatePage = onCreatePage,
+                    onDismissDialog = onDismiss
+                )
             }
         },
         confirmButton = {

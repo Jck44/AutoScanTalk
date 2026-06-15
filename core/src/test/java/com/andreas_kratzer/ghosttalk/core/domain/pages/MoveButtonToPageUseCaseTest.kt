@@ -44,7 +44,7 @@ class MoveButtonToPageUseCaseTest {
         coEvery { pageRepository.getPageById("p1") } returns fromPage
         coEvery { pageRepository.getPageById("p2") } returns toPage
 
-        val result = useCase.execute("p1", 0, "p2", false)
+        val result = useCase.execute("p1", listOf(0), "p2", false)
 
         assertTrue(result is MoveButtonToPageUseCase.MoveResult.Success)
         val success = result as MoveButtonToPageUseCase.MoveResult.Success
@@ -78,7 +78,7 @@ class MoveButtonToPageUseCaseTest {
         coEvery { pageRepository.getPageById("p1") } returns fromPage
         coEvery { pageRepository.getPageById("p2") } returns toPage
 
-        val result = useCase.execute("p1", 0, "p2", false)
+        val result = useCase.execute("p1", listOf(0), "p2", false)
 
         assertTrue(result is MoveButtonToPageUseCase.MoveResult.NeedsConfirmation)
         val confirmation = result as MoveButtonToPageUseCase.MoveResult.NeedsConfirmation
@@ -112,7 +112,7 @@ class MoveButtonToPageUseCaseTest {
         coEvery { pageRepository.getPageById("p1") } returns fromPage
         coEvery { pageRepository.getPageById("p2") } returns toPage
 
-        val result = useCase.execute("p1", 0, "p2", false)
+        val result = useCase.execute("p1", listOf(0), "p2", false)
 
         // It should succeed and put the moved button at index 7 (visible) rather than index 2 (invisible, which would need confirmation)
         assertTrue(result is MoveButtonToPageUseCase.MoveResult.Success)
@@ -138,7 +138,7 @@ class MoveButtonToPageUseCaseTest {
         coEvery { pageRepository.getPageById("p1") } returns fromPage
         coEvery { pageRepository.getPageById("p2") } returns toPage
 
-        val result = useCase.execute("p1", 0, "p2", false)
+        val result = useCase.execute("p1", listOf(0), "p2", false)
 
         assertTrue(result is MoveButtonToPageUseCase.MoveResult.TargetFull)
     }
@@ -161,7 +161,7 @@ class MoveButtonToPageUseCaseTest {
         coEvery { pageRepository.getPageById("p2") } returns toPage
 
         // Move to index 1 (requires expanding columns to 2)
-        val result = useCase.execute("p1", 0, "p2", true)
+        val result = useCase.execute("p1", listOf(0), "p2", true)
 
         assertTrue(result is MoveButtonToPageUseCase.MoveResult.Success)
         val success = result as MoveButtonToPageUseCase.MoveResult.Success
@@ -191,7 +191,7 @@ class MoveButtonToPageUseCaseTest {
         coEvery { pageRepository.getPageById("p1") } returns fromPage
         coEvery { pageRepository.getPageById("p2") } returns toPage
 
-        val result = useCase.execute("p1", 0, "p2", false)
+        val result = useCase.execute("p1", listOf(0), "p2", false)
 
         assertTrue(result is MoveButtonToPageUseCase.MoveResult.NeedsConfirmation)
         val confirmation = result as MoveButtonToPageUseCase.MoveResult.NeedsConfirmation
@@ -217,7 +217,7 @@ class MoveButtonToPageUseCaseTest {
         coEvery { pageRepository.getPageById("p1") } returns fromPage
         coEvery { pageRepository.getPageById("p2") } returns toPage
 
-        val result = useCase.execute("p1", 0, "p2", false)
+        val result = useCase.execute("p1", listOf(0), "p2", false)
 
         assertTrue(result is MoveButtonToPageUseCase.MoveResult.TargetFull)
         

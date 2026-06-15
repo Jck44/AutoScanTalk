@@ -226,7 +226,7 @@ fun StructureEditorScreen(
     val onMoveButton = { fromPageId: String, fromIndex: Int, targetPageId: String ->
         gridEditorViewModel.moveButtonToPage(
             fromPageId = fromPageId,
-            fromIndex = fromIndex,
+            fromIndices = listOf(fromIndex),
             toPageId = targetPageId,
             forceMove = false
         ) { result ->

@@ -17,6 +17,8 @@ import com.andreas_kratzer.ghosttalk.core.domain.pages.IdentifyActivePageLinksUs
 import com.andreas_kratzer.ghosttalk.core.domain.pages.ImportPageUseCase
 import com.andreas_kratzer.ghosttalk.core.domain.pages.MoveButtonToPageUseCase
 import com.andreas_kratzer.ghosttalk.core.domain.pages.MoveButtonUseCase
+import com.andreas_kratzer.ghosttalk.core.domain.pages.InsertButtonConfigUseCase
+import com.andreas_kratzer.ghosttalk.core.domain.pages.MoveButtonWithInsertUseCase
 import com.andreas_kratzer.ghosttalk.core.domain.pages.MoveRowUseCase
 import com.andreas_kratzer.ghosttalk.core.domain.pages.UpdateButtonConfigUseCase
 import com.andreas_kratzer.ghosttalk.core.domain.pages.UpdateMultipleButtonsUseCase
@@ -72,7 +74,9 @@ class PageManagementDelegate @Inject constructor(
     private val updateMultipleButtonsUseCase: UpdateMultipleButtonsUseCase,
     private val identifyActivePageLinksUseCase: IdentifyActivePageLinksUseCase,
     private val appStateRepository: AppStateRepository,
-    private val settingsRepository: SettingsRepository
+    private val settingsRepository: SettingsRepository,
+    val insertButtonConfigUseCase: InsertButtonConfigUseCase,
+    val moveButtonWithInsertUseCase: MoveButtonWithInsertUseCase
 ) {
     private lateinit var scope: CoroutineScope
     lateinit var history: EditHistory
@@ -226,74 +230,27 @@ class PageManagementDelegate @Inject constructor(
             mutex.withLock {
                 val page = pageRepository.getPageById(pageId) ?: return@withLock
                 val oldConfigs = page.buttonConfigs.toList()
-                val newButtonConfigs = page.buttonConfigs.toMutableList()
                 
-                // Ensure 49 slots
-                while (newButtonConfigs.size < com.andreas_kratzer.ghosttalk.core.util.GridUtils.TOTAL_SLOTS) {
-                    newButtonConfigs.add(null)
-                }
-                
-                if (index in newButtonConfigs.indices) {
-                    // Check if the entire 49 slots are completely full
-                    if ((newButtonConfigs[index] != null || forceShift) && newButtonConfigs.none { it == null }) {
+                when (val result = insertButtonConfigUseCase.execute(page, index, newConfig, forceShift)) {
+                    is InsertButtonConfigUseCase.Result.Success -> {
+                        val labelVal = newConfig.label
+                        val command = PageSnapshotCommand(
+                            delegate = this@PageManagementDelegate,
+                            pageId = pageId,
+                            oldConfigs = oldConfigs,
+                            newConfigs = result.newConfigs,
+                            label = EditLabel(R.string.history_insert_button, listOf(labelVal)),
+                            icon = EditIcon.EDIT
+                        )
+                        history.execute(command)
+                        kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                            onResult(true)
+                        }
+                    }
+                    else -> {
                         kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
                             onResult(false)
                         }
-                        return@withLock
-                    }
-                    
-                    if (newButtonConfigs[index] == null && !forceShift) {
-                        // Target is empty, just replace
-                        newButtonConfigs[index] = newConfig
-                    } else {
-                        // Target is not empty or we force shift, shift items down following the visible layout flow
-                        val visibleIndices = mutableListOf<Int>()
-                        for (r in 0 until page.rows) {
-                            for (c in 0 until page.columns) {
-                                visibleIndices.add(r * com.andreas_kratzer.ghosttalk.core.util.GridUtils.MAX_GRID_SIZE + c)
-                            }
-                        }
-                        
-                        val dropVisiblePos = visibleIndices.indexOf(index)
-                        if (dropVisiblePos != -1) {
-                            val lastVisibleGlobal = visibleIndices.last()
-                            val lastItem = newButtonConfigs[lastVisibleGlobal]
-                            
-                            // Shift visible items down by 1
-                            val now = System.currentTimeMillis()
-                            for (i in visibleIndices.size - 1 downTo dropVisiblePos + 1) {
-                                val currentGlobal = visibleIndices[i]
-                                val prevGlobal = visibleIndices[i - 1]
-                                newButtonConfigs[currentGlobal] = newButtonConfigs[prevGlobal]?.copy(updatedAt = now)
-                            }
-                            
-                            // Rescue the last item by placing it in the first available invisible slot
-                            if (lastItem != null) {
-                                for (i in 0 until com.andreas_kratzer.ghosttalk.core.util.GridUtils.TOTAL_SLOTS) {
-                                    if (i !in visibleIndices && newButtonConfigs[i] == null) {
-                                        newButtonConfigs[i] = lastItem.copy(updatedAt = now)
-                                        break
-                                    }
-                                }
-                            }
-                        }
-                        
-                        // Insert new config
-                        newButtonConfigs[index] = newConfig
-                    }
-                    
-                    val labelVal = newConfig.label
-                    val command = PageSnapshotCommand(
-                        delegate = this@PageManagementDelegate,
-                        pageId = pageId,
-                        oldConfigs = oldConfigs,
-                        newConfigs = newButtonConfigs.toList(),
-                        label = EditLabel(R.string.history_insert_button, listOf(labelVal)),
-                        icon = EditIcon.EDIT
-                    )
-                    history.execute(command)
-                    kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
-                        onResult(true)
                     }
                 }
             }
@@ -437,61 +394,22 @@ class PageManagementDelegate @Inject constructor(
             mutex.withLock {
                 val page = pageRepository.getPageById(pageId) ?: return@withLock
                 val oldConfigs = page.buttonConfigs.toList()
-                val newButtonConfigs = page.buttonConfigs.toMutableList()
                 
-                // Ensure 49 slots
-                while (newButtonConfigs.size < com.andreas_kratzer.ghosttalk.core.util.GridUtils.TOTAL_SLOTS) {
-                    newButtonConfigs.add(null)
-                }
-                
-                val visibleIndices = mutableListOf<Int>()
-                for (r in 0 until page.rows) {
-                    for (c in 0 until page.columns) {
-                        visibleIndices.add(r * com.andreas_kratzer.ghosttalk.core.util.GridUtils.MAX_GRID_SIZE + c)
+                when (val result = moveButtonWithInsertUseCase.execute(page, fromIndex, toIndex)) {
+                    is MoveButtonWithInsertUseCase.Result.Success -> {
+                        val command = PageSnapshotCommand(
+                            delegate = this@PageManagementDelegate,
+                            pageId = pageId,
+                            oldConfigs = oldConfigs,
+                            newConfigs = result.newConfigs,
+                            label = EditLabel(R.string.history_move_button_with_insert, listOf(result.movedButtonLabel)),
+                            icon = EditIcon.MOVE
+                        )
+                        history.execute(command)
                     }
-                }
-                
-                if (fromIndex in visibleIndices && toIndex <= visibleIndices.size) {
-                    val movedItem = newButtonConfigs[fromIndex] ?: return@withLock
-                    
-                    // Clear the source
-                    newButtonConfigs[fromIndex] = null
-                    
-                    val now = System.currentTimeMillis()
-                    if (fromIndex < toIndex) {
-                        // Shift items between fromIndex + 1 and toIndex - 1 to the left
-                        for (i in fromIndex until toIndex - 1) {
-                            if (i < visibleIndices.size - 1) {
-                                val currentGlobal = visibleIndices[i]
-                                val nextGlobal = visibleIndices[i + 1]
-                                newButtonConfigs[currentGlobal] = newButtonConfigs[nextGlobal]?.copy(updatedAt = now)
-                            }
-                        }
-                        // Insert the moved item at toIndex - 1
-                        val targetGlobal = visibleIndices[toIndex - 1]
-                        newButtonConfigs[targetGlobal] = movedItem.copy(updatedAt = now)
-                    } else if (fromIndex > toIndex) {
-                        // Shift items between toIndex and fromIndex - 1 to the right
-                        for (i in fromIndex downTo toIndex + 1) {
-                            val currentGlobal = visibleIndices[i]
-                            val prevGlobal = visibleIndices[i - 1]
-                            newButtonConfigs[currentGlobal] = newButtonConfigs[prevGlobal]?.copy(updatedAt = now)
-                        }
-                        // Insert the moved item at toIndex
-                        val targetGlobal = visibleIndices[toIndex]
-                        newButtonConfigs[targetGlobal] = movedItem.copy(updatedAt = now)
+                    MoveButtonWithInsertUseCase.Result.Error -> {
+                        // ignore or handle error
                     }
-                    
-                    val labelVal = movedItem.label
-                    val command = PageSnapshotCommand(
-                        delegate = this@PageManagementDelegate,
-                        pageId = pageId,
-                        oldConfigs = oldConfigs,
-                        newConfigs = newButtonConfigs.toList(),
-                        label = EditLabel(R.string.history_move_button_with_insert, listOf(labelVal)),
-                        icon = EditIcon.MOVE
-                    )
-                    history.execute(command)
                 }
             }
         }
@@ -499,7 +417,7 @@ class PageManagementDelegate @Inject constructor(
 
     fun moveButtonToPage(
         fromPageId: String,
-        fromIndex: Int,
+        fromIndices: List<Int>,
         toPageId: String,
         forceMove: Boolean = false,
         onResult: (MoveButtonToPageUseCase.MoveResult) -> Unit
@@ -507,15 +425,18 @@ class PageManagementDelegate @Inject constructor(
         scope.launch {
             mutex.withLock {
                 val fromPage = pageRepository.getPageById(fromPageId) ?: return@withLock
-                val button = fromPage.buttonConfigs.getOrNull(fromIndex)
-                val buttonLabel = button?.label ?: ""
+                val buttonLabel = if (fromIndices.size == 1) {
+                    fromPage.buttonConfigs.getOrNull(fromIndices.first())?.label ?: ""
+                } else {
+                    "${fromIndices.size} Knöpfe"
+                }
                 val toPage = pageRepository.getPageById(toPageId)
                 val toPageName = toPage?.name ?: ""
 
                 val command = MoveButtonToPageCommand(
                     delegate = this@PageManagementDelegate,
                     fromPageId = fromPageId,
-                    fromIndex = fromIndex,
+                    fromIndices = fromIndices,
                     toPageId = toPageId,
                     forceMove = forceMove,
                     label = EditLabel(R.string.history_move_button_to_page, listOf(buttonLabel, toPageName)),
@@ -528,7 +449,7 @@ class PageManagementDelegate @Inject constructor(
 
     fun duplicateButtonToPage(
         fromPageId: String,
-        fromIndex: Int,
+        fromIndices: List<Int>,
         toPageId: String,
         forceMove: Boolean = false,
         onResult: (MoveButtonToPageUseCase.MoveResult) -> Unit
@@ -536,15 +457,18 @@ class PageManagementDelegate @Inject constructor(
         scope.launch {
             mutex.withLock {
                 val fromPage = pageRepository.getPageById(fromPageId) ?: return@withLock
-                val button = fromPage.buttonConfigs.getOrNull(fromIndex)
-                val buttonLabel = button?.label ?: ""
+                val buttonLabel = if (fromIndices.size == 1) {
+                    fromPage.buttonConfigs.getOrNull(fromIndices.first())?.label ?: ""
+                } else {
+                    "${fromIndices.size} Knöpfe"
+                }
                 val toPage = pageRepository.getPageById(toPageId)
                 val toPageName = toPage?.name ?: ""
 
                 val command = DuplicateButtonToPageCommand(
                     delegate = this@PageManagementDelegate,
                     fromPageId = fromPageId,
-                    fromIndex = fromIndex,
+                    fromIndices = fromIndices,
                     toPageId = toPageId,
                     forceMove = forceMove,
                     label = EditLabel(R.string.history_duplicate_button_to_page, listOf(buttonLabel, toPageName)),
