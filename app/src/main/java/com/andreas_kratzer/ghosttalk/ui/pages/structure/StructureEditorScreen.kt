@@ -126,6 +126,8 @@ fun StructureEditorScreen(
         mutableStateOf(emptyList<String>())
     }
 
+    var sidePanelExpanded by rememberSaveable { mutableStateOf(true) }
+
     val navigateToPage = { newPageId: String ->
         if (newPageId != focusedPageId && newPageId.isNotBlank()) {
             focusHistory = focusHistory + focusedPageId
@@ -497,23 +499,54 @@ fun StructureEditorScreen(
                     .weight(1f)
             ) {
                 if (isTablet) {
-                    // Left Column: TreeView (~34%)
-                    Card(
-                        modifier = Modifier
-                            .fillMaxHeight()
-                            .width(300.dp)
-                            .padding(start = 16.dp, top = 16.dp, bottom = 16.dp),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
-                    ) {
-                        StructureTreeNavigator(
-                            graph = graph,
-                            pages = pages,
-                            pageNames = pageNames,
-                            focusedPageId = focusedPageId,
-                            onFocus = { navigateToPage(it) },
-                            onOrphanClick = { orphanId -> orphanToConnectId = orphanId },
-                            modifier = Modifier.fillMaxSize()
-                        )
+                    if (sidePanelExpanded) {
+                        // Left Column: TreeView (~34%)
+                        Card(
+                            modifier = Modifier
+                                .fillMaxHeight()
+                                .width(300.dp)
+                                .padding(start = 16.dp, top = 16.dp, bottom = 16.dp),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                        ) {
+                            Column(modifier = Modifier.fillMaxSize()) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.End
+                                ) {
+                                    IconButton(onClick = { sidePanelExpanded = false }) {
+                                        Icon(
+                                            imageVector = GhostTalkIcons.ArrowBack,
+                                            contentDescription = stringResource(R.string.side_panel_collapse)
+                                        )
+                                    }
+                                }
+                                StructureTreeNavigator(
+                                    graph = graph,
+                                    pages = pages,
+                                    pageNames = pageNames,
+                                    focusedPageId = focusedPageId,
+                                    onFocus = { navigateToPage(it) },
+                                    onOrphanClick = { orphanId -> orphanToConnectId = orphanId },
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .fillMaxWidth()
+                                )
+                            }
+                        }
+                    } else {
+                        // Collapsed rail: button to re-open the side panel
+                        Column(
+                            modifier = Modifier
+                                .fillMaxHeight()
+                                .padding(start = 8.dp, top = 16.dp)
+                        ) {
+                            IconButton(onClick = { sidePanelExpanded = true }) {
+                                Icon(
+                                    imageVector = GhostTalkIcons.ArrowForward,
+                                    contentDescription = stringResource(R.string.side_panel_expand)
+                                )
+                            }
+                        }
                     }
 
                     // Split divider

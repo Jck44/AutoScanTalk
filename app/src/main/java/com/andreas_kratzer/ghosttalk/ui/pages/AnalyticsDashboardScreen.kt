@@ -199,49 +199,6 @@ fun AnalyticsDashboardScreen(
     val previousUsageMinutes = previousUsageMs / (1000.0 * 60.0)
     val previousCommRate = if (previousUsageMinutes > 0.0) previousClicks / previousUsageMinutes else 0.0
     
-    // Transition flows
-    val commonTransitions = remember(historyEvents, unfilteredPages) {
-        if (historyEvents.size < 2) emptyList<TransitionFlow>()
-        else {
-            historyEvents.zipWithNext()
-                .filter { (prev, curr) ->
-                    prev.pageId != null && curr.pageId != null && prev.pageId != curr.pageId &&
-                    !prev.label.equals("Zurück", true) && !prev.label.equals("Startseite", true) &&
-                    !curr.label.equals("Zurück", true) && !curr.label.equals("Startseite", true)
-                }
-                .groupBy { (prev, curr) -> Pair(prev.pageId!!, curr.pageId!!) }
-                .mapNotNull { (pair, list) ->
-                    val fromName = unfilteredPages.find { it.id == pair.first }?.name ?: return@mapNotNull null
-                    val toName = unfilteredPages.find { it.id == pair.second }?.name ?: return@mapNotNull null
-                    TransitionFlow(fromName, toName, list.size)
-                }
-                .sortedByDescending { it.count }
-                .take(5)
-        }
-    }
-
-    // Page-Level Analytics Calculations
-    val topUsedPages = remember(historyEvents, unfilteredPages) {
-        val totalPagesClicks = historyEvents.filter { it.pageId != null }.size
-        if (totalPagesClicks == 0) emptyList<PageUsage>()
-        else {
-            historyEvents.filter { it.pageId != null }
-                .groupBy { it.pageId!! }
-                .mapNotNull { (pageId, events) ->
-                    val pageName = unfilteredPages.find { it.id == pageId }?.name ?: return@mapNotNull null
-                    val pct = (events.size.toFloat() / totalPagesClicks)
-                    PageUsage(pageId, pageName, events.size, pct)
-                }
-                .sortedByDescending { it.count }
-                .take(5)
-        }
-    }
-
-    val unusedPages = remember(historyEvents, unfilteredPages) {
-        val usedPageIds = historyEvents.mapNotNull { it.pageId }.toSet()
-        unfilteredPages.filter { !usedPageIds.contains(it.id) }
-    }
-
     val pageToDelete = remember { mutableStateOf<Page?>(null) }
     val usagesToDelete = remember { mutableStateOf<List<UsageLocation>>(emptyList()) }
     val coroutineScope = rememberCoroutineScope()
@@ -457,6 +414,46 @@ fun AnalyticsDashboardScreen(
                         )
                     }
                     2 -> {
+                        // Computed lazily here (only when the Details tab is open)
+                        // so opening the dashboard on the Overview tab stays light.
+                        val commonTransitions = remember(historyEvents, unfilteredPages) {
+                            if (historyEvents.size < 2) emptyList<TransitionFlow>()
+                            else {
+                                historyEvents.zipWithNext()
+                                    .filter { (prev, curr) ->
+                                        prev.pageId != null && curr.pageId != null && prev.pageId != curr.pageId &&
+                                        !prev.label.equals("Zurück", true) && !prev.label.equals("Startseite", true) &&
+                                        !curr.label.equals("Zurück", true) && !curr.label.equals("Startseite", true)
+                                    }
+                                    .groupBy { (prev, curr) -> Pair(prev.pageId!!, curr.pageId!!) }
+                                    .mapNotNull { (pair, list) ->
+                                        val fromName = unfilteredPages.find { it.id == pair.first }?.name ?: return@mapNotNull null
+                                        val toName = unfilteredPages.find { it.id == pair.second }?.name ?: return@mapNotNull null
+                                        TransitionFlow(fromName, toName, list.size)
+                                    }
+                                    .sortedByDescending { it.count }
+                                    .take(5)
+                            }
+                        }
+                        val topUsedPages = remember(historyEvents, unfilteredPages) {
+                            val totalPagesClicks = historyEvents.filter { it.pageId != null }.size
+                            if (totalPagesClicks == 0) emptyList<PageUsage>()
+                            else {
+                                historyEvents.filter { it.pageId != null }
+                                    .groupBy { it.pageId!! }
+                                    .mapNotNull { (pageId, events) ->
+                                        val pageName = unfilteredPages.find { it.id == pageId }?.name ?: return@mapNotNull null
+                                        val pct = (events.size.toFloat() / totalPagesClicks)
+                                        PageUsage(pageId, pageName, events.size, pct)
+                                    }
+                                    .sortedByDescending { it.count }
+                                    .take(5)
+                            }
+                        }
+                        val unusedPages = remember(historyEvents, unfilteredPages) {
+                            val usedPageIds = historyEvents.mapNotNull { it.pageId }.toSet()
+                            unfilteredPages.filter { !usedPageIds.contains(it.id) }
+                        }
                         AnalyticsDetailsTab(
                             commonTransitions = commonTransitions,
                             topUsedPages = topUsedPages,

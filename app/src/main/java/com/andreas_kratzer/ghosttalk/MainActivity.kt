@@ -189,8 +189,12 @@ class MainActivity : AppCompatActivity() {
             if (activeBookId != null) {
                 pageViewModel.setActiveBookId(activeBookId)
             }
+            // Show the UI as soon as the active book is known.
             isDbInitialized = true
             handleIntent(intent)
+            // Non-critical maintenance (scheduling, sync, purge) runs after the
+            // first frame so it doesn't delay startup.
+            appStartupInitializer.runDeferredStartupWork()
         }
 
         // Observe Auth Consent Intent

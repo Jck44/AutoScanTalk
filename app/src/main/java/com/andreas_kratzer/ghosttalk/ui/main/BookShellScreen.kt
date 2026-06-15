@@ -1,13 +1,21 @@
 package com.andreas_kratzer.ghosttalk.ui.main
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -21,18 +29,25 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.andreas_kratzer.ghosttalk.R
+import com.andreas_kratzer.ghosttalk.core.SecurityManager
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
-import com.andreas_kratzer.ghosttalk.feature.settings.ui.SettingsScreen
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.SettingsViewModel
 import com.andreas_kratzer.ghosttalk.ui.books.BookViewModel
 import com.andreas_kratzer.ghosttalk.ui.pages.AnalyticsDashboardScreen
@@ -40,7 +55,6 @@ import com.andreas_kratzer.ghosttalk.ui.pages.PageListScreen
 import com.andreas_kratzer.ghosttalk.ui.pages.PageViewModel
 import com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons
 import com.andreas_kratzer.ghosttalk.core.ui.R as CoreR
-import com.andreas_kratzer.ghosttalk.feature.settings.R as SettingsR
 
 enum class BookShellTab {
     Inhalte,
@@ -54,9 +68,11 @@ fun BookShellScreen(
     pageViewModel: PageViewModel,
     settingsViewModel: SettingsViewModel,
     settingsRepository: SettingsRepository,
+    securityManager: SecurityManager,
     onNavigateToUserMode: () -> Unit,
     onNavigateToBooks: () -> Unit,
     onNavigateToGlobalSettings: () -> Unit,
+    onRequestUnlock: () -> Unit,
     onEditPage: (String) -> Unit,
     onEditPageWithAssistant: (String, Boolean) -> Unit,
     onEditTemplate: (String) -> Unit,
@@ -64,13 +80,50 @@ fun BookShellScreen(
     onNavigateToTemplates: () -> Unit,
     onNavigateToStaticRow: () -> Unit
 ) {
-    var currentTab by rememberSaveable { mutableStateOf(BookShellTab.Inhalte) }
+    var currentTab by remember { mutableStateOf(BookShellTab.Inhalte) }
     var menuExpanded by remember { mutableStateOf(false) }
+    // tabSelected: tracks whether the user explicitly chose a tab. While false,
+    // the big "Nutzermodus" landing is shown so user mode stays in focus.
+    var tabSelected by remember { mutableStateOf(false) }
+    // Set when entering user mode, so we can return to the landing on resume
+    // (but not when coming back from the editor, where we keep the tab).
+    var returningFromUserMode by remember { mutableStateOf(false) }
 
     val activeBookId by pageViewModel.activeBookId.collectAsState()
     val allBooks by bookViewModel.allBooks.collectAsState()
     val activeBook = allBooks.find { it.id == activeBookId }
     val bookName = activeBook?.name ?: "GhostTalk"
+
+    val isUnlocked by securityManager.isUnlocked.collectAsState()
+    val isLocked = securityManager.isPinSet() && !isUnlocked
+
+    // Derived synchronously — no LaunchedEffect, no 1-frame flash.
+    // Landing shows when locked OR when no tab has been picked yet.
+    val showLanding by remember { derivedStateOf { isLocked || !tabSelected } }
+
+    // After successful unlock, auto-advance to editor so the user doesn't
+    // have to click a tab after entering the PIN.
+    LaunchedEffect(isUnlocked) {
+        if (isUnlocked) tabSelected = true
+    }
+
+    // When returning from user mode, refocus the big landing button.
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME && returningFromUserMode) {
+                returningFromUserMode = false
+                tabSelected = false
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+
+    val enterUserMode: () -> Unit = {
+        returningFromUserMode = true
+        onNavigateToUserMode()
+    }
 
     Scaffold(
         topBar = {
@@ -140,7 +193,7 @@ fun BookShellScreen(
             navigationSuiteItems = {
                 item(
                     selected = false,
-                    onClick = onNavigateToUserMode,
+                    onClick = enterUserMode,
                     icon = {
                         Icon(
                             imageVector = Icons.Default.PlayArrow,
@@ -158,40 +211,100 @@ fun BookShellScreen(
                     modifier = Modifier.testTag("start_card_user_mode")
                 )
                 item(
-                    selected = currentTab == BookShellTab.Inhalte,
-                    onClick = { currentTab = BookShellTab.Inhalte },
-                    icon = { Icon(Icons.Default.List, contentDescription = stringResource(R.string.nav_content)) },
+                    selected = !showLanding && currentTab == BookShellTab.Inhalte,
+                    onClick = {
+                        if (isLocked) onRequestUnlock()
+                        else { tabSelected = true; currentTab = BookShellTab.Inhalte }
+                    },
+                    icon = { Icon(Icons.AutoMirrored.Filled.List, contentDescription = stringResource(R.string.nav_content)) },
                     label = { Text(stringResource(R.string.nav_content)) }
                 )
                 item(
-                    selected = currentTab == BookShellTab.Statistik,
-                    onClick = { currentTab = BookShellTab.Statistik },
+                    selected = !showLanding && currentTab == BookShellTab.Statistik,
+                    onClick = {
+                        if (isLocked) onRequestUnlock()
+                        else { tabSelected = true; currentTab = BookShellTab.Statistik }
+                    },
                     icon = { Icon(GhostTalkIcons.BarChart, contentDescription = stringResource(R.string.nav_stats)) },
                     label = { Text(stringResource(R.string.nav_stats)) }
                 )
             }
         ) {
-            when (currentTab) {
-                BookShellTab.Inhalte -> {
-                    PageListScreen(
-                        pageViewModel = pageViewModel,
-                        onNavigateBack = null,
-                        onEditPage = onEditPage,
-                        onEditTemplate = onEditTemplate,
-                        onOpenStructureEditor = onOpenStructureEditor,
-                        onNavigateToTemplates = onNavigateToTemplates,
-                        onNavigateToStaticRow = onNavigateToStaticRow,
-                        showTopBar = false
-                    )
+            if (showLanding) {
+                BookShellLanding(
+                    onNavigateToUserMode = enterUserMode,
+                    isLocked = isLocked,
+                    onRequestUnlock = onRequestUnlock
+                )
+            } else {
+                when (currentTab) {
+                    BookShellTab.Inhalte -> {
+                        PageListScreen(
+                            pageViewModel = pageViewModel,
+                            onNavigateBack = null,
+                            onEditPage = onEditPage,
+                            onEditTemplate = onEditTemplate,
+                            onOpenStructureEditor = onOpenStructureEditor,
+                            onNavigateToTemplates = onNavigateToTemplates,
+                            onNavigateToStaticRow = onNavigateToStaticRow,
+                            showTopBar = false
+                        )
+                    }
+                    BookShellTab.Statistik -> {
+                        AnalyticsDashboardScreen(
+                            pageViewModel = pageViewModel,
+                            onNavigateBack = null,
+                            onEditPage = onEditPageWithAssistant,
+                            showTopBar = false
+                        )
+                    }
                 }
-                BookShellTab.Statistik -> {
-                    AnalyticsDashboardScreen(
-                        pageViewModel = pageViewModel,
-                        onNavigateBack = null,
-                        onEditPage = onEditPageWithAssistant,
-                        showTopBar = false
-                    )
-                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun BookShellLanding(
+    onNavigateToUserMode: () -> Unit,
+    isLocked: Boolean,
+    onRequestUnlock: () -> Unit
+) {
+    Column(
+        modifier = Modifier.fillMaxSize(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Button(
+            onClick = onNavigateToUserMode,
+            modifier = Modifier
+                .size(width = 240.dp, height = 80.dp)
+                .testTag("pin_locked_user_mode_button"),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.primary
+            )
+        ) {
+            Icon(
+                imageVector = Icons.Default.PlayArrow,
+                contentDescription = null,
+                modifier = Modifier.size(28.dp)
+            )
+            Spacer(modifier = Modifier.size(8.dp))
+            Text(
+                text = stringResource(R.string.start_user_mode),
+                style = MaterialTheme.typography.titleMedium
+            )
+        }
+        if (isLocked) {
+            Spacer(modifier = Modifier.height(24.dp))
+            TextButton(onClick = onRequestUnlock) {
+                Icon(
+                    imageVector = Icons.Default.Lock,
+                    contentDescription = null,
+                    modifier = Modifier.size(16.dp)
+                )
+                Spacer(modifier = Modifier.size(6.dp))
+                Text(stringResource(R.string.book_shell_unlock_editor))
             }
         }
     }

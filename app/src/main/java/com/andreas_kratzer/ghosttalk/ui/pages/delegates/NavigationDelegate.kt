@@ -63,29 +63,34 @@ class NavigationDelegate @Inject constructor(
     }
 
     private fun loadPageInternal(page: Page, isBackNavigation: Boolean = false) {
+        val previousPage = pageManagementDelegate.currentPage.value
+        val isSamePage = previousPage?.id == page.id
+
+        // Make the new page visible immediately. This must happen synchronously
+        // and before the async cleanup below, otherwise the screen stays blank
+        // until old-page teardown (incl. TTS stop, which can take 1-2s) finishes.
+        pageManagementDelegate.setCurrentPage(page)
+        savedStateHandle["currentPageId"] = page.id
+
+        // Track backstack: push the previous page ID before switching
+        if (!isSamePage && !isBackNavigation) {
+            previousPage?.id?.let { prevId ->
+                if (pageBackStack.lastOrNull() != prevId) {
+                    pageBackStack.add(prevId)
+                }
+            }
+        }
+
         scope.launch {
-            val currentPage = pageManagementDelegate.currentPage.value
-            val isSamePage = currentPage?.id == page.id
             val redoPrediction = settingsRepository.geminiRedoPrediction
-            
+
             // Stoppe laufende Aktionen und Audio der alten Seite
             val skipLog = activeBookState.value?.logStopActions == false
             actionExecutor.stopActions(skipLog = skipLog)
-            
+
             scanCoordinator.onPageChanged(isSamePage)
             onPageChanging?.invoke(isSamePage, redoPrediction)
 
-            // Track backstack: push current page ID before switching
-            if (!isSamePage && !isBackNavigation) {
-                currentPage?.id?.let { prevId ->
-                    if (pageBackStack.lastOrNull() != prevId) {
-                        pageBackStack.add(prevId)
-                    }
-                }
-            }
-
-            pageManagementDelegate.setCurrentPage(page)
-            savedStateHandle["currentPageId"] = page.id
             savedStateHandle["focusedButtonIndex"] = scanCoordinator.focusedButtonIndex.value
             savedStateHandle["focusedRowIndex"] = scanCoordinator.focusedRowIndex.value
         }

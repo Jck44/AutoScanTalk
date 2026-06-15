@@ -121,7 +121,13 @@ fun StructureGraphView(
     val showOutgoingMore = distinctOutgoing.size > outgoingTotalLimit
     val visibleOutgoing = if (showOutgoingMore) distinctOutgoing.take(outgoingTotalLimit - 1) else distinctOutgoing
     val outgoingNodeIds = if (showOutgoingMore) visibleOutgoing + "more_outgoing" else visibleOutgoing
-    val outgoingColumns = outgoingNodeIds.chunked(maxOutgoingRows)
+    // Cap the number of columns at maxOutgoingColumns by growing the rows per column
+    // instead of opening another column — the threaded-arrow routing only works for ≤2 columns.
+    val outgoingRowsPerColumn = maxOf(
+        maxOutgoingRows,
+        (outgoingNodeIds.size + maxOutgoingColumns - 1) / maxOutgoingColumns
+    )
+    val outgoingColumns = outgoingNodeIds.chunked(outgoingRowsPerColumn)
 
     val scrollStateX = rememberScrollState()
     val scrollStateY = rememberScrollState()
@@ -170,6 +176,9 @@ fun StructureGraphView(
                     }
                     .horizontalScroll(scrollStateX)
                     .verticalScroll(scrollStateY)
+                    // Bottom scroll buffer so the last node can be scrolled clear of the
+                    // floating "Zielseite verbinden" button (only present in the full editor).
+                    .then(if (isFullView) Modifier.padding(bottom = 88.dp) else Modifier)
             ) {
                 val density = LocalDensity.current
 
@@ -320,19 +329,20 @@ fun StructureGraphView(
                         }
                         val centerTotalHeight = centerPlaceable.height
 
-                        val outgoingColumnsPlaceables = outgoingPlaceables.chunked(maxOutgoingRows)
+                        val outgoingColumnsPlaceables = outgoingPlaceables.chunked(outgoingRowsPerColumn)
                         val outgoingColumnHeights = outgoingColumnsPlaceables.map { col ->
                             col.sumOf { it.height } + spacingPx * (col.size - 1)
                         }
                         val maxOutgoingHeight = outgoingColumnHeights.maxOrNull() ?: 0
 
-                        // Slight vertical stagger between adjacent target columns so their
-                        // connecting lines/arrows don't align and stay distinguishable.
-                        val columnStaggerPx = if (targetColumnsCount > 1) with(density) { 24.dp.roundToPx() } else 0
+                        // Offset every other target column by half a row so the outer column's
+                        // chips sit in the gaps of the inner column — the long connector lines to
+                        // the outer chips then thread between the inner chips instead of over them.
+                        val rowOffsetPx = if (targetColumnsCount > 1) ((outgoingPlaceables.firstOrNull()?.height ?: 0) + spacingPx) / 2 else 0
 
                         val maxColumnHeight = maxOf(incomingTotalHeight, centerTotalHeight, maxOutgoingHeight)
-                        layoutHeight = if (isFullView) maxOf(maxColumnHeight + columnStaggerPx, with(density) { 450.dp.roundToPx() })
-                                       else maxOf(maxColumnHeight + columnStaggerPx, with(density) { 240.dp.roundToPx() })
+                        layoutHeight = if (isFullView) maxOf(maxColumnHeight + rowOffsetPx, with(density) { 450.dp.roundToPx() })
+                                       else maxOf(maxColumnHeight + rowOffsetPx, with(density) { 240.dp.roundToPx() })
 
                         val incomingColWidth = with(density) { incomingWidthDp.roundToPx() }
                         val centerColWidth = with(density) { centerWidthDp.roundToPx() }
@@ -366,9 +376,11 @@ fun StructureGraphView(
                         if (outgoingPlaceables.isNotEmpty()) {
                             var flatIndex = 0
                             outgoingColumnsPlaceables.forEachIndexed { colIdx, colPls ->
-                                val colH = outgoingColumnHeights[colIdx]
-                                val colStagger = if (colIdx % 2 == 0) -columnStaggerPx / 2f else columnStaggerPx / 2f
-                                val startY = (layoutHeight - colH) / 2f + colStagger
+                                val colStagger = if (colIdx % 2 == 0) -rowOffsetPx / 2f else rowOffsetPx / 2f
+                                // Center every column on the SAME (tallest) baseline so rows align to
+                                // a common grid — otherwise columns with different row counts (after
+                                // "+ weitere") drift and the half-row offset no longer lands in the gaps.
+                                val startY = (layoutHeight - maxOutgoingHeight) / 2f + colStagger
                                 var currentY = startY
                                 colPls.forEach { p ->
                                     val cx = col3StartX + colIdx * (outgoingColWidth + hSpacingPx) + outgoingColWidth / 2f
@@ -452,8 +464,9 @@ fun StructureGraphView(
                                                     val endY: Float
 
                                                     if (isLandscape) {
-                                                        startX = centerPoint.first + (centerWidthDp / 2).toPx()
-                                                        startY = centerPoint.second
+                                                        // Horizontal stub of the bus connector (unique per edge).
+                                                        startX = centerPoint.first + (centerWidthDp / 2).toPx() + 24.dp.toPx()
+                                                        startY = pt.second
                                                         endX = pt.first - (outgoingColWidthDp / 2).toPx()
                                                         endY = pt.second
                                                     } else {
@@ -561,20 +574,23 @@ fun StructureGraphView(
                                         val c2y: Float
 
                                         if (isLandscape) {
+                                            // Orthogonal bus: exit the centre horizontally to a shared
+                                            // vertical bus, run along it to the target's row, then a
+                                            // horizontal stub into the chip. The stub for the outer column
+                                            // threads through the gaps between the inner column's chips.
                                             startX = centerPoint.first + (centerWidthDp / 2).toPx()
                                             startY = centerPoint.second
+                                            val busX = startX + 24.dp.toPx()
                                             endX = pt.first - (outgoingColWidthDp / 2).toPx()
                                             endY = pt.second
 
-                                            // smooth horizontal exit from center, diagonal approach into the node
-                                            c2x = endX - (endX - startX) * 0.4f
-                                            c2y = endY - (endY - startY) * 0.4f
+                                            // Control point left of the end so the arrowhead points horizontally into the node.
+                                            c2x = busX
+                                            c2y = endY
                                             path.moveTo(startX, startY)
-                                            path.cubicTo(
-                                                startX + (endX - startX) * 0.6f, startY,
-                                                c2x, c2y,
-                                                endX, endY
-                                            )
+                                            path.lineTo(busX, startY)
+                                            path.lineTo(busX, endY)
+                                            path.lineTo(endX, endY)
                                         } else {
                                             // Elbow: trunk down from the centre node, then a short stub into the target's left edge.
                                             startX = centerPoint.first
@@ -646,8 +662,8 @@ fun StructureGraphView(
                                 val endY: Float
 
                                 if (isLandscape) {
-                                    startX = centerPoint.first + with(density) { (centerWidthDp / 2).toPx() }
-                                    startY = centerPoint.second
+                                    startX = centerPoint.first + with(density) { (centerWidthDp / 2).toPx() + 24.dp.toPx() }
+                                    startY = pt.second
                                     endX = pt.first - with(density) { (outgoingColWidthDp / 2).toPx() }
                                     endY = pt.second
                                 } else {

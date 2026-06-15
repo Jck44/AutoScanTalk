@@ -58,6 +58,7 @@ fun GhostTalkNavHost(
     val isUnlocked by securityManager.isUnlocked.collectAsState()
     val coroutineScope = rememberCoroutineScope()
     val pendingRoute = remember { mutableStateOf<String?>(null) }
+    val showUnlockDialog = remember { mutableStateOf(false) }
 
     val navigateWithSecurity: (String) -> Unit = { route ->
         val isProtected = when {
@@ -79,7 +80,7 @@ fun GhostTalkNavHost(
 
     if (pendingRoute.value != null) {
         SecurityEntryDialog(
-            onDismiss = { 
+            onDismiss = {
                 pendingRoute.value = null
             },
             onConfirm = { success: Boolean ->
@@ -90,6 +91,17 @@ fun GhostTalkNavHost(
                 } else {
                     pendingRoute.value = null
                 }
+            },
+            securityManager = securityManager,
+            isBiometricEnabled = settingsRepository.isBiometricEnabled
+        )
+    }
+
+    if (showUnlockDialog.value) {
+        SecurityEntryDialog(
+            onDismiss = { showUnlockDialog.value = false },
+            onConfirm = { success: Boolean ->
+                showUnlockDialog.value = false
             },
             securityManager = securityManager,
             isBiometricEnabled = settingsRepository.isBiometricEnabled
@@ -138,6 +150,18 @@ fun GhostTalkNavHost(
                         popUpTo("book_list") { inclusive = false }
                     }
                 }
+            }
+        }
+    }
+
+    // Once we've actually navigated away from the book list, allow it to render
+    // normally on subsequent visits (e.g. "Back to books"). Doing this here —
+    // rather than right after navigate() — avoids a one-frame flash where the
+    // list would render before the navigation takes visual effect.
+    LaunchedEffect(Unit) {
+        navController.currentBackStackEntryFlow.collect { entry ->
+            if (entry.destination.route != "book_list") {
+                bookViewModel.markStartDestinationResolved()
             }
         }
     }
@@ -216,18 +240,25 @@ fun GhostTalkNavHost(
             )
         }
         composable("book_list") {
-            BookListScreen(
-                bookViewModel = bookViewModel,
-                settingsRepository = settingsRepository,
-                securityManager = securityManager,
-                onBookSelected = { selectedBookId ->
-                    pageViewModel.setActiveBookId(selectedBookId)
-                    settingsRepository.activeBookId = selectedBookId
-                    settingsViewModel.refresh()
-                    navController.navigate("start")
-                },
-                onNavigateToGlobalSettings = { navigateWithSecurity("settings?isGlobal=true") }
-            )
+            val isResolvingStartDestination by bookViewModel.isResolvingStartDestination.collectAsState()
+            if (isResolvingStartDestination) {
+                // Auto-open is pending: render nothing so the book list doesn't
+                // flash before we navigate to the opened book.
+                androidx.compose.foundation.layout.Box(modifier = Modifier.fillMaxSize())
+            } else {
+                BookListScreen(
+                    bookViewModel = bookViewModel,
+                    settingsRepository = settingsRepository,
+                    securityManager = securityManager,
+                    onBookSelected = { selectedBookId ->
+                        pageViewModel.setActiveBookId(selectedBookId)
+                        settingsRepository.activeBookId = selectedBookId
+                        settingsViewModel.refresh()
+                        navController.navigate("start")
+                    },
+                    onNavigateToGlobalSettings = { navigateWithSecurity("settings?isGlobal=true") }
+                )
+            }
         }
         composable("start") {
             BookShellScreen(
@@ -235,6 +266,7 @@ fun GhostTalkNavHost(
                 pageViewModel = pageViewModel,
                 settingsViewModel = settingsViewModel,
                 settingsRepository = settingsRepository,
+                securityManager = securityManager,
                 onNavigateToUserMode = {
                     coroutineScope.launch {
                         val activeBookId = pageViewModel.activeBookId.value ?: "book-default"
@@ -247,6 +279,7 @@ fun GhostTalkNavHost(
                 },
                 onNavigateToBooks = { navController.safePopBackStack() },
                 onNavigateToGlobalSettings = { navigateWithSecurity("settings?isGlobal=false") },
+                onRequestUnlock = { showUnlockDialog.value = true },
                 onEditPage = { pageId ->
                     navController.safeNavigate("editor/$pageId?mode=${EditorMode.RASTER.route}")
                 },
@@ -276,7 +309,6 @@ fun GhostTalkNavHost(
         }
         composable("main") {
             val callViewModel = hiltViewModel<com.andreas_kratzer.ghosttalk.ui.pages.CallViewModel>()
-            val showExitSecurityDialog = remember { mutableStateOf(false) }
 
             LaunchedEffect(Unit) {
                 if (securityManager.isPinSet()) {
@@ -284,30 +316,10 @@ fun GhostTalkNavHost(
                 }
             }
 
-            if (showExitSecurityDialog.value) {
-                SecurityEntryDialog(
-                    onDismiss = { showExitSecurityDialog.value = false },
-                    onConfirm = { success ->
-                        showExitSecurityDialog.value = false
-                        if (success) {
-                            navController.safePopBackStack()
-                        }
-                    },
-                    securityManager = securityManager,
-                    isBiometricEnabled = settingsRepository.isBiometricEnabled
-                )
-            }
-
             PageScreen(
                 pageViewModel = pageViewModel,
                 callViewModel = callViewModel,
-                onNavigateBack = {
-                    if (securityManager.isPinSet()) {
-                        showExitSecurityDialog.value = true
-                    } else {
-                        navController.safePopBackStack()
-                    }
-                },
+                onNavigateBack = { navController.safePopBackStack() },
                 modifier = Modifier.fillMaxSize()
             )
         }

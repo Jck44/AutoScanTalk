@@ -71,9 +71,7 @@ fun PageScreen(
     val page = currentPage
 
     if (page == null) {
-        Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text(stringResource(R.string.page_loading))
-        }
+        Box(modifier = modifier.fillMaxSize())
         return
     }
 

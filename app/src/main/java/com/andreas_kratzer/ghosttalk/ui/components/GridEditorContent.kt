@@ -2,6 +2,7 @@ package com.andreas_kratzer.ghosttalk.ui.components
 
 import android.annotation.SuppressLint
 import android.content.res.Configuration
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -41,6 +42,9 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -227,8 +231,26 @@ fun GridEditorContent(
         ) {
             Row(modifier = Modifier.fillMaxSize()) {
                 var activeSidePanelTab by rememberSaveable { mutableStateOf("templates") } // "templates" or "tree"
+                var sidePanelExpanded by rememberSaveable { mutableStateOf(true) }
 
-                if (isLandscape || dimensions.isTablet) {
+                if ((isLandscape || dimensions.isTablet) && !sidePanelExpanded) {
+                    // Collapsed rail: button to re-open the side panel
+                    Column(
+                        modifier = Modifier
+                            .fillMaxHeight()
+                            .padding(start = dimensions.paddingSmall, top = dimensions.paddingMedium)
+                    ) {
+                        IconButton(onClick = { sidePanelExpanded = true }) {
+                            Icon(
+                                imageVector = GhostTalkIcons.ArrowForward,
+                                contentDescription = stringResource(R.string.side_panel_expand)
+                            )
+                        }
+                    }
+                    Spacer(modifier = Modifier.width(dimensions.paddingSmall))
+                }
+
+                if ((isLandscape || dimensions.isTablet) && sidePanelExpanded) {
                     Card(
                         modifier = Modifier
                             .width(300.dp)
@@ -237,7 +259,18 @@ fun GridEditorContent(
                         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
                     ) {
                         Column(modifier = Modifier.fillMaxSize()) {
-                            androidx.compose.material3.TabRow(
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.End
+                            ) {
+                                IconButton(onClick = { sidePanelExpanded = false }) {
+                                    Icon(
+                                        imageVector = GhostTalkIcons.ArrowBack,
+                                        contentDescription = stringResource(R.string.side_panel_collapse)
+                                    )
+                                }
+                            }
+                            androidx.compose.material3.SecondaryTabRow(
                                 selectedTabIndex = if (activeSidePanelTab == "templates") 0 else 1,
                                 modifier = Modifier.fillMaxWidth()
                             ) {

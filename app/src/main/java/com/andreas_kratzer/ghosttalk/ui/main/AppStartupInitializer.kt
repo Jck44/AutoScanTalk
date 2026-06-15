@@ -56,17 +56,27 @@ class AppStartupInitializer @Inject constructor(
 
             // 4. Set the final active book
             settingsRepository.activeBookId = finalActiveBookId
-            
-            backgroundScheduler.scheduleLocationUpdate()
-            backgroundScheduler.scheduleWeatherUpdate()
-            rescheduleProfileSyncUseCase.reschedule()
-            rescheduleProfileSyncUseCase.runOnceImmediately()
-            pageRepository.purgeInstallUpdateButtons()
-            
+
+            // Background scheduling, sync and DB maintenance are NOT needed to
+            // paint the first frame. They run via runDeferredStartupWork() after
+            // the UI is shown so startup isn't blocked on them.
             finalActiveBookId
         } else {
             Log.d("AppStartupInitializer", "Setup is not completed yet, skipping database initialization on startup.")
             null
         }
+    }
+
+    /**
+     * Non-critical startup work (WorkManager scheduling, cloud sync, button purge).
+     * Call this after the UI has been shown so it doesn't delay first paint.
+     */
+    suspend fun runDeferredStartupWork() = withContext(Dispatchers.IO) {
+        if (!settingsRepository.isSetupCompleted) return@withContext
+        backgroundScheduler.scheduleLocationUpdate()
+        backgroundScheduler.scheduleWeatherUpdate()
+        rescheduleProfileSyncUseCase.reschedule()
+        rescheduleProfileSyncUseCase.runOnceImmediately()
+        pageRepository.purgeInstallUpdateButtons()
     }
 }

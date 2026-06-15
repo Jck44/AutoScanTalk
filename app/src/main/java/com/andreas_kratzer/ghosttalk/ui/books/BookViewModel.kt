@@ -44,6 +44,20 @@ class BookViewModel @Inject constructor(
 
     private var hasAutoOpened = false
 
+    // True while we still expect to auto-navigate away from the book list on
+    // startup. The book list renders blank during this window so the user
+    // doesn't briefly see the list before landing on the opened book.
+    private val _isResolvingStartDestination = MutableStateFlow(
+        settingsRepository.isSetupCompleted &&
+            settingsRepository.startupBehavior in setOf("SELECTED_BOOK", "USER_MODE")
+    )
+    val isResolvingStartDestination: StateFlow<Boolean> = _isResolvingStartDestination.asStateFlow()
+
+    /** Called once the auto-open navigation has happened (or won't happen). */
+    fun markStartDestinationResolved() {
+        _isResolvingStartDestination.value = false
+    }
+
 
     init {
         viewModelScope.launch {
@@ -53,6 +67,7 @@ class BookViewModel @Inject constructor(
                 
                 if (books.isEmpty()) {
                     hasAutoOpened = true // Don't auto-open if nothing exists
+                    _isResolvingStartDestination.value = false
                     return@collect
                 }
 
@@ -74,10 +89,14 @@ class BookViewModel @Inject constructor(
                                 // Fallback for single book if behavior is not BOOK_SELECTION
                                 hasAutoOpened = true
                                 _autoOpenBookEvent.emit(books[0].id)
+                            } else {
+                                // No favorite to auto-open: stay on the book list
+                                _isResolvingStartDestination.value = false
                             }
                         }
                         "BOOK_SELECTION" -> {
                             hasAutoOpened = true
+                            _isResolvingStartDestination.value = false
                             // Stay on book selection
                         }
                     }

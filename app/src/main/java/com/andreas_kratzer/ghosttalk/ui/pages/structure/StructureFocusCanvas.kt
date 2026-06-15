@@ -236,8 +236,9 @@ fun StructureFocusCanvas(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(16.dp)
-                    .verticalScroll(scrollState),
+                    .verticalScroll(scrollState)
+                    // Bottom buffer so the last card clears the floating "Zielseite verbinden" button.
+                    .padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 88.dp),
                 verticalArrangement = Arrangement.spacedBy(20.dp)
             ) {
             // Top Section: Incoming
