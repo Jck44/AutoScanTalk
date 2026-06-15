@@ -15,6 +15,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.navArgument
 import com.andreas_kratzer.ghosttalk.core.SecurityManager
 import com.andreas_kratzer.ghosttalk.core.data.BookRepository
@@ -119,17 +120,21 @@ fun GhostTalkNavHost(
             pageViewModel.setActiveBookId(selectedBookId)
             settingsRepository.activeBookId = selectedBookId
             settingsViewModel.refresh()
-            
+
             val behavior = settingsRepository.startupBehavior
+            // On auto-open, remove book_list from the back stack entirely
+            // (inclusive = true) so the landing/user mode is the real root:
+            // system-back there closes the app instead of returning to a list
+            // the user never chose to see. "Back to books" navigates explicitly.
             if (behavior == "USER_MODE") {
                 // Navigate directly to user mode
                 val finalPage = resolveStartPage(selectedBookId, settingsRepository, pageRepository)
-                
+
                 if (finalPage != null) {
                     pageViewModel.loadPage(finalPage)
                     runOnMainThread {
                         navController.navigate("start") {
-                            popUpTo("book_list") { inclusive = false }
+                            popUpTo("book_list") { inclusive = true }
                         }
                         navController.navigate("main") {
                             launchSingleTop = true
@@ -139,7 +144,7 @@ fun GhostTalkNavHost(
                     // Fallback to start screen if no pages
                     runOnMainThread {
                         navController.navigate("start") {
-                            popUpTo("book_list") { inclusive = false }
+                            popUpTo("book_list") { inclusive = true }
                             launchSingleTop = true
                         }
                     }
@@ -147,24 +152,13 @@ fun GhostTalkNavHost(
             } else {
                 runOnMainThread {
                     navController.navigate("start") {
-                        popUpTo("book_list") { inclusive = false }
+                        popUpTo("book_list") { inclusive = true }
                     }
                 }
             }
         }
     }
 
-    // Once we've actually navigated away from the book list, allow it to render
-    // normally on subsequent visits (e.g. "Back to books"). Doing this here —
-    // rather than right after navigate() — avoids a one-frame flash where the
-    // list would render before the navigation takes visual effect.
-    LaunchedEffect(Unit) {
-        navController.currentBackStackEntryFlow.collect { entry ->
-            if (entry.destination.route != "book_list") {
-                bookViewModel.markStartDestinationResolved()
-            }
-        }
-    }
 
     // Handle Settings Navigation Events
     LaunchedEffect(Unit) {
@@ -241,9 +235,17 @@ fun GhostTalkNavHost(
         }
         composable("book_list") {
             val isResolvingStartDestination by bookViewModel.isResolvingStartDestination.collectAsState()
-            if (isResolvingStartDestination) {
-                // Auto-open is pending: render nothing so the book list doesn't
-                // flash before we navigate to the opened book.
+            // book_list lingers in composition for a frame after we navigate away
+            // (popped entry). If the gate flips to false during that window it
+            // would briefly render the list → flash. Guard on being the *current*
+            // destination: while lingering, the current route is already "start",
+            // so we stay blank regardless of the gate.
+            val currentEntry by navController.currentBackStackEntryAsState()
+            val isCurrentDestination = currentEntry?.destination?.route == "book_list"
+            val showList = !isResolvingStartDestination && isCurrentDestination
+            if (!showList) {
+                // Auto-open pending or we've already navigated away: render nothing
+                // so the book list never flashes.
                 androidx.compose.foundation.layout.Box(modifier = Modifier.fillMaxSize())
             } else {
                 BookListScreen(
@@ -261,6 +263,9 @@ fun GhostTalkNavHost(
             }
         }
         composable("start") {
+            // Reaching "start" means we've navigated away from book_list, so
+            // release the gate so it renders normally on later visits.
+            LaunchedEffect(Unit) { bookViewModel.markStartDestinationResolved() }
             BookShellScreen(
                 bookViewModel = bookViewModel,
                 pageViewModel = pageViewModel,
@@ -277,7 +282,18 @@ fun GhostTalkNavHost(
                         }
                     }
                 },
-                onNavigateToBooks = { navController.safePopBackStack() },
+                onNavigateToBooks = {
+                    // User explicitly wants the list now → release the gate so it
+                    // renders (it stays blank only during startup auto-open).
+                    bookViewModel.markStartDestinationResolved()
+                    runOnMainThread {
+                        // Manual selection path keeps book_list in the stack → pop
+                        // back to it. Auto-open path removed it → navigate fresh.
+                        if (!navController.popBackStack("book_list", inclusive = false)) {
+                            navController.navigate("book_list")
+                        }
+                    }
+                },
                 onNavigateToGlobalSettings = { navigateWithSecurity("settings?isGlobal=false") },
                 onRequestUnlock = { showUnlockDialog.value = true },
                 onEditPage = { pageId ->
@@ -309,6 +325,10 @@ fun GhostTalkNavHost(
         }
         composable("main") {
             val callViewModel = hiltViewModel<com.andreas_kratzer.ghosttalk.ui.pages.CallViewModel>()
+
+            // USER_MODE startup may go straight to "main" (skipping "start"), so
+            // release the gate here too.
+            LaunchedEffect(Unit) { bookViewModel.markStartDestinationResolved() }
 
             LaunchedEffect(Unit) {
                 if (securityManager.isPinSet()) {

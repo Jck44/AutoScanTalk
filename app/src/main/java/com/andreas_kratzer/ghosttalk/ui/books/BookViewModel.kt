@@ -64,7 +64,7 @@ class BookViewModel @Inject constructor(
             bookRepository.getAllBooks().collect { books ->
                 _allBooks.value = books
                 _isLoading.value = false
-                
+
                 if (books.isEmpty()) {
                     hasAutoOpened = true // Don't auto-open if nothing exists
                     _isResolvingStartDestination.value = false

@@ -73,6 +73,7 @@ class AppStartupInitializer @Inject constructor(
      */
     suspend fun runDeferredStartupWork() = withContext(Dispatchers.IO) {
         if (!settingsRepository.isSetupCompleted) return@withContext
+        sampleDataInitializer.backfillTransitionStatsIfNeeded(settingsRepository.activeBookId)
         backgroundScheduler.scheduleLocationUpdate()
         backgroundScheduler.scheduleWeatherUpdate()
         rescheduleProfileSyncUseCase.reschedule()

@@ -36,17 +36,25 @@ class SampleDataInitializer @Inject constructor(
             }
             return@withContext defaultBookId
         } else {
-            android.util.Log.d("SampleDataInitializer", "Books already exist, checking transition stats.")
-            val activeBookId = allBooks.first().id
-            val stats = buttonUsageRepository.getGroupedUsageStats(activeBookId)
-            if (stats.isEmpty()) {
-                android.util.Log.d("SampleDataInitializer", "Transition stats are empty. Backfilling transition data for existing book.")
-                val pages = pageRepository.getAllPages().filter { it.bookId == activeBookId }
-                if (pages.isNotEmpty()) {
-                    seedTransitionData(activeBookId, pages)
-                }
+            // Transition-stats backfill is NOT needed to paint the first frame;
+            // it runs later via backfillTransitionStatsIfNeeded() so startup isn't
+            // blocked on an analytics query for existing books.
+            return@withContext allBooks.first().id
+        }
+    }
+
+    /**
+     * One-time backfill of demo transition data for an existing book that has no
+     * usage stats yet. Safe to call after the UI is shown (off the critical path).
+     */
+    suspend fun backfillTransitionStatsIfNeeded(bookId: String) = withContext(Dispatchers.IO) {
+        val stats = buttonUsageRepository.getGroupedUsageStats(bookId)
+        if (stats.isEmpty()) {
+            android.util.Log.d("SampleDataInitializer", "Transition stats are empty. Backfilling transition data for existing book.")
+            val pages = pageRepository.getAllPages().filter { it.bookId == bookId }
+            if (pages.isNotEmpty()) {
+                seedTransitionData(bookId, pages)
             }
-            return@withContext activeBookId
         }
     }
 
