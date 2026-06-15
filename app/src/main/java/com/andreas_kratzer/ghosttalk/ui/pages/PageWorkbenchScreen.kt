@@ -1,31 +1,20 @@
 package com.andreas_kratzer.ghosttalk.ui.pages
 
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Row
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.res.stringResource
-import com.andreas_kratzer.ghosttalk.R
-import com.andreas_kratzer.ghosttalk.core.ui.components.EditorMode
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import com.andreas_kratzer.ghosttalk.core.ui.components.EditorMode
+import com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons
 import com.andreas_kratzer.ghosttalk.ui.pages.structure.StructureEditorScreen
 import com.andreas_kratzer.ghosttalk.ui.pages.structure.StructureViewMode
-
-import androidx.compose.material3.Icon
-import com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons
 
 /**
  * Unified Workbench Screen hosting both the Grid Page Editor ("Raster")

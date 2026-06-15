@@ -48,12 +48,12 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.core.SecurityManager
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
+import com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.SettingsViewModel
 import com.andreas_kratzer.ghosttalk.ui.books.BookViewModel
 import com.andreas_kratzer.ghosttalk.ui.pages.AnalyticsDashboardScreen
 import com.andreas_kratzer.ghosttalk.ui.pages.PageListScreen
 import com.andreas_kratzer.ghosttalk.ui.pages.PageViewModel
-import com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons
 import com.andreas_kratzer.ghosttalk.core.ui.R as CoreR
 
 enum class BookShellTab {
@@ -189,7 +189,7 @@ fun BookShellScreen(
         NavigationSuiteScaffold(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding),
+                .padding(top = innerPadding.calculateTopPadding()),
             navigationSuiteItems = {
                 item(
                     selected = false,

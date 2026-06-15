@@ -7,13 +7,11 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Menu
@@ -55,6 +53,7 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.andreas_kratzer.ghosttalk.R
@@ -63,12 +62,10 @@ import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.core.model.GridSettingsUpdate
 import com.andreas_kratzer.ghosttalk.core.model.NavigateToPageButtonAction
 import com.andreas_kratzer.ghosttalk.core.ui.components.EditorTopBar
-import com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons
-import androidx.compose.ui.text.style.TextOverflow
-import com.andreas_kratzer.ghosttalk.core.ui.R as CoreR
 import com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkDialog
-import com.andreas_kratzer.ghosttalk.ui.components.ValidatedTextField
+import com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons
 import com.andreas_kratzer.ghosttalk.ui.components.EditorAssistantButton
+import com.andreas_kratzer.ghosttalk.ui.components.ValidatedTextField
 import com.andreas_kratzer.ghosttalk.ui.pages.GridEditorViewModel
 import com.andreas_kratzer.ghosttalk.ui.pages.IncomingReferencesDialog
 import com.andreas_kratzer.ghosttalk.ui.pages.PageSplitViewModel
@@ -78,6 +75,7 @@ import com.andreas_kratzer.ghosttalk.ui.pages.pagesplit.PageSplitManualPromptDia
 import com.andreas_kratzer.ghosttalk.ui.pages.pagesplit.PageSplitOptInDialog
 import com.andreas_kratzer.ghosttalk.ui.pages.resolveEditLabel
 import kotlinx.coroutines.launch
+import com.andreas_kratzer.ghosttalk.core.ui.R as CoreR
 
 enum class StructureViewMode {
     CARDS, GRAPH

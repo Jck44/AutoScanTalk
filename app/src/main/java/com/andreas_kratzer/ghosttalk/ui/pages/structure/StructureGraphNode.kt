@@ -26,12 +26,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.andreas_kratzer.ghosttalk.core.domain.pages.BookNavigationGraph
-import com.andreas_kratzer.ghosttalk.core.model.NavigateToPageButtonAction
-import com.andreas_kratzer.ghosttalk.core.model.NavigateToStartPageButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.Page
+import com.andreas_kratzer.ghosttalk.ui.components.ChipDragDropState
 import com.andreas_kratzer.ghosttalk.ui.components.DraggableChip
 import com.andreas_kratzer.ghosttalk.ui.components.chipDropTarget
-import com.andreas_kratzer.ghosttalk.ui.components.ChipDragDropState
 
 @Composable
 fun StructureGraphNode(

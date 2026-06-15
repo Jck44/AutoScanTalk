@@ -1,11 +1,10 @@
 package com.andreas_kratzer.ghosttalk.ui.pages.structure
 
+import androidx.compose.ui.geometry.Offset
 import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.core.model.NavigateToPageButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.NavigateToStartPageButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.Page
-
-import androidx.compose.ui.geometry.Offset
 import kotlin.math.sqrt
 
 fun navigableButtons(

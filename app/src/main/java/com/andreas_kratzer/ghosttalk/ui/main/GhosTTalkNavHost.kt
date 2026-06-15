@@ -22,16 +22,13 @@ import com.andreas_kratzer.ghosttalk.core.data.BookRepository
 import com.andreas_kratzer.ghosttalk.core.data.PageRepository
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.core.data.impl.SampleDataInitializer
+import com.andreas_kratzer.ghosttalk.core.ui.components.EditorMode
 import com.andreas_kratzer.ghosttalk.core.ui.components.SecurityEntryDialog
-import com.andreas_kratzer.ghosttalk.feature.settings.ui.ContentManagementScreen
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.SettingsScreen
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.SettingsViewModel
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.VocalTrainingScreen
 import com.andreas_kratzer.ghosttalk.ui.books.BookListScreen
 import com.andreas_kratzer.ghosttalk.ui.books.BookViewModel
-import com.andreas_kratzer.ghosttalk.ui.pages.AnalyticsDashboardScreen
-import com.andreas_kratzer.ghosttalk.ui.pages.PageListScreen
-import com.andreas_kratzer.ghosttalk.core.ui.components.EditorMode
 import com.andreas_kratzer.ghosttalk.ui.pages.PageScreen
 import com.andreas_kratzer.ghosttalk.ui.pages.PageViewModel
 import com.andreas_kratzer.ghosttalk.ui.pages.PageWorkbenchScreen
