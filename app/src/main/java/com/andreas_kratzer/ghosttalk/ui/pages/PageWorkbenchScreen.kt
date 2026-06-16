@@ -46,7 +46,7 @@ fun PageWorkbenchScreen(
             SegmentedButton(
                 selected = mode == EditorMode.RASTER,
                 onClick = { mode = EditorMode.RASTER },
-                shape = SegmentedButtonDefaults.itemShape(index = 0, count = 3),
+                shape = SegmentedButtonDefaults.itemShape(index = 0, count = 4),
                 icon = {}
             ) {
                 Icon(
@@ -60,7 +60,7 @@ fun PageWorkbenchScreen(
                     mode = EditorMode.STRUKTUR
                     structureView = StructureViewMode.CARDS
                 },
-                shape = SegmentedButtonDefaults.itemShape(index = 1, count = 3),
+                shape = SegmentedButtonDefaults.itemShape(index = 1, count = 4),
                 icon = {}
             ) {
                 Icon(
@@ -74,12 +74,26 @@ fun PageWorkbenchScreen(
                     mode = EditorMode.STRUKTUR
                     structureView = StructureViewMode.GRAPH
                 },
-                shape = SegmentedButtonDefaults.itemShape(index = 2, count = 3),
+                shape = SegmentedButtonDefaults.itemShape(index = 2, count = 4),
                 icon = {}
             ) {
                 Icon(
                     imageVector = GhostTalkIcons.Sitemap,
                     contentDescription = "Graph"
+                )
+            }
+            SegmentedButton(
+                selected = mode == EditorMode.STRUKTUR && structureView == StructureViewMode.OVERVIEW,
+                onClick = {
+                    mode = EditorMode.STRUKTUR
+                    structureView = StructureViewMode.OVERVIEW
+                },
+                shape = SegmentedButtonDefaults.itemShape(index = 3, count = 4),
+                icon = {}
+            ) {
+                Icon(
+                    imageVector = GhostTalkIcons.BarChart,
+                    contentDescription = "Übersicht"
                 )
             }
         }
@@ -112,7 +126,13 @@ fun PageWorkbenchScreen(
             gridEditorViewModel = gridEditorViewModel,
             initialFocusedPageId = focusedPageId,
             initialTriggerSplit = triggerSplit,
-            onFocusedPageChanged = { focusedPageId = it },
+            onFocusedPageChanged = {
+                focusedPageId = it
+            },
+            onNavigateToGraph = {
+                focusedPageId = it
+                structureView = StructureViewMode.GRAPH
+            },
             viewMode = structureView,
             onNavigateBack = onNavigateBack,
             modeSwitcher = modeSwitcher,

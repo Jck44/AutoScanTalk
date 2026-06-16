@@ -113,7 +113,15 @@ fun StructureTreeNavigator(
 
     var isOrphansExpanded by rememberSaveable { mutableStateOf(false) }
     var isProblemsExpanded by rememberSaveable { mutableStateOf(false) }
-    var searchQuery by rememberSaveable { mutableStateOf("") }
+    var localSearchQuery by rememberSaveable { mutableStateOf("") }
+    val searchQuery = if (state != null) state.searchQuery else localSearchQuery
+    val onSearchQueryChange: (String) -> Unit = {
+        if (state != null) {
+            state.searchQuery = it
+        } else {
+            localSearchQuery = it
+        }
+    }
 
     fun toggleExpand(pageId: String) {
         expandedNodes = if (pageId in expandedNodes) {
@@ -158,12 +166,12 @@ fun StructureTreeNavigator(
     Column(modifier = modifier.padding(dimensions.paddingMedium)) {
         OutlinedTextField(
             value = searchQuery,
-            onValueChange = { searchQuery = it },
+            onValueChange = onSearchQueryChange,
             placeholder = { Text(stringResource(R.string.structure_search), fontSize = 14.sp) },
             leadingIcon = { Icon(imageVector = Icons.Default.Search, contentDescription = null) },
             trailingIcon = {
                 if (searchQuery.isNotEmpty()) {
-                    IconButton(onClick = { searchQuery = "" }) {
+                    IconButton(onClick = { onSearchQueryChange("") }) {
                         Icon(imageVector = Icons.Default.Close, contentDescription = stringResource(R.string.structure_search_clear))
                     }
                 }
@@ -224,7 +232,7 @@ fun StructureTreeNavigator(
                                         .fillMaxWidth()
                                         .clickable {
                                             onFocus(pageId)
-                                            searchQuery = ""
+                                            onSearchQueryChange("")
                                         }
                                         .padding(vertical = 10.dp, horizontal = 12.dp),
                                     verticalAlignment = Alignment.CenterVertically
@@ -289,7 +297,7 @@ fun StructureTreeNavigator(
                                                     if (state != null) {
                                                         state.editTarget = pageId to hit.index
                                                     }
-                                                    searchQuery = ""
+                                                    onSearchQueryChange("")
                                                 }
                                             ) {
                                                 Text(

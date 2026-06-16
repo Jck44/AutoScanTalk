@@ -67,6 +67,7 @@ fun StructureEditorContent(
     onEditButtonTemplate: (ButtonTemplate) -> Unit,
     onButtonTemplateClick: (ButtonTemplate) -> Unit,
     templatesPanelActions: GridEditorActions,
+    onNavigateToGraph: (String) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val dragDropState = rememberDragDropState()
@@ -177,42 +178,57 @@ fun StructureEditorContent(
                     Spacer(modifier = Modifier.width(8.dp))
                 }
 
-                // Right Column / Main: Focus Canvas
-                StructureFocusCanvas(
-                    focusedPageId = state.focusedPageId,
-                    pages = pages,
-                    graph = graph,
-                    pageNames = pageNames,
-                    onFocus = { state.navigateToPage(it) },
-                    onAddConnection = onAddConnection,
-                    onRemoveConnection = { pageId, buttonIndex, targetPageName ->
-                        state.pageToRemoveConnectionFromPageId = pageId
-                        state.pageToRemoveConnectionByButtonIndex = buttonIndex
-                        state.pageToRemoveConnectionTargetName = targetPageName
-                    },
-                    proposal = pageSplitProposal,
-                    onApplySplit = onApplySplit,
-                    onDiscardSplit = onDiscardSplit,
-                    viewMode = viewMode,
-                    onEditButton = { pageId, idx ->
-                        if (state.isMultiSelectMode) {
-                            val cur = state.selection[pageId].orEmpty()
-                            val next = if (cur.contains(idx)) cur - idx else cur + idx
-                            state.selection = if (next.isEmpty()) state.selection - pageId else state.selection + (pageId to next)
-                        } else {
-                            state.editTarget = pageId to idx
-                        }
-                    },
-                    onAddButton = { pageId -> state.addTargetPageId = pageId },
-                    onRegisterSplitWizardDropCallback = { callback -> state.onSplitWizardDropCallback = callback },
-                    isMultiSelectMode = state.isMultiSelectMode,
-                    selection = state.selection,
-                    templates = templates,
-                    onCreatePage = onCreatePage,
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxHeight()
-                )
+                // Right Column / Main: Focus Canvas or Overview Canvas
+                if (viewMode == StructureViewMode.OVERVIEW) {
+                    StructureOverviewCanvas(
+                        focusedPageId = state.focusedPageId,
+                        pages = pages,
+                        graph = graph,
+                        pageNames = pageNames,
+                        onFocus = { state.navigateToPage(it) },
+                        onNavigateToGraph = onNavigateToGraph,
+                        searchQuery = state.searchQuery,
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxHeight()
+                    )
+                } else {
+                    StructureFocusCanvas(
+                        focusedPageId = state.focusedPageId,
+                        pages = pages,
+                        graph = graph,
+                        pageNames = pageNames,
+                        onFocus = { state.navigateToPage(it) },
+                        onAddConnection = onAddConnection,
+                        onRemoveConnection = { pageId, buttonIndex, targetPageName ->
+                            state.pageToRemoveConnectionFromPageId = pageId
+                            state.pageToRemoveConnectionByButtonIndex = buttonIndex
+                            state.pageToRemoveConnectionTargetName = targetPageName
+                        },
+                        proposal = pageSplitProposal,
+                        onApplySplit = onApplySplit,
+                        onDiscardSplit = onDiscardSplit,
+                        viewMode = viewMode,
+                        onEditButton = { pageId, idx ->
+                            if (state.isMultiSelectMode) {
+                                val cur = state.selection[pageId].orEmpty()
+                                val next = if (cur.contains(idx)) cur - idx else cur + idx
+                                state.selection = if (next.isEmpty()) state.selection - pageId else state.selection + (pageId to next)
+                            } else {
+                                state.editTarget = pageId to idx
+                            }
+                        },
+                        onAddButton = { pageId -> state.addTargetPageId = pageId },
+                        onRegisterSplitWizardDropCallback = { callback -> state.onSplitWizardDropCallback = callback },
+                        isMultiSelectMode = state.isMultiSelectMode,
+                        selection = state.selection,
+                        templates = templates,
+                        onCreatePage = onCreatePage,
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxHeight()
+                    )
+                }
 
                 if (isTablet && state.templatesPanelExpanded) {
                     Spacer(modifier = Modifier.width(8.dp))

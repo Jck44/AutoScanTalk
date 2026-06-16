@@ -38,7 +38,7 @@ import kotlinx.coroutines.launch
 private const val PAGE_NAME_UPDATE_DEBOUNCE_MS = 500L
 
 enum class StructureViewMode {
-    CARDS, GRAPH
+    CARDS, GRAPH, OVERVIEW
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -51,6 +51,7 @@ fun StructureEditorScreen(
     pageSplitViewModel: PageSplitViewModel = hiltViewModel(),
     onNavigateBack: () -> Unit,
     onFocusedPageChanged: (String) -> Unit = {},
+    onNavigateToGraph: (String) -> Unit = {},
     viewMode: StructureViewMode = StructureViewMode.CARDS,
     modeSwitcher: (@Composable () -> Unit)? = null,
     onExitEditor: (() -> Unit)? = null
@@ -391,6 +392,7 @@ fun StructureEditorScreen(
                 state.showTemplatesBottomSheet = false
             },
             templatesPanelActions = gridEditorViewModel,
+            onNavigateToGraph = onNavigateToGraph,
             modifier = Modifier.padding(paddingValues)
         )
 

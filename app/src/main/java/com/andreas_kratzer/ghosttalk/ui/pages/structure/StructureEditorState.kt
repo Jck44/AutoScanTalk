@@ -33,6 +33,7 @@ class StructureEditorState(
     var showTemplatesBottomSheet by mutableStateOf(false)
 
     var editTarget by mutableStateOf<Pair<String, Int>?>(null)
+    var searchQuery by mutableStateOf("")
     var addTargetPageId by mutableStateOf<String?>(null)
     var editingTemplate by mutableStateOf<ButtonTemplate?>(null)
     var showSaveTemplateDialogConfig by mutableStateOf<ButtonConfig?>(null)
