@@ -313,6 +313,8 @@
     <string name="editor_template_duplicate_not_supported">Duplizieren für Vorlagen nicht unterstützt</string>
     <string name="editor_template_saved">Vorlage gespeichert</string>
     <string name="template_panel_title">Button-Vorlagen</string>
+    <string name="structure_more_options">Mehr Optionen</string>
+    <string name="structure_close_templates">Vorlagen schließen</string>
     <string name="template_search_placeholder">Vorlagen durchsuchen…</string>
     <string name="template_drag_drop_hint">💡 Vorlage auf Gitter ziehen zum Platzieren. Button aus Gitter hierhin ziehen, um Vorlage zu erstellen.</string>
     <string name="content_desc_collapse">Einklappen</string>

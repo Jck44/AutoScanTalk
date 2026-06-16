@@ -1,0 +1,336 @@
+package com.andreas_kratzer.ghosttalk.ui.pages.structure
+
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material3.BottomSheetDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import com.andreas_kratzer.ghosttalk.R
+import com.andreas_kratzer.ghosttalk.core.domain.pages.BookNavigationGraph
+import com.andreas_kratzer.ghosttalk.core.model.PageTemplate
+import com.andreas_kratzer.ghosttalk.core.ai.domain.SplitPageUseCase.PageSplitProposal
+import com.andreas_kratzer.ghosttalk.ui.util.GridEditorActions
+import com.andreas_kratzer.ghosttalk.core.model.ButtonTemplate
+import com.andreas_kratzer.ghosttalk.core.model.Page
+import com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons
+import com.andreas_kratzer.ghosttalk.ui.components.DragDropContainer
+import com.andreas_kratzer.ghosttalk.ui.components.LocalDragDropState
+import com.andreas_kratzer.ghosttalk.ui.components.SplitWizardButtonDrag
+import com.andreas_kratzer.ghosttalk.ui.components.rememberDragDropState
+import com.andreas_kratzer.ghosttalk.ui.templates.ButtonTemplatesPanel
+import kotlinx.coroutines.launch
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun StructureEditorContent(
+    state: StructureEditorState,
+    graph: BookNavigationGraph,
+    pages: List<Page>,
+    templates: List<PageTemplate>,
+    pageNames: Map<String, String>,
+    viewMode: StructureViewMode,
+    isTablet: Boolean,
+    pageSplitProposal: PageSplitProposal?,
+    onApplySplit: (PageSplitProposal) -> Unit,
+    onDiscardSplit: () -> Unit,
+    onAddConnection: (String) -> Unit,
+    onCreatePage: (String, Int, Int, String?, (String) -> Unit) -> Unit,
+    onDrop: (Any, Any) -> Unit,
+    onTemplateClick: (ButtonTemplate) -> Unit,
+    onEditButtonTemplate: (ButtonTemplate) -> Unit,
+    onButtonTemplateClick: (ButtonTemplate) -> Unit,
+    templatesPanelActions: GridEditorActions,
+    modifier: Modifier = Modifier
+) {
+    val dragDropState = rememberDragDropState()
+    val scope = rememberCoroutineScope()
+    val sheetState = rememberModalBottomSheetState()
+
+    DragDropContainer(
+        state = dragDropState,
+        onDrop = { item, target -> onDrop(item, target) },
+        modifier = modifier.fillMaxSize(),
+        floatingPreview = { draggedItem ->
+            val label = when (draggedItem) {
+                is com.andreas_kratzer.ghosttalk.ui.components.StructureButtonDrag -> draggedItem.label
+                is ButtonTemplate -> draggedItem.buttonConfig.label
+                is SplitWizardButtonDrag -> draggedItem.label
+                else -> ""
+            }
+            val action = when (draggedItem) {
+                is com.andreas_kratzer.ghosttalk.ui.components.StructureButtonDrag -> draggedItem.action
+                is ButtonTemplate -> draggedItem.buttonConfig.buttonAction
+                is SplitWizardButtonDrag -> draggedItem.action
+                else -> null
+            }
+            val isDark = androidx.compose.foundation.isSystemInDarkTheme()
+            val (bgColor, textColor) = remember(action, isDark) {
+                com.andreas_kratzer.ghosttalk.core.ui.theme.ActionVisualTokens.getColors(action, isDark)
+            }
+            Card(
+                shape = MaterialTheme.shapes.small,
+                colors = CardDefaults.cardColors(containerColor = bgColor),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                modifier = Modifier.fillMaxSize()
+            ) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text(
+                        text = label,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = textColor,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                    )
+                }
+            }
+        }
+    ) {
+        Column(
+            modifier = Modifier.fillMaxSize()
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .weight(1f)
+            ) {
+                if (isTablet) {
+                    if (state.sidePanelExpanded) {
+                        // Left Column: TreeView (~34%)
+                        Card(
+                            modifier = Modifier
+                                .fillMaxHeight()
+                                .width(300.dp)
+                                .padding(start = 16.dp, top = 16.dp, bottom = 16.dp),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                        ) {
+                            Column(modifier = Modifier.fillMaxSize()) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.End
+                                ) {
+                                    IconButton(onClick = { state.sidePanelExpanded = false }) {
+                                        Icon(
+                                            imageVector = GhostTalkIcons.ArrowBack,
+                                            contentDescription = stringResource(R.string.side_panel_collapse)
+                                        )
+                                    }
+                                }
+                                StructureTreeNavigator(
+                                    graph = graph,
+                                    pages = pages,
+                                    pageNames = pageNames,
+                                    focusedPageId = state.focusedPageId,
+                                    onFocus = { state.navigateToPage(it) },
+                                    onOrphanClick = { orphanId -> state.orphanToConnectId = orphanId },
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .fillMaxWidth()
+                                )
+                            }
+                        }
+                    } else {
+                        // Collapsed rail: button to re-open the side panel
+                        Column(
+                            modifier = Modifier
+                                .fillMaxHeight()
+                                .padding(start = 8.dp, top = 16.dp)
+                        ) {
+                            IconButton(onClick = { state.sidePanelExpanded = true }) {
+                                Icon(
+                                    imageVector = GhostTalkIcons.ArrowForward,
+                                    contentDescription = stringResource(R.string.side_panel_expand)
+                                )
+                            }
+                        }
+                    }
+
+                    // Split divider
+                    Spacer(modifier = Modifier.width(8.dp))
+                }
+
+                // Right Column / Main: Focus Canvas
+                StructureFocusCanvas(
+                    focusedPageId = state.focusedPageId,
+                    pages = pages,
+                    graph = graph,
+                    pageNames = pageNames,
+                    onFocus = { state.navigateToPage(it) },
+                    onAddConnection = onAddConnection,
+                    onRemoveConnection = { pageId, buttonIndex, targetPageName ->
+                        state.pageToRemoveConnectionFromPageId = pageId
+                        state.pageToRemoveConnectionByButtonIndex = buttonIndex
+                        state.pageToRemoveConnectionTargetName = targetPageName
+                    },
+                    proposal = pageSplitProposal,
+                    onApplySplit = onApplySplit,
+                    onDiscardSplit = onDiscardSplit,
+                    viewMode = viewMode,
+                    onEditButton = { pageId, idx ->
+                        if (state.isMultiSelectMode) {
+                            val cur = state.selection[pageId].orEmpty()
+                            val next = if (cur.contains(idx)) cur - idx else cur + idx
+                            state.selection = if (next.isEmpty()) state.selection - pageId else state.selection + (pageId to next)
+                        } else {
+                            state.editTarget = pageId to idx
+                        }
+                    },
+                    onAddButton = { pageId -> state.addTargetPageId = pageId },
+                    onRegisterSplitWizardDropCallback = { callback -> state.onSplitWizardDropCallback = callback },
+                    isMultiSelectMode = state.isMultiSelectMode,
+                    selection = state.selection,
+                    templates = templates,
+                    onCreatePage = onCreatePage,
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight()
+                )
+
+                if (isTablet && state.templatesPanelExpanded) {
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Card(
+                        modifier = Modifier
+                            .fillMaxHeight()
+                            .width(300.dp)
+                            .padding(end = 16.dp, top = 16.dp, bottom = 16.dp),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                    ) {
+                        Column(modifier = Modifier.fillMaxSize()) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth().padding(16.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = stringResource(R.string.template_panel_title),
+                                    style = MaterialTheme.typography.titleMedium
+                                )
+                                IconButton(onClick = { state.templatesPanelExpanded = false }) {
+                                    Icon(
+                                        imageVector = Icons.Default.Close,
+                                        contentDescription = stringResource(R.string.structure_close_templates)
+                                    )
+                                }
+                            }
+                            ButtonTemplatesPanel(
+                                actions = templatesPanelActions,
+                                onEditTemplate = onEditButtonTemplate,
+                                onTemplateClick = onTemplateClick,
+                                modifier = Modifier.weight(1f).fillMaxWidth()
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        // Drawer / BottomSheet for tree view on phones
+        if (!isTablet && state.showBottomSheet) {
+            ModalBottomSheet(
+                onDismissRequest = { state.showBottomSheet = false },
+                sheetState = sheetState,
+                dragHandle = { BottomSheetDefaults.DragHandle() }
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .fillMaxHeight(0.85f)
+                        .padding(horizontal = 16.dp)
+                ) {
+                    Text(
+                        text = stringResource(R.string.structure_tree_toggle),
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+                    StructureTreeNavigator(
+                        graph = graph,
+                        pages = pages,
+                        pageNames = pageNames,
+                        focusedPageId = state.focusedPageId,
+                        onFocus = {
+                            state.navigateToPage(it)
+                            scope.launch { sheetState.hide() }.invokeOnCompletion {
+                                if (!sheetState.isVisible) {
+                                    state.showBottomSheet = false
+                                }
+                            }
+                        },
+                        onOrphanClick = { orphanId ->
+                            scope.launch { sheetState.hide() }.invokeOnCompletion {
+                                if (!sheetState.isVisible) {
+                                    state.showBottomSheet = false
+                                }
+                            }
+                            state.orphanToConnectId = orphanId
+                        },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+            }
+        }
+
+        // Drawer / BottomSheet for templates on phones
+        if (!isTablet && state.showTemplatesBottomSheet) {
+            ModalBottomSheet(
+                onDismissRequest = { state.showTemplatesBottomSheet = false },
+                dragHandle = { BottomSheetDefaults.DragHandle() }
+            ) {
+                CompositionLocalProvider(LocalDragDropState provides dragDropState) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .fillMaxHeight(0.85f)
+                            .padding(horizontal = 16.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = stringResource(R.string.template_panel_title),
+                                style = MaterialTheme.typography.titleMedium
+                            )
+                            IconButton(onClick = { state.showTemplatesBottomSheet = false }) {
+                                Icon(imageVector = Icons.Default.Close, contentDescription = stringResource(R.string.action_close))
+                            }
+                        }
+                        ButtonTemplatesPanel(
+                            actions = templatesPanelActions,
+                            onEditTemplate = onEditButtonTemplate,
+                            onTemplateClick = onButtonTemplateClick,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
