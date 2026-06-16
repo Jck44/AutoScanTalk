@@ -698,6 +698,9 @@
     <string name="history_page_split">Seite „%1$s“ aufgeteilt</string>
     <string name="structure_search_clear">Suche löschen</string>
     <string name="button_add">Button hinzufügen</string>
+    <string name="button_delete_success">Button gelöscht</string>
+    <string name="button_add_success">Button hinzugefügt</string>
+    <string name="template_insert_success">Vorlage eingefügt</string>
 
     <!-- AP 4 Strings -->
     <string name="book_list_empty_title">Keine Bücher</string>

@@ -232,12 +232,12 @@ fun StructureEditorScreen(
     var pageToRemoveConnectionTargetName by remember { mutableStateOf("") }
     var orphanToConnectId by remember { mutableStateOf<String?>(null) }
 
-    val showSuccessSnackbarWithUndo = {
+    val showSuccessSnackbarWithUndo = { messageResId: Int ->
         scope.launch {
             snackbarHostState.currentSnackbarData?.dismiss()
             val app = pageViewModel.getApplication<android.app.Application>()
             val snackbarResult = snackbarHostState.showSnackbar(
-                message = app.getString(R.string.button_move_success),
+                message = app.getString(messageResId),
                 actionLabel = app.getString(R.string.structure_action_undo),
                 duration = SnackbarDuration.Long
             )
@@ -260,7 +260,7 @@ fun StructureEditorScreen(
         ) { result ->
             when (result) {
                 is com.andreas_kratzer.ghosttalk.core.domain.pages.MoveButtonToPageUseCase.MoveResult.Success -> {
-                    showSuccessSnackbarWithUndo()
+                    showSuccessSnackbarWithUndo(R.string.button_move_success)
                 }
                 is com.andreas_kratzer.ghosttalk.core.domain.pages.MoveButtonToPageUseCase.MoveResult.TargetFull -> {
                     scope.launch {
@@ -282,7 +282,7 @@ fun StructureEditorScreen(
         )
         gridEditorViewModel.insertButtonConfig(focusedPageId, targetIndex, newConfig, false) { success ->
             if (success) {
-                showSuccessSnackbarWithUndo()
+                showSuccessSnackbarWithUndo(R.string.template_insert_success)
             } else {
                 scope.launch {
                     snackbarHostState.showSnackbar(
@@ -320,7 +320,7 @@ fun StructureEditorScreen(
                                 if (actualPlacedIdx != -1 && actualPlacedIdx != targetIndex) {
                                     gridEditorViewModel.moveButton(targetPageId, actualPlacedIdx, targetIndex)
                                 }
-                                showSuccessSnackbarWithUndo()
+                                showSuccessSnackbarWithUndo(R.string.button_move_success)
                             } else if (result is com.andreas_kratzer.ghosttalk.core.domain.pages.MoveButtonToPageUseCase.MoveResult.TargetFull) {
                                 scope.launch {
                                     snackbarHostState.showSnackbar(
@@ -333,7 +333,7 @@ fun StructureEditorScreen(
                 },
                 onDeleteButton = { pageId, index ->
                     gridEditorViewModel.updateButtonConfig(pageId, index, null)
-                    showSuccessSnackbarWithUndo()
+                    showSuccessSnackbarWithUndo(R.string.button_delete_success)
                 },
                 onInsertTemplate = { pageId, targetIndex, template ->
                     val newConfig = template.buttonConfig.copy(
@@ -346,7 +346,7 @@ fun StructureEditorScreen(
                     }
                     gridEditorViewModel.insertButtonConfig(pageId, actualIndex, newConfig, false) { success ->
                         if (success) {
-                            showSuccessSnackbarWithUndo()
+                            showSuccessSnackbarWithUndo(R.string.template_insert_success)
                         } else {
                             scope.launch {
                                 snackbarHostState.showSnackbar(
@@ -386,7 +386,7 @@ fun StructureEditorScreen(
                 )
                 gridEditorViewModel.insertButtonConfig(focusedPageId, targetIndex, newConfig, false) { success ->
                     if (success) {
-                        showSuccessSnackbarWithUndo()
+                        showSuccessSnackbarWithUndo(R.string.button_add_success)
                     } else {
                         scope.launch {
                             snackbarHostState.showSnackbar(
@@ -872,7 +872,7 @@ fun StructureEditorScreen(
                         pageToRemoveConnectionTargetName = ""
                         gridEditorViewModel.updateButtonConfig(pageToRemoveConnectionFromPageId, index, null)
                         pageToRemoveConnectionFromPageId = ""
-                        showSuccessSnackbarWithUndo()
+                        showSuccessSnackbarWithUndo(R.string.button_delete_success)
                     }
                 ) {
                     Text(stringResource(R.string.structure_action_remove))
@@ -1107,7 +1107,7 @@ fun StructureEditorScreen(
             onDelete = {
                 gridEditorViewModel.updateButtonConfig(pageId, index, null)
                 editTarget = null
-                showSuccessSnackbarWithUndo()
+                showSuccessSnackbarWithUndo(R.string.button_delete_success)
             },
             onCreatePage = onCreatePage,
             isTextCached = { gridEditorViewModel.isTextCached(it) },
@@ -1133,7 +1133,7 @@ fun StructureEditorScreen(
                 val targetIndex = if (firstFreeIndex != -1) firstFreeIndex else page?.buttonConfigs?.size ?: 0
                 gridEditorViewModel.insertButtonConfig(pageId, targetIndex, newConfig, false) { success ->
                     if (success) {
-                        showSuccessSnackbarWithUndo()
+                        showSuccessSnackbarWithUndo(R.string.button_add_success)
                     } else {
                         scope.launch {
                             snackbarHostState.showSnackbar(

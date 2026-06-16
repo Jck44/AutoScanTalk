@@ -5,12 +5,15 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.KeyboardArrowDown
@@ -38,6 +41,7 @@ import com.andreas_kratzer.ghosttalk.ui.components.StructureButtonDrag
 import com.andreas_kratzer.ghosttalk.ui.components.StructureNodeTarget
 import com.andreas_kratzer.ghosttalk.ui.components.StructureSlotTarget
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun StructureGraphNode(
     pageId: String,
@@ -120,9 +124,12 @@ fun StructureGraphNode(
                     navigableButtons(page, pageOutgoingIndices, effectiveStartPageId)
                 } else emptyList()
 
-                Column(
+                // Chips flow left-to-right and wrap within the node's fixed width — same
+                // arrangement as the card editor, instead of one chip per row.
+                FlowRow(
                     modifier = Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     activeButtons.forEach { (btnIdx, btn) ->
                         val dragItem = StructureButtonDrag(pageId, btnIdx, btn.label, btn.buttonAction)
@@ -147,13 +154,14 @@ fun StructureGraphNode(
                     if (showPlaceholder) {
                         Box(
                             modifier = Modifier
-                                .fillMaxWidth()
+                                .widthIn(min = 48.dp)
                                 .height(32.dp)
                                 .border(
                                     BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)),
                                     MaterialTheme.shapes.small
                                 )
-                                .dropTarget(key = StructureSlotTarget(pageId, targetSlotIndex)),
+                                .dropTarget(key = StructureSlotTarget(pageId, targetSlotIndex))
+                                .padding(horizontal = 12.dp),
                             contentAlignment = Alignment.Center
                         ) {
                             Text(

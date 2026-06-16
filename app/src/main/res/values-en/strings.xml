@@ -694,6 +694,9 @@
     <string name="history_page_split">Page \"%1$s\" split</string>
     <string name="structure_search_clear">Clear search</string>
     <string name="button_add">Add button</string>
+    <string name="button_delete_success">Button deleted</string>
+    <string name="button_add_success">Button added</string>
+    <string name="template_insert_success">Template inserted</string>
 
     <!-- AP 4 Strings -->
     <string name="book_list_empty_title">No books</string>
