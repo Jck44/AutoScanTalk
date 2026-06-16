@@ -63,7 +63,12 @@ fun AnalyticsOverviewTab(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Text("📅", style = MaterialTheme.typography.titleMedium)
+            Icon(
+                imageVector = GhostTalkIcons.DateRange,
+                contentDescription = null,
+                modifier = Modifier.size(24.dp),
+                tint = MaterialTheme.colorScheme.primary
+            )
             Text(
                 text = statisticsTimeframeText,
                 style = MaterialTheme.typography.bodyMedium,
