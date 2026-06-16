@@ -125,17 +125,9 @@ class PageViewModelStateTest {
             systemCallManager = systemCallManager,
             settingsRepository = settingsRepository,
             ttsHelper = mockk(relaxed = true),
-            appScope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Unconfined)
+            appScope = kotlinx.coroutines.CoroutineScope(Dispatchers.Unconfined)
         )
 
-        val aiRestructureDelegate = com.andreas_kratzer.ghosttalk.ui.pages.delegates.AiRestructureDelegate(
-            application = application,
-            buttonUsageRepository = buttonUsageRepository,
-            settingsRepository = settingsRepository,
-            cloneBookUseCase = mockk(relaxed = true),
-            bookHierarchyProposalUseCase = mockk(relaxed = true),
-            pageLayoutProposalUseCase = mockk(relaxed = true)
-        )
         val navigationDelegate = NavigationDelegate(
             pageManagementDelegate = pageManagementDelegate,
             actionExecutor = actionExecutor,
