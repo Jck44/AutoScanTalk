@@ -354,6 +354,7 @@ fun GridEditorContent(
                     GridEditorHeader(
                         item = item,
                         isEditPreviewActive = isEditPreviewActive,
+                        isMultiSelectMode = isMultiSelectMode,
                         onSummaryClick = { showLayoutSettingsSheet = true }
                     )
 

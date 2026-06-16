@@ -731,6 +731,7 @@
 
     <string name="bulk_action_toggle_multi_select">Mehrfachauswahl umschalten</string>
     <string name="bulk_action_selected">Ausgewählt</string>
-    <string name="bulk_action_unselected">Nicht ausgewählt</string>
+    <string name="bulk_action_hint_empty">Knöpfe auswählen</string>
+    <string name="bulk_action_mode_banner">Mehrfachauswahl aktiv</string>
 </resources>
 

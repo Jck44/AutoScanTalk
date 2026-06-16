@@ -27,7 +27,11 @@ fun BulkActionTopBar(
     TopAppBar(
         title = {
             Text(
-                text = stringResource(R.string.bulk_action_selected_count, selectedCount),
+                text = if (selectedCount > 0) {
+                    stringResource(R.string.bulk_action_selected_count, selectedCount)
+                } else {
+                    stringResource(R.string.bulk_action_hint_empty)
+                },
                 style = MaterialTheme.typography.titleMedium
             )
         },

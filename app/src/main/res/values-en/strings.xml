@@ -727,6 +727,7 @@
 
     <string name="bulk_action_toggle_multi_select">Toggle multi-select</string>
     <string name="bulk_action_selected">Selected</string>
-    <string name="bulk_action_unselected">Unselected</string>
+    <string name="bulk_action_hint_empty">Select buttons</string>
+    <string name="bulk_action_mode_banner">Multi-select mode active</string>
 </resources>
 

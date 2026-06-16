@@ -34,6 +34,12 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.Surface
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -75,6 +81,19 @@ fun GridEditorGrid(
     onEditRow: (Int) -> Unit,
     onEditButton: (Int) -> Unit
 ) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val isReducedMotion = remember(context) {
+        try {
+            android.provider.Settings.Global.getFloat(
+                context.contentResolver,
+                android.provider.Settings.Global.ANIMATOR_DURATION_SCALE,
+                1.0f
+            ) == 0.0f
+        } catch (e: Exception) {
+            false
+        }
+    }
+
     LazyVerticalGrid(
         columns = GridCells.Fixed(pageToShow.columns),
         state = gridState,
@@ -101,6 +120,7 @@ fun GridEditorGrid(
                 isEditPreviewActive = isEditPreviewActive,
                 isMultiSelectMode = isMultiSelectMode,
                 selectedButtonIndices = selectedButtonIndices,
+                isReducedMotion = isReducedMotion,
                 onEditRow = onEditRow,
                 onEditButton = onEditButton
             )
@@ -119,6 +139,7 @@ fun GridEditorGrid(
                 isEditPreviewActive = isEditPreviewActive,
                 isMultiSelectMode = isMultiSelectMode,
                 selectedButtonIndices = selectedButtonIndices,
+                isReducedMotion = isReducedMotion,
                 onEditButton = onEditButton
             )
         }
@@ -142,6 +163,7 @@ private fun EditorButtonCell(
     isEditPreviewActive: Boolean = false,
     isMultiSelectMode: Boolean = false,
     isSelected: Boolean = false,
+    isReducedMotion: Boolean = false,
     onDragEnd: (Int) -> Unit,
     onClick: () -> Unit
 ) {
@@ -149,6 +171,23 @@ private fun EditorButtonCell(
     val isDragging = if (isEditPreviewActive) false else dragDropState.isDragging
     val isDraggedHovered = if (isEditPreviewActive) false else dragDropState.currentHoveredTarget == GridCellTarget(globalIndex)
     
+    
+    val targetScale = when {
+        !isMultiSelectMode -> 1.0f
+        isSelected -> 0.90f
+        else -> 0.96f
+    }
+    
+    val cellScale by if (isReducedMotion) {
+        remember(targetScale) { mutableStateOf(targetScale) }
+    } else {
+        animateFloatAsState(
+            targetValue = targetScale,
+            animationSpec = tween(durationMillis = 180),
+            label = "cellScale"
+        )
+    }
+
     val infiniteTransition = rememberInfiniteTransition(label = "pulse")
     val pulseAlpha by infiniteTransition.animateFloat(
         initialValue = 0.4f,
@@ -166,6 +205,9 @@ private fun EditorButtonCell(
         modifier = Modifier
             .width(width)
             .height(height)
+            .semantics {
+                selected = isSelected
+            }
             .run {
                 if (!isEditPreviewActive && !isMultiSelectMode) reorderableItemVisuals(reorderState, localIndex)
                 else this
@@ -202,14 +244,16 @@ private fun EditorButtonCell(
             isMultiSelectMode = isMultiSelectMode,
             onClick = onClick,
             modifier = Modifier
+                .scale(cellScale)
                 .fillMaxSize()
                 .background(
-                    if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
+                    color = if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
                     else if (isHighlighted) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.15f)
-                    else Color.Transparent
+                    else Color.Transparent,
+                    shape = MaterialTheme.shapes.small
                 )
                 .border(
-                    width = if (isSelected) 3.dp else if (isDraggedHovered) 3.dp else if (isTarget) 2.dp else 0.dp,
+                    width = if (isSelected) 2.dp else if (isDraggedHovered) 3.dp else if (isTarget) 2.dp else 0.dp,
                     color = if (isSelected) MaterialTheme.colorScheme.primary
                             else if (isDraggedHovered) MaterialTheme.colorScheme.primary.copy(alpha = pulseAlpha)
                             else if (isTarget) MaterialTheme.colorScheme.primary
@@ -218,21 +262,26 @@ private fun EditorButtonCell(
                 )
         )
 
-        if (isMultiSelectMode && buttonConfig != null) {
+        if (isMultiSelectMode && buttonConfig != null && isSelected) {
             Surface(
                 modifier = Modifier
                     .align(Alignment.TopEnd)
                     .padding(4.dp)
-                    .size(20.dp),
+                    .size(20.dp)
+                    .border(
+                        width = 2.dp,
+                        color = MaterialTheme.colorScheme.surface,
+                        shape = androidx.compose.foundation.shape.CircleShape
+                    ),
                 shape = androidx.compose.foundation.shape.CircleShape,
-                color = MaterialTheme.colorScheme.surfaceVariant,
+                color = MaterialTheme.colorScheme.primary,
                 shadowElevation = 1.dp
             ) {
                 Icon(
-                    imageVector = if (isSelected) com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons.CheckCircle else com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons.RadioButtonUnchecked,
-                    contentDescription = if (isSelected) stringResource(R.string.bulk_action_selected) else stringResource(R.string.bulk_action_unselected),
-                    tint = if (isSelected) MaterialTheme.colorScheme.primary else Color.Gray.copy(alpha = 0.6f),
-                    modifier = Modifier.fillMaxSize()
+                    imageVector = Icons.Default.Check,
+                    contentDescription = stringResource(R.string.bulk_action_selected),
+                    tint = MaterialTheme.colorScheme.onPrimary,
+                    modifier = Modifier.padding(2.dp).fillMaxSize()
                 )
             }
         }
@@ -310,6 +359,7 @@ private fun LazyGridScope.renderRowByRowGrid(
     isEditPreviewActive: Boolean,
     isMultiSelectMode: Boolean,
     selectedButtonIndices: Set<Int>,
+    isReducedMotion: Boolean,
     onEditRow: (Int) -> Unit,
     onEditButton: (Int) -> Unit
 ) {
@@ -422,6 +472,7 @@ private fun LazyGridScope.renderRowByRowGrid(
                                 isEditPreviewActive = isEditPreviewActive,
                                 isMultiSelectMode = isMultiSelectMode,
                                 isSelected = isSelected,
+                                isReducedMotion = isReducedMotion,
                                 onDragEnd = { fromIdx ->
                                     val to = buttonReorderState.findTargetButtonIndex(
                                         gridState = gridState,
@@ -468,6 +519,7 @@ private fun LazyGridScope.renderLinearGrid(
     isEditPreviewActive: Boolean,
     isMultiSelectMode: Boolean,
     selectedButtonIndices: Set<Int>,
+    isReducedMotion: Boolean,
     onEditButton: (Int) -> Unit
 ) {
     val buttonTargetIndex = if (isEditPreviewActive) -1 else buttonReorderState.findTargetButtonIndex(
@@ -504,6 +556,7 @@ private fun LazyGridScope.renderLinearGrid(
             isEditPreviewActive = isEditPreviewActive,
             isMultiSelectMode = isMultiSelectMode,
             isSelected = isSelected,
+            isReducedMotion = isReducedMotion,
             onDragEnd = { fromLocalIdx ->
                 val toGlobal = buttonReorderState.findTargetButtonIndex(
                     gridState = gridState,
