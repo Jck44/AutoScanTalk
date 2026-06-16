@@ -696,6 +696,14 @@
     <string name="structure_page_full">This page is full – no space for a new connection.</string>
     <string name="structure_remove_connection_desc">Remove connection</string>
     <string name="structure_view_page">View</string>
+    <string name="structure_warning_orphan">Not reachable (no path from start page)</string>
+    <string name="structure_warning_dead_end">Dead end (no outgoing connections)</string>
+    <string name="structure_problems_title">Structural Issues</string>
+    <string name="structure_action_connect_to_start">Connect to start page</string>
+    <string name="structure_quick_fix_connect_orphan_title">Resolve Orphan</string>
+    <string name="structure_quick_fix_connect_orphan_msg">How do you want to connect the unreachable page \"%1$s\"?</string>
+    <string name="structure_quick_fix_connect_to_start">Link from start page</string>
+    <string name="structure_quick_fix_connect_to_focused">Link from active page (%1$s)</string>
     <string name="structure_search">Search pages…</string>
     <string name="structure_search_no_results">No results</string>
     <string name="structure_show_more">Show %1$d more</string>

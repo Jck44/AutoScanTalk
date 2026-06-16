@@ -37,6 +37,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.andreas_kratzer.ghosttalk.R
@@ -46,6 +48,46 @@ import com.andreas_kratzer.ghosttalk.core.model.Page
 import com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
 
+@Composable
+private fun WarningBadges(
+    isOrphan: Boolean,
+    isDeadEnd: Boolean,
+    modifier: Modifier = Modifier
+) {
+    if (isOrphan || isDeadEnd) {
+        Row(
+            modifier = modifier,
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            if (isOrphan) {
+                val orphanDesc = stringResource(R.string.structure_warning_orphan)
+                Text(
+                    text = "⚠",
+                    color = MaterialTheme.colorScheme.error,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 16.sp,
+                    modifier = Modifier.semantics {
+                        contentDescription = orphanDesc
+                    }
+                )
+            }
+            if (isDeadEnd) {
+                val deadEndDesc = stringResource(R.string.structure_warning_dead_end)
+                Text(
+                    text = "⛔",
+                    color = MaterialTheme.colorScheme.error,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 16.sp,
+                    modifier = Modifier.semantics {
+                        contentDescription = deadEndDesc
+                    }
+                )
+            }
+        }
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun StructureTreeNavigator(
@@ -54,8 +96,9 @@ fun StructureTreeNavigator(
     pageNames: Map<String, String>,
     focusedPageId: String,
     onFocus: (String) -> Unit,
-    onOrphanClick: ((String) -> Unit)? = null,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    state: StructureEditorState? = null,
+    onOrphanClick: ((String) -> Unit)? = null
 ) {
     val rootNode = remember(graph) { graph.buildTree() }
     var expandedNodes by rememberSaveable { 
@@ -63,6 +106,7 @@ fun StructureTreeNavigator(
     }
 
     var isOrphansExpanded by rememberSaveable { mutableStateOf(false) }
+    var isProblemsExpanded by rememberSaveable { mutableStateOf(false) }
     var searchQuery by rememberSaveable { mutableStateOf("") }
 
     fun toggleExpand(pageId: String) {
@@ -89,6 +133,13 @@ fun StructureTreeNavigator(
     }
 
     val orphans = remember(graph) { graph.orphans() }
+    val orphansSet = remember(graph) { graph.orphans().toSet() }
+    val deadEndsSet = remember(graph) { graph.deadEnds().toSet() }
+
+    val problemPages = remember(graph, orphansSet, deadEndsSet) {
+        graph.allPageIds.filter { it in orphansSet || it in deadEndsSet }
+            .sortedBy { pageNames[it] ?: it }
+    }
 
     val searchResults = remember(searchQuery, graph.allPageIds, pageNames) {
         val trimmedQuery = searchQuery.trim()
@@ -186,6 +237,11 @@ fun StructureTreeNavigator(
                                     },
                                     modifier = Modifier.weight(1f)
                                 )
+                                WarningBadges(
+                                    isOrphan = pageId in orphansSet,
+                                    isDeadEnd = pageId in deadEndsSet,
+                                    modifier = Modifier.padding(end = 8.dp)
+                                )
 
                                 Row(
                                     horizontalArrangement = Arrangement.spacedBy(4.dp),
@@ -269,6 +325,11 @@ fun StructureTreeNavigator(
                                         MaterialTheme.typography.bodyMedium
                                     },
                                     modifier = Modifier.weight(1f)
+                                )
+                                WarningBadges(
+                                    isOrphan = node.pageId in orphansSet,
+                                    isDeadEnd = node.pageId in deadEndsSet,
+                                    modifier = Modifier.padding(end = 8.dp)
                                 )
 
                                 val page = pages.find { it.id == node.pageId }
@@ -368,6 +429,11 @@ fun StructureTreeNavigator(
                                         },
                                         modifier = Modifier.weight(1f)
                                     )
+                                    WarningBadges(
+                                        isOrphan = orphanId in orphansSet,
+                                        isDeadEnd = orphanId in deadEndsSet,
+                                        modifier = Modifier.padding(end = 8.dp)
+                                    )
 
                                     val page = pages.find { it.id == orphanId }
                                     val hasSpeech = page?.buttonConfigs?.any { it != null && it.isActive && it.buttonAction is com.andreas_kratzer.ghosttalk.core.model.SpeakTextButtonAction } ?: false
@@ -393,6 +459,94 @@ fun StructureTreeNavigator(
                                                 modifier = Modifier
                                                     .size(8.dp)
                                                     .background(navColor, shape = CircleShape)
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if (problemPages.isNotEmpty()) {
+                    item {
+                        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { isProblemsExpanded = !isProblemsExpanded }
+                                .padding(vertical = 8.dp, horizontal = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = if (isProblemsExpanded) GhostTalkIcons.KeyboardArrowDown else GhostTalkIcons.ArrowForward,
+                                contentDescription = null,
+                                modifier = Modifier.padding(end = 8.dp)
+                            )
+                            Text(
+                                text = "${stringResource(R.string.structure_problems_title)} (${problemPages.size})",
+                                style = MaterialTheme.typography.titleMedium,
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+                    }
+
+                    if (isProblemsExpanded) {
+                        items(problemPages) { pageId ->
+                            val pageName = pageNames[pageId] ?: pageId
+                            val isFocused = pageId == focusedPageId
+                            val isOrphan = pageId in orphansSet
+                            val isDeadEnd = pageId in deadEndsSet
+
+                            Surface(
+                                color = if (isFocused) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface,
+                                shape = MaterialTheme.shapes.small,
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(start = 16.dp)
+                                        .clickable { onFocus(pageId) }
+                                        .padding(vertical = 6.dp, horizontal = 4.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Spacer(modifier = Modifier.width(24.dp))
+                                    Text(
+                                        text = pageName,
+                                        style = if (isFocused) {
+                                            MaterialTheme.typography.bodyMedium.copy(
+                                                fontWeight = FontWeight.Bold,
+                                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                                            )
+                                        } else {
+                                            MaterialTheme.typography.bodyMedium
+                                        },
+                                        modifier = Modifier.weight(1f)
+                                    )
+
+                                    WarningBadges(
+                                        isOrphan = isOrphan,
+                                        isDeadEnd = isDeadEnd,
+                                        modifier = Modifier.padding(end = 8.dp)
+                                    )
+
+                                    if (state != null) {
+                                        IconButton(
+                                            onClick = {
+                                                if (isOrphan) {
+                                                    state.orphanToConnectId = pageId
+                                                } else if (isDeadEnd) {
+                                                    state.quickConnectForPageId = pageId
+                                                }
+                                            },
+                                            modifier = Modifier.size(24.dp)
+                                        ) {
+                                            Icon(
+                                                imageVector = GhostTalkIcons.Link,
+                                                contentDescription = stringResource(R.string.structure_add_connection_btn),
+                                                tint = MaterialTheme.colorScheme.primary,
+                                                modifier = Modifier.size(16.dp)
                                             )
                                         }
                                     }

@@ -2,6 +2,7 @@ package com.andreas_kratzer.ghosttalk.core.domain.pages
 
 import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.core.model.NavigateToPageButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.NavigateToStartPageButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.Page
 import com.andreas_kratzer.ghosttalk.core.model.SpeakTextButtonAction
 import org.junit.Assert.assertEquals
@@ -485,5 +486,65 @@ class BookNavigationGraphTest {
         val components = graph.connectedComponents()
         assertEquals(1, components.size)
         assertEquals(setOf("pageA", "pageB"), components[0])
+    }
+
+    @Test
+    fun `NavigateToStartPageButtonAction is recognized as valid outgoing edge and not dead end`() {
+        val pages = listOf(
+            Page(
+                id = "page1",
+                bookId = "book1",
+                name = "Page 1",
+                orderIndex = 1,
+                buttonConfigs = emptyList()
+            ),
+            Page(
+                id = "page2",
+                bookId = "book1",
+                name = "Page 2",
+                orderIndex = 2,
+                buttonConfigs = listOf(
+                    ButtonConfig(label = "Zurück zum Start", isActive = true, buttonAction = NavigateToStartPageButtonAction())
+                )
+            )
+        )
+
+        val graph = BookNavigationGraph.from(pages, "page1")
+        // page2 has an outgoing edge to page1 (startPageId)
+        assertEquals(listOf(NavEdge("page2", 0, "page1")), graph.outgoing["page2"])
+        // page2 should not be in deadEnds
+        assertTrue(!graph.deadEnds().contains("page2"))
+        // but target page1 should not have page2 in its incoming references (to avoid graph clutter)
+        assertTrue(graph.incoming["page1"].isNullOrEmpty())
+    }
+
+    @Test
+    fun `NavigateToPageButtonAction with empty pageId is recognized as navigation to start page`() {
+        val pages = listOf(
+            Page(
+                id = "page1",
+                bookId = "book1",
+                name = "Page 1",
+                orderIndex = 1,
+                buttonConfigs = emptyList()
+            ),
+            Page(
+                id = "page2",
+                bookId = "book1",
+                name = "Page 2",
+                orderIndex = 2,
+                buttonConfigs = listOf(
+                    ButtonConfig(label = "Zum Start", isActive = true, buttonAction = NavigateToPageButtonAction(pageId = ""))
+                )
+            )
+        )
+
+        val graph = BookNavigationGraph.from(pages, "page1")
+        // page2 has an outgoing edge to page1 (startPageId)
+        assertEquals(listOf(NavEdge("page2", 0, "page1")), graph.outgoing["page2"])
+        // page2 should not be in deadEnds
+        assertTrue(!graph.deadEnds().contains("page2"))
+        // but target page1 should not have page2 in its incoming references (to avoid graph clutter)
+        assertTrue(graph.incoming["page1"].isNullOrEmpty())
     }
 }

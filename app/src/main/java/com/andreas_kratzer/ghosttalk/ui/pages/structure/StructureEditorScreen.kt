@@ -257,11 +257,11 @@ fun StructureEditorScreen(
         }
     }
 
-    val performAddConnection = { targetPageId: String ->
-        val currentPage = pages.find { it.id == state.focusedPageId }
+    val onAddConnectionBetween = { sourcePageId: String, targetPageId: String ->
+        val sourcePage = pages.find { it.id == sourcePageId }
         val targetPageName = pageNames[targetPageId] ?: targetPageId
-        if (currentPage != null) {
-            val alreadyConnected = graph.outgoing[state.focusedPageId].orEmpty().any { it.targetPageId == targetPageId }
+        if (sourcePage != null) {
+            val alreadyConnected = graph.outgoing[sourcePageId].orEmpty().any { it.targetPageId == targetPageId }
             if (alreadyConnected) {
                 scope.launch {
                     snackbarHostState.showSnackbar(
@@ -269,8 +269,8 @@ fun StructureEditorScreen(
                     )
                 }
             } else {
-                val firstFreeIndex = currentPage.buttonConfigs.indexOfFirst { it == null || !it.isActive }
-                val targetIndex = if (firstFreeIndex != -1) firstFreeIndex else currentPage.buttonConfigs.size
+                val firstFreeIndex = sourcePage.buttonConfigs.indexOfFirst { it == null || !it.isActive }
+                val targetIndex = if (firstFreeIndex != -1) firstFreeIndex else sourcePage.buttonConfigs.size
                 val newConfig = ButtonConfig(
                     id = java.util.UUID.randomUUID().toString(),
                     label = targetPageName,
@@ -278,7 +278,7 @@ fun StructureEditorScreen(
                     buttonAction = NavigateToPageButtonAction(pageId = targetPageId),
                     auditoryCue = com.andreas_kratzer.ghosttalk.core.model.AuditoryCue.TextToSpeechCue("Öffne $targetPageName")
                 )
-                gridEditorViewModel.insertButtonConfig(state.focusedPageId, targetIndex, newConfig, false) { success ->
+                gridEditorViewModel.insertButtonConfig(sourcePageId, targetIndex, newConfig, false) { success ->
                     if (success) {
                         showSuccessSnackbarWithUndo(R.string.button_add_success)
                     } else {
@@ -294,7 +294,7 @@ fun StructureEditorScreen(
     }
 
     val onAddConnection = { targetPageId: String ->
-        performAddConnection(targetPageId)
+        onAddConnectionBetween(state.focusedPageId, targetPageId)
     }
 
     val onCreatePage: (String, Int, Int, String?, (String) -> Unit) -> Unit = { name, rows, cols, templateId, callback ->
@@ -439,8 +439,8 @@ fun StructureEditorScreen(
             onUndoTo = { index ->
                 gridEditorViewModel.undoTo(index)
             },
-            onPerformAddConnection = { targetPageId ->
-                performAddConnection(targetPageId)
+            onAddConnectionBetween = { sourcePageId, targetPageId ->
+                onAddConnectionBetween(sourcePageId, targetPageId)
             },
             onBulkDelete = { selectionMap ->
                 gridEditorViewModel.bulkDeleteButtonsBatch(selectionMap)

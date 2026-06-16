@@ -56,6 +56,7 @@ class StructureEditorState(
     var pageToRemoveConnectionByButtonIndex by mutableStateOf<Int?>(null)
     var pageToRemoveConnectionTargetName by mutableStateOf("")
     var orphanToConnectId by mutableStateOf<String?>(null)
+    var quickConnectForPageId by mutableStateOf<String?>(null)
 
     val selectedCount: Int
         get() = selection.values.sumOf { it.size }

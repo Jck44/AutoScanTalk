@@ -700,6 +700,14 @@
     <string name="structure_page_full">Diese Seite ist voll – kein Platz für eine neue Verknüpfung.</string>
     <string name="structure_remove_connection_desc">Verbindung entfernen</string>
     <string name="structure_view_page">Ansehen</string>
+    <string name="structure_warning_orphan">Nicht erreichbar (keine Verbindung von der Startseite)</string>
+    <string name="structure_warning_dead_end">Sackgasse (keine ausgehenden Verbindungen)</string>
+    <string name="structure_problems_title">Strukturelle Probleme</string>
+    <string name="structure_action_connect_to_start">Mit Startseite verbinden</string>
+    <string name="structure_quick_fix_connect_orphan_title">Orphan beheben</string>
+    <string name="structure_quick_fix_connect_orphan_msg">Wie möchtest du die nicht erreichbare Seite „%1$s“ verbinden?</string>
+    <string name="structure_quick_fix_connect_to_start">Von Startseite verlinken</string>
+    <string name="structure_quick_fix_connect_to_focused">Von aktiver Seite (%1$s) verlinken</string>
     <string name="structure_search">Seiten suchen…</string>
     <string name="structure_search_no_results">Keine Ergebnisse</string>
     <string name="structure_show_more">%1$d weitere anzeigen</string>

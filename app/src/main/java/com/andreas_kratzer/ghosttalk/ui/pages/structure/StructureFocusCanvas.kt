@@ -55,6 +55,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.unit.sp
 import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.core.ai.domain.SplitPageUseCase
 import com.andreas_kratzer.ghosttalk.core.domain.pages.BookNavigationGraph
@@ -77,6 +80,46 @@ import com.andreas_kratzer.ghosttalk.ui.components.dropTarget
 
 private const val MAX_VISIBLE_TARGETS = 12
 private const val MAX_VISIBLE_SOURCES = 12
+
+@Composable
+private fun WarningBadges(
+    isOrphan: Boolean,
+    isDeadEnd: Boolean,
+    modifier: Modifier = Modifier
+) {
+    if (isOrphan || isDeadEnd) {
+        Row(
+            modifier = modifier,
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            if (isOrphan) {
+                val orphanDesc = stringResource(R.string.structure_warning_orphan)
+                Text(
+                    text = "⚠",
+                    color = MaterialTheme.colorScheme.error,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 16.sp,
+                    modifier = Modifier.semantics {
+                        contentDescription = orphanDesc
+                    }
+                )
+            }
+            if (isDeadEnd) {
+                val deadEndDesc = stringResource(R.string.structure_warning_dead_end)
+                Text(
+                    text = "⛔",
+                    color = MaterialTheme.colorScheme.error,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 16.sp,
+                    modifier = Modifier.semantics {
+                        contentDescription = deadEndDesc
+                    }
+                )
+            }
+        }
+    }
+}
 
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -102,6 +145,8 @@ fun StructureFocusCanvas(
     onCreatePage: ((String, Int, Int, String?, (String) -> Unit) -> Unit)? = null
 ) {
     val page = remember(pages, focusedPageId) { pages.find { it.id == focusedPageId } }
+    val orphans = remember(graph) { graph.orphans().toSet() }
+    val deadEnds = remember(graph) { graph.deadEnds().toSet() }
     val incomingSources = remember(graph, focusedPageId) { graph.incoming[focusedPageId] ?: emptyList() }
     val outgoingEdges = remember(graph, focusedPageId) { 
         (graph.outgoing[focusedPageId] ?: emptyList()).filter { it.targetPageId != focusedPageId }
@@ -339,13 +384,22 @@ fun StructureFocusCanvas(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Column(modifier = Modifier.weight(1f)) {
+                        Row(
+                            modifier = Modifier.weight(1f),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
                             Text(
                                 text = page.name,
                                 style = MaterialTheme.typography.headlineSmall,
                                 fontWeight = FontWeight.Bold,
                                 maxLines = 2,
-                                overflow = TextOverflow.Ellipsis
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.weight(1f, fill = false)
+                            )
+                            WarningBadges(
+                                isOrphan = focusedPageId in orphans,
+                                isDeadEnd = focusedPageId in deadEnds
                             )
                         }
                         if (!isMultiSelectMode) {
@@ -623,7 +677,21 @@ fun StructureFocusCanvas(
                                                 verticalAlignment = Alignment.CenterVertically
                                             ) {
                                                 Column(modifier = Modifier.weight(1f)) {
-                                                    Text(targetName, fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.titleMedium)
+                                                    Row(
+                                                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                                        verticalAlignment = Alignment.CenterVertically
+                                                    ) {
+                                                        Text(
+                                                            text = targetName,
+                                                            fontWeight = FontWeight.SemiBold,
+                                                            style = MaterialTheme.typography.titleMedium,
+                                                            modifier = Modifier.weight(1f, fill = false)
+                                                        )
+                                                        WarningBadges(
+                                                            isOrphan = edge.targetPageId in orphans,
+                                                            isDeadEnd = edge.targetPageId in deadEnds
+                                                        )
+                                                    }
                                                     Text(
                                                         text = stringResource(R.string.structure_via_button, page.buttonConfigs.getOrNull(edge.sourceButtonIndex)?.label ?: ""),
                                                         style = MaterialTheme.typography.labelSmall,

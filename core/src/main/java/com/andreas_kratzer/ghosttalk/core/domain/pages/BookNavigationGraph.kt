@@ -1,6 +1,7 @@
 package com.andreas_kratzer.ghosttalk.core.domain.pages
 
 import com.andreas_kratzer.ghosttalk.core.model.NavigateToPageButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.NavigateToStartPageButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.Page
 
 data class NavEdge(
@@ -144,16 +145,30 @@ class BookNavigationGraph private constructor(
                     if (config != null && config.isActive && config.label.isNotBlank()) {
                         val action = config.buttonAction
                         if (action is NavigateToPageButtonAction) {
-                            val targetId = action.pageId
+                            val targetId = action.pageId.ifEmpty { startPageId ?: fallbackStartPageId }
                             // targetPageId muss in allPageIds existieren
-                            if (targetId in allPageIds) {
+                            if (targetId != null && targetId in allPageIds) {
                                 val edge = NavEdge(
                                     sourcePageId = page.id,
                                     sourceButtonIndex = index,
                                     targetPageId = targetId
                                 )
                                 outgoing.getOrPut(page.id) { mutableListOf() }.add(edge)
-                                incoming.getOrPut(targetId) { mutableSetOf() }.add(page.id)
+                                // Exclude general "To Start" links (empty pageId) from incoming map to avoid cluttering the start page
+                                if (action.pageId.isNotEmpty()) {
+                                    incoming.getOrPut(targetId) { mutableSetOf() }.add(page.id)
+                                }
+                            }
+                        } else if (action is NavigateToStartPageButtonAction) {
+                            val resolvedStartPageId = startPageId?.takeIf { it in allPageIds } ?: fallbackStartPageId?.takeIf { it in allPageIds }
+                            if (resolvedStartPageId != null) {
+                                val edge = NavEdge(
+                                    sourcePageId = page.id,
+                                    sourceButtonIndex = index,
+                                    targetPageId = resolvedStartPageId
+                                )
+                                outgoing.getOrPut(page.id) { mutableListOf() }.add(edge)
+                                // Exclude explicit "To Start" action from incoming map to avoid cluttering the start page
                             }
                         }
                     }

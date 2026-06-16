@@ -30,6 +30,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.unit.sp
 import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.core.domain.pages.BookNavigationGraph
 import com.andreas_kratzer.ghosttalk.core.model.Page
@@ -40,6 +43,46 @@ import com.andreas_kratzer.ghosttalk.ui.components.StructureNodeTarget
 import com.andreas_kratzer.ghosttalk.ui.components.StructureSlotTarget
 import com.andreas_kratzer.ghosttalk.ui.components.dragSource
 import com.andreas_kratzer.ghosttalk.ui.components.dropTarget
+
+@Composable
+private fun WarningBadges(
+    isOrphan: Boolean,
+    isDeadEnd: Boolean,
+    modifier: Modifier = Modifier
+) {
+    if (isOrphan || isDeadEnd) {
+        Row(
+            modifier = modifier,
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            if (isOrphan) {
+                val orphanDesc = stringResource(R.string.structure_warning_orphan)
+                Text(
+                    text = "⚠",
+                    color = MaterialTheme.colorScheme.error,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 14.sp,
+                    modifier = Modifier.semantics {
+                        contentDescription = orphanDesc
+                    }
+                )
+            }
+            if (isDeadEnd) {
+                val deadEndDesc = stringResource(R.string.structure_warning_dead_end)
+                Text(
+                    text = "⛔",
+                    color = MaterialTheme.colorScheme.error,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 14.sp,
+                    modifier = Modifier.semantics {
+                        contentDescription = deadEndDesc
+                    }
+                )
+            }
+        }
+    }
+}
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -56,7 +99,9 @@ fun StructureGraphNode(
     onAddButton: (String) -> Unit,
     modifier: Modifier = Modifier,
     isMultiSelectMode: Boolean = false,
-    selectedIndices: Set<Int> = emptySet()
+    selectedIndices: Set<Int> = emptySet(),
+    isOrphan: Boolean = false,
+    isDeadEnd: Boolean = false
 ) {
     val dragDropState = LocalDragDropState.current
     val isNodeHovered = dragDropState.currentHoveredTarget == StructureNodeTarget(pageId)
@@ -84,14 +129,21 @@ fun StructureGraphNode(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        text = pageName,
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.Bold,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.weight(1f)
-                    )
+                    Row(
+                        modifier = Modifier.weight(1f),
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = pageName,
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f, fill = false)
+                        )
+                        WarningBadges(isOrphan, isDeadEnd)
+                    }
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(4.dp),
                         verticalAlignment = Alignment.CenterVertically
@@ -183,13 +235,20 @@ fun StructureGraphNode(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = pageName,
-                    style = MaterialTheme.typography.labelMedium,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f)
-                )
+                Row(
+                    modifier = Modifier.weight(1f),
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = pageName,
+                        style = MaterialTheme.typography.labelMedium,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f, fill = false)
+                    )
+                    WarningBadges(isOrphan, isDeadEnd)
+                }
                 IconButton(
                     onClick = onToggleExpand,
                     modifier = Modifier.size(20.dp)

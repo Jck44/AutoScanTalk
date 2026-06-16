@@ -144,6 +144,7 @@ fun StructureEditorContent(
                                     }
                                 }
                                 StructureTreeNavigator(
+                                    state = state,
                                     graph = graph,
                                     pages = pages,
                                     pageNames = pageNames,
@@ -270,6 +271,7 @@ fun StructureEditorContent(
                         modifier = Modifier.padding(bottom = 8.dp)
                     )
                     StructureTreeNavigator(
+                        state = state,
                         graph = graph,
                         pages = pages,
                         pageNames = pageNames,

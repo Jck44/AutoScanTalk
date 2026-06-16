@@ -81,6 +81,9 @@ fun StructureGraphView(
     isMultiSelectMode: Boolean = false,
     selection: Map<String, Set<Int>> = emptyMap()
 ) {
+    val orphans = remember(graph) { graph.orphans().toSet() }
+    val deadEnds = remember(graph) { graph.deadEnds().toSet() }
+
     var expandedPageIds: Set<String> by rememberSaveable(stateSaver = expandedPageIdsSaver) {
         mutableStateOf(emptySet<String>())
     }
@@ -244,7 +247,9 @@ fun StructureGraphView(
                             onEditButton = onEditButton,
                             onAddButton = onAddButton,
                             isMultiSelectMode = isMultiSelectMode,
-                            selectedIndices = selection[focusedPageId].orEmpty()
+                            selectedIndices = selection[focusedPageId].orEmpty(),
+                            isOrphan = focusedPageId in orphans,
+                            isDeadEnd = focusedPageId in deadEnds
                         )
                     }.map { it.measure(Constraints.fixedWidth(with(density) { centerWidthDp.roundToPx() })) }
                     val centerPlaceable = centerPlaceables.first()
@@ -288,7 +293,9 @@ fun StructureGraphView(
                                     onEditButton = onEditButton,
                                     onAddButton = onAddButton,
                                     isMultiSelectMode = isMultiSelectMode,
-                                    selectedIndices = selection[sourceId].orEmpty()
+                                    selectedIndices = selection[sourceId].orEmpty(),
+                                    isOrphan = sourceId in orphans,
+                                    isDeadEnd = sourceId in deadEnds
                                 )
                             }
                         }
@@ -333,7 +340,9 @@ fun StructureGraphView(
                                     onEditButton = onEditButton,
                                     onAddButton = onAddButton,
                                     isMultiSelectMode = isMultiSelectMode,
-                                    selectedIndices = selection[targetId].orEmpty()
+                                    selectedIndices = selection[targetId].orEmpty(),
+                                    isOrphan = targetId in orphans,
+                                    isDeadEnd = targetId in deadEnds
                                 )
                             }
                         }

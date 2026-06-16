@@ -72,7 +72,7 @@ fun StructureEditorDialogs(
     onDeleteButtonTemplate: (ButtonTemplate) -> Unit,
     onSaveButtonAsTemplate: (String, ButtonConfig) -> Unit,
     onUndoTo: (Int) -> Unit,
-    onPerformAddConnection: (String) -> Unit,
+    onAddConnectionBetween: (String, String) -> Unit,
     onBulkDelete: (Map<String, List<Int>>) -> Unit,
     onBulkMove: (Map<String, List<Int>>, String, Boolean, (MoveResult) -> Unit) -> Unit,
     onBulkCopy: (Map<String, List<Int>>, String, Boolean, (MoveResult) -> Unit) -> Unit,
@@ -115,21 +115,57 @@ fun StructureEditorDialogs(
         val orphanName = pageNames[state.orphanToConnectId] ?: state.orphanToConnectId!!
         val currentPageName = pageNames[state.focusedPageId] ?: state.focusedPageId
         GhostTalkDialog(
-            title = stringResource(R.string.structure_connect_orphan_title),
-            confirmText = stringResource(R.string.structure_action_connect),
-            dismissText = stringResource(R.string.structure_view_page),
-            onConfirm = {
-                val targetId = state.orphanToConnectId!!
-                state.orphanToConnectId = null
-                onPerformAddConnection(targetId)
-            },
+            title = stringResource(R.string.structure_quick_fix_connect_orphan_title),
+            confirmText = "",
+            dismissText = stringResource(R.string.action_cancel),
+            onConfirm = {},
             onDismiss = {
-                val targetId = state.orphanToConnectId!!
                 state.orphanToConnectId = null
-                state.navigateToPage(targetId)
             },
             content = {
-                Text(stringResource(R.string.structure_connect_orphan_msg, orphanName, currentPageName))
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        text = stringResource(R.string.structure_quick_fix_connect_orphan_msg, orphanName),
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    androidx.compose.material3.Button(
+                        onClick = {
+                            val targetId = state.orphanToConnectId!!
+                            state.orphanToConnectId = null
+                            val startId = startPageId ?: pages.minByOrNull { it.orderIndex }?.id
+                            if (startId != null) {
+                                onAddConnectionBetween(startId, targetId)
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(stringResource(R.string.structure_quick_fix_connect_to_start))
+                    }
+                    androidx.compose.material3.Button(
+                        onClick = {
+                            val targetId = state.orphanToConnectId!!
+                            state.orphanToConnectId = null
+                            onAddConnectionBetween(state.focusedPageId, targetId)
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(stringResource(R.string.structure_quick_fix_connect_to_focused, currentPageName))
+                    }
+                    androidx.compose.material3.OutlinedButton(
+                        onClick = {
+                            val targetId = state.orphanToConnectId!!
+                            state.orphanToConnectId = null
+                            state.navigateToPage(targetId)
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(stringResource(R.string.structure_view_page))
+                    }
+                }
             }
         )
     }
@@ -490,6 +526,21 @@ fun StructureEditorDialogs(
                     }
                 }
                 state.showBulkCopyDialog = false
+            }
+        )
+    }
+
+    // 15. Quick Connect Target Selection Dialog
+    if (state.quickConnectForPageId != null) {
+        val sourcePageId = state.quickConnectForPageId!!
+        TargetPageSelectionDialog(
+            availablePages = pages.filter { it.id != sourcePageId },
+            templates = templates,
+            onCreatePage = onCreatePage,
+            onDismiss = { state.quickConnectForPageId = null },
+            onPageSelected = { targetPage ->
+                onAddConnectionBetween(sourcePageId, targetPage.id)
+                state.quickConnectForPageId = null
             }
         )
     }
