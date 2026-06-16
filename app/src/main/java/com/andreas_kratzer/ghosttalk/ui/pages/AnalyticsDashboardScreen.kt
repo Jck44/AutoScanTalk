@@ -36,6 +36,7 @@ import com.andreas_kratzer.ghosttalk.core.domain.pages.UsageLocation
 import com.andreas_kratzer.ghosttalk.core.model.Page
 import com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkEmptyState
 import com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkScaffold
+import com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkDialog
 import com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
 import com.andreas_kratzer.ghosttalk.ui.components.UsageLocationRow
@@ -244,63 +245,43 @@ fun AnalyticsDashboardScreen(
     val page = pageToDelete.value
     if (page != null) {
         val usages = usagesToDelete.value
-        AlertDialog(
-            onDismissRequest = { 
+        GhostTalkDialog(
+            title = if (usages.isEmpty()) stringResource(R.string.page_dialog_delete_title) else "Seite wird verwendet",
+            onDismiss = {
                 pageToDelete.value = null
                 usagesToDelete.value = emptyList()
             },
-            title = { Text(if (usages.isEmpty()) stringResource(R.string.page_dialog_delete_title) else "Seite wird verwendet") },
-            text = { 
-                Column {
-                    if (usages.isEmpty()) {
-                        Text(stringResource(R.string.page_dialog_delete_confirm, page.name))
-                    } else {
-                        Text("Die Seite \"${page.name}\" wird an folgenden Stellen zur Navigation verwendet:")
-                        
-                        val scrollState = rememberScrollState()
-                        androidx.compose.foundation.layout.Box(
-                            modifier = Modifier
-                                .padding(vertical = 8.dp)
-                                .heightIn(max = 280.dp)
-                                .verticalScroll(scrollState)
-                        ) {
-                            Column {
-                                for (usage in usages) {
-                                    UsageLocationRow(usage = usage)
-                                }
-                            }
+            confirmText = if (usages.isEmpty()) stringResource(CoreR.string.action_delete) else "Alles Löschen",
+            onConfirm = {
+                pageViewModel.deletePage(page, deleteUsages = usages.isNotEmpty())
+                pageToDelete.value = null
+                usagesToDelete.value = emptyList()
+            },
+            dismissText = stringResource(CoreR.string.action_cancel),
+            isDestructive = true
+        ) {
+            if (usages.isEmpty()) {
+                Text(stringResource(R.string.page_dialog_delete_confirm, page.name))
+            } else {
+                Text("Die Seite \"${page.name}\" wird an folgenden Stellen zur Navigation verwendet:")
+                
+                val scrollState = rememberScrollState()
+                androidx.compose.foundation.layout.Box(
+                    modifier = Modifier
+                        .padding(vertical = 8.dp)
+                        .heightIn(max = 280.dp)
+                        .verticalScroll(scrollState)
+                ) {
+                    Column {
+                        for (usage in usages) {
+                            UsageLocationRow(usage = usage)
                         }
-                        
-                        Text("Beim Löschen werden auch alle Buttons entfernt, die auf diese Seite verweisen.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
                     }
                 }
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        pageViewModel.deletePage(page, deleteUsages = usages.isNotEmpty())
-                        pageToDelete.value = null
-                        usagesToDelete.value = emptyList()
-                    },
-                    shape = MaterialTheme.shapes.medium,
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
-                ) {
-                    Text(if (usages.isEmpty()) stringResource(CoreR.string.action_delete) else "Alles Löschen")
-                }
-            },
-            dismissButton = {
-                Button(
-                    onClick = { 
-                        pageToDelete.value = null
-                        usagesToDelete.value = emptyList()
-                    },
-                    shape = MaterialTheme.shapes.medium,
-                    colors = ButtonDefaults.textButtonColors()
-                ) {
-                    Text(stringResource(CoreR.string.action_cancel))
-                }
+                
+                Text("Beim Löschen werden auch alle Buttons entfernt, die auf diese Seite verweisen.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
             }
-        )
+        }
     }
 
     GhostTalkScaffold(
