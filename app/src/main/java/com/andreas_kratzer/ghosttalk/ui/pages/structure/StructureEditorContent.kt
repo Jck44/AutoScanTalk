@@ -33,18 +33,18 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.andreas_kratzer.ghosttalk.R
-import com.andreas_kratzer.ghosttalk.core.domain.pages.BookNavigationGraph
-import com.andreas_kratzer.ghosttalk.core.model.PageTemplate
 import com.andreas_kratzer.ghosttalk.core.ai.domain.SplitPageUseCase.PageSplitProposal
-import com.andreas_kratzer.ghosttalk.ui.util.GridEditorActions
+import com.andreas_kratzer.ghosttalk.core.domain.pages.BookNavigationGraph
 import com.andreas_kratzer.ghosttalk.core.model.ButtonTemplate
 import com.andreas_kratzer.ghosttalk.core.model.Page
+import com.andreas_kratzer.ghosttalk.core.model.PageTemplate
 import com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons
 import com.andreas_kratzer.ghosttalk.ui.components.DragDropContainer
 import com.andreas_kratzer.ghosttalk.ui.components.LocalDragDropState
 import com.andreas_kratzer.ghosttalk.ui.components.SplitWizardButtonDrag
 import com.andreas_kratzer.ghosttalk.ui.components.rememberDragDropState
 import com.andreas_kratzer.ghosttalk.ui.templates.ButtonTemplatesPanel
+import com.andreas_kratzer.ghosttalk.ui.util.GridEditorActions
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)

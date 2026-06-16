@@ -51,13 +51,13 @@ import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.zIndex
-import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.zIndex
 import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.core.ai.domain.SplitPageUseCase
 import com.andreas_kratzer.ghosttalk.core.domain.pages.BookNavigationGraph
@@ -66,7 +66,6 @@ import com.andreas_kratzer.ghosttalk.core.model.NavigateToStartPageButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.Page
 import com.andreas_kratzer.ghosttalk.core.model.PageTemplate
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
-import com.andreas_kratzer.ghosttalk.ui.pages.TargetPageSelectionDialog
 import com.andreas_kratzer.ghosttalk.ui.components.DraggableChip
 import com.andreas_kratzer.ghosttalk.ui.components.LocalDragDropState
 import com.andreas_kratzer.ghosttalk.ui.components.SplitWizardButtonDrag
@@ -77,6 +76,7 @@ import com.andreas_kratzer.ghosttalk.ui.components.StructureDeleteTarget
 import com.andreas_kratzer.ghosttalk.ui.components.StructureNodeTarget
 import com.andreas_kratzer.ghosttalk.ui.components.dragSource
 import com.andreas_kratzer.ghosttalk.ui.components.dropTarget
+import com.andreas_kratzer.ghosttalk.ui.pages.TargetPageSelectionDialog
 
 private const val MAX_VISIBLE_TARGETS = 12
 private const val MAX_VISIBLE_SOURCES = 12

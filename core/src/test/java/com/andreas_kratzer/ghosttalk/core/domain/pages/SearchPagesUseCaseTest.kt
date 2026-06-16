@@ -1,7 +1,6 @@
 package com.andreas_kratzer.ghosttalk.core.domain.pages
 
 import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
-import com.andreas_kratzer.ghosttalk.core.model.NavigateToPageButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.Page
 import com.andreas_kratzer.ghosttalk.core.model.SpeakTextButtonAction
 import org.junit.Assert.assertEquals

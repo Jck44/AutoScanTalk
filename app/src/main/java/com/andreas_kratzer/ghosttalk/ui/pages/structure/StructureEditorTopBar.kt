@@ -21,8 +21,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.core.ui.components.EditorTopBar
 import com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons
-import com.andreas_kratzer.ghosttalk.ui.components.EditorAssistantButton
 import com.andreas_kratzer.ghosttalk.ui.components.BulkActionTopBar
+import com.andreas_kratzer.ghosttalk.ui.components.EditorAssistantButton
 import com.andreas_kratzer.ghosttalk.core.ui.R as CoreR
 
 @OptIn(ExperimentalMaterial3Api::class)
