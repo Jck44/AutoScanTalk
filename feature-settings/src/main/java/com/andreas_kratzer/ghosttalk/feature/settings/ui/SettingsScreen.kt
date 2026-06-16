@@ -59,7 +59,6 @@ import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
 import com.andreas_kratzer.ghosttalk.feature.settings.R
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.dialogs.ActionHistoryDialog
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.dialogs.BackupRestoreProgressDialog
-import com.andreas_kratzer.ghosttalk.feature.settings.ui.dialogs.UsageStatisticsDialog
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.search.SettingsSearchBar
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.search.SettingsSearchResults
 import com.andreas_kratzer.ghosttalk.core.ui.R as CoreR
@@ -474,7 +473,6 @@ fun SettingsScreen(
     }
 
     val showActionHistory by viewModel.showActionHistoryDialog.collectAsState()
-    val showUsageStats by viewModel.showUsageStatsDialog.collectAsState()
 
     if (showDiscardChangesDialog) {
         androidx.compose.material3.AlertDialog(
@@ -508,12 +506,7 @@ fun SettingsScreen(
         )
     }
 
-    if (showUsageStats) {
-        UsageStatisticsDialog(
-            viewModel = viewModel,
-            onDismiss = { viewModel.setShowUsageStatsDialog(false) }
-        )
-    }
+
 
     val showPrefetch by viewModel.showPrefetchDialog.collectAsState()
     if (showPrefetch) {

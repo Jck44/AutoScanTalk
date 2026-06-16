@@ -93,7 +93,7 @@ fun MaintenanceSection(
                 }
                 Spacer(modifier = Modifier.height(LocalDimensions.current.paddingSmall))
                 Button(
-                    onClick = { viewModel.setShowUsageStatsDialog(true) },
+                    onClick = { viewModel.openUsageStatistics() },
                     shape = MaterialTheme.shapes.medium,
                     modifier = Modifier.fillMaxWidth()
                 ) {

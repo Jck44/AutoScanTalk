@@ -231,15 +231,9 @@ class SettingsViewModel @Inject constructor(
  
     private val _showActionHistoryDialog = MutableStateFlow(false)
     val showActionHistoryDialog = _showActionHistoryDialog.asStateFlow()
- 
-    private val _showUsageStatsDialog = MutableStateFlow(false)
-    val showUsageStatsDialog = _showUsageStatsDialog.asStateFlow()
 
     private val _showPrefetchDialog = MutableStateFlow(false)
     val showPrefetchDialog = _showPrefetchDialog.asStateFlow()
-
-    private val _topButtonUsage = MutableStateFlow<List<com.andreas_kratzer.ghosttalk.core.model.GroupedButtonUsageStat>>(emptyList())
-    val topButtonUsage = _topButtonUsage.asStateFlow()
 
     // --- TTS Prefetch State ---
     val selectedPagesForPrefetch = prefetchDelegate.selectedPagesForPrefetch
@@ -329,6 +323,7 @@ class SettingsViewModel @Inject constructor(
         data class EditButton(val pageId: String, val buttonId: String) : SettingsNavigationEvent()
         data class JumpToPage(val pageId: String) : SettingsNavigationEvent()
         object StartSetup : SettingsNavigationEvent()
+        object OpenAnalytics : SettingsNavigationEvent()
     }
 
     sealed class UpdateCheckStatus {
@@ -355,7 +350,6 @@ class SettingsViewModel @Inject constructor(
         ttsDelegate.loadAvailableLanguages()
         ttsDelegate.loadAvailableAudioDevices()
         genAiDelegate.updateGeminiToolStatus()
-        refreshTopButtonUsage()
     }
 
     fun setTtsLanguage(tag: String) = ttsDelegate.setTtsLanguage(tag)
@@ -702,7 +696,6 @@ class SettingsViewModel @Inject constructor(
     fun clearButtonUsageStats(bookId: String) {
         viewModelScope.launch { 
             buttonUsageRepository.clearStats(bookId)
-            refreshTopButtonUsage()
         }
     }
 
@@ -710,22 +703,8 @@ class SettingsViewModel @Inject constructor(
         _showActionHistoryDialog.value = show
     }
 
-    fun setShowUsageStatsDialog(show: Boolean) {
-        _showUsageStatsDialog.value = show
-        if (show) {
-            refreshTopButtonUsage()
-        }
-    }
-
     fun setShowPrefetchDialog(show: Boolean) {
         _showPrefetchDialog.value = show
-    }
-
-    fun refreshTopButtonUsage() {
-        viewModelScope.launch {
-            val stats = buttonUsageRepository.getGroupedUsageStats(activeBookId)
-            _topButtonUsage.value = stats.take(50) // Show top 50 groups
-        }
     }
 
     fun checkManualUpdate() {
@@ -876,7 +855,6 @@ class SettingsViewModel @Inject constructor(
     fun onEditButtonFromHistory(pageId: String, buttonId: String) {
         viewModelScope.launch {
             _showActionHistoryDialog.value = false
-            _showUsageStatsDialog.value = false
             _navigationEvent.emit(SettingsNavigationEvent.EditButton(pageId, buttonId))
         }
     }
@@ -884,8 +862,13 @@ class SettingsViewModel @Inject constructor(
     fun onJumpToPageFromHistory(pageId: String) {
         viewModelScope.launch {
             _showActionHistoryDialog.value = false
-            _showUsageStatsDialog.value = false
             _navigationEvent.emit(SettingsNavigationEvent.JumpToPage(pageId))
+        }
+    }
+
+    fun openUsageStatistics() {
+        viewModelScope.launch {
+            _navigationEvent.emit(SettingsNavigationEvent.OpenAnalytics)
         }
     }
 

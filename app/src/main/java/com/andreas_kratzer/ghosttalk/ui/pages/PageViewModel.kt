@@ -37,6 +37,8 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import kotlinx.coroutines.flow.asSharedFlow
+import com.andreas_kratzer.ghosttalk.ui.main.BookShellTab
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
@@ -135,6 +137,15 @@ class PageViewModel @Inject constructor(
     )
 
     val isEditPreviewActive = pageResolutionDelegate.isEditPreviewActive
+
+    private val _shellTabRequest = kotlinx.coroutines.flow.MutableSharedFlow<BookShellTab>()
+    val shellTabRequest = _shellTabRequest.asSharedFlow()
+
+    fun requestShellTab(tab: BookShellTab) {
+        viewModelScope.launch {
+            _shellTabRequest.emit(tab)
+        }
+    }
 
     fun toggleEditPreviewActive() {
         pageResolutionDelegate.toggleEditPreviewActive()

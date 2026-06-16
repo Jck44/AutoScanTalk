@@ -174,6 +174,10 @@ fun GhostTalkNavHost(
                             popUpTo("start") { inclusive = true }
                         }
                     }
+                    is SettingsViewModel.SettingsNavigationEvent.OpenAnalytics -> {
+                        navController.popBackStack("start", inclusive = false)
+                        pageViewModel.requestShellTab(BookShellTab.Statistik)
+                    }
                 }
             }
         }

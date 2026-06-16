@@ -38,6 +38,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.saveable.Saver
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -80,7 +82,11 @@ fun BookShellScreen(
     onNavigateToTemplates: () -> Unit,
     onNavigateToStaticRow: () -> Unit
 ) {
-    var currentTab by remember { mutableStateOf(BookShellTab.Inhalte) }
+    val BookShellTabSaver = Saver<BookShellTab, String>(
+        save = { it.name },
+        restore = { value -> try { BookShellTab.valueOf(value) } catch (e: Exception) { BookShellTab.Inhalte } }
+    )
+    var currentTab by rememberSaveable(stateSaver = BookShellTabSaver) { mutableStateOf(BookShellTab.Inhalte) }
     var menuExpanded by remember { mutableStateOf(false) }
     // tabSelected: tracks whether the user explicitly chose a tab. While false,
     // the big "Nutzermodus" landing is shown so user mode stays in focus.
@@ -105,6 +111,13 @@ fun BookShellScreen(
     // have to click a tab after entering the PIN.
     LaunchedEffect(isUnlocked) {
         if (isUnlocked) tabSelected = true
+    }
+
+    LaunchedEffect(Unit) {
+        pageViewModel.shellTabRequest.collect { tab ->
+            currentTab = tab
+            tabSelected = true
+        }
     }
 
     // When returning from user mode, refocus the big landing button.
