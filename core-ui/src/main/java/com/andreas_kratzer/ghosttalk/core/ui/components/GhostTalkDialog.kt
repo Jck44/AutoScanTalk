@@ -12,40 +12,61 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
 
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.width
+import androidx.compose.ui.Alignment
+
 @Composable
 fun GhostTalkDialog(
-    title: String,
+    title: String = "",
     onDismiss: () -> Unit,
     confirmText: String,
     onConfirm: () -> Unit,
     modifier: Modifier = Modifier,
+    titleContent: @Composable (() -> Unit)? = null,
     icon: @Composable (() -> Unit)? = null,
     dismissText: String? = null,          // null = kein Abbrechen-Button
     isDestructive: Boolean = false,       // färbt Confirm-Button error
     confirmEnabled: Boolean = true,
+    neutralButton: @Composable (() -> Unit)? = null,
+    properties: androidx.compose.ui.window.DialogProperties = androidx.compose.ui.window.DialogProperties(),
     content: @Composable ColumnScope.() -> Unit
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
+        properties = properties,
         icon = icon,
-        title = { Text(title, style = MaterialTheme.typography.titleLarge) },
+        title = titleContent ?: { Text(title, style = MaterialTheme.typography.titleLarge) },
         text = { Column { content() } },
         confirmButton = {
-            if (isDestructive) {
-                TextButton(
-                    onClick = onConfirm,
-                    enabled = confirmEnabled,
-                    colors = ButtonDefaults.textButtonColors(
-                        contentColor = MaterialTheme.colorScheme.error
-                    )
-                ) { Text(confirmText) }
-            } else {
-                TextButton(onClick = onConfirm, enabled = confirmEnabled) { Text(confirmText) }
+            if (confirmText.isNotEmpty()) {
+                if (isDestructive) {
+                    TextButton(
+                        onClick = onConfirm,
+                        enabled = confirmEnabled,
+                        colors = ButtonDefaults.textButtonColors(
+                            contentColor = MaterialTheme.colorScheme.error
+                        )
+                    ) { Text(confirmText) }
+                } else {
+                    TextButton(onClick = onConfirm, enabled = confirmEnabled) { Text(confirmText) }
+                }
             }
         },
-        dismissButton = dismissText?.let {
-            { TextButton(onClick = onDismiss) { Text(it) } }
-        },
+        dismissButton = if (dismissText != null || neutralButton != null) {
+            {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    neutralButton?.invoke()
+                    if (neutralButton != null && dismissText != null) {
+                        Spacer(modifier = Modifier.width(LocalDimensions.current.paddingMedium))
+                    }
+                    if (dismissText != null) {
+                        TextButton(onClick = onDismiss) { Text(dismissText) }
+                    }
+                }
+            }
+        } else null,
         shape = RoundedCornerShape(LocalDimensions.current.dialogCornerRadius),
         modifier = modifier
     )

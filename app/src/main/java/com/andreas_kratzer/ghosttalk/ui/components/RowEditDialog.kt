@@ -55,89 +55,81 @@ fun RowEditDialog(
     val context = LocalContext.current
     var isSuggesting by remember { mutableStateOf(false) }
 
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.page_editor_row_name_label)) },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(
-                    value = textFieldValue,
-                    onValueChange = { textFieldValue = it },
-                    label = { Text(initialName) },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .focusRequester(focusRequester),
-                    singleLine = true,
-                    shape = MaterialTheme.shapes.large,
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                    keyboardActions = KeyboardActions(
-                        onDone = { onSave(textFieldValue.text) }
-                    )
+    com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkDialog(
+        title = stringResource(R.string.page_editor_row_name_label),
+        onDismiss = onDismiss,
+        confirmText = stringResource(CoreR.string.action_save),
+        onConfirm = { onSave(textFieldValue.text) },
+        dismissText = stringResource(CoreR.string.action_cancel)
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            OutlinedTextField(
+                value = textFieldValue,
+                onValueChange = { textFieldValue = it },
+                label = { Text(initialName) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .focusRequester(focusRequester),
+                singleLine = true,
+                shape = MaterialTheme.shapes.large,
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                keyboardActions = KeyboardActions(
+                    onDone = { onSave(textFieldValue.text) }
                 )
+            )
 
-                if (onSuggestName != null) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.End,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        if (isSuggesting) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(20.dp),
-                                strokeWidth = 2.dp,
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = stringResource(R.string.generating_suggestion),
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.outline
-                            )
-                        } else {
-                            TextButton(
-                                onClick = {
-                                    isSuggesting = true
-                                    onSuggestName { suggestion ->
-                                        isSuggesting = false
-                                        if (suggestion.isNotBlank()) {
-                                            textFieldValue = TextFieldValue(
-                                                text = suggestion,
-                                                selection = TextRange(suggestion.length)
-                                            )
-                                        } else {
-                                            android.widget.Toast.makeText(
-                                                context,
-                                                R.string.error_row_suggestion_failed,
-                                                android.widget.Toast.LENGTH_LONG
-                                            ).show()
-                                        }
+            if (onSuggestName != null) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    if (isSuggesting) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(20.dp),
+                            strokeWidth = 2.dp,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = stringResource(R.string.generating_suggestion),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.outline
+                        )
+                    } else {
+                        TextButton(
+                            onClick = {
+                                isSuggesting = true
+                                onSuggestName { suggestion ->
+                                    isSuggesting = false
+                                    if (suggestion.isNotBlank()) {
+                                        textFieldValue = TextFieldValue(
+                                            text = suggestion,
+                                            selection = TextRange(suggestion.length)
+                                        )
+                                    } else {
+                                        android.widget.Toast.makeText(
+                                            context,
+                                            R.string.error_row_suggestion_failed,
+                                            android.widget.Toast.LENGTH_LONG
+                                        ).show()
                                     }
                                 }
-                            ) {
-                                Icon(
-                                    imageVector = GhostTalkIcons.AutoAwesome,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text(stringResource(R.string.ki_suggestion))
                             }
+                        ) {
+                            Icon(
+                                imageVector = GhostTalkIcons.AutoAwesome,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(stringResource(R.string.ki_suggestion))
                         }
                     }
                 }
             }
-        },
-        confirmButton = {
-            TextButton(onClick = { onSave(textFieldValue.text) }) {
-                Text(stringResource(CoreR.string.action_save))
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text(stringResource(CoreR.string.action_cancel))
-            }
         }
-    )
+    }
 
     LaunchedEffect(Unit) {
         focusRequester.requestFocus()

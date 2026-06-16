@@ -39,6 +39,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkDialog
 import com.andreas_kratzer.ghosttalk.core.ui.components.PreferenceCategory
 import com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
@@ -301,10 +302,20 @@ fun ProfileSettingsSection(
         }
 
         if (showCreateProfileDialog.value) {
-            androidx.compose.material3.AlertDialog(
-                onDismissRequest = { showCreateProfileDialog.value = false },
-                title = { Text(stringResource(R.string.settings_profile_create_title)) },
-                text = {
+            GhostTalkDialog(
+                title = stringResource(R.string.settings_profile_create_title),
+                confirmText = stringResource(com.andreas_kratzer.ghosttalk.core.ui.R.string.dialog_confirm),
+                dismissText = stringResource(com.andreas_kratzer.ghosttalk.core.ui.R.string.action_cancel),
+                onConfirm = {
+                    if (newProfileName.value.isNotBlank()) {
+                        viewModel.createNewProfile(newProfileName.value)
+                        newProfileName.value = ""
+                        showCreateProfileDialog.value = false
+                    }
+                },
+                onDismiss = { showCreateProfileDialog.value = false },
+                confirmEnabled = newProfileName.value.isNotBlank(),
+                content = {
                     androidx.compose.material3.OutlinedTextField(
                         value = newProfileName.value,
                         onValueChange = { newProfileName.value = it },
@@ -312,76 +323,41 @@ fun ProfileSettingsSection(
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth()
                     )
-                },
-                confirmButton = {
-                    TextButton(
-                        onClick = {
-                            if (newProfileName.value.isNotBlank()) {
-                                viewModel.createNewProfile(newProfileName.value)
-                                newProfileName.value = ""
-                                showCreateProfileDialog.value = false
-                            }
-                        },
-                        enabled = newProfileName.value.isNotBlank()
-                    ) {
-                        Text(stringResource(com.andreas_kratzer.ghosttalk.core.ui.R.string.dialog_confirm))
-                    }
-                },
-                dismissButton = {
-                    TextButton(onClick = { showCreateProfileDialog.value = false }) {
-                        Text(stringResource(com.andreas_kratzer.ghosttalk.core.ui.R.string.action_cancel))
-                    }
                 }
             )
         }
 
         if (showActivateConfirmDialog.value != null) {
             val profileToActivate = showActivateConfirmDialog.value!!
-            androidx.compose.material3.AlertDialog(
-                onDismissRequest = { showActivateConfirmDialog.value = null },
-                title = { Text("Profil wechseln?") },
-                text = { Text("Möchten Sie '${profileToActivate.name}' als aktives Profil laden und anwenden? Dies ändert die Stimme und synchronisiert Daten aus der Cloud.") },
-                confirmButton = {
-                    TextButton(
-                        onClick = {
-                            viewModel.setActiveProfileId(profileToActivate.id)
-                            showActivateConfirmDialog.value = null
-                        }
-                    ) {
-                        Text(stringResource(com.andreas_kratzer.ghosttalk.core.ui.R.string.dialog_confirm))
-                    }
+            GhostTalkDialog(
+                title = stringResource(R.string.settings_profile_switch_title),
+                confirmText = stringResource(com.andreas_kratzer.ghosttalk.core.ui.R.string.dialog_confirm),
+                dismissText = stringResource(com.andreas_kratzer.ghosttalk.core.ui.R.string.action_cancel),
+                onConfirm = {
+                    viewModel.setActiveProfileId(profileToActivate.id)
+                    showActivateConfirmDialog.value = null
                 },
-                dismissButton = {
-                    TextButton(onClick = { showActivateConfirmDialog.value = null }) {
-                        Text(stringResource(com.andreas_kratzer.ghosttalk.core.ui.R.string.action_cancel))
-                    }
+                onDismiss = { showActivateConfirmDialog.value = null },
+                content = {
+                    Text(stringResource(R.string.settings_profile_switch_confirm, profileToActivate.name))
                 }
             )
         }
 
         if (showDeleteConfirmDialog.value != null) {
             val profileToDelete = showDeleteConfirmDialog.value!!
-            androidx.compose.material3.AlertDialog(
-                onDismissRequest = { showDeleteConfirmDialog.value = null },
-                title = { Text(stringResource(R.string.settings_profile_delete)) },
-                text = { Text(stringResource(R.string.settings_profile_delete_confirm, profileToDelete.name)) },
-                confirmButton = {
-                    TextButton(
-                        onClick = {
-                            viewModel.deleteProfile(profileToDelete)
-                            showDeleteConfirmDialog.value = null
-                        }
-                    ) {
-                        Text(
-                            text = stringResource(com.andreas_kratzer.ghosttalk.core.ui.R.string.dialog_confirm),
-                            color = MaterialTheme.colorScheme.error
-                        )
-                    }
+            GhostTalkDialog(
+                title = stringResource(R.string.settings_profile_delete),
+                confirmText = stringResource(com.andreas_kratzer.ghosttalk.core.ui.R.string.dialog_confirm),
+                dismissText = stringResource(com.andreas_kratzer.ghosttalk.core.ui.R.string.action_cancel),
+                isDestructive = true,
+                onConfirm = {
+                    viewModel.deleteProfile(profileToDelete)
+                    showDeleteConfirmDialog.value = null
                 },
-                dismissButton = {
-                    TextButton(onClick = { showDeleteConfirmDialog.value = null }) {
-                        Text(stringResource(com.andreas_kratzer.ghosttalk.core.ui.R.string.action_cancel))
-                    }
+                onDismiss = { showDeleteConfirmDialog.value = null },
+                content = {
+                    Text(stringResource(R.string.settings_profile_delete_confirm, profileToDelete.name))
                 }
             )
         }

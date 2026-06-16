@@ -50,65 +50,52 @@ fun SmartHomeSettingsSection(
     }
 
     pendingCertInfo?.let { cert ->
-        AlertDialog(
-            onDismissRequest = { viewModel.cancelHueBridgeCertificate() },
-            title = {
+        com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkDialog(
+            title = "SSL-Zertifikat verifizieren",
+            onDismiss = { viewModel.cancelHueBridgeCertificate() },
+            confirmText = "Zertifikat vertrauen",
+            onConfirm = { viewModel.confirmHueBridgeCertificate() },
+            dismissText = "Abbrechen"
+        ) {
+            Column {
                 Text(
-                    text = "SSL-Zertifikat verifizieren",
-                    style = MaterialTheme.typography.titleLarge
+                    text = "GhosTTalk stellt eine verschlüsselte Verbindung zur Bridge her. Bitte überprüfen Sie die folgenden Zertifikatsdetails:",
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(bottom = 12.dp)
                 )
-            },
-            text = {
-                Column {
-                    Text(
-                        text = "GhosTTalk stellt eine verschlüsselte Verbindung zur Bridge her. Bitte überprüfen Sie die folgenden Zertifikatsdetails:",
-                        style = MaterialTheme.typography.bodyMedium,
-                        modifier = Modifier.padding(bottom = 12.dp)
-                    )
-                    Text(
-                        text = "Name (Subject): ${cert.subject}",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Text(
-                        text = "Aussteller (Issuer): ${cert.issuer}",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Text(
-                        text = "Gültig ab: ${cert.validFrom}",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Text(
-                        text = "Gültig bis: ${cert.validTo}",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = "SHA-256 Fingerprint:",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                    Text(
-                        text = cert.fingerprint,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = { viewModel.confirmHueBridgeCertificate() }) {
-                    Text("Zertifikat vertrauen")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { viewModel.cancelHueBridgeCertificate() }) {
-                    Text("Abbrechen")
-                }
+                Text(
+                    text = "Name (Subject): ${cert.subject}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    text = "Aussteller (Issuer): ${cert.issuer}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    text = "Gültig ab: ${cert.validFrom}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    text = "Gültig bis: ${cert.validTo}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "SHA-256 Fingerprint:",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                Text(
+                    text = cert.fingerprint,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
-        )
+        }
     }
 
     Column(

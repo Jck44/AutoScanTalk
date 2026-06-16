@@ -269,33 +269,25 @@ fun SpokenTextSection(
                     }
 
                     if (state.showDeleteConfirmation) {
-                        AlertDialog(
-                            onDismissRequest = { state.showDeleteConfirmation = false },
-                            title = { Text(stringResource(R.string.button_audio_delete)) },
-                            text = { Text(stringResource(R.string.button_audio_delete_confirm)) },
-                            confirmButton = {
-                                TextButton(
-                                    onClick = {
-                                        state.showDeleteConfirmation = false
-                                        val file = File(context.filesDir.resolve("audio_recordings"), state.audioFileName ?: "")
-                                        if (file.exists()) {
-                                            file.delete()
-                                        }
-                                        state.audioFileName = null
-                                        onAutoSave()
-                                        Toast.makeText(context, "Aufnahme gelöscht", Toast.LENGTH_SHORT).show()
-                                    },
-                                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
-                                ) {
-                                    Text(stringResource(R.string.button_audio_delete))
+                        com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkDialog(
+                            title = stringResource(R.string.button_audio_delete),
+                            onDismiss = { state.showDeleteConfirmation = false },
+                            confirmText = stringResource(R.string.button_audio_delete),
+                            onConfirm = {
+                                state.showDeleteConfirmation = false
+                                val file = File(context.filesDir.resolve("audio_recordings"), state.audioFileName ?: "")
+                                if (file.exists()) {
+                                    file.delete()
                                 }
+                                state.audioFileName = null
+                                onAutoSave()
+                                Toast.makeText(context, "Aufnahme gelöscht", Toast.LENGTH_SHORT).show()
                             },
-                            dismissButton = {
-                                TextButton(onClick = { state.showDeleteConfirmation = false }) {
-                                    Text(stringResource(CoreR.string.dialog_close))
-                                }
-                            }
-                        )
+                            dismissText = stringResource(CoreR.string.dialog_close),
+                            isDestructive = true
+                        ) {
+                            Text(stringResource(R.string.button_audio_delete_confirm))
+                        }
                     }
                 }
             }

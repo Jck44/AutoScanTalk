@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
@@ -29,6 +28,7 @@ import androidx.compose.ui.unit.dp
 import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.core.model.BookHierarchyProposal
 import com.andreas_kratzer.ghosttalk.core.model.HierarchyPageNode
+import com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkDialog
 
 @Composable
 fun AiPageSelectionDialog(
@@ -36,16 +36,12 @@ fun AiPageSelectionDialog(
     actions: AiRestructureActions,
     onDismiss: () -> Unit
 ) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = {
-            Text(
-                text = stringResource(R.string.analytics_ai_page_selection_title),
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
-            )
-        },
-        text = {
+    GhostTalkDialog(
+        title = stringResource(R.string.analytics_ai_page_selection_title),
+        confirmText = "OK",
+        onConfirm = onDismiss,
+        onDismiss = onDismiss,
+        content = {
             Column(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -119,11 +115,6 @@ fun AiPageSelectionDialog(
                     }
                 }
             }
-        },
-        confirmButton = {
-            TextButton(onClick = onDismiss) {
-                Text("OK")
-            }
         }
     )
 }
@@ -139,10 +130,30 @@ fun AiHierarchyNodeEditDialog(
     var editingNodeNewDesc by remember { mutableStateOf(node.description) }
     var editingNodeNewSubpages by remember { mutableStateOf(node.subpages.toSet()) }
 
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Seite bearbeiten") },
-        text = {
+    GhostTalkDialog(
+        title = "Seite bearbeiten",
+        confirmText = "Speichern",
+        dismissText = "Abbrechen",
+        onConfirm = {
+            val updatedPages = hierarchy.pages.map { page ->
+                if (page.name == node.name) {
+                    page.copy(
+                        name = editingNodeNewName,
+                        description = editingNodeNewDesc,
+                        subpages = editingNodeNewSubpages.toList()
+                    )
+                } else {
+                    val newSubpages = page.subpages.map { subName ->
+                        if (subName == node.name) editingNodeNewName else subName
+                    }
+                    page.copy(subpages = newSubpages)
+                }
+            }
+            actions.onUpdateHierarchyManualEdit(BookHierarchyProposal(updatedPages))
+            onDismiss()
+        },
+        onDismiss = onDismiss,
+        content = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(
                     value = editingNodeNewName,
@@ -191,35 +202,6 @@ fun AiHierarchyNodeEditDialog(
                     }
                 }
             }
-        },
-        confirmButton = {
-            TextButton(
-                onClick = {
-                    val updatedPages = hierarchy.pages.map { page ->
-                        if (page.name == node.name) {
-                            page.copy(
-                                name = editingNodeNewName,
-                                description = editingNodeNewDesc,
-                                subpages = editingNodeNewSubpages.toList()
-                            )
-                        } else {
-                            val newSubpages = page.subpages.map { subName ->
-                                if (subName == node.name) editingNodeNewName else subName
-                            }
-                            page.copy(subpages = newSubpages)
-                        }
-                    }
-                    actions.onUpdateHierarchyManualEdit(BookHierarchyProposal(updatedPages))
-                    onDismiss()
-                }
-            ) {
-                Text("Speichern")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Abbrechen")
-            }
         }
     )
 }
@@ -229,35 +211,20 @@ fun AiTokenWarningDialog(
     actions: AiRestructureActions,
     onDismiss: () -> Unit
 ) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = {
-            Text(
-                text = stringResource(R.string.analytics_ai_token_warning_title),
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
-            )
+    GhostTalkDialog(
+        title = stringResource(R.string.analytics_ai_token_warning_title),
+        confirmText = stringResource(android.R.string.ok),
+        dismissText = stringResource(android.R.string.cancel),
+        onConfirm = {
+            actions.onSetScope("full")
+            onDismiss()
         },
-        text = {
+        onDismiss = onDismiss,
+        content = {
             Text(
                 text = stringResource(R.string.analytics_ai_token_warning_desc),
                 style = MaterialTheme.typography.bodyMedium
             )
-        },
-        confirmButton = {
-            TextButton(
-                onClick = {
-                    actions.onSetScope("full")
-                    onDismiss()
-                }
-            ) {
-                Text(stringResource(android.R.string.ok))
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text(stringResource(android.R.string.cancel))
-            }
         }
     )
 }

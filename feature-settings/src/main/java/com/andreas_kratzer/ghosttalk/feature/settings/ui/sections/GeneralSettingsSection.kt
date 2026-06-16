@@ -40,7 +40,7 @@ import com.andreas_kratzer.ghosttalk.feature.settings.R
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.SettingsViewModel
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.highlightSetting
 import java.util.Locale
-import com.andreas_kratzer.ghosttalk.core.ui.R as CoreR
+import com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkDialog
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -406,27 +406,20 @@ fun BookSettingsSection(
     }
 
     if (showDeleteConfirm.value) {
-        AlertDialog(
-            onDismissRequest = { showDeleteConfirm.value = false },
-            title = { Text(deleteConfirmTitle) },
-            text = { Text(deleteConfirmMessage) },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        showDeleteConfirm.value = false
-                        viewModel.deleteActiveBook {
-                            onBookDeleted()
-                        }
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
-                ) {
-                    Text(stringResource(CoreR.string.action_delete))
+        GhostTalkDialog(
+            title = deleteConfirmTitle,
+            confirmText = stringResource(com.andreas_kratzer.ghosttalk.core.ui.R.string.action_delete),
+            dismissText = stringResource(com.andreas_kratzer.ghosttalk.core.ui.R.string.action_cancel),
+            isDestructive = true,
+            onConfirm = {
+                showDeleteConfirm.value = false
+                viewModel.deleteActiveBook {
+                    onBookDeleted()
                 }
             },
-            dismissButton = {
-                OutlinedButton(onClick = { showDeleteConfirm.value = false }) {
-                    Text(stringResource(CoreR.string.action_cancel))
-                }
+            onDismiss = { showDeleteConfirm.value = false },
+            content = {
+                Text(deleteConfirmMessage)
             }
         )
     }

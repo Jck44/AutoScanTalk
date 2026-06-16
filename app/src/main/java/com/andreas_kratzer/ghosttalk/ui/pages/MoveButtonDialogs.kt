@@ -50,78 +50,74 @@ fun TargetPageSelectionDialog(
     val dimensions = LocalDimensions.current
     var selectedPageId by remember { mutableStateOf("") }
     
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.button_move_target_title)) },
-        text = {
-            Column(
-                verticalArrangement = Arrangement.spacedBy(dimensions.paddingMedium)
-            ) {
-                if (currentPageId != null) {
-                    val currentPage = availablePages.find { it.id == currentPageId }
-                    if (currentPage != null) {
-                        Card(
+    com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkDialog(
+        title = stringResource(R.string.button_move_target_title),
+        onDismiss = onDismiss,
+        confirmText = stringResource(CoreR.string.action_cancel),
+        onConfirm = onDismiss
+    ) {
+        Column(
+            verticalArrangement = Arrangement.spacedBy(dimensions.paddingMedium)
+        ) {
+            if (currentPageId != null) {
+                val currentPage = availablePages.find { it.id == currentPageId }
+                if (currentPage != null) {
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { onPageSelected(currentPage) },
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.primaryContainer,
+                            contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                        ),
+                        shape = MaterialTheme.shapes.medium
+                    ) {
+                        Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .clickable { onPageSelected(currentPage) },
-                            colors = CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.primaryContainer,
-                                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                            ),
-                            shape = MaterialTheme.shapes.medium
+                                .padding(dimensions.paddingMedium),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(dimensions.paddingSmall)
                         ) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(dimensions.paddingMedium),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(dimensions.paddingSmall)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Add,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.primary
+                            Icon(
+                                imageVector = Icons.Default.Add,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                            Column {
+                                Text(
+                                    text = "Auf aktueller Seite duplizieren",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold
                                 )
-                                Column {
-                                    Text(
-                                        text = "Auf aktueller Seite duplizieren",
-                                        style = MaterialTheme.typography.titleMedium,
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                    Text(
-                                        text = "Erstellt ein Duplikat auf dieser Seite (${currentPage.name})",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
-                                    )
-                                }
+                                Text(
+                                    text = "Erstellt ein Duplikat auf dieser Seite (${currentPage.name})",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
+                                )
                             }
                         }
                     }
                 }
+            }
 
-                NavigationActionFields(
-                    navigateToPageId = selectedPageId,
-                    onPageSelected = { pageId ->
-                        selectedPageId = pageId
-                        val page = availablePages.find { it.id == pageId }
-                        if (page != null) {
-                            onPageSelected(page)
-                        }
-                    },
-                    availablePages = availablePages,
-                    templates = templates,
-                    onNavigateToPage = null,
-                    onCreatePage = onCreatePage,
-                    onDismissDialog = onDismiss
-                )
-            }
-        },
-        confirmButton = {
-            Button(onClick = onDismiss) {
-                Text(stringResource(CoreR.string.action_cancel))
-            }
+            NavigationActionFields(
+                navigateToPageId = selectedPageId,
+                onPageSelected = { pageId ->
+                    selectedPageId = pageId
+                    val page = availablePages.find { it.id == pageId }
+                    if (page != null) {
+                        onPageSelected(page)
+                    }
+                },
+                availablePages = availablePages,
+                templates = templates,
+                onNavigateToPage = null,
+                onCreatePage = onCreatePage,
+                onDismissDialog = onDismiss
+            )
         }
-    )
+    }
 }
 
 @Composable
@@ -138,21 +134,13 @@ fun MoveHiddenPromptDialog(
         else -> stringResource(R.string.button_move_hidden_prompt_add_col)
     }
 
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.button_move_hidden_prompt_title)) },
-        text = {
-            Text(stringResource(R.string.button_move_hidden_prompt_message, info))
-        },
-        confirmButton = {
-            Button(onClick = onConfirm) {
-                Text(stringResource(R.string.action_create))
-            }
-        },
-        dismissButton = {
-            Button(onClick = onDismiss) {
-                Text(stringResource(R.string.action_cancel))
-            }
-        }
-    )
+    com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkDialog(
+        title = stringResource(R.string.button_move_hidden_prompt_title),
+        onDismiss = onDismiss,
+        confirmText = stringResource(R.string.action_create),
+        onConfirm = onConfirm,
+        dismissText = stringResource(R.string.action_cancel)
+    ) {
+        Text(stringResource(R.string.button_move_hidden_prompt_message, info))
+    }
 }

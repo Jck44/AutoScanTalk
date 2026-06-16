@@ -262,6 +262,8 @@
     <string name="settings_profile_create_title">Neues Profil</string>
     <string name="settings_profile_name_hint">Profilname</string>
     <string name="settings_profile_delete_confirm">Möchtest du das Profil \"%s\" wirklich löschen? Dies kann nicht rückgängig gemacht werden.</string>
+    <string name="settings_profile_switch_title">Profil wechseln?</string>
+    <string name="settings_profile_switch_confirm">Möchten Sie \"%s\" als aktives Profil laden und anwenden? Dies ändert die Stimme und synchronisiert Daten aus der Cloud.</string>
     <string name="settings_category_local_backup">Lokale Datensicherung</string>
     <string name="settings_local_backup_create">Sicherung erstellen</string>
     <string name="settings_local_backup_restore">Sicherung wiederherstellen</string>

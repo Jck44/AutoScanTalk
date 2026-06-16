@@ -13,6 +13,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.HorizontalDivider
+import com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkDialog
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
@@ -165,150 +166,147 @@ fun ButtonConfigDialog(
             onSave(config)
         }
     }
-    AlertDialog(
-        onDismissRequest = onDismiss,
+    val actionBadgeText = when (state.selectedActionType) {
+        ActionTypeId.NAVIGATE, ActionTypeId.NAVIGATE_BACK, ActionTypeId.NAVIGATE_TO_START_PAGE -> "Nav"
+        ActionTypeId.GEMINI, ActionTypeId.GEMINI_SEARCH, ActionTypeId.GEMINI_VISION -> "KI"
+        ActionTypeId.FREQUENT, ActionTypeId.PREVIOUS, ActionTypeId.SMART -> "Verlauf"
+        ActionTypeId.WEATHER -> "Wetter"
+        ActionTypeId.READ_NOTIFICATIONS, ActionTypeId.CLEAR_NOTIFICATIONS, ActionTypeId.SEND_MESSAGE, ActionTypeId.START_CALL, ActionTypeId.TOGGLE_AUTO_READ -> "Komm."
+        ActionTypeId.SPOTIFY, ActionTypeId.YOUTUBE, ActionTypeId.YOUTUBE_MUSIC, ActionTypeId.AUDIBLE, ActionTypeId.MEDIA_PLAY_PAUSE, ActionTypeId.MEDIA_NEXT, ActionTypeId.MEDIA_PREVIOUS -> "Medien"
+        ActionTypeId.PHILIPS_HUE, ActionTypeId.GOOGLE_HOME -> "Home"
+        ActionTypeId.SPEAK -> "Sprechen"
+        else -> "Gerät"
+    }
+    com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkDialog(
+        title = "[$actionBadgeText] Bearbeiten",
+        onDismiss = onDismiss,
+        confirmText = "",
+        onConfirm = {},
         modifier = Modifier
             .widthIn(max = 800.dp)
             .fillMaxWidth(0.9f),
-        properties = DialogProperties(usePlatformDefaultWidth = false),
-        title = {
-            val actionBadgeText = when (state.selectedActionType) {
-                ActionTypeId.NAVIGATE, ActionTypeId.NAVIGATE_BACK, ActionTypeId.NAVIGATE_TO_START_PAGE -> "Nav"
-                ActionTypeId.GEMINI, ActionTypeId.GEMINI_SEARCH, ActionTypeId.GEMINI_VISION -> "KI"
-                ActionTypeId.FREQUENT, ActionTypeId.PREVIOUS, ActionTypeId.SMART -> "Verlauf"
-                ActionTypeId.WEATHER -> "Wetter"
-                ActionTypeId.READ_NOTIFICATIONS, ActionTypeId.CLEAR_NOTIFICATIONS, ActionTypeId.SEND_MESSAGE, ActionTypeId.START_CALL, ActionTypeId.TOGGLE_AUTO_READ -> "Komm."
-                ActionTypeId.SPOTIFY, ActionTypeId.YOUTUBE, ActionTypeId.YOUTUBE_MUSIC, ActionTypeId.AUDIBLE, ActionTypeId.MEDIA_PLAY_PAUSE, ActionTypeId.MEDIA_NEXT, ActionTypeId.MEDIA_PREVIOUS -> "Medien"
-                ActionTypeId.PHILIPS_HUE, ActionTypeId.GOOGLE_HOME -> "Home"
-                ActionTypeId.SPEAK -> "Sprechen"
-                else -> "Gerät"
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+        ) {
+            SingleChoiceSegmentedButtonRow(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 16.dp)
+            ) {
+                tabTitles.forEachIndexed { index, title ->
+                    SegmentedButton(
+                        selected = currentTab == index,
+                        onClick = { currentTab = index },
+                        shape = SegmentedButtonDefaults.itemShape(index = index, count = tabTitles.size),
+                        label = { Text(title, maxLines = 1) }
+                    )
+                }
             }
-            Text("[$actionBadgeText] Bearbeiten")
-        },
-        text = {
+
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .weight(1f, fill = false)
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(LocalDimensions.current.paddingSmall)
             ) {
-                SingleChoiceSegmentedButtonRow(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 16.dp)
-                ) {
-                    tabTitles.forEachIndexed { index, title ->
-                        SegmentedButton(
-                            selected = currentTab == index,
-                            onClick = { currentTab = index },
-                            shape = SegmentedButtonDefaults.itemShape(index = index, count = tabTitles.size),
-                            label = { Text(title, maxLines = 1) }
+                when (currentTab) {
+                    0 -> {
+                        com.andreas_kratzer.ghosttalk.ui.pages.components.ButtonSettingsTabContent(
+                            context = context,
+                            state = state,
+                            pages = pages,
+                            templates = templates,
+                            defaultStartPageId = defaultStartPageId,
+                            featureGuard = featureGuard,
+                            availableGeminiTools = availableGeminiTools,
+                            spotifyPlaylists = spotifyPlaylists,
+                            availableHomeDevices = availableHomeDevices,
+                            permissionLauncher = permissionLauncher,
+                            audioRecordingController = audioRecordingController,
+                            onNavigateToPage = onNavigateToPage,
+                            onCreatePage = onCreatePage,
+                            onDismiss = onDismiss,
+                            onPlayTts = onPlayTts,
+                            onStopTts = onStopTts,
+                            isTtsElevenLabs = isTtsElevenLabs,
+                            isTextCached = isTextCached,
+                            onPrefetchText = onPrefetchText,
+                            onSuggestLabel = onSuggestLabel,
+                            onRefreshHueCache = onRefreshHueCache,
+                            isLoadingSpotifyPlaylists = isLoadingSpotifyPlaylists,
+                            spotifyUserDisplayName = spotifyUserDisplayName,
+                            onConnectSpotify = onConnectSpotify,
+                            onDisconnectSpotify = onDisconnectSpotify,
+                            onLoadSpotifyPlaylists = onLoadSpotifyPlaylists,
+                            onAutoSave = handleAutoSave,
+                            saveWithAction = saveWithAction
+                        )
+                    }
+                    1 -> {
+                        val resolver = remember(context) { ActionTypeResolver(context) }
+                        PreviewTabContent(
+                            selectedActionType = resolver.getLabel(state.selectedActionType),
+                            spokenText = state.spokenText,
+                            label = state.label,
+                            geminiPrompt = state.geminiPrompt,
+                            targetPageId = state.targetPageId,
+                            deviceActionType = state.deviceActionType,
+                            includeWeekday = state.includeWeekday,
+                            offsetValue = state.offsetValue,
+                            prefixText = state.prefixText,
+                            suffixText = state.suffixText,
+                            contactName = state.contactName,
+                            contactPhone = state.contactPhone,
+                            messageText = state.messageText,
+                            smartHomeDeviceName = state.smartHomeDeviceName,
+                            playActionAsAuditoryCue = state.playActionAsAuditoryCue,
+                            auditoryCueText = state.auditoryCueText,
+                            mediaProvider = state.mediaProvider,
+                            mediaContentName = state.mediaContentName,
+                            mediaReturnToAppDelaySec = state.mediaReturnToAppDelaySec,
+                            rank = state.rank,
+                            predictionType = state.predictionType
+                        )
+                    }
+                    2 -> {
+                        ButtonStatisticsTabContent(
+                            metrics = metrics,
+                            historyEvents = historyEvents,
+                            recommendations = recommendations,
+                            onApplyRecommendation = onApplyRecommendation,
+                            buttonId = buttonConfig.id,
+                            loadMarkovSuccessors = loadMarkovSuccessors,
+                            allPages = pages,
+                            onNavigateToPage = onNavigateToPage,
+                            onDismissDialog = onDismiss
                         )
                     }
                 }
-
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f, fill = false)
-                        .verticalScroll(rememberScrollState()),
-                    verticalArrangement = Arrangement.spacedBy(LocalDimensions.current.paddingSmall)
-                ) {
-                    when (currentTab) {
-                        0 -> {
-                            com.andreas_kratzer.ghosttalk.ui.pages.components.ButtonSettingsTabContent(
-                                context = context,
-                                state = state,
-                                pages = pages,
-                                templates = templates,
-                                defaultStartPageId = defaultStartPageId,
-                                featureGuard = featureGuard,
-                                availableGeminiTools = availableGeminiTools,
-                                spotifyPlaylists = spotifyPlaylists,
-                                availableHomeDevices = availableHomeDevices,
-                                permissionLauncher = permissionLauncher,
-                                audioRecordingController = audioRecordingController,
-                                onNavigateToPage = onNavigateToPage,
-                                onCreatePage = onCreatePage,
-                                onDismiss = onDismiss,
-                                onPlayTts = onPlayTts,
-                                onStopTts = onStopTts,
-                                isTtsElevenLabs = isTtsElevenLabs,
-                                isTextCached = isTextCached,
-                                onPrefetchText = onPrefetchText,
-                                onSuggestLabel = onSuggestLabel,
-                                onRefreshHueCache = onRefreshHueCache,
-                                isLoadingSpotifyPlaylists = isLoadingSpotifyPlaylists,
-                                spotifyUserDisplayName = spotifyUserDisplayName,
-                                onConnectSpotify = onConnectSpotify,
-                                onDisconnectSpotify = onDisconnectSpotify,
-                                onLoadSpotifyPlaylists = onLoadSpotifyPlaylists,
-                                onAutoSave = handleAutoSave,
-                                saveWithAction = saveWithAction
-                            )
-                        }
-                        1 -> {
-                            val resolver = remember(context) { ActionTypeResolver(context) }
-                            PreviewTabContent(
-                                selectedActionType = resolver.getLabel(state.selectedActionType),
-                                spokenText = state.spokenText,
-                                label = state.label,
-                                geminiPrompt = state.geminiPrompt,
-                                targetPageId = state.targetPageId,
-                                deviceActionType = state.deviceActionType,
-                                includeWeekday = state.includeWeekday,
-                                offsetValue = state.offsetValue,
-                                prefixText = state.prefixText,
-                                suffixText = state.suffixText,
-                                contactName = state.contactName,
-                                contactPhone = state.contactPhone,
-                                messageText = state.messageText,
-                                smartHomeDeviceName = state.smartHomeDeviceName,
-                                playActionAsAuditoryCue = state.playActionAsAuditoryCue,
-                                auditoryCueText = state.auditoryCueText,
-                                mediaProvider = state.mediaProvider,
-                                mediaContentName = state.mediaContentName,
-                                mediaReturnToAppDelaySec = state.mediaReturnToAppDelaySec,
-                                rank = state.rank,
-                                predictionType = state.predictionType
-                            )
-                        }
-                        2 -> {
-                            ButtonStatisticsTabContent(
-                                metrics = metrics,
-                                historyEvents = historyEvents,
-                                recommendations = recommendations,
-                                onApplyRecommendation = onApplyRecommendation,
-                                buttonId = buttonConfig.id,
-                                loadMarkovSuccessors = loadMarkovSuccessors,
-                                allPages = pages,
-                                onNavigateToPage = onNavigateToPage,
-                                onDismissDialog = onDismiss
-                            )
-                        }
-                    }
-                }
+            }
 
             HorizontalDivider(modifier = Modifier.padding(top = 8.dp, bottom = 4.dp))
 
             // Action Bar (Fixed at the bottom)
             DialogActionBar(
-                                buttonConfig = buttonConfig,
-                                label = state.label,
-                                spokenText = state.spokenText,
-                                spokenTextMode = state.spokenTextMode,
-                                audioFileName = state.audioFileName,
-                                buildCurrentAction = { state.buildAction() },
-                                onDismiss = onDismiss,
-                                onTest = onTest,
-                                onMove = onMove,
-                                onDuplicate = onDuplicate,
-                                onDelete = onDelete,
-                                onSaveAsTemplate = onSaveAsTemplate
+                buttonConfig = buttonConfig,
+                label = state.label,
+                spokenText = state.spokenText,
+                spokenTextMode = state.spokenTextMode,
+                audioFileName = state.audioFileName,
+                buildCurrentAction = { state.buildAction() },
+                onDismiss = onDismiss,
+                onTest = onTest,
+                onMove = onMove,
+                onDuplicate = onDuplicate,
+                onDelete = onDelete,
+                onSaveAsTemplate = onSaveAsTemplate
             )
         }
-    },
-    confirmButton = { },
-    dismissButton = { }
-)
+    }
 }
 
 private fun android.content.Context.findActivity(): android.app.Activity? {

@@ -236,6 +236,8 @@
     <string name="settings_profile_create_title">New Profile</string>
     <string name="settings_profile_name_hint">Profile Name</string>
     <string name="settings_profile_delete_confirm">Do you really want to delete the profile \"%s\"? This cannot be undone.</string>
+    <string name="settings_profile_switch_title">Switch profile?</string>
+    <string name="settings_profile_switch_confirm">Load and apply \"%s\" as the active profile? This changes the voice and syncs data from the cloud.</string>
     <string name="settings_category_local_backup">Local Backup</string>
     <string name="settings_local_backup_create">Create Backup</string>
     <string name="settings_local_backup_restore">Restore Backup</string>

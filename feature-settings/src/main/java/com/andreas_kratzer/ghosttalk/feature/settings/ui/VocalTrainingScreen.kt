@@ -23,7 +23,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material3.AlertDialog
+import com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -288,42 +288,31 @@ fun VocalTrainingScreen(
             }
         }
     }
-
     if (showResetDialog) {
-        AlertDialog(
-            onDismissRequest = { showResetDialog = false },
-            title = { Text(stringResource(R.string.settings_vocal_reset_dialog_title)) },
-            text = { Text(stringResource(R.string.settings_vocal_reset_dialog_message)) },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        viewModel.resetModel()
-                        showResetDialog = false
-                    },
-                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
-                ) {
-                    Text(stringResource(R.string.settings_vocal_reset_confirm))
-                }
+        GhostTalkDialog(
+            title = stringResource(R.string.settings_vocal_reset_dialog_title),
+            confirmText = stringResource(R.string.settings_vocal_reset_confirm),
+            dismissText = stringResource(CoreR.string.action_cancel),
+            isDestructive = true,
+            onConfirm = {
+                viewModel.resetModel()
+                showResetDialog = false
             },
-            dismissButton = {
-                TextButton(onClick = { showResetDialog = false }) {
-                    Text(stringResource(CoreR.string.action_cancel))
-                }
+            onDismiss = { showResetDialog = false },
+            content = {
+                Text(stringResource(R.string.settings_vocal_reset_dialog_message))
             }
         )
     }
 
     if (showPermissionDeniedHint) {
-        AlertDialog(
-            onDismissRequest = { showPermissionDeniedHint = false },
-            title = { Text(stringResource(R.string.settings_vocal_mic_permission_title)) },
-            text = {
+        GhostTalkDialog(
+            title = stringResource(R.string.settings_vocal_mic_permission_title),
+            confirmText = stringResource(R.string.settings_vocal_understood),
+            onConfirm = { showPermissionDeniedHint = false },
+            onDismiss = { showPermissionDeniedHint = false },
+            content = {
                 Text(stringResource(R.string.settings_vocal_mic_permission_message))
-            },
-            confirmButton = {
-                TextButton(onClick = { showPermissionDeniedHint = false }) {
-                    Text(stringResource(R.string.settings_vocal_understood))
-                }
             }
         )
     }

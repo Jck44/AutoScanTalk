@@ -294,26 +294,25 @@ fun AiRestructureSection(
                     actions = actions,
                     isAiHierarchyLoading = state.isHierarchyLoading
                 )
-                
+
                 var isSavingAndLoadingLayouts by remember { mutableStateOf(false) }
                 var savingProgressText by remember { mutableStateOf("") }
-                
                 if (isSavingAndLoadingLayouts) {
-                    AlertDialog(
-                        onDismissRequest = {},
-                        confirmButton = {},
-                        title = { Text("Struktur anwenden...") },
-                        text = {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(10.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                CircularProgressIndicator()
-                                Text(savingProgressText)
-                            }
+                    com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkDialog(
+                        title = "Struktur anwenden...",
+                        onDismiss = {},
+                        confirmText = "",
+                        onConfirm = {}
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            CircularProgressIndicator()
+                            Text(savingProgressText)
                         }
-                    )
+                    }
                 }
                 
                 Button(

@@ -158,30 +158,22 @@ fun PageListScreen(
     }
 
     if (pageToDeactivate.value != null) {
-        AlertDialog(
-            onDismissRequest = { pageToDeactivate.value = null },
-            title = { Text(stringResource(R.string.page_deactivate_dialog_title)) },
-            text = { Text(stringResource(R.string.page_deactivate_dialog_message)) },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        val page = pageToDeactivate.value ?: return@TextButton
-                        coroutineScope.launch {
-                            val usages = pageViewModel.getPageUsages(page.id)
-                            pageViewModel.activateButtons(usages, false)
-                            pageToDeactivate.value = null
-                        }
-                    }
-                ) {
-                    Text(stringResource(R.string.action_page_deactivate))
+        com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkDialog(
+            title = stringResource(R.string.page_deactivate_dialog_title),
+            onDismiss = { pageToDeactivate.value = null },
+            confirmText = stringResource(R.string.action_page_deactivate),
+            onConfirm = {
+                val page = pageToDeactivate.value ?: return@GhostTalkDialog
+                coroutineScope.launch {
+                    val usages = pageViewModel.getPageUsages(page.id)
+                    pageViewModel.activateButtons(usages, false)
+                    pageToDeactivate.value = null
                 }
             },
-            dismissButton = {
-                TextButton(onClick = { pageToDeactivate.value = null }) {
-                    Text(stringResource(CoreR.string.action_cancel))
-                }
-            }
-        )
+            dismissText = stringResource(CoreR.string.action_cancel)
+        ) {
+            Text(stringResource(R.string.page_deactivate_dialog_message))
+        }
     }
 
     if (showAddDialog) {

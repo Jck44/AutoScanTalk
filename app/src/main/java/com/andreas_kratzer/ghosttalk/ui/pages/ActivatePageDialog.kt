@@ -9,8 +9,6 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
@@ -27,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.core.domain.pages.UsageLocation
 import com.andreas_kratzer.ghosttalk.ui.components.UsageLocationRow
+import com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkDialog
 
 @Composable
 fun ActivatePageDialog(
@@ -37,78 +36,68 @@ fun ActivatePageDialog(
 ) {
     var selectedUsages by remember { mutableStateOf(usages.toSet()) }
 
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.page_activate_dialog_title)) },
-        text = {
-            Column {
-                Text(
-                    text = stringResource(R.string.page_activate_message, pageName),
-                    style = MaterialTheme.typography.bodyMedium
-                )
+    GhostTalkDialog(
+        title = stringResource(R.string.page_activate_dialog_title),
+        onDismiss = onDismiss,
+        confirmText = stringResource(R.string.action_page_activate),
+        onConfirm = { onConfirm(selectedUsages.toList()) },
+        dismissText = stringResource(R.string.action_cancel),
+        confirmEnabled = selectedUsages.isNotEmpty()
+    ) {
+        Column {
+            Text(
+                text = stringResource(R.string.page_activate_message, pageName),
+                style = MaterialTheme.typography.bodyMedium
+            )
 
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    TextButton(
-                        onClick = { selectedUsages = usages.toSet() },
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Text(stringResource(R.string.page_activate_select_all))
-                    }
-                    TextButton(
-                        onClick = { selectedUsages = emptySet() },
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Text(stringResource(R.string.page_activate_deselect_all))
-                    }
-                }
-
-                HorizontalDivider()
-
-                val scrollState = rememberScrollState()
-                Box(
-                    modifier = Modifier
-                        .heightIn(max = 300.dp)
-                        .verticalScroll(scrollState)
-                ) {
-                    Column {
-                        usages.forEach { usage ->
-                            UsageLocationRow(
-                                usage = usage,
-                                leadingContent = {
-                                    Checkbox(
-                                        checked = selectedUsages.contains(usage),
-                                        onCheckedChange = { isChecked ->
-                                            selectedUsages = if (isChecked) {
-                                                selectedUsages + usage
-                                            } else {
-                                                selectedUsages - usage
-                                            }
-                                        }
-                                    )
-                                }
-                            )
-                        }
-                    }
-                }
-            }
-        },
-        confirmButton = {
-            Button(
-                onClick = { onConfirm(selectedUsages.toList()) },
-                enabled = selectedUsages.isNotEmpty()
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Text(stringResource(R.string.action_page_activate))
+                TextButton(
+                    onClick = { selectedUsages = usages.toSet() },
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text(stringResource(R.string.page_activate_select_all))
+                }
+                TextButton(
+                    onClick = { selectedUsages = emptySet() },
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text(stringResource(R.string.page_activate_deselect_all))
+                }
             }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text(stringResource(R.string.action_cancel))
+
+            HorizontalDivider()
+
+            val scrollState = rememberScrollState()
+            Box(
+                modifier = Modifier
+                    .heightIn(max = 300.dp)
+                    .verticalScroll(scrollState)
+            ) {
+                Column {
+                    usages.forEach { usage ->
+                        UsageLocationRow(
+                            usage = usage,
+                            leadingContent = {
+                                Checkbox(
+                                    checked = selectedUsages.contains(usage),
+                                    onCheckedChange = { isChecked ->
+                                        selectedUsages = if (isChecked) {
+                                            selectedUsages + usage
+                                        } else {
+                                            selectedUsages - usage
+                                        }
+                                    }
+                                )
+                            }
+                        )
+                    }
+                }
             }
         }
-    )
+    }
 }

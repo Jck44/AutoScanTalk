@@ -437,37 +437,27 @@ fun GridEditorContent(
                 }
             }
 
-            // Confirm Delete Dialog
             if (showConfirmDeleteDialog) {
-                androidx.compose.material3.AlertDialog(
-                    onDismissRequest = { showConfirmDeleteDialog = false },
-                    title = { Text(stringResource(R.string.bulk_action_delete)) },
-                    text = { Text(stringResource(R.string.bulk_action_confirm_delete)) },
-                    confirmButton = {
-                        androidx.compose.material3.TextButton(
-                            onClick = {
-                                showConfirmDeleteDialog = false
-                                val itemId = (item as? Page)?.id ?: (item as? com.andreas_kratzer.ghosttalk.core.model.PageTemplate)?.id
-                                if (itemId != null) {
-                                    scope.launch {
-                                        actions.bulkDeleteButtons(itemId, selectedButtonIndices.toList())
-                                        selectedButtonIndices = emptySet()
-                                        isMultiSelectMode = false
-                                    }
-                                }
+                com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkDialog(
+                    title = stringResource(R.string.bulk_action_delete),
+                    onDismiss = { showConfirmDeleteDialog = false },
+                    confirmText = stringResource(R.string.bulk_action_delete),
+                    onConfirm = {
+                        showConfirmDeleteDialog = false
+                        val itemId = (item as? Page)?.id ?: (item as? com.andreas_kratzer.ghosttalk.core.model.PageTemplate)?.id
+                        if (itemId != null) {
+                            scope.launch {
+                                actions.bulkDeleteButtons(itemId, selectedButtonIndices.toList())
+                                selectedButtonIndices = emptySet()
+                                isMultiSelectMode = false
                             }
-                        ) {
-                            Text(stringResource(R.string.bulk_action_delete))
                         }
                     },
-                    dismissButton = {
-                        androidx.compose.material3.TextButton(
-                            onClick = { showConfirmDeleteDialog = false }
-                        ) {
-                            Text(stringResource(R.string.bulk_action_cancel))
-                        }
-                    }
-                )
+                    dismissText = stringResource(R.string.bulk_action_cancel),
+                    isDestructive = true
+                ) {
+                    Text(stringResource(R.string.bulk_action_confirm_delete))
+                }
             }
 
             Box(

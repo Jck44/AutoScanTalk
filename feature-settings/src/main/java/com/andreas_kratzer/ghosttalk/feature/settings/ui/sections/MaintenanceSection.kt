@@ -33,6 +33,7 @@ import androidx.compose.ui.unit.dp
 import com.andreas_kratzer.ghosttalk.core.ui.components.PreferenceCategory
 import com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
+import com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkDialog
 import com.andreas_kratzer.ghosttalk.feature.settings.R
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.SettingsViewModel
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.dialogs.BackupSelectionDialog
@@ -241,33 +242,24 @@ fun MaintenanceSection(
     }
 
     if (showDeleteEmptyButtonsConfirmation.value) {
-        AlertDialog(
-            onDismissRequest = { showDeleteEmptyButtonsConfirmation.value = false },
-            title = { Text(stringResource(R.string.settings_maintenance_delete_empty_buttons_confirm_title)) },
-            text = { Text(stringResource(R.string.settings_maintenance_delete_empty_buttons_confirm_text)) },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        showDeleteEmptyButtonsConfirmation.value = false
-                        viewModel.deleteEmptyButtons { count ->
-                            Toast.makeText(
-                                context,
-                                context.applicationContext.resources.getQuantityString(R.plurals.settings_maintenance_delete_empty_buttons_success, count, count),
-                                Toast.LENGTH_LONG
-                            ).show()
-                        }
-                    }
-                ) {
-                    Text(
-                        stringResource(R.string.settings_maintenance_delete_empty_buttons_title),
-                        color = MaterialTheme.colorScheme.error
-                    )
+        GhostTalkDialog(
+            title = stringResource(R.string.settings_maintenance_delete_empty_buttons_confirm_title),
+            confirmText = stringResource(R.string.settings_maintenance_delete_empty_buttons_title),
+            dismissText = stringResource(com.andreas_kratzer.ghosttalk.core.ui.R.string.dialog_close),
+            isDestructive = true,
+            onConfirm = {
+                showDeleteEmptyButtonsConfirmation.value = false
+                viewModel.deleteEmptyButtons { count ->
+                    Toast.makeText(
+                        context,
+                        context.applicationContext.resources.getQuantityString(R.plurals.settings_maintenance_delete_empty_buttons_success, count, count),
+                        Toast.LENGTH_LONG
+                    ).show()
                 }
             },
-            dismissButton = {
-                TextButton(onClick = { showDeleteEmptyButtonsConfirmation.value = false }) {
-                    Text(stringResource(com.andreas_kratzer.ghosttalk.core.ui.R.string.dialog_close))
-                }
+            onDismiss = { showDeleteEmptyButtonsConfirmation.value = false },
+            content = {
+                Text(stringResource(R.string.settings_maintenance_delete_empty_buttons_confirm_text))
             }
         )
     }
@@ -303,10 +295,17 @@ fun MaintenanceSection(
     if (showManualImportUrlDialog.value) {
         val urlOrIdInput = remember { mutableStateOf("") }
 
-        AlertDialog(
-            onDismissRequest = { showManualImportUrlDialog.value = false },
-            title = { Text(stringResource(R.string.settings_cloud_import_dialog_title)) },
-            text = {
+        GhostTalkDialog(
+            title = stringResource(R.string.settings_cloud_import_dialog_title),
+            confirmText = stringResource(R.string.settings_cloud_import_search_backups),
+            dismissText = stringResource(com.andreas_kratzer.ghosttalk.core.ui.R.string.action_cancel),
+            onConfirm = {
+                viewModel.fetchAvailableBackupsForImportByUrlOrId(urlOrIdInput.value)
+                showManualImportUrlDialog.value = false
+            },
+            onDismiss = { showManualImportUrlDialog.value = false },
+            confirmEnabled = urlOrIdInput.value.isNotBlank(),
+            content = {
                 Column {
                     Text(
                         text = stringResource(R.string.settings_cloud_import_dialog_explanation),
@@ -320,24 +319,6 @@ fun MaintenanceSection(
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true
                     )
-                }
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        viewModel.fetchAvailableBackupsForImportByUrlOrId(urlOrIdInput.value)
-                        showManualImportUrlDialog.value = false
-                    },
-                    enabled = urlOrIdInput.value.isNotBlank()
-                ) {
-                    Text(stringResource(R.string.settings_cloud_import_search_backups))
-                }
-            },
-            dismissButton = {
-                TextButton(
-                    onClick = { showManualImportUrlDialog.value = false }
-                ) {
-                    Text(stringResource(com.andreas_kratzer.ghosttalk.core.ui.R.string.action_cancel))
                 }
             }
         )

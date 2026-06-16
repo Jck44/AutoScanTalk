@@ -35,15 +35,20 @@ fun SyncLogDialog(
 ) {
     val dimensions = LocalDimensions.current
 
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = {
+    com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkDialog(
+        onDismiss = onDismiss,
+        confirmText = stringResource(android.R.string.ok),
+        onConfirm = onDismiss,
+        titleContent = {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(stringResource(R.string.settings_cloud_logs_title))
+                Text(
+                    text = stringResource(R.string.settings_cloud_logs_title),
+                    style = MaterialTheme.typography.titleLarge
+                )
                 IconButton(onClick = onClearLogs) {
                     Icon(
                         imageVector = Icons.Default.Delete,
@@ -52,46 +57,40 @@ fun SyncLogDialog(
                     )
                 }
             }
-        },
-        text = {
-            Column(modifier = Modifier.heightIn(max = 400.dp)) {
-                HorizontalDivider(modifier = Modifier.padding(bottom = 8.dp))
-                
-                if (logs.isEmpty()) {
-                    Box(
-                        modifier = Modifier.fillMaxWidth().padding(dimensions.paddingLarge),
-                        contentAlignment = Alignment.Center
-                    ) {
+        }
+    ) {
+        Column(modifier = Modifier.heightIn(max = 400.dp)) {
+            HorizontalDivider(modifier = Modifier.padding(bottom = 8.dp))
+            
+            if (logs.isEmpty()) {
+                Box(
+                    modifier = Modifier.fillMaxWidth().padding(dimensions.paddingLarge),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = stringResource(R.string.settings_cloud_logs_empty),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            } else {
+                LazyColumn(
+                    modifier = Modifier.fillMaxWidth(),
+                    contentPadding = PaddingValues(vertical = 4.dp)
+                ) {
+                    items(logs) { log ->
                         Text(
-                            text = stringResource(R.string.settings_cloud_logs_empty),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            text = log,
+                            style = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier.padding(vertical = 4.dp)
                         )
-                    }
-                } else {
-                    LazyColumn(
-                        modifier = Modifier.fillMaxWidth(),
-                        contentPadding = PaddingValues(vertical = 4.dp)
-                    ) {
-                        items(logs) { log ->
-                            Text(
-                                text = log,
-                                style = MaterialTheme.typography.bodySmall,
-                                modifier = Modifier.padding(vertical = 4.dp)
-                            )
-                            HorizontalDivider(
-                                thickness = 0.5.dp,
-                                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
-                            )
-                        }
+                        HorizontalDivider(
+                            thickness = 0.5.dp,
+                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                        )
                     }
                 }
             }
-        },
-        confirmButton = {
-            Button(onClick = onDismiss) {
-                Text(stringResource(android.R.string.ok))
-            }
         }
-    )
+    }
 }

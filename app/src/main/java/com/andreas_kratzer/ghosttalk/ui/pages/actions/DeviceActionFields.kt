@@ -18,6 +18,7 @@ import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.AlertDialog
+import com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkDialog
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuAnchorType
@@ -298,39 +299,22 @@ fun DeviceActionFields(
         }
 
         if (showNotificationPermissionDialog && !onlyShowConfig) {
-            AlertDialog(
-                onDismissRequest = { showNotificationPermissionDialog = false },
-                title = {
-                    Text(
-                        text = stringResource(R.string.notification_permission_dialog_title),
-                        style = MaterialTheme.typography.titleMedium
-                    )
+            GhostTalkDialog(
+                title = stringResource(R.string.notification_permission_dialog_title),
+                onDismiss = { showNotificationPermissionDialog = false },
+                confirmText = stringResource(R.string.notification_permission_dialog_confirm),
+                onConfirm = {
+                    showNotificationPermissionDialog = false
+                    val intent = android.content.Intent(android.provider.Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
+                    context.startActivity(intent)
                 },
-                text = {
-                    Text(
-                        text = stringResource(R.string.notification_permission_dialog_message),
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                },
-                confirmButton = {
-                    TextButton(
-                        onClick = {
-                            showNotificationPermissionDialog = false
-                            val intent = android.content.Intent(android.provider.Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
-                            context.startActivity(intent)
-                        }
-                    ) {
-                        Text(stringResource(R.string.notification_permission_dialog_confirm))
-                    }
-                },
-                dismissButton = {
-                    TextButton(
-                        onClick = { showNotificationPermissionDialog = false }
-                    ) {
-                        Text(stringResource(R.string.notification_permission_dialog_dismiss))
-                    }
-                }
-            )
+                dismissText = stringResource(R.string.notification_permission_dialog_dismiss)
+            ) {
+                Text(
+                    text = stringResource(R.string.notification_permission_dialog_message),
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            }
         }
     }
 }

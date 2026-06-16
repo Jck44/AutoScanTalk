@@ -475,28 +475,19 @@ fun SettingsScreen(
     val showActionHistory by viewModel.showActionHistoryDialog.collectAsState()
 
     if (showDiscardChangesDialog) {
-        androidx.compose.material3.AlertDialog(
-            onDismissRequest = { showDiscardChangesDialog = false },
-            title = { Text(stringResource(R.string.settings_dialog_discard_changes_title)) },
-            text = { Text(stringResource(R.string.settings_dialog_discard_changes_message)) },
-            confirmButton = {
-                androidx.compose.material3.TextButton(
-                    onClick = {
-                        showDiscardChangesDialog = false
-                        viewModel.cancelEditingProfile()
-                    }
-                ) {
-                    Text(stringResource(R.string.settings_dialog_discard_changes_confirm))
-                }
+        com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkDialog(
+            title = stringResource(R.string.settings_dialog_discard_changes_title),
+            onDismiss = { showDiscardChangesDialog = false },
+            confirmText = stringResource(R.string.settings_dialog_discard_changes_confirm),
+            onConfirm = {
+                showDiscardChangesDialog = false
+                viewModel.cancelEditingProfile()
             },
-            dismissButton = {
-                androidx.compose.material3.TextButton(
-                    onClick = { showDiscardChangesDialog = false }
-                ) {
-                    Text(stringResource(CoreR.string.action_cancel))
-                }
-            }
-        )
+            dismissText = stringResource(CoreR.string.action_cancel),
+            isDestructive = true
+        ) {
+            Text(stringResource(R.string.settings_dialog_discard_changes_message))
+        }
     }
 
     if (showActionHistory) {

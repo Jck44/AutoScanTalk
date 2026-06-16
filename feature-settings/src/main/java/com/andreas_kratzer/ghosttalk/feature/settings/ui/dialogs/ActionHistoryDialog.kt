@@ -16,7 +16,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.material3.AlertDialog
+import com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkDialog
 import androidx.compose.material3.BasicAlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -50,7 +50,6 @@ import com.andreas_kratzer.ghosttalk.feature.settings.R
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.SettingsViewModel
 import java.text.SimpleDateFormat
 import java.util.Date
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ActionHistoryDialog(
@@ -62,15 +61,12 @@ fun ActionHistoryDialog(
     val dimensions = LocalDimensions.current
     val previewImagePath = remember { mutableStateOf<String?>(null) }
 
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        confirmButton = {
-            TextButton(onClick = onDismiss) {
-                Text(stringResource(android.R.string.ok))
-            }
-        },
-        title = { Text(stringResource(R.string.settings_action_history_title)) },
-        text = {
+    GhostTalkDialog(
+        title = stringResource(R.string.settings_action_history_title),
+        confirmText = stringResource(android.R.string.ok),
+        onConfirm = onDismiss,
+        onDismiss = onDismiss,
+        content = {
             Box(modifier = Modifier.fillMaxWidth().height(400.dp)) {
                 if (buttonHistory.isEmpty()) {
                     Text(
@@ -149,22 +145,18 @@ fun ActionHistoryDialog(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun HistoryDetailDialog(
     event: ButtonUsageRepository.ButtonUsageEvent,
     onDismiss: () -> Unit
 ) {
     val dimensions = LocalDimensions.current
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        confirmButton = {
-            TextButton(onClick = onDismiss) {
-                Text(stringResource(android.R.string.ok))
-            }
-        },
-        title = { Text(stringResource(R.string.history_details_title)) },
-        text = {
+    GhostTalkDialog(
+        title = stringResource(R.string.history_details_title),
+        confirmText = stringResource(android.R.string.ok),
+        onConfirm = onDismiss,
+        onDismiss = onDismiss,
+        content = {
             Column(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(dimensions.paddingLarge),

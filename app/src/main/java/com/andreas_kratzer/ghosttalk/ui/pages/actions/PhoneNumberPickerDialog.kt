@@ -32,60 +32,50 @@ fun PhoneNumberPickerDialog(
 ) {
     val dimensions = LocalDimensions.current
 
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = {
+    com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkDialog(
+        title = stringResource(R.string.contact_picker_select_number_title),
+        onDismiss = onDismiss,
+        confirmText = stringResource(android.R.string.cancel),
+        onConfirm = onDismiss
+    ) {
+        Column {
             Text(
-                text = stringResource(R.string.contact_picker_select_number_title),
-                style = MaterialTheme.typography.titleMedium
+                text = title,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(bottom = dimensions.paddingSmall)
             )
-        },
-        text = {
-            Column {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.padding(bottom = dimensions.paddingSmall)
-                )
-                HorizontalDivider()
-                LazyColumn {
-                    items(phoneNumbers) { info ->
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable { onNumberSelected(info) }
-                                .padding(vertical = dimensions.paddingMedium),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                imageVector = GhostTalkIcons.Phone,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary
+            HorizontalDivider()
+            LazyColumn {
+                items(phoneNumbers) { info ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { onNumberSelected(info) }
+                            .padding(vertical = dimensions.paddingMedium),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = GhostTalkIcons.Phone,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                        Spacer(modifier = Modifier.width(dimensions.paddingMedium))
+                        Column {
+                            Text(
+                                text = info.number,
+                                style = MaterialTheme.typography.bodyLarge
                             )
-                            Spacer(modifier = Modifier.width(dimensions.paddingMedium))
-                            Column {
-                                Text(
-                                    text = info.number,
-                                    style = MaterialTheme.typography.bodyLarge
-                                )
-                                Text(
-                                    text = info.label,
-                                    style = MaterialTheme.typography.labelMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
+                            Text(
+                                text = info.label,
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
                         }
-                        HorizontalDivider()
                     }
+                    HorizontalDivider()
                 }
             }
-        },
-        confirmButton = {},
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text(stringResource(android.R.string.cancel))
-            }
         }
-    )
+    }
 }

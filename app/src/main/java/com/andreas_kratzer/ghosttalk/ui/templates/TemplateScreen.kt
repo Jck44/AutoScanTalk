@@ -303,43 +303,27 @@ fun AddTemplateDialog(
     var name by remember { mutableStateOf("") }
     val dimensions = LocalDimensions.current
 
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.template_create_new)) },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(dimensions.paddingMedium)) {
-                OutlinedTextField(
-                    value = name,
-                    onValueChange = { name = it },
-                    label = { Text(stringResource(R.string.template_name_label)) },
-                    singleLine = true,
-                    shape = MaterialTheme.shapes.large,
-                    modifier = Modifier.fillMaxWidth()
-                )
+    com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkDialog(
+        title = stringResource(R.string.template_create_new),
+        onDismiss = onDismiss,
+        confirmText = stringResource(CoreR.string.action_create),
+        onConfirm = {
+            if (name.isNotBlank()) {
+                onConfirm(name, 4, 4)
             }
         },
-        confirmButton = {
-            Button(
-                onClick = {
-                    // Standardmäßig 4x4
-                    if (name.isNotBlank()) {
-                        onConfirm(name, 4, 4)
-                    }
-                },
-                shape = MaterialTheme.shapes.medium,
-                enabled = name.isNotBlank()
-            ) {
-                Text(stringResource(CoreR.string.action_create))
-            }
-        },
-        dismissButton = {
-            Button(
-                onClick = onDismiss,
-                shape = MaterialTheme.shapes.medium,
-                colors = ButtonDefaults.textButtonColors()
-            ) {
-                Text(stringResource(CoreR.string.action_cancel))
-            }
+        dismissText = stringResource(CoreR.string.action_cancel),
+        confirmEnabled = name.isNotBlank()
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(dimensions.paddingMedium)) {
+            OutlinedTextField(
+                value = name,
+                onValueChange = { name = it },
+                label = { Text(stringResource(R.string.template_name_label)) },
+                singleLine = true,
+                shape = MaterialTheme.shapes.large,
+                modifier = Modifier.fillMaxWidth()
+            )
         }
-    )
+    }
 }

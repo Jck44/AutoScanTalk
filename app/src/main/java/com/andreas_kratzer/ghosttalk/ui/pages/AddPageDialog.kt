@@ -44,107 +44,86 @@ fun AddPageDialog(
     val dimensions = LocalDimensions.current
     val focusManager = LocalFocusManager.current
 
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { 
-            Text(
-                text = stringResource(R.string.page_dialog_new_title),
-                style = MaterialTheme.typography.headlineSmall
-            ) 
+    com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkDialog(
+        title = stringResource(R.string.page_dialog_new_title),
+        onDismiss = onDismiss,
+        confirmText = stringResource(R.string.action_create),
+        onConfirm = {
+            // Default grid size is 4x4 unless template specifies otherwise
+            val rows = selectedTemplate?.rows ?: 4
+            val cols = selectedTemplate?.columns ?: 4
+            if (name.isNotBlank()) {
+                onConfirm(name, rows, cols, selectedTemplate?.id)
+            } else {
+                isError = true
+            }
         },
-        text = {
-            Column(
-                verticalArrangement = Arrangement.spacedBy(dimensions.paddingLarge),
-                modifier = Modifier.verticalScroll(rememberScrollState())
+        dismissText = stringResource(CoreR.string.action_cancel)
+    ) {
+        Column(
+            verticalArrangement = Arrangement.spacedBy(dimensions.paddingLarge),
+            modifier = Modifier.verticalScroll(rememberScrollState())
+        ) {
+            
+            // Template Dropdown
+            ExposedDropdownMenuBox(
+                expanded = expanded,
+                onExpandedChange = { expanded = it }
             ) {
-                
-                // Template Dropdown
-                ExposedDropdownMenuBox(
+                OutlinedTextField(
+                    value = selectedTemplate?.name ?: "Leere Seite (Kein Template)",
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text("Template (Optional)") },
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                    colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
+                    shape = MaterialTheme.shapes.large,
+                    modifier = Modifier.fillMaxWidth().menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable)
+                )
+                ExposedDropdownMenu(
                     expanded = expanded,
-                    onExpandedChange = { expanded = it }
+                    onDismissRequest = { expanded = false }
                 ) {
-                    OutlinedTextField(
-                        value = selectedTemplate?.name ?: "Leere Seite (Kein Template)",
-                        onValueChange = {},
-                        readOnly = true,
-                        label = { Text("Template (Optional)") },
-                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-                        colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
-                        shape = MaterialTheme.shapes.large,
-                        modifier = Modifier.fillMaxWidth().menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable)
+                    DropdownMenuItem(
+                        text = { Text("Leere Seite (Kein Template)", style = MaterialTheme.typography.bodyLarge) },
+                        onClick = {
+                            selectedTemplate = null
+                            focusManager.clearFocus()
+                            expanded = false
+                        }
                     )
-                    ExposedDropdownMenu(
-                        expanded = expanded,
-                        onDismissRequest = { expanded = false }
-                    ) {
+                    templates.forEach { template ->
                         DropdownMenuItem(
-                            text = { Text("Leere Seite (Kein Template)", style = MaterialTheme.typography.bodyLarge) },
+                            text = { Text(template.name, style = MaterialTheme.typography.bodyLarge) },
                             onClick = {
-                                selectedTemplate = null
+                                selectedTemplate = template
                                 focusManager.clearFocus()
                                 expanded = false
                             }
                         )
-                        templates.forEach { template ->
-                            DropdownMenuItem(
-                                text = { Text(template.name, style = MaterialTheme.typography.bodyLarge) },
-                                onClick = {
-                                    selectedTemplate = template
-                                    focusManager.clearFocus()
-                                    expanded = false
-                                }
-                            )
-                        }
                     }
                 }
-                
-                OutlinedTextField(
-                    value = name,
-                    onValueChange = { 
-                        name = it 
-                        if (it.isNotBlank()) isError = false
-                    },
-                    label = { Text(stringResource(R.string.page_name_field)) },
-                    singleLine = true,
-                    shape = MaterialTheme.shapes.large,
-                    modifier = Modifier.fillMaxWidth(),
-                    isError = isError,
-                    keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(imeAction = androidx.compose.ui.text.input.ImeAction.Done),
-                    supportingText = {
-                        if (isError) {
-                            Text(stringResource(R.string.error_page_name_required))
-                        }
-                    }
-                )
-
             }
-        },
-        confirmButton = {
-            Button(
-                onClick = {
-                    // Default grid size is 4x4 unless template specifies otherwise
-                    val rows = selectedTemplate?.rows ?: 4
-                    val cols = selectedTemplate?.columns ?: 4
-                    if (name.isNotBlank()) {
-                        onConfirm(name, rows, cols, selectedTemplate?.id)
-                    } else {
-                        isError = true
-                    }
+            
+            OutlinedTextField(
+                value = name,
+                onValueChange = { 
+                    name = it 
+                    if (it.isNotBlank()) isError = false
                 },
-                shape = MaterialTheme.shapes.medium
+                label = { Text(stringResource(R.string.page_name_field)) },
+                singleLine = true,
+                shape = MaterialTheme.shapes.large,
+                modifier = Modifier.fillMaxWidth(),
+                isError = isError,
+                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(imeAction = androidx.compose.ui.text.input.ImeAction.Done),
+                supportingText = {
+                    if (isError) {
+                        Text(stringResource(R.string.error_page_name_required))
+                    }
+                }
+            )
 
-            ) {
-                Text(stringResource(R.string.action_create))
-            }
-        },
-        dismissButton = {
-            Button(
-                onClick = onDismiss,
-                shape = MaterialTheme.shapes.medium,
-                colors = ButtonDefaults.textButtonColors()
-            ) {
-                Text(stringResource(CoreR.string.action_cancel))
-            }
         }
-    )
+    }
 }

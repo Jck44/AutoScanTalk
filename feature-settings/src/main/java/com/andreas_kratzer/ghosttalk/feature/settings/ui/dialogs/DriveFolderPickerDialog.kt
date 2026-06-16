@@ -51,9 +51,19 @@ fun DriveFolderPickerDialog(
         onFetchFolders(currentFolder.first)
     }
 
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = {
+    com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkDialog(
+        onDismiss = onDismiss,
+        confirmText = "Diesen Ordner wählen",
+        onConfirm = {
+            if (currentFolder.first == "root") {
+                onFolderSelected(null, null)
+            } else {
+                onFolderSelected(currentFolder.first, currentFolder.second)
+            }
+        },
+        dismissText = "Abbrechen",
+        confirmEnabled = !isLoading,
+        titleContent = {
             Column {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     if (currentPathStack.size > 1) {
@@ -79,70 +89,50 @@ fun DriveFolderPickerDialog(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-        },
-        text = {
-            Column(modifier = Modifier.height(300.dp)) {
-                HorizontalDivider()
-                if (isLoading) {
-                    Box(modifier = Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator()
-                    }
-                } else if (folders.isEmpty()) {
-                    Box(modifier = Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
-                        Text("Keine Unterordner gefunden.", style = MaterialTheme.typography.bodyMedium)
-                    }
-                } else {
-                    LazyColumn(modifier = Modifier.weight(1f)) {
-                        items(folders) { folder ->
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable {
-                                        currentPathStack = currentPathStack + (folder.id to folder.name)
-                                    }
-                                    .padding(vertical = 12.dp, horizontal = 8.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                val isAppCreated = folder.name == "GhosTTalk_Sync" || folder.appProperties?.containsKey("ghosttalk_sync") == true
-                                Icon(
-                                    imageVector = GhostTalkIcons.Folder,
-                                    contentDescription = null,
-                                    tint = if (isAppCreated) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary
-                                )
-                                Spacer(modifier = Modifier.width(12.dp))
-                                Text(
-                                    text = folder.name,
-                                    modifier = Modifier.weight(1f),
-                                    style = MaterialTheme.typography.bodyLarge
-                                )
-                                CustomIcon(GhostTalkIcons.ArrowForward, contentDescription = null, size = 16.dp, tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                            }
-                            HorizontalDivider(modifier = Modifier.padding(horizontal = 8.dp))
+        }
+    ) {
+        Column(modifier = Modifier.height(300.dp)) {
+            HorizontalDivider()
+            if (isLoading) {
+                Box(modifier = Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator()
+                }
+            } else if (folders.isEmpty()) {
+                Box(modifier = Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
+                    Text("Keine Unterordner gefunden.", style = MaterialTheme.typography.bodyMedium)
+                }
+            } else {
+                LazyColumn(modifier = Modifier.weight(1f)) {
+                    items(folders) { folder ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    currentPathStack = currentPathStack + (folder.id to folder.name)
+                                }
+                                .padding(vertical = 12.dp, horizontal = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            val isAppCreated = folder.name == "GhosTTalk_Sync" || folder.appProperties?.containsKey("ghosttalk_sync") == true
+                            Icon(
+                                imageVector = GhostTalkIcons.Folder,
+                                contentDescription = null,
+                                tint = if (isAppCreated) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Text(
+                                text = folder.name,
+                                modifier = Modifier.weight(1f),
+                                style = MaterialTheme.typography.bodyLarge
+                            )
+                            CustomIcon(GhostTalkIcons.ArrowForward, contentDescription = null, size = 16.dp, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
+                        HorizontalDivider(modifier = Modifier.padding(horizontal = 8.dp))
                     }
                 }
             }
-        },
-        confirmButton = {
-            TextButton(
-                onClick = {
-                    if (currentFolder.first == "root") {
-                        onFolderSelected(null, null)
-                    } else {
-                        onFolderSelected(currentFolder.first, currentFolder.second)
-                    }
-                },
-                enabled = !isLoading
-            ) {
-                Text("Diesen Ordner wählen", fontWeight = FontWeight.Bold)
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Abbrechen")
-            }
         }
-    )
+    }
 }
 
 @Composable

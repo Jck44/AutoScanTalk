@@ -37,56 +37,46 @@ fun BackupSelectionDialog(
     val locale = LocalConfiguration.current.locales[0]
     val dateFormat = SimpleDateFormat("dd.MM.yyyy HH:mm", locale)
 
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = {
+    com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkDialog(
+        title = stringResource(R.string.settings_cloud_backup_selection_title),
+        onDismiss = onDismiss,
+        confirmText = stringResource(android.R.string.cancel),
+        onConfirm = onDismiss
+    ) {
+        Column {
             Text(
-                text = stringResource(R.string.settings_cloud_backup_selection_title),
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold
+                text = stringResource(R.string.settings_cloud_backup_selection_description),
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.padding(bottom = dimensions.paddingMedium)
             )
-        },
-        text = {
-            Column {
-                Text(
-                    text = stringResource(R.string.settings_cloud_backup_selection_description),
-                    style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.padding(bottom = dimensions.paddingMedium)
-                )
-                
-                Surface(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(max = 300.dp),
-                    shape = MaterialTheme.shapes.medium,
-                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
-                    border = CardDefaults.outlinedCardBorder()
+            
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = 300.dp),
+                shape = MaterialTheme.shapes.medium,
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                border = CardDefaults.outlinedCardBorder()
+            ) {
+                LazyColumn(
+                    modifier = Modifier.fillMaxWidth(),
+                    contentPadding = PaddingValues(dimensions.paddingSmall)
                 ) {
-                    LazyColumn(
-                        modifier = Modifier.fillMaxWidth(),
-                        contentPadding = PaddingValues(dimensions.paddingSmall)
-                    ) {
-                        items(backups) { backup ->
-                            BackupItem(
-                                backup = backup,
-                                dateFormat = dateFormat,
-                                onClick = { onBackupSelected(backup) }
-                            )
-                            HorizontalDivider(
-                                modifier = Modifier.padding(horizontal = dimensions.paddingSmall),
-                                color = MaterialTheme.colorScheme.outlineVariant
-                            )
-                        }
+                    items(backups) { backup ->
+                        BackupItem(
+                            backup = backup,
+                            dateFormat = dateFormat,
+                            onClick = { onBackupSelected(backup) }
+                        )
+                        HorizontalDivider(
+                            modifier = Modifier.padding(horizontal = dimensions.paddingSmall),
+                            color = MaterialTheme.colorScheme.outlineVariant
+                        )
                     }
                 }
             }
-        },
-        confirmButton = {
-            TextButton(onClick = onDismiss) {
-                Text(stringResource(android.R.string.cancel))
-            }
         }
-    )
+    }
 }
 
 @Composable

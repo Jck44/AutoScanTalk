@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.OutlinedTextField
+import com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkDialog
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -416,41 +417,31 @@ fun EditorDialogs(
     }
 
     if (showSaveTemplateDialogConfig.value != null) {
-        AlertDialog(
-            onDismissRequest = { showSaveTemplateDialogConfig.value = null },
-            title = { Text("Als Vorlage speichern") },
-            text = {
-                Column {
-                    Text("Geben Sie einen Namen für die Button-Vorlage ein:")
-                    Spacer(modifier = Modifier.height(8.dp))
-                    OutlinedTextField(
-                        value = newTemplateName,
-                        onValueChange = { newTemplateName = it },
-                        label = { Text("Name der Vorlage") },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth()
-                    )
+        GhostTalkDialog(
+            title = "Als Vorlage speichern",
+            onDismiss = { showSaveTemplateDialogConfig.value = null },
+            confirmText = "Speichern",
+            onConfirm = {
+                val config = showSaveTemplateDialogConfig.value
+                if (config != null && newTemplateName.isNotBlank()) {
+                    actions.saveButtonAsTemplate(newTemplateName, config)
+                    android.widget.Toast.makeText(context, "Vorlage gespeichert", android.widget.Toast.LENGTH_SHORT).show()
                 }
+                showSaveTemplateDialogConfig.value = null
             },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        val config = showSaveTemplateDialogConfig.value
-                        if (config != null && newTemplateName.isNotBlank()) {
-                            actions.saveButtonAsTemplate(newTemplateName, config)
-                            android.widget.Toast.makeText(context, "Vorlage gespeichert", android.widget.Toast.LENGTH_SHORT).show()
-                        }
-                        showSaveTemplateDialogConfig.value = null
-                    }
-                ) {
-                    Text("Speichern")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showSaveTemplateDialogConfig.value = null }) {
-                    Text("Abbrechen")
-                }
+            dismissText = "Abbrechen"
+        ) {
+            Column {
+                Text("Geben Sie einen Namen für die Button-Vorlage ein:")
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = newTemplateName,
+                    onValueChange = { newTemplateName = it },
+                    label = { Text("Name der Vorlage") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
             }
-        )
+        }
     }
 }

@@ -16,7 +16,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -903,37 +902,25 @@ fun StructureEditorScreen(
 
     // Confirmation dialogs
     if (pageToRemoveConnectionByButtonIndex != null) {
-        AlertDialog(
-            onDismissRequest = {
+        GhostTalkDialog(
+            title = stringResource(R.string.structure_remove_connection_title),
+            confirmText = stringResource(R.string.structure_action_remove),
+            dismissText = stringResource(R.string.action_cancel),
+            onConfirm = {
+                val index = pageToRemoveConnectionByButtonIndex!!
+                pageToRemoveConnectionByButtonIndex = null
+                pageToRemoveConnectionTargetName = ""
+                gridEditorViewModel.updateButtonConfig(pageToRemoveConnectionFromPageId, index, null)
+                pageToRemoveConnectionFromPageId = ""
+                showSuccessSnackbarWithUndo(R.string.button_delete_success)
+            },
+            onDismiss = {
                 pageToRemoveConnectionByButtonIndex = null
                 pageToRemoveConnectionTargetName = ""
                 pageToRemoveConnectionFromPageId = ""
             },
-            title = { Text(stringResource(R.string.structure_remove_connection_title)) },
-            text = { Text(stringResource(R.string.structure_remove_connection_msg, pageToRemoveConnectionTargetName)) },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        val index = pageToRemoveConnectionByButtonIndex!!
-                        pageToRemoveConnectionByButtonIndex = null
-                        pageToRemoveConnectionTargetName = ""
-                        gridEditorViewModel.updateButtonConfig(pageToRemoveConnectionFromPageId, index, null)
-                        pageToRemoveConnectionFromPageId = ""
-                        showSuccessSnackbarWithUndo(R.string.button_delete_success)
-                    }
-                ) {
-                    Text(stringResource(R.string.structure_action_remove))
-                }
-            },
-            dismissButton = {
-                TextButton(
-                    onClick = {
-                        pageToRemoveConnectionByButtonIndex = null
-                        pageToRemoveConnectionTargetName = ""
-                    }
-                ) {
-                    Text(stringResource(R.string.action_cancel))
-                }
+            content = {
+                Text(stringResource(R.string.structure_remove_connection_msg, pageToRemoveConnectionTargetName))
             }
         )
     }
@@ -941,31 +928,22 @@ fun StructureEditorScreen(
     if (orphanToConnectId != null) {
         val orphanName = pageNames[orphanToConnectId] ?: orphanToConnectId!!
         val currentPageName = pageNames[focusedPageId] ?: focusedPageId
-        AlertDialog(
-            onDismissRequest = { orphanToConnectId = null },
-            title = { Text(stringResource(R.string.structure_connect_orphan_title)) },
-            text = { Text(stringResource(R.string.structure_connect_orphan_msg, orphanName, currentPageName)) },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        val targetId = orphanToConnectId!!
-                        orphanToConnectId = null
-                        performAddConnection(targetId)
-                    }
-                ) {
-                    Text(stringResource(R.string.structure_action_connect))
-                }
+        GhostTalkDialog(
+            title = stringResource(R.string.structure_connect_orphan_title),
+            confirmText = stringResource(R.string.structure_action_connect),
+            dismissText = stringResource(R.string.structure_view_page),
+            onConfirm = {
+                val targetId = orphanToConnectId!!
+                orphanToConnectId = null
+                performAddConnection(targetId)
             },
-            dismissButton = {
-                TextButton(
-                    onClick = {
-                        val targetId = orphanToConnectId!!
-                        orphanToConnectId = null
-                        navigateToPage(targetId)
-                    }
-                ) {
-                    Text(stringResource(R.string.structure_view_page))
-                }
+            onDismiss = {
+                val targetId = orphanToConnectId!!
+                orphanToConnectId = null
+                navigateToPage(targetId)
+            },
+            content = {
+                Text(stringResource(R.string.structure_connect_orphan_msg, orphanName, currentPageName))
             }
         )
     }
@@ -1237,10 +1215,21 @@ fun StructureEditorScreen(
     }
 
     if (showSaveTemplateDialogConfig.value != null) {
-        AlertDialog(
-            onDismissRequest = { showSaveTemplateDialogConfig.value = null },
-            title = { Text("Als Vorlage speichern") },
-            text = {
+        GhostTalkDialog(
+            title = "Als Vorlage speichern",
+            confirmText = "Speichern",
+            dismissText = "Abbrechen",
+            onConfirm = {
+                val config = showSaveTemplateDialogConfig.value
+                if (config != null && newTemplateName.isNotBlank()) {
+                    gridEditorViewModel.saveButtonAsTemplate(newTemplateName, config)
+                    android.widget.Toast.makeText(context, "Vorlage gespeichert", android.widget.Toast.LENGTH_SHORT).show()
+                }
+                showSaveTemplateDialogConfig.value = null
+            },
+            onDismiss = { showSaveTemplateDialogConfig.value = null },
+            confirmEnabled = newTemplateName.isNotBlank(),
+            content = {
                 Column {
                     Text("Geben Sie einen Namen für die Button-Vorlage ein:")
                     Spacer(modifier = Modifier.height(8.dp))
@@ -1251,25 +1240,6 @@ fun StructureEditorScreen(
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth()
                     )
-                }
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        val config = showSaveTemplateDialogConfig.value
-                        if (config != null && newTemplateName.isNotBlank()) {
-                            gridEditorViewModel.saveButtonAsTemplate(newTemplateName, config)
-                            android.widget.Toast.makeText(context, "Vorlage gespeichert", android.widget.Toast.LENGTH_SHORT).show()
-                        }
-                        showSaveTemplateDialogConfig.value = null
-                    }
-                ) {
-                    Text("Speichern")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showSaveTemplateDialogConfig.value = null }) {
-                    Text("Abbrechen")
                 }
             }
         )
@@ -1318,29 +1288,21 @@ fun StructureEditorScreen(
     }
 
     if (showBulkDeleteConfirm) {
-        AlertDialog(
-            onDismissRequest = { showBulkDeleteConfirm = false },
-            title = { Text(stringResource(R.string.bulk_action_delete)) },
-            text = { Text(stringResource(R.string.bulk_action_confirm_delete)) },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        val listSelection = selection.mapValues { it.value.toList() }
-                        gridEditorViewModel.bulkDeleteButtonsBatch(listSelection)
-                        showSuccessSnackbarWithUndo(R.string.button_delete_success)
-                        clearSelection()
-                        showBulkDeleteConfirm = false
-                    }
-                ) {
-                    Text(stringResource(R.string.bulk_action_delete))
-                }
+        GhostTalkDialog(
+            title = stringResource(R.string.bulk_action_delete),
+            confirmText = stringResource(R.string.bulk_action_delete),
+            dismissText = stringResource(R.string.action_cancel),
+            isDestructive = true,
+            onConfirm = {
+                val listSelection = selection.mapValues { it.value.toList() }
+                gridEditorViewModel.bulkDeleteButtonsBatch(listSelection)
+                showSuccessSnackbarWithUndo(R.string.button_delete_success)
+                clearSelection()
+                showBulkDeleteConfirm = false
             },
-            dismissButton = {
-                TextButton(
-                    onClick = { showBulkDeleteConfirm = false }
-                ) {
-                    Text(stringResource(R.string.action_cancel))
-                }
+            onDismiss = { showBulkDeleteConfirm = false },
+            content = {
+                Text(stringResource(R.string.bulk_action_confirm_delete))
             }
         )
     }

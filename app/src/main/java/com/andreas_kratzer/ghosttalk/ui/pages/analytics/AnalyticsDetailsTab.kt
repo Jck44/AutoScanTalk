@@ -22,7 +22,7 @@ import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Warning
 import com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons
-import androidx.compose.material3.AlertDialog
+import com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkDialog
 import androidx.compose.material3.Badge
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -526,28 +526,18 @@ fun UserModeSessionsSection(
     }
 
     if (showClearConfirm.value) {
-        AlertDialog(
-            onDismissRequest = { showClearConfirm.value = false },
-            title = { Text(stringResource(R.string.analytics_usage_sessions_clear)) },
-            text = { Text(stringResource(R.string.analytics_usage_sessions_clear_confirm)) },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        onClearSessions()
-                        showClearConfirm.value = false
-                    }
-                ) {
-                    Text(
-                        text = stringResource(android.R.string.ok),
-                        color = MaterialTheme.colorScheme.error,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
+        GhostTalkDialog(
+            title = stringResource(R.string.analytics_usage_sessions_clear),
+            confirmText = stringResource(android.R.string.ok),
+            dismissText = stringResource(android.R.string.cancel),
+            isDestructive = true,
+            onConfirm = {
+                onClearSessions()
+                showClearConfirm.value = false
             },
-            dismissButton = {
-                TextButton(onClick = { showClearConfirm.value = false }) {
-                    Text(stringResource(android.R.string.cancel))
-                }
+            onDismiss = { showClearConfirm.value = false },
+            content = {
+                Text(stringResource(R.string.analytics_usage_sessions_clear_confirm))
             }
         )
     }

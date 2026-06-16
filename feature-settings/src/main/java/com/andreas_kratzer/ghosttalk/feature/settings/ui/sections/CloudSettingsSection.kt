@@ -42,6 +42,7 @@ import com.andreas_kratzer.ghosttalk.feature.settings.R
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.SettingsViewModel
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.dialogs.DriveFolderPickerDialog
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.dialogs.SyncLogDialog
+import com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkDialog
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -668,10 +669,29 @@ private fun ManualUrlDialog(
     val isVerifying = remember { mutableStateOf(false) }
     val verificationError = remember { mutableStateOf<String?>(null) }
 
-    androidx.compose.material3.AlertDialog(
-        onDismissRequest = { if (!isVerifying.value) showManualUrlDialog.value = false },
-        title = { Text(stringResource(R.string.settings_sync_manual_dialog_title)) },
-        text = {
+    GhostTalkDialog(
+        title = stringResource(R.string.settings_sync_manual_dialog_title),
+        confirmText = stringResource(R.string.settings_sync_manual_dialog_confirm),
+        dismissText = stringResource(com.andreas_kratzer.ghosttalk.core.ui.R.string.action_cancel),
+        onConfirm = {
+            isVerifying.value = true
+            verificationError.value = null
+            viewModel.selectDriveFolderByUrlOrId(urlOrIdInput.value) { success, folderName ->
+                isVerifying.value = false
+                if (success) {
+                    showManualUrlDialog.value = false
+                } else {
+                    verificationError.value = folderName ?: "Unbekannter Fehler beim Verifizieren"
+                }
+            }
+        },
+        onDismiss = { showManualUrlDialog.value = false },
+        confirmEnabled = urlOrIdInput.value.isNotBlank() && !isVerifying.value && !isVerifying.value,
+        properties = androidx.compose.ui.window.DialogProperties(
+            dismissOnBackPress = !isVerifying.value,
+            dismissOnClickOutside = !isVerifying.value
+        ),
+        content = {
             Column {
                 Text(
                     text = stringResource(R.string.settings_sync_manual_dialog_desc),
@@ -698,33 +718,6 @@ private fun ManualUrlDialog(
                     Spacer(modifier = Modifier.height(8.dp))
                     LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
                 }
-            }
-        },
-        confirmButton = {
-            TextButton(
-                onClick = {
-                    isVerifying.value = true
-                    verificationError.value = null
-                    viewModel.selectDriveFolderByUrlOrId(urlOrIdInput.value) { success, folderName ->
-                        isVerifying.value = false
-                        if (success) {
-                            showManualUrlDialog.value = false
-                        } else {
-                            verificationError.value = folderName ?: "Unbekannter Fehler beim Verifizieren"
-                        }
-                    }
-                },
-                enabled = urlOrIdInput.value.isNotBlank() && !isVerifying.value
-            ) {
-                Text(stringResource(R.string.settings_sync_manual_dialog_confirm))
-            }
-        },
-        dismissButton = {
-            TextButton(
-                onClick = { showManualUrlDialog.value = false },
-                enabled = !isVerifying.value
-            ) {
-                Text(stringResource(com.andreas_kratzer.ghosttalk.core.ui.R.string.action_cancel))
             }
         }
     )

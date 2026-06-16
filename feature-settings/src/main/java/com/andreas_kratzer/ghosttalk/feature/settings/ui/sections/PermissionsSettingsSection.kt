@@ -154,42 +154,25 @@ fun PermissionsSettingsSection(viewModel: SettingsViewModel) {
     }
 
     if (showOverlayExplanationDialog.value) {
-        androidx.compose.material3.AlertDialog(
-            onDismissRequest = { showOverlayExplanationDialog.value = false },
-            title = {
-                Text(
-                    text = stringResource(R.string.settings_permission_overlay_dialog_title),
-                    style = MaterialTheme.typography.titleMedium
+        com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkDialog(
+            title = stringResource(R.string.settings_permission_overlay_dialog_title),
+            onDismiss = { showOverlayExplanationDialog.value = false },
+            confirmText = stringResource(R.string.settings_permission_overlay_dialog_confirm),
+            onConfirm = {
+                showOverlayExplanationDialog.value = false
+                val intent = Intent(
+                    Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                    "package:$packageName".toUri()
                 )
+                context.startActivity(intent)
             },
-            text = {
-                Text(
-                    text = stringResource(R.string.settings_permission_overlay_dialog_desc),
-                    style = MaterialTheme.typography.bodyMedium
-                )
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        showOverlayExplanationDialog.value = false
-                        val intent = Intent(
-                            Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                            "package:$packageName".toUri()
-                        )
-                        context.startActivity(intent)
-                    }
-                ) {
-                    Text(text = stringResource(R.string.settings_permission_overlay_dialog_confirm))
-                }
-            },
-            dismissButton = {
-                TextButton(
-                    onClick = { showOverlayExplanationDialog.value = false }
-                ) {
-                    Text(text = stringResource(R.string.settings_permission_overlay_dialog_dismiss))
-                }
-            }
-        )
+            dismissText = stringResource(R.string.settings_permission_overlay_dialog_dismiss)
+        ) {
+            Text(
+                text = stringResource(R.string.settings_permission_overlay_dialog_desc),
+                style = MaterialTheme.typography.bodyMedium
+            )
+        }
     }
 }
 

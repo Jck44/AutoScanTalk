@@ -16,7 +16,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
@@ -37,6 +36,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
 import com.andreas_kratzer.ghosttalk.core.tts.CachedAudioItem
+import com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkDialog
 
 @Composable
 fun AudioCacheDialog(
@@ -52,10 +52,20 @@ fun AudioCacheDialog(
 
     var showClearConfirmation by remember { mutableStateOf(false) }
 
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(text = "Gecachte Audios", style = MaterialTheme.typography.titleLarge) },
-        text = {
+    GhostTalkDialog(
+        title = "Gecachte Audios",
+        confirmText = "Schließen",
+        onConfirm = onDismiss,
+        onDismiss = onDismiss,
+        neutralButton = {
+            if (cacheItems.isNotEmpty()) {
+                TextButton(onClick = { showClearConfirmation = true }) {
+                    Text("Alle löschen", color = MaterialTheme.colorScheme.error)
+                }
+            }
+        },
+        properties = DialogProperties(usePlatformDefaultWidth = false),
+        content = {
             if (cacheItems.isEmpty()) {
                 Box(modifier = Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
                     Text("Keine gecachten Audios vorhanden.", color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -101,41 +111,22 @@ fun AudioCacheDialog(
                     }
                 }
             }
-        },
-        confirmButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Schließen")
-            }
-        },
-        dismissButton = {
-            if (cacheItems.isNotEmpty()) {
-                TextButton(onClick = { showClearConfirmation = true }) {
-                    Text("Alle löschen", color = MaterialTheme.colorScheme.error)
-                }
-            }
-        },
-        properties = DialogProperties(usePlatformDefaultWidth = false)
+        }
     )
 
     if (showClearConfirmation) {
-        AlertDialog(
-            onDismissRequest = { showClearConfirmation = false },
-            title = { Text("Gesamten Cache löschen?") },
-            text = { Text("Es werden alle ${cacheItems.size} Audio-Dateien vom Gerät gelöscht. Dies verursacht bei erneuter Verwendung erneute API-Kosten.") },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        onClearAll()
-                        showClearConfirmation = false
-                    }
-                ) {
-                    Text("Ja, löschen", color = MaterialTheme.colorScheme.error)
-                }
+        GhostTalkDialog(
+            title = "Gesamten Cache löschen?",
+            confirmText = "Ja, löschen",
+            dismissText = "Abbrechen",
+            isDestructive = true,
+            onConfirm = {
+                onClearAll()
+                showClearConfirmation = false
             },
-            dismissButton = {
-                TextButton(onClick = { showClearConfirmation = false }) {
-                    Text("Abbrechen")
-                }
+            onDismiss = { showClearConfirmation = false },
+            content = {
+                Text("Es werden alle ${cacheItems.size} Audio-Dateien vom Gerät gelöscht. Dies verursacht bei erneuter Verwendung erneute API-Kosten.")
             }
         )
     }

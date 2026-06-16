@@ -16,7 +16,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -45,6 +44,8 @@ import com.andreas_kratzer.ghosttalk.core.model.Page
 import com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons
 import kotlin.math.roundToInt
 
+import com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkDialog
+
 @Composable
 fun PageLayoutAssistantDialog(
     page: Page,
@@ -61,9 +62,8 @@ fun PageLayoutAssistantDialog(
 
     var homeInterval by remember { mutableFloatStateOf(5f) }
 
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = {
+    GhostTalkDialog(
+        titleContent = {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -81,7 +81,11 @@ fun PageLayoutAssistantDialog(
                 )
             }
         },
-        text = {
+        confirmText = "",
+        onConfirm = {},
+        dismissText = "Schließen",
+        onDismiss = onDismiss,
+        content = {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -490,12 +494,6 @@ fun PageLayoutAssistantDialog(
                         }
                     }
                 }
-            }
-        },
-        confirmButton = {},
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Schließen")
             }
         }
     )
