@@ -174,11 +174,7 @@ class PageViewModelStateTest {
             pageResolutionDelegate = pageResolutionDelegate,
             updateSmartPredictionsUseCase = updateSmartPredictionsUseCase,
             actionExecutor = actionExecutor,
-            scanCoordinator = scanCoordinator,
-            geminiUseCase = mockk(relaxed = true),
-            philipsHueManager = mockk(relaxed = true),
-            createPageUseCase = mockk(relaxed = true),
-            buttonUsageRepository = buttonUsageRepository
+            scanCoordinator = scanCoordinator
         )
         
         // Advance to allow launch in init to execute

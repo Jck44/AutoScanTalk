@@ -72,14 +72,14 @@ fun StructureGraphView(
     graph: BookNavigationGraph,
     pageNames: Map<String, String>,
     onFocus: (String) -> Unit,
+    pages: List<Page>,
+    onEditButton: (String, Int) -> Unit,
+    onAddButton: (String) -> Unit,
+    modifier: Modifier = Modifier,
     onRemoveConnection: ((pageId: String, buttonIndex: Int, targetPageName: String) -> Unit)? = null,
     isFullView: Boolean = false,
     isMultiSelectMode: Boolean = false,
-    selection: Map<String, Set<Int>> = emptyMap(),
-    modifier: Modifier = Modifier,
-    pages: List<Page>,
-    onEditButton: (String, Int) -> Unit,
-    onAddButton: (String) -> Unit
+    selection: Map<String, Set<Int>> = emptyMap()
 ) {
     var expandedPageIds: Set<String> by rememberSaveable(stateSaver = expandedPageIdsSaver) {
         mutableStateOf(emptySet<String>())

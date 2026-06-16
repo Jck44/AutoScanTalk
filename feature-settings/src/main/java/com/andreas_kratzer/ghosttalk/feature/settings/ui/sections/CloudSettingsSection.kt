@@ -47,7 +47,6 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-@Suppress("UNUSED_VALUE", "AssignedValueDoubleCheck")
 @Composable
 fun CloudSettingsSection(
     viewModel: SettingsViewModel,

@@ -20,6 +20,7 @@ import com.andreas_kratzer.ghosttalk.ui.pages.structure.StructureViewMode
  * Unified Workbench Screen hosting both the Grid Page Editor ("Raster")
  * and the Graph/Tree Structure Editor ("Struktur") in a cohesive layout.
  */
+@Suppress("AssignedValueIsNeverRead")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PageWorkbenchScreen(

@@ -61,7 +61,6 @@ import com.andreas_kratzer.ghosttalk.core.domain.pages.BookNavigationGraph
 import com.andreas_kratzer.ghosttalk.core.model.NavigateToPageButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.NavigateToStartPageButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.Page
-import com.andreas_kratzer.ghosttalk.core.model.PageTemplate
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
 import com.andreas_kratzer.ghosttalk.ui.components.DraggableChip
 import com.andreas_kratzer.ghosttalk.ui.components.LocalDragDropState

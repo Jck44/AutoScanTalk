@@ -400,11 +400,7 @@ class PageViewModelTest {
             pageResolutionDelegate = pageResolutionDelegate,
             updateSmartPredictionsUseCase = updateSmartPredictionsUseCase,
             actionExecutor = actionExecutor,
-            scanCoordinator = scanCoordinator,
-            geminiUseCase = geminiUseCase,
-            philipsHueManager = philipsHueManager,
-            createPageUseCase = createPageUseCase,
-            buttonUsageRepository = buttonUsageRepository
+            scanCoordinator = scanCoordinator
         )
     }
 

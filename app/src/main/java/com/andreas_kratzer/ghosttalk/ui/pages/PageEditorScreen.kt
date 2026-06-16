@@ -65,7 +65,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import com.andreas_kratzer.ghosttalk.core.ui.R as CoreR
 
-@Suppress("UNUSED_VALUE", "AssignedValueDoubleCheck")
+@Suppress("AssignedValueIsNeverRead")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PageEditorScreen(

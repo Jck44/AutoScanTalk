@@ -7,12 +7,9 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import com.andreas_kratzer.ghosttalk.core.actions.ActionExecutor
-import com.andreas_kratzer.ghosttalk.core.ai.domain.GeminiUseCase
 import com.andreas_kratzer.ghosttalk.core.ai.domain.UpdateSmartPredictionsUseCase
 import com.andreas_kratzer.ghosttalk.core.call.CallState
-import com.andreas_kratzer.ghosttalk.core.cloud.PhilipsHueManager
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
-import com.andreas_kratzer.ghosttalk.core.domain.pages.CreatePageUseCase
 import com.andreas_kratzer.ghosttalk.core.domain.pages.UsageLocation
 import com.andreas_kratzer.ghosttalk.core.model.Book
 import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
@@ -63,11 +60,7 @@ class PageViewModel @Inject constructor(
     private val pageResolutionDelegate: com.andreas_kratzer.ghosttalk.ui.pages.delegates.PageResolutionDelegate,
     updateSmartPredictionsUseCase: UpdateSmartPredictionsUseCase,
     private val actionExecutor: ActionExecutor,
-    private val scanCoordinator: ScanCoordinator,
-    geminiUseCase: GeminiUseCase,
-    philipsHueManager: PhilipsHueManager,
-    createPageUseCase: CreatePageUseCase,
-    private val buttonUsageRepository: com.andreas_kratzer.ghosttalk.core.data.ButtonUsageRepository
+    private val scanCoordinator: ScanCoordinator
 ) : AndroidViewModel(application) {
 
 

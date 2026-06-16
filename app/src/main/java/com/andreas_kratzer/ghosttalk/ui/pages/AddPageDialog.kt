@@ -27,7 +27,7 @@ import com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkDialog
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
 import com.andreas_kratzer.ghosttalk.core.ui.R as CoreR
 
-@Suppress("UNUSED_VALUE", "AssignedValueDoubleCheck")
+@Suppress("AssignedValueIsNeverRead")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddPageDialog(

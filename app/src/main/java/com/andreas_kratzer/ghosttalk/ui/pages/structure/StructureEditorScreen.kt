@@ -88,7 +88,7 @@ enum class StructureViewMode {
     CARDS, GRAPH
 }
 
-@Suppress("UNUSED_VALUE", "AssignedValueDoubleCheck")
+@Suppress("AssignedValueIsNeverRead")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun StructureEditorScreen(
