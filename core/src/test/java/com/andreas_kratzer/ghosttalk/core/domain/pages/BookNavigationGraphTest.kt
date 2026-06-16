@@ -323,4 +323,167 @@ class BookNavigationGraphTest {
         assertTrue(graph.outgoing.isEmpty())
         assertTrue(graph.incoming.isEmpty())
     }
+
+    @Test
+    fun `deadEnds identifies pages without outgoing navigation edges`() {
+        val pages = listOf(
+            Page(
+                id = "page1",
+                bookId = "book1",
+                name = "Page 1",
+                buttonConfigs = listOf(
+                    ButtonConfig(label = "Go to 2", isActive = true, buttonAction = NavigateToPageButtonAction("page2"))
+                )
+            ),
+            Page(
+                id = "page2", // dead end: has Speak action but no navigate action
+                bookId = "book1",
+                name = "Page 2",
+                buttonConfigs = listOf(
+                    ButtonConfig(label = "Speak", isActive = true, buttonAction = SpeakTextButtonAction())
+                )
+            ),
+            Page(
+                id = "page3", // dead end: has no buttons
+                bookId = "book1",
+                name = "Page 3",
+                buttonConfigs = emptyList()
+            ),
+            Page(
+                id = "page4", // dead end: has a navigate action but to nonexistent page (which is filtered out)
+                bookId = "book1",
+                name = "Page 4",
+                buttonConfigs = listOf(
+                    ButtonConfig(label = "Go to fake", isActive = true, buttonAction = NavigateToPageButtonAction("nonexistent"))
+                )
+            )
+        )
+
+        val graph = BookNavigationGraph.from(pages, "page1")
+        val deadEnds = graph.deadEnds()
+        assertEquals(3, deadEnds.size)
+        assertTrue(deadEnds.contains("page2"))
+        assertTrue(deadEnds.contains("page3"))
+        assertTrue(deadEnds.contains("page4"))
+        // page1 is not a dead end
+        assertTrue(!deadEnds.contains("page1"))
+    }
+
+    @Test
+    fun `mixed dead-ends and orphans cycles`() {
+        // page1 -> page2 -> page1 (cycle)
+        // page3 (orphan and dead-end)
+        val pages = listOf(
+            Page(
+                id = "page1",
+                bookId = "book1",
+                name = "Page 1",
+                buttonConfigs = listOf(
+                    ButtonConfig(label = "Go to 2", isActive = true, buttonAction = NavigateToPageButtonAction("page2"))
+                )
+            ),
+            Page(
+                id = "page2",
+                bookId = "book1",
+                name = "Page 2",
+                buttonConfigs = listOf(
+                    ButtonConfig(label = "Go to 1", isActive = true, buttonAction = NavigateToPageButtonAction("page1"))
+                )
+            ),
+            Page(
+                id = "page3",
+                bookId = "book1",
+                name = "Page 3",
+                buttonConfigs = emptyList()
+            )
+        )
+
+        val graph = BookNavigationGraph.from(pages, "page1")
+        assertEquals(listOf("page3"), graph.deadEnds())
+        assertEquals(listOf("page3"), graph.orphans())
+    }
+
+    @Test
+    fun `connectedComponents with fully connected, fully disconnected and multiple clusters`() {
+        // Cluster 1: page1 <-> page2
+        // Cluster 2: page3 -> page4
+        // Cluster 3: page5 (isolated)
+        val pages = listOf(
+            Page(
+                id = "page1",
+                bookId = "book1",
+                name = "Page 1",
+                buttonConfigs = listOf(
+                    ButtonConfig(label = "Go to 2", isActive = true, buttonAction = NavigateToPageButtonAction("page2"))
+                )
+            ),
+            Page(
+                id = "page2",
+                bookId = "book1",
+                name = "Page 2",
+                buttonConfigs = listOf(
+                    ButtonConfig(label = "Go to 1", isActive = true, buttonAction = NavigateToPageButtonAction("page1"))
+                )
+            ),
+            Page(
+                id = "page3",
+                bookId = "book1",
+                name = "Page 3",
+                buttonConfigs = listOf(
+                    ButtonConfig(label = "Go to 4", isActive = true, buttonAction = NavigateToPageButtonAction("page4"))
+                )
+            ),
+            Page(
+                id = "page4",
+                bookId = "book1",
+                name = "Page 4",
+                buttonConfigs = emptyList()
+            ),
+            Page(
+                id = "page5",
+                bookId = "book1",
+                name = "Page 5",
+                buttonConfigs = emptyList()
+            )
+        )
+
+        val graph = BookNavigationGraph.from(pages, "page1")
+        val components = graph.connectedComponents()
+
+        assertEquals(3, components.size)
+        // Find which component is which
+        val c1 = components.first { it.contains("page1") }
+        val c2 = components.first { it.contains("page3") }
+        val c3 = components.first { it.contains("page5") }
+
+        assertEquals(setOf("page1", "page2"), c1)
+        assertEquals(setOf("page3", "page4"), c2)
+        assertEquals(setOf("page5"), c3)
+    }
+
+    @Test
+    fun `connectedComponents treats directed edges as undirected`() {
+        // pageA -> pageB (directed). Under weakly connected, they should be in the same component.
+        val pages = listOf(
+            Page(
+                id = "pageA",
+                bookId = "book1",
+                name = "Page A",
+                buttonConfigs = listOf(
+                    ButtonConfig(label = "Go to B", isActive = true, buttonAction = NavigateToPageButtonAction("pageB"))
+                )
+            ),
+            Page(
+                id = "pageB",
+                bookId = "book1",
+                name = "Page B",
+                buttonConfigs = emptyList()
+            )
+        )
+
+        val graph = BookNavigationGraph.from(pages, "pageA")
+        val components = graph.connectedComponents()
+        assertEquals(1, components.size)
+        assertEquals(setOf("pageA", "pageB"), components[0])
+    }
 }

@@ -48,6 +48,55 @@ class BookNavigationGraph private constructor(
         return allPageIds.filter { it !in reachable }
     }
 
+    /** „Sackgassen" = Seiten ohne ausgehende Navigationskanten. */
+    fun deadEnds(): List<String> {
+        return allPageIds.filter { pageId ->
+            outgoing[pageId].isNullOrEmpty()
+        }
+    }
+
+    /** Schwach zusammenhängende Komponenten des Seiten-Graphen. */
+    fun connectedComponents(): List<Set<String>> {
+        val adj = mutableMapOf<String, MutableSet<String>>()
+        for (pageId in allPageIds) {
+            adj[pageId] = mutableSetOf()
+        }
+        for ((source, edges) in outgoing) {
+            for (edge in edges) {
+                val target = edge.targetPageId
+                adj[source]?.add(target)
+                adj[target]?.add(source)
+            }
+        }
+
+        val visited = mutableSetOf<String>()
+        val components = mutableListOf<Set<String>>()
+
+        for (pageId in allPageIds) {
+            if (pageId !in visited) {
+                val component = mutableSetOf<String>()
+                val queue = ArrayDeque<String>()
+                queue.addLast(pageId)
+                visited.add(pageId)
+
+                while (queue.isNotEmpty()) {
+                    val current = queue.removeFirst()
+                    component.add(current)
+
+                    val neighbors = adj[current] ?: emptySet()
+                    for (neighbor in neighbors) {
+                        if (neighbor !in visited) {
+                            visited.add(neighbor)
+                            queue.addLast(neighbor)
+                        }
+                    }
+                }
+                components.add(component)
+            }
+        }
+        return components
+    }
+
     fun buildTree(): TreeNode? {
         val rootId = resolveRootId() ?: return null
 
