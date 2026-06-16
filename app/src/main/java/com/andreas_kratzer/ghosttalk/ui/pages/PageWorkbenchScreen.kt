@@ -112,6 +112,7 @@ fun PageWorkbenchScreen(
             gridEditorViewModel = gridEditorViewModel,
             initialFocusedPageId = focusedPageId,
             initialTriggerSplit = triggerSplit,
+            onFocusedPageChanged = { focusedPageId = it },
             viewMode = structureView,
             onNavigateBack = onNavigateBack,
             modeSwitcher = modeSwitcher,

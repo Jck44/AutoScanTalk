@@ -50,6 +50,7 @@ fun StructureEditorScreen(
     initialTriggerSplit: Boolean = false,
     pageSplitViewModel: PageSplitViewModel = hiltViewModel(),
     onNavigateBack: () -> Unit,
+    onFocusedPageChanged: (String) -> Unit = {},
     viewMode: StructureViewMode = StructureViewMode.CARDS,
     modeSwitcher: (@Composable () -> Unit)? = null,
     onExitEditor: (() -> Unit)? = null
@@ -105,6 +106,12 @@ fun StructureEditorScreen(
     LaunchedEffect(initialFocusedId, pages) {
         if (state.focusedPageId.isBlank() || pages.none { it.id == state.focusedPageId }) {
             state.focusedPageId = initialFocusedId
+        }
+    }
+
+    LaunchedEffect(state.focusedPageId) {
+        if (state.focusedPageId.isNotBlank()) {
+            onFocusedPageChanged(state.focusedPageId)
         }
     }
 
