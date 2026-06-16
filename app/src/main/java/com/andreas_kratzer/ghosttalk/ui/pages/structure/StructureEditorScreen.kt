@@ -76,6 +76,7 @@ import com.andreas_kratzer.ghosttalk.ui.pages.GridEditorViewModel
 import com.andreas_kratzer.ghosttalk.ui.pages.IncomingReferencesDialog
 import com.andreas_kratzer.ghosttalk.ui.pages.PageSplitViewModel
 import com.andreas_kratzer.ghosttalk.ui.pages.PageViewModel
+import com.andreas_kratzer.ghosttalk.ui.pages.TargetPageSelectionDialog
 import com.andreas_kratzer.ghosttalk.ui.pages.history.EditIcon
 import com.andreas_kratzer.ghosttalk.ui.pages.pagesplit.PageSplitManualPromptDialog
 import com.andreas_kratzer.ghosttalk.ui.pages.pagesplit.PageSplitOptInDialog
@@ -788,6 +789,8 @@ fun StructureEditorScreen(
                         onRegisterSplitWizardDropCallback = { callback -> onSplitWizardDropCallback = callback },
                         isMultiSelectMode = isMultiSelectMode,
                         selection = selection,
+                        templates = templates,
+                        onCreatePage = onCreatePage,
                         modifier = Modifier
                             .weight(1f)
                             .fillMaxHeight()
@@ -1286,13 +1289,13 @@ fun StructureEditorScreen(
     }
 
     if (showBulkMoveDialog) {
-        SearchablePagePicker(
-            title = stringResource(R.string.bulk_action_move),
-            subtitle = null,
-            excludePageId = "",
-            pages = pages,
-            onDismissRequest = { showBulkMoveDialog = false },
-            onPageSelected = { targetPageId ->
+        TargetPageSelectionDialog(
+            availablePages = pages,
+            templates = templates,
+            onCreatePage = onCreatePage,
+            onDismiss = { showBulkMoveDialog = false },
+            onPageSelected = { targetPage ->
+                val targetPageId = targetPage.id
                 val listSelection = selection.mapValues { it.value.toList() }
                 gridEditorViewModel.bulkMoveButtonsToPageBatch(
                     selection = listSelection,
@@ -1317,13 +1320,13 @@ fun StructureEditorScreen(
     }
 
     if (showBulkCopyDialog) {
-        SearchablePagePicker(
-            title = stringResource(R.string.bulk_action_copy),
-            subtitle = null,
-            excludePageId = "",
-            pages = pages,
-            onDismissRequest = { showBulkCopyDialog = false },
-            onPageSelected = { targetPageId ->
+        TargetPageSelectionDialog(
+            availablePages = pages,
+            templates = templates,
+            onCreatePage = onCreatePage,
+            onDismiss = { showBulkCopyDialog = false },
+            onPageSelected = { targetPage ->
+                val targetPageId = targetPage.id
                 val listSelection = selection.mapValues { it.value.toList() }
                 gridEditorViewModel.bulkDuplicateButtonsToPageBatch(
                     selection = listSelection,

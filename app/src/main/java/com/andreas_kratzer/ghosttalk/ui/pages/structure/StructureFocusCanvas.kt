@@ -61,7 +61,9 @@ import com.andreas_kratzer.ghosttalk.core.domain.pages.BookNavigationGraph
 import com.andreas_kratzer.ghosttalk.core.model.NavigateToPageButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.NavigateToStartPageButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.Page
+import com.andreas_kratzer.ghosttalk.core.model.PageTemplate
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
+import com.andreas_kratzer.ghosttalk.ui.pages.TargetPageSelectionDialog
 import com.andreas_kratzer.ghosttalk.ui.components.DraggableChip
 import com.andreas_kratzer.ghosttalk.ui.components.LocalDragDropState
 import com.andreas_kratzer.ghosttalk.ui.components.SplitWizardButtonDrag
@@ -95,7 +97,9 @@ fun StructureFocusCanvas(
     onAddButton: (String) -> Unit = {},
     onRegisterSplitWizardDropCallback: (((SplitWizardButtonDrag, Any) -> Unit) -> Unit)? = null,
     isMultiSelectMode: Boolean = false,
-    selection: Map<String, Set<Int>> = emptyMap()
+    selection: Map<String, Set<Int>> = emptyMap(),
+    templates: List<PageTemplate> = emptyList(),
+    onCreatePage: ((String, Int, Int, String?, (String) -> Unit) -> Unit)? = null
 ) {
     val page = remember(pages, focusedPageId) { pages.find { it.id == focusedPageId } }
     val incomingSources = remember(graph, focusedPageId) { graph.incoming[focusedPageId] ?: emptyList() }
@@ -775,14 +779,13 @@ fun StructureFocusCanvas(
     }
 
     if (showConnectDialogState.value) {
-        SearchablePagePicker(
-            title = stringResource(R.string.structure_add_connection_title),
-            subtitle = null,
-            excludePageId = focusedPageId,
-            pages = pages,
-            onDismissRequest = { showConnectDialogState.value = false },
-            onPageSelected = { targetPageId ->
-                onAddConnection(targetPageId)
+        TargetPageSelectionDialog(
+            availablePages = pages.filter { it.id != focusedPageId },
+            templates = templates,
+            onCreatePage = onCreatePage,
+            onDismiss = { showConnectDialogState.value = false },
+            onPageSelected = { targetPage ->
+                onAddConnection(targetPage.id)
                 showConnectDialogState.value = false
             }
         )

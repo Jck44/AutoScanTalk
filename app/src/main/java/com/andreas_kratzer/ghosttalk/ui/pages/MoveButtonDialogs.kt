@@ -22,6 +22,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.window.DialogProperties
 import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.core.model.Page
 import com.andreas_kratzer.ghosttalk.core.model.PageTemplate
@@ -46,7 +47,10 @@ fun TargetPageSelectionDialog(
         title = stringResource(R.string.button_move_target_title),
         onDismiss = onDismiss,
         confirmText = stringResource(CoreR.string.action_cancel),
-        onConfirm = onDismiss
+        onConfirm = onDismiss,
+        // usePlatformDefaultWidth = false fixes the ExposedDropdownMenu in NavigationActionFields
+        // overlapping its anchor inside a dialog (same as the button-edit dialog).
+        properties = DialogProperties(usePlatformDefaultWidth = false)
     ) {
         Column(
             verticalArrangement = Arrangement.spacedBy(dimensions.paddingMedium)
