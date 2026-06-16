@@ -13,7 +13,9 @@ interface EditCommand {
 
 data class EditLabel(
     @StringRes val resId: Int,
-    val args: List<Any> = emptyList()
+    val args: List<Any> = emptyList(),
+    val isPlural: Boolean = false,
+    val quantity: Int = 1
 )
 
 enum class EditIcon {

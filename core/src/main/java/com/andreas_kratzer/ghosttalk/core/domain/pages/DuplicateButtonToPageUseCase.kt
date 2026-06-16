@@ -24,81 +24,31 @@ class DuplicateButtonToPageUseCase @Inject constructor(
         }
         if (buttonsToCopy.isEmpty()) return MoveButtonToPageUseCase.MoveResult.Error
 
-        var tempToPage = toPage
-        val placements = mutableListOf<Pair<Int, com.andreas_kratzer.ghosttalk.core.model.ButtonConfig>>()
-        var maxRequiredRows = toPage.rows
-        var maxRequiredCols = toPage.columns
-        var needsConfirmation = false
-        var targetIndexForConfirmation = -1
-
-        for (button in buttonsToCopy) {
-            val placement = GridUtils.determineTargetSlot(tempToPage, forceMove)
-            val duplicatedButton = button.copy(
-                id = UUID.randomUUID().toString(),
-                updatedAt = System.currentTimeMillis()
+        val now = System.currentTimeMillis()
+        val buttonsToDuplicate = buttonsToCopy.map {
+            it to it.copy(
+                id = java.util.UUID.randomUUID().toString(),
+                updatedAt = now
             )
-            when (placement) {
-                is GridUtils.SlotPlacementResult.TargetFull -> 
-                    return MoveButtonToPageUseCase.MoveResult.TargetFull
-                is GridUtils.SlotPlacementResult.NeedsConfirmation -> {
-                    needsConfirmation = true
-                    targetIndexForConfirmation = placement.targetIndex
-                    maxRequiredRows = maxOf(maxRequiredRows, placement.requiredRows)
-                    maxRequiredCols = maxOf(maxRequiredCols, placement.requiredCols)
-                    
-                    val updatedConfigs = tempToPage.buttonConfigs.toMutableList()
-                    while (updatedConfigs.size < GridUtils.TOTAL_SLOTS) {
-                        updatedConfigs.add(null)
-                    }
-                    updatedConfigs[placement.targetIndex] = duplicatedButton
-                    tempToPage = tempToPage.copy(
-                        buttonConfigs = updatedConfigs,
-                        rows = placement.requiredRows,
-                        columns = placement.requiredCols
-                    )
-                }
-                is GridUtils.SlotPlacementResult.Success -> {
-                    placements.add(placement.targetIndex to duplicatedButton)
-                    
-                    val updatedConfigs = tempToPage.buttonConfigs.toMutableList()
-                    while (updatedConfigs.size < GridUtils.TOTAL_SLOTS) {
-                        updatedConfigs.add(null)
-                    }
-                    updatedConfigs[placement.targetIndex] = duplicatedButton
-                    tempToPage = tempToPage.copy(
-                        buttonConfigs = updatedConfigs,
-                        rows = placement.requiredRows,
-                        columns = placement.requiredCols
-                    )
-                    maxRequiredRows = maxOf(maxRequiredRows, placement.requiredRows)
-                    maxRequiredCols = maxOf(maxRequiredCols, placement.requiredCols)
-                }
+        }
+
+        val buttonsList = buttonsToDuplicate.map { it.second }
+        val bulkResult = GridUtils.determineBulkTargetSlots(toPage, buttonsList, forceMove)
+
+        val finalToPage = when (bulkResult) {
+            is GridUtils.BulkPlacementResult.TargetFull -> return MoveButtonToPageUseCase.MoveResult.TargetFull
+            is GridUtils.BulkPlacementResult.NeedsConfirmation -> {
+                return MoveButtonToPageUseCase.MoveResult.NeedsConfirmation(
+                    targetPage = toPage,
+                    freeSlotIndex = bulkResult.freeSlotIndex,
+                    requiredRows = bulkResult.requiredRows,
+                    requiredCols = bulkResult.requiredCols
+                )
+            }
+            is GridUtils.BulkPlacementResult.Success -> {
+                bulkResult.updatedPage
             }
         }
-
-        if (needsConfirmation && !forceMove) {
-            return MoveButtonToPageUseCase.MoveResult.NeedsConfirmation(
-                targetPage = toPage,
-                freeSlotIndex = targetIndexForConfirmation,
-                requiredRows = maxRequiredRows,
-                requiredCols = maxRequiredCols
-            )
-        }
-
-        // Apply copies
-        val updatedToConfigs = toPage.buttonConfigs.toMutableList()
-        while (updatedToConfigs.size < GridUtils.TOTAL_SLOTS) {
-            updatedToConfigs.add(null)
-        }
-        for ((targetIndex, button) in placements) {
-            updatedToConfigs[targetIndex] = button
-        }
-
-        val finalToPage = toPage.copy(
-            buttonConfigs = updatedToConfigs,
-            rows = if (forceMove) maxRequiredRows else toPage.rows,
-            columns = if (forceMove) maxRequiredCols else toPage.columns
-        )
 
         // Persist (Only update the target page)
         pageRepository.updatePage(finalToPage)

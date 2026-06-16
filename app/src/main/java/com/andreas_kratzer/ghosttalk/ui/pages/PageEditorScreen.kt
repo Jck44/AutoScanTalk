@@ -158,52 +158,15 @@ fun PageEditorScreen(
     Scaffold(
         topBar = {
             if (isMultiSelectMode) {
-                androidx.compose.material3.TopAppBar(
-                    title = {
-                        Text(
-                            text = stringResource(R.string.bulk_action_selected_count, selectedButtonIndices.size),
-                            style = MaterialTheme.typography.titleMedium
-                        )
+                com.andreas_kratzer.ghosttalk.ui.components.BulkActionTopBar(
+                    selectedCount = selectedButtonIndices.size,
+                    onCancel = {
+                        isMultiSelectMode = false
+                        selectedButtonIndices = emptySet()
                     },
-                    navigationIcon = {
-                        androidx.compose.material3.IconButton(onClick = {
-                            isMultiSelectMode = false
-                            selectedButtonIndices = emptySet()
-                        }) {
-                            androidx.compose.material3.Icon(
-                                imageVector = androidx.compose.material.icons.Icons.Default.Close,
-                                contentDescription = stringResource(R.string.bulk_action_cancel)
-                            )
-                        }
-                    },
-                    actions = {
-                        if (selectedButtonIndices.isNotEmpty()) {
-                            androidx.compose.material3.IconButton(onClick = { showMoveDialogState.value = true }) {
-                                androidx.compose.material3.Icon(
-                                    imageVector = com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons.ArrowForward,
-                                    contentDescription = stringResource(R.string.bulk_action_move)
-                                )
-                            }
-                            androidx.compose.material3.IconButton(onClick = { showDuplicateDialogState.value = true }) {
-                                androidx.compose.material3.Icon(
-                                    imageVector = com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons.Copy,
-                                    contentDescription = stringResource(R.string.bulk_action_copy)
-                                )
-                            }
-                            androidx.compose.material3.IconButton(onClick = { showConfirmDeleteDialogState.value = true }) {
-                                androidx.compose.material3.Icon(
-                                    imageVector = androidx.compose.material.icons.Icons.Default.Delete,
-                                    contentDescription = stringResource(R.string.bulk_action_delete)
-                                )
-                            }
-                        }
-                    },
-                    colors = androidx.compose.material3.TopAppBarDefaults.topAppBarColors(
-                        containerColor = MaterialTheme.colorScheme.primaryContainer,
-                        titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                        actionIconContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                        navigationIconContentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                    )
+                    onMove = { showMoveDialogState.value = true },
+                    onCopy = { showDuplicateDialogState.value = true },
+                    onDelete = { showConfirmDeleteDialogState.value = true }
                 )
             } else {
                 EditorTopBar(
@@ -252,7 +215,7 @@ fun PageEditorScreen(
                         ) {
                             Icon(
                                 imageVector = com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons.CheckCircle,
-                                contentDescription = "Mehrfachauswahl umschalten",
+                                contentDescription = stringResource(R.string.bulk_action_toggle_multi_select),
                                 tint = if (isMultiSelectMode) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
@@ -671,5 +634,9 @@ fun resolveEditLabel(label: EditLabel): String {
             arg
         }
     }.toTypedArray()
-    return context.getString(label.resId, *formatArgs)
+    return if (label.isPlural) {
+        context.resources.getQuantityString(label.resId, label.quantity, *formatArgs)
+    } else {
+        context.getString(label.resId, *formatArgs)
+    }
 }

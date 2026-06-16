@@ -139,6 +139,20 @@ class TemplateViewModel @Inject constructor(
         updateButtonConfig(current, index, newConfig)
     }
 
+    override fun bulkDeleteButtons(itemId: String, indices: List<Int>) {
+        val current = templates.value.find { it.id == itemId } ?: return
+        saveUndoState(itemId)
+        
+        val newConfigs = current.buttonConfigs.toMutableList()
+        indices.forEach { idx ->
+            if (idx in newConfigs.indices) {
+                newConfigs[idx] = null
+            }
+        }
+        
+        updateTemplate(current.copy(buttonConfigs = newConfigs.toList()))
+    }
+
     override fun insertButtonConfig(itemId: String, index: Int, newConfig: ButtonConfig, forceShift: Boolean, onResult: (Boolean) -> Unit) {
         val current = templates.value.find { it.id == itemId } ?: return
         val newButtonConfigs = current.buttonConfigs.toMutableList()

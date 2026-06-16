@@ -57,6 +57,7 @@ interface GridEditorActions {
     val availableGeminiTools: List<com.andreas_kratzer.ghosttalk.core.ai.domain.AiTool>
     val isGeminiEnabled: Boolean get() = false
     fun suggestButtonLabel(config: ButtonConfig, onResult: (String) -> Unit) {}
+    fun bulkDeleteButtons(itemId: String, indices: List<Int>)
     
     fun isTextCached(text: String): Boolean = false
     fun prefetchText(text: String, onComplete: () -> Unit = {}) {}

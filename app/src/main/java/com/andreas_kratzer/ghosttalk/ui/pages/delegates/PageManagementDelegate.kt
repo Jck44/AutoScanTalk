@@ -225,6 +225,32 @@ class PageManagementDelegate @Inject constructor(
         }
     }
 
+    fun bulkDeleteButtons(pageId: String, indices: List<Int>) {
+        scope.launch {
+            mutex.withLock {
+                val page = pageRepository.getPageById(pageId) ?: return@withLock
+                val oldConfigs = page.buttonConfigs.toList()
+                val newConfigs = oldConfigs.toMutableList()
+                
+                indices.forEach { idx ->
+                    if (idx in newConfigs.indices) {
+                        newConfigs[idx] = null
+                    }
+                }
+                
+                val command = PageSnapshotCommand(
+                    delegate = this@PageManagementDelegate,
+                    pageId = pageId,
+                    oldConfigs = oldConfigs,
+                    newConfigs = newConfigs,
+                    label = EditLabel(R.string.bulk_action_delete),
+                    icon = EditIcon.DELETE
+                )
+                history.execute(command)
+            }
+        }
+    }
+
     fun insertButtonConfig(pageId: String, index: Int, newConfig: ButtonConfig, forceShift: Boolean = false, onResult: (Boolean) -> Unit = {}) {
         scope.launch {
             mutex.withLock {
@@ -425,10 +451,15 @@ class PageManagementDelegate @Inject constructor(
         scope.launch {
             mutex.withLock {
                 val fromPage = pageRepository.getPageById(fromPageId) ?: return@withLock
-                val buttonLabel = if (fromIndices.size == 1) {
+                val buttonLabelArg = if (fromIndices.size == 1) {
                     fromPage.buttonConfigs.getOrNull(fromIndices.first())?.label ?: ""
                 } else {
-                    "${fromIndices.size} Knöpfe"
+                    EditLabel(
+                        resId = R.plurals.bulk_action_move_buttons,
+                        args = listOf(fromIndices.size),
+                        isPlural = true,
+                        quantity = fromIndices.size
+                    )
                 }
                 val toPage = pageRepository.getPageById(toPageId)
                 val toPageName = toPage?.name ?: ""
@@ -439,7 +470,7 @@ class PageManagementDelegate @Inject constructor(
                     fromIndices = fromIndices,
                     toPageId = toPageId,
                     forceMove = forceMove,
-                    label = EditLabel(R.string.history_move_button_to_page, listOf(buttonLabel, toPageName)),
+                    label = EditLabel(R.string.history_move_button_to_page, listOf(buttonLabelArg, toPageName)),
                     onResult = onResult
                 )
                 history.execute(command)
@@ -457,10 +488,15 @@ class PageManagementDelegate @Inject constructor(
         scope.launch {
             mutex.withLock {
                 val fromPage = pageRepository.getPageById(fromPageId) ?: return@withLock
-                val buttonLabel = if (fromIndices.size == 1) {
+                val buttonLabelArg = if (fromIndices.size == 1) {
                     fromPage.buttonConfigs.getOrNull(fromIndices.first())?.label ?: ""
                 } else {
-                    "${fromIndices.size} Knöpfe"
+                    EditLabel(
+                        resId = R.plurals.bulk_action_move_buttons,
+                        args = listOf(fromIndices.size),
+                        isPlural = true,
+                        quantity = fromIndices.size
+                    )
                 }
                 val toPage = pageRepository.getPageById(toPageId)
                 val toPageName = toPage?.name ?: ""
@@ -471,7 +507,7 @@ class PageManagementDelegate @Inject constructor(
                     fromIndices = fromIndices,
                     toPageId = toPageId,
                     forceMove = forceMove,
-                    label = EditLabel(R.string.history_duplicate_button_to_page, listOf(buttonLabel, toPageName)),
+                    label = EditLabel(R.string.history_duplicate_button_to_page, listOf(buttonLabelArg, toPageName)),
                     onResult = onResult
                 )
                 history.execute(command)

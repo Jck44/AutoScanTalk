@@ -719,5 +719,14 @@
     <string name="bulk_action_cancel">Cancel</string>
     <string name="bulk_action_selected_count">%1$d selected</string>
     <string name="bulk_action_confirm_delete">Delete selected buttons?</string>
+
+    <plurals name="bulk_action_move_buttons">
+        <item quantity="one">1 button</item>
+        <item quantity="other">%d buttons</item>
+    </plurals>
+
+    <string name="bulk_action_toggle_multi_select">Toggle multi-select</string>
+    <string name="bulk_action_selected">Selected</string>
+    <string name="bulk_action_unselected">Unselected</string>
 </resources>
 

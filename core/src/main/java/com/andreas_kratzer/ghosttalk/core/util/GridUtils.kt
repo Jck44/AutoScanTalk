@@ -56,6 +56,79 @@ object GridUtils {
             )
         }
     }
+
+    sealed interface BulkPlacementResult {
+        object TargetFull : BulkPlacementResult
+        data class NeedsConfirmation(
+            val targetPage: Page,
+            val freeSlotIndex: Int,
+            val requiredRows: Int,
+            val requiredCols: Int
+        ) : BulkPlacementResult
+        data class Success(
+            val maxRequiredRows: Int,
+            val maxRequiredCols: Int,
+            val updatedPage: Page
+        ) : BulkPlacementResult
+    }
+
+    fun determineBulkTargetSlots(
+        toPage: Page,
+        buttons: List<ButtonConfig>,
+        forceMove: Boolean
+    ): BulkPlacementResult {
+        var tempToPage = toPage
+        var maxRequiredRows = toPage.rows
+        var maxRequiredCols = toPage.columns
+        var needsConfirmation = false
+        var targetIndexForConfirmation = -1
+
+        for (button in buttons) {
+            val placement = determineTargetSlot(tempToPage, forceMove)
+            when (placement) {
+                is SlotPlacementResult.TargetFull -> return BulkPlacementResult.TargetFull
+                is SlotPlacementResult.NeedsConfirmation -> {
+                    if (!needsConfirmation) {
+                        needsConfirmation = true
+                        targetIndexForConfirmation = placement.targetIndex
+                    }
+                    maxRequiredRows = maxOf(maxRequiredRows, placement.requiredRows)
+                    maxRequiredCols = maxOf(maxRequiredCols, placement.requiredCols)
+                    val updatedConfigs = tempToPage.buttonConfigs.toMutableList()
+                    while (updatedConfigs.size < TOTAL_SLOTS) updatedConfigs.add(null)
+                    updatedConfigs[placement.targetIndex] = button
+                    tempToPage = tempToPage.copy(
+                        buttonConfigs = updatedConfigs,
+                        rows = maxRequiredRows,
+                        columns = maxRequiredCols
+                    )
+                }
+                is SlotPlacementResult.Success -> {
+                    maxRequiredRows = maxOf(maxRequiredRows, placement.requiredRows)
+                    maxRequiredCols = maxOf(maxRequiredCols, placement.requiredCols)
+                    val updatedConfigs = tempToPage.buttonConfigs.toMutableList()
+                    while (updatedConfigs.size < TOTAL_SLOTS) updatedConfigs.add(null)
+                    updatedConfigs[placement.targetIndex] = button
+                    tempToPage = tempToPage.copy(
+                        buttonConfigs = updatedConfigs,
+                        rows = maxRequiredRows,
+                        columns = maxRequiredCols
+                    )
+                }
+            }
+        }
+
+        if (needsConfirmation && !forceMove) {
+            return BulkPlacementResult.NeedsConfirmation(
+                targetPage = toPage,
+                freeSlotIndex = targetIndexForConfirmation,
+                requiredRows = maxRequiredRows,
+                requiredCols = maxRequiredCols
+            )
+        }
+
+        return BulkPlacementResult.Success(maxRequiredRows, maxRequiredCols, tempToPage)
+    }
     const val MAX_GRID_SIZE = 7
     const val TOTAL_SLOTS = MAX_GRID_SIZE * MAX_GRID_SIZE
 

@@ -38,34 +38,41 @@ class MoveButtonWithInsertUseCase @Inject constructor() {
             }
         }
         
-        if (fromIndex in visibleIndices && toIndex <= visibleIndices.size) {
+        val fromPos = visibleIndices.indexOf(fromIndex)
+        
+        // Helper to determine visible insertion position from the global target index
+        val toPos = visibleIndices.indexOf(toIndex).takeIf { it != -1 }
+            ?: visibleIndices.indexOf(toIndex - 1).takeIf { it != -1 }?.plus(1)
+            ?: -1
+            
+        if (fromPos != -1 && toPos != -1 && toPos <= visibleIndices.size) {
             val movedItem = newButtonConfigs[fromIndex] ?: return Result.Error
             
             // Clear the source
             newButtonConfigs[fromIndex] = null
             
             val now = System.currentTimeMillis()
-            if (fromIndex < toIndex) {
-                // Shift items between fromIndex + 1 and toIndex - 1 to the left
-                for (i in fromIndex until toIndex - 1) {
+            if (fromPos < toPos) {
+                // Shift items between fromPos + 1 and toPos - 1 to the left
+                for (i in fromPos until toPos - 1) {
                     if (i < visibleIndices.size - 1) {
                         val currentGlobal = visibleIndices[i]
                         val nextGlobal = visibleIndices[i + 1]
                         newButtonConfigs[currentGlobal] = newButtonConfigs[nextGlobal]?.copy(updatedAt = now)
                     }
                 }
-                // Insert the moved item at toIndex - 1
-                val targetGlobal = visibleIndices[toIndex - 1]
+                // Insert the moved item at toPos - 1
+                val targetGlobal = visibleIndices[toPos - 1]
                 newButtonConfigs[targetGlobal] = movedItem.copy(updatedAt = now)
-            } else if (fromIndex > toIndex) {
-                // Shift items between toIndex and fromIndex - 1 to the right
-                for (i in fromIndex downTo toIndex + 1) {
+            } else if (fromPos > toPos) {
+                // Shift items between toPos and fromPos - 1 to the right
+                for (i in fromPos downTo toPos + 1) {
                     val currentGlobal = visibleIndices[i]
                     val prevGlobal = visibleIndices[i - 1]
                     newButtonConfigs[currentGlobal] = newButtonConfigs[prevGlobal]?.copy(updatedAt = now)
                 }
-                // Insert the moved item at toIndex
-                val targetGlobal = visibleIndices[toIndex]
+                // Insert the moved item at toPos
+                val targetGlobal = visibleIndices[toPos]
                 newButtonConfigs[targetGlobal] = movedItem.copy(updatedAt = now)
             }
             

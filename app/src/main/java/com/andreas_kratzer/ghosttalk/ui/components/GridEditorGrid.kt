@@ -230,7 +230,7 @@ private fun EditorButtonCell(
             ) {
                 Icon(
                     imageVector = if (isSelected) com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons.CheckCircle else com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons.RadioButtonUnchecked,
-                    contentDescription = if (isSelected) "Selected" else "Unselected",
+                    contentDescription = if (isSelected) stringResource(R.string.bulk_action_selected) else stringResource(R.string.bulk_action_unselected),
                     tint = if (isSelected) MaterialTheme.colorScheme.primary else Color.Gray.copy(alpha = 0.6f),
                     modifier = Modifier.fillMaxSize()
                 )

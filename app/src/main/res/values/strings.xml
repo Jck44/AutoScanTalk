@@ -723,5 +723,14 @@
     <string name="bulk_action_cancel">Abbrechen</string>
     <string name="bulk_action_selected_count">%1$d ausgewählt</string>
     <string name="bulk_action_confirm_delete">Ausgewählte Knöpfe wirklich löschen?</string>
+
+    <plurals name="bulk_action_move_buttons">
+        <item quantity="one">1 Knopf</item>
+        <item quantity="other">%d Knöpfe</item>
+    </plurals>
+
+    <string name="bulk_action_toggle_multi_select">Mehrfachauswahl umschalten</string>
+    <string name="bulk_action_selected">Ausgewählt</string>
+    <string name="bulk_action_unselected">Nicht ausgewählt</string>
 </resources>
 

@@ -75,6 +75,10 @@ class GridEditorViewModel @Inject constructor(
         pageManagementDelegate.updateButtonConfig(itemId, index, newConfig)
     }
 
+    override fun bulkDeleteButtons(itemId: String, indices: List<Int>) {
+        pageManagementDelegate.bulkDeleteButtons(itemId, indices)
+    }
+
     override fun insertButtonConfig(itemId: String, index: Int, newConfig: ButtonConfig, forceShift: Boolean, onResult: (Boolean) -> Unit) {
         pageManagementDelegate.insertButtonConfig(itemId, index, newConfig, forceShift, onResult)
     }

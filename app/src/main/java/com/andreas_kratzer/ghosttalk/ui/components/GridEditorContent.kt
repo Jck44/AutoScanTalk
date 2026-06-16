@@ -354,13 +354,6 @@ fun GridEditorContent(
                     GridEditorHeader(
                         item = item,
                         isEditPreviewActive = isEditPreviewActive,
-                        isMultiSelectMode = isMultiSelectMode,
-                        onMultiSelectModeChange = { active ->
-                            isMultiSelectMode = active
-                            if (!active) {
-                                selectedButtonIndices = emptySet()
-                            }
-                        },
                         onSummaryClick = { showLayoutSettingsSheet = true }
                     )
 
@@ -453,12 +446,10 @@ fun GridEditorContent(
                         androidx.compose.material3.TextButton(
                             onClick = {
                                 showConfirmDeleteDialog = false
-                                val currentItem = item as? Page
-                                if (currentItem != null) {
+                                val itemId = (item as? Page)?.id ?: (item as? com.andreas_kratzer.ghosttalk.core.model.PageTemplate)?.id
+                                if (itemId != null) {
                                     scope.launch {
-                                        selectedButtonIndices.forEach { index ->
-                                            actions.updateButtonConfig(currentItem.id, index, null)
-                                        }
+                                        actions.bulkDeleteButtons(itemId, selectedButtonIndices.toList())
                                         selectedButtonIndices = emptySet()
                                         isMultiSelectMode = false
                                     }
