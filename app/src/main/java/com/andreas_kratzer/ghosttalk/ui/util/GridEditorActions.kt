@@ -58,6 +58,19 @@ interface GridEditorActions {
     val isGeminiEnabled: Boolean get() = false
     fun suggestButtonLabel(config: ButtonConfig, onResult: (String) -> Unit) {}
     fun bulkDeleteButtons(itemId: String, indices: List<Int>)
+    fun bulkDeleteButtonsBatch(selection: Map<String, List<Int>>) {}
+    fun bulkMoveButtonsToPageBatch(
+        selection: Map<String, List<Int>>,
+        toPageId: String,
+        forceMove: Boolean = false,
+        onResult: (com.andreas_kratzer.ghosttalk.core.domain.pages.MoveButtonToPageUseCase.MoveResult) -> Unit
+    ) {}
+    fun bulkDuplicateButtonsToPageBatch(
+        selection: Map<String, List<Int>>,
+        toPageId: String,
+        forceMove: Boolean = false,
+        onResult: (com.andreas_kratzer.ghosttalk.core.domain.pages.MoveButtonToPageUseCase.MoveResult) -> Unit
+    ) {}
     
     fun isTextCached(text: String): Boolean = false
     fun prefetchText(text: String, onComplete: () -> Unit = {}) {}

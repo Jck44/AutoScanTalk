@@ -732,6 +732,14 @@
         <item quantity="one">1 Knopf</item>
         <item quantity="other">%d Knöpfe</item>
     </plurals>
+    <plurals name="bulk_action_delete_buttons">
+        <item quantity="one">1 Knopf gelöscht</item>
+        <item quantity="other">%d Knöpfe gelöscht</item>
+    </plurals>
+    <plurals name="bulk_action_duplicate_buttons">
+        <item quantity="one">1 Knopf dupliziert</item>
+        <item quantity="other">%d Knöpfe dupliziert</item>
+    </plurals>
 
     <string name="bulk_action_toggle_multi_select">Mehrfachauswahl umschalten</string>
     <string name="bulk_action_selected">Ausgewählt</string>

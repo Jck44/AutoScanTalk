@@ -79,6 +79,28 @@ class GridEditorViewModel @Inject constructor(
         pageManagementDelegate.bulkDeleteButtons(itemId, indices)
     }
 
+    override fun bulkDeleteButtonsBatch(selection: Map<String, List<Int>>) {
+        pageManagementDelegate.bulkDeleteButtonsBatch(selection)
+    }
+
+    override fun bulkMoveButtonsToPageBatch(
+        selection: Map<String, List<Int>>,
+        toPageId: String,
+        forceMove: Boolean,
+        onResult: (com.andreas_kratzer.ghosttalk.core.domain.pages.MoveButtonToPageUseCase.MoveResult) -> Unit
+    ) {
+        pageManagementDelegate.bulkMoveButtonsToPageBatch(selection, toPageId, forceMove, onResult)
+    }
+
+    override fun bulkDuplicateButtonsToPageBatch(
+        selection: Map<String, List<Int>>,
+        toPageId: String,
+        forceMove: Boolean,
+        onResult: (com.andreas_kratzer.ghosttalk.core.domain.pages.MoveButtonToPageUseCase.MoveResult) -> Unit
+    ) {
+        pageManagementDelegate.bulkDuplicateButtonsToPageBatch(selection, toPageId, forceMove, onResult)
+    }
+
     override fun insertButtonConfig(itemId: String, index: Int, newConfig: ButtonConfig, forceShift: Boolean, onResult: (Boolean) -> Unit) {
         pageManagementDelegate.insertButtonConfig(itemId, index, newConfig, forceShift, onResult)
     }

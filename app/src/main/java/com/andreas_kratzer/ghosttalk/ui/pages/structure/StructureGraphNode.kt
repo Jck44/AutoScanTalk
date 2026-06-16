@@ -63,7 +63,7 @@ fun StructureGraphNode(
     val isNodeHovered = dragDropState.currentHoveredTarget == StructureNodeTarget(pageId)
 
     Surface(
-        onClick = onFocus,
+        onClick = { if (!isMultiSelectMode) onFocus() },
         shape = MaterialTheme.shapes.medium,
         color = if (isCenter) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface,
         border = BorderStroke(
@@ -97,15 +97,17 @@ fun StructureGraphNode(
                         horizontalArrangement = Arrangement.spacedBy(4.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        IconButton(
-                            onClick = { onAddButton(pageId) },
-                            modifier = Modifier.size(20.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Add,
-                                contentDescription = stringResource(R.string.button_add),
-                                modifier = Modifier.size(16.dp)
-                            )
+                        if (!isMultiSelectMode) {
+                            IconButton(
+                                onClick = { onAddButton(pageId) },
+                                modifier = Modifier.size(20.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Add,
+                                    contentDescription = stringResource(R.string.button_add),
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
                         }
                         IconButton(
                             onClick = onToggleExpand,
@@ -140,7 +142,7 @@ fun StructureGraphNode(
                             action = btn.buttonAction,
                             selected = isMultiSelectMode && selectedIndices.contains(btnIdx),
                             isDragged = dragDropState.isDragging && dragDropState.dragItem == dragItem,
-                            modifier = Modifier.dragSource(item = dragItem),
+                            modifier = if (isMultiSelectMode) Modifier else Modifier.dragSource(item = dragItem),
                             onClick = {
                                 onEditButton(pageId, btnIdx)
                             }

@@ -341,3 +341,18 @@ class PageSplitCommand(
         preSplitPages.find { it.id == sourcePageId }?.let { delegate.setCurrentPage(it) }
     }
 }
+
+class CompositeCommand(
+    private val commands: List<EditCommand>,
+    override val label: EditLabel,
+    override val icon: EditIcon,
+) : EditCommand {
+    override val pageId: String? get() = commands.firstOrNull()?.pageId
+    override suspend fun apply() {
+        commands.forEach { it.apply() }
+    }
+    override suspend fun revert() {
+        commands.asReversed().forEach { it.revert() }
+    }
+}
+

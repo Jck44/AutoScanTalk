@@ -166,3 +166,75 @@ Alles, was navigiert oder `buttonConfigs` mutiert, wird deaktiviert. `isMultiSel
 - Im Auswahlmodus: Knoten-Tap navigiert **nicht**; '+' und Chip-Drag sind weg; Template-Panel zu.
 - Auf-/Zuklappen eines Nachbar-Knotens funktioniert weiter; dessen Chips sind auswählbar.
 - Modus verlassen → Navigation/Drag/'+'/Template wieder normal.
+
+---
+
+## Phase 2: Bulk-Aktion = EIN Undo/Redo-Eintrag (+ Atomarität „alles oder nichts")
+
+**Problem:** Die Bulk-Handler rufen pro Quellseite eine Delegate-Methode auf → jede macht ein eigenes
+`history.execute(...)` → **N Undo-Einträge**. Gewünscht: ein einziger Eintrag, der alles in einem
+Schritt rückgängig macht/wiederherstellt.
+
+### A) Ein History-Eintrag via `CompositeCommand`
+Neues Command in `ui/pages/history/PageCommands.kt`:
+```kotlin
+class CompositeCommand(
+    private val commands: List<EditCommand>,
+    override val label: EditLabel,
+    override val icon: EditIcon,
+) : EditCommand {
+    override val pageId: String? get() = commands.firstOrNull()?.pageId
+    override suspend fun apply()  { commands.forEach { it.apply() } }
+    override suspend fun revert() { commands.asReversed().forEach { it.revert() } }
+    // kein mergeWith (Default null) — Bulk-Ops sollen nicht verschmelzen
+}
+```
+`revert` läuft **rückwärts** — wichtig, weil die bestehenden Sub-Commands ihren Vorzustand lazy beim
+ersten `apply` erfassen; reverse-order stellt auch „mehrere Quellen → ein Ziel" korrekt wieder her.
+
+### B) Drei Batch-Methoden im `PageManagementDelegate`
+Bauen die Sub-Commands und führen **ein** `CompositeCommand` unter **einem** `mutex.withLock` aus
+(Sub-Commands sind die vorhandenen Klassen — wiederverwenden, nicht neu schreiben):
+- `bulkDeleteButtonsBatch(Map<pageId, List<Int>>)` → je Seite ein `PageSnapshotCommand` (alte/neue Configs wie im jetzigen `bulkDeleteButtons`, Z. 228).
+- `bulkMoveButtonsToPageBatch(Map<pageId, List<Int>>, toPageId)` → je Quellseite ein `MoveButtonToPageCommand`.
+- `bulkDuplicateButtonsToPageBatch(Map<pageId, List<Int>>, toPageId)` → je Quellseite ein `DuplicateButtonToPageCommand`.
+
+Composite-Label = Gesamtzahl (`map.values.sumOf { it.size }`). Sub-Command-`onResult` kann `{}` sein
+(Erfolg/Fehler wird durch C) vorab geklärt).
+
+### C) Atomarität „alles oder nichts" (Move/Copy) — **Antwort auf die Rückfrage**
+Das `CompositeCommand` allein ist **nicht** all-or-nothing: `MoveButtonToPageUseCase` prüft die
+Kapazität gegen den **aktuellen** Zielseiten-Stand; da die Sub-Commands die Zielseite sequenziell
+füllen, könnte eine *spätere* Quelle `TargetFull` treffen, **nachdem** frühere schon verschoben
+wurden → Teil-Ergebnis.
+
+**Lösung — Pre-Flight-Kapazitätsprüfung** in den Batch-Methoden für Move **und** Copy, **bevor** das
+Composite ausgeführt wird:
+1. Alle ausgewählten Buttons über alle Quellseiten zu **einer** Liste sammeln
+   (`fromPage.buttonConfigs[idx]`, mit `updatedAt = now`).
+2. `GridUtils.determineBulkTargetSlots(toPage, kombinierteListe, forceMove = false)` als Probe rufen
+   (`core/util/GridUtils.kt:75`).
+3. Ist das Ergebnis **nicht** `Success` (also `TargetFull` oder `NeedsConfirmation`) → **Batch
+   komplett abbrechen**: nichts ausführen, `structure_target_full`-Snackbar zeigen, Auswahl behalten.
+4. Nur bei `Success` das `CompositeCommand` ausführen → da die **Summe** passt, gelingt jede
+   Quelle sequenziell → alle oder (bei Abbruch) keine. Garantiert all-or-nothing, ein Undo-Eintrag.
+
+**Delete** ist von Natur aus all-or-nothing (Löschen einzelner Slots kann nicht „fehlschlagen").
+
+### D) Durchreichen & Handler-Umbau
+- Je eine Methode im `GridEditorActions`-Interface + `GridEditorViewModel` (Passthrough).
+- In `StructureEditorScreen` die drei `selection.forEach { … }`-Schleifen (Delete-Confirm, Move-,
+  Copy-Picker) durch **einen** Batch-Aufruf ersetzen (`Map<String, Set<Int>>` → `Map<String, List<Int>>`).
+  Bei Move/Copy die optimistische Erfolgs-Snackbar erst nach bestandener Pre-Flight zeigen
+  (bei Abbruch stattdessen `structure_target_full`).
+
+### E) Strings
+- Move: vorhandenes Plural `R.plurals.bulk_action_move_buttons` nutzbar.
+- Löschen & Kopieren: je ein Plural-History-Label ergänzen (z. B. „%d Knöpfe gelöscht" / „%d Knöpfe dupliziert").
+
+### Verifikation (Phase 2)
+- Mehrere Chips über mehrere Quellseiten löschen/verschieben/kopieren → **genau ein** Undo-Eintrag;
+  ein Undo stellt **alles** wieder her, ein Redo wendet **alles** erneut an.
+- Move/Copy in eine fast volle Zielseite, sodass nicht alle passen → **nichts** wird verschoben,
+  `structure_target_full`-Hinweis, Auswahl bleibt erhalten (kein Teil-Ergebnis).
+- Onlyfit-Fall (alles passt) → alle landen im Ziel, ein Undo-Eintrag.

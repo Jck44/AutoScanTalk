@@ -462,7 +462,9 @@ fun StructureEditorScreen(
                         IconButton(
                             onClick = {
                                 isMultiSelectMode = !isMultiSelectMode
-                                if (!isMultiSelectMode) {
+                                if (isMultiSelectMode) {
+                                    templatesPanelExpanded = false
+                                } else {
                                     selection = emptyMap()
                                 }
                             },
@@ -1323,9 +1325,8 @@ fun StructureEditorScreen(
             confirmButton = {
                 Button(
                     onClick = {
-                        selection.forEach { (pageId, indices) ->
-                            gridEditorViewModel.bulkDeleteButtons(pageId, indices.toList())
-                        }
+                        val listSelection = selection.mapValues { it.value.toList() }
+                        gridEditorViewModel.bulkDeleteButtonsBatch(listSelection)
                         showSuccessSnackbarWithUndo(R.string.button_delete_success)
                         clearSelection()
                         showBulkDeleteConfirm = false
@@ -1352,27 +1353,24 @@ fun StructureEditorScreen(
             pages = pages,
             onDismissRequest = { showBulkMoveDialog = false },
             onPageSelected = { targetPageId ->
-                selection.forEach { (srcPageId, indices) ->
-                    if (srcPageId != targetPageId) {
-                        gridEditorViewModel.moveButtonToPage(
-                            fromPageId = srcPageId,
-                            fromIndices = indices.toList(),
-                            toPageId = targetPageId,
-                            forceMove = false
-                        ) { result ->
-                            if (result is com.andreas_kratzer.ghosttalk.core.domain.pages.MoveButtonToPageUseCase.MoveResult.TargetFull) {
-                                scope.launch {
-                                    snackbarHostState.showSnackbar(
-                                        message = pageViewModel.getApplication<android.app.Application>()
-                                            .getString(R.string.structure_target_full)
-                                    )
-                                }
-                            }
+                val listSelection = selection.mapValues { it.value.toList() }
+                gridEditorViewModel.bulkMoveButtonsToPageBatch(
+                    selection = listSelection,
+                    toPageId = targetPageId,
+                    forceMove = false
+                ) { result ->
+                    if (result is com.andreas_kratzer.ghosttalk.core.domain.pages.MoveButtonToPageUseCase.MoveResult.Success) {
+                        showSuccessSnackbarWithUndo(R.string.button_move_success)
+                        clearSelection()
+                    } else if (result is com.andreas_kratzer.ghosttalk.core.domain.pages.MoveButtonToPageUseCase.MoveResult.TargetFull) {
+                        scope.launch {
+                            snackbarHostState.showSnackbar(
+                                message = pageViewModel.getApplication<android.app.Application>()
+                                    .getString(R.string.structure_target_full)
+                            )
                         }
                     }
                 }
-                showSuccessSnackbarWithUndo(R.string.button_move_success)
-                clearSelection()
                 showBulkMoveDialog = false
             }
         )
@@ -1386,25 +1384,24 @@ fun StructureEditorScreen(
             pages = pages,
             onDismissRequest = { showBulkCopyDialog = false },
             onPageSelected = { targetPageId ->
-                selection.forEach { (srcPageId, indices) ->
-                    gridEditorViewModel.duplicateButtonToPage(
-                        fromPageId = srcPageId,
-                        fromIndices = indices.toList(),
-                        toPageId = targetPageId,
-                        forceMove = false
-                    ) { result ->
-                        if (result is com.andreas_kratzer.ghosttalk.core.domain.pages.MoveButtonToPageUseCase.MoveResult.TargetFull) {
-                            scope.launch {
-                                snackbarHostState.showSnackbar(
-                                    message = pageViewModel.getApplication<android.app.Application>()
-                                        .getString(R.string.structure_target_full)
-                                )
-                            }
+                val listSelection = selection.mapValues { it.value.toList() }
+                gridEditorViewModel.bulkDuplicateButtonsToPageBatch(
+                    selection = listSelection,
+                    toPageId = targetPageId,
+                    forceMove = false
+                ) { result ->
+                    if (result is com.andreas_kratzer.ghosttalk.core.domain.pages.MoveButtonToPageUseCase.MoveResult.Success) {
+                        showSuccessSnackbarWithUndo(R.string.button_duplicate_success)
+                        clearSelection()
+                    } else if (result is com.andreas_kratzer.ghosttalk.core.domain.pages.MoveButtonToPageUseCase.MoveResult.TargetFull) {
+                        scope.launch {
+                            snackbarHostState.showSnackbar(
+                                message = pageViewModel.getApplication<android.app.Application>()
+                                    .getString(R.string.structure_target_full)
+                            )
                         }
                     }
                 }
-                showSuccessSnackbarWithUndo(R.string.button_duplicate_success)
-                clearSelection()
                 showBulkCopyDialog = false
             }
         )

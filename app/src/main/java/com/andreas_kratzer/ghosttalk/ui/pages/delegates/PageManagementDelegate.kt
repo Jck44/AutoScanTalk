@@ -43,6 +43,8 @@ import com.andreas_kratzer.ghosttalk.ui.pages.history.MoveButtonCommand
 import com.andreas_kratzer.ghosttalk.ui.pages.history.MoveButtonToPageCommand
 import com.andreas_kratzer.ghosttalk.ui.pages.history.PageSnapshotCommand
 import com.andreas_kratzer.ghosttalk.ui.pages.history.UpdateButtonConfigCommand
+import com.andreas_kratzer.ghosttalk.ui.pages.history.CompositeCommand
+import com.andreas_kratzer.ghosttalk.core.util.GridUtils
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -511,6 +513,187 @@ class PageManagementDelegate @Inject constructor(
                     onResult = onResult
                 )
                 history.execute(command)
+            }
+        }
+    }
+
+    fun bulkDeleteButtonsBatch(selection: Map<String, List<Int>>) {
+        scope.launch {
+            mutex.withLock {
+                val commands = mutableListOf<EditCommand>()
+                var totalCount = 0
+                selection.forEach { (pageId, indices) ->
+                    val page = pageRepository.getPageById(pageId) ?: return@forEach
+                    val newConfigs = page.buttonConfigs.toMutableList()
+                    indices.forEach { idx ->
+                        if (idx in newConfigs.indices) {
+                            newConfigs[idx] = null
+                        }
+                    }
+                    totalCount += indices.size
+                    commands.add(
+                        PageSnapshotCommand(
+                            delegate = this@PageManagementDelegate,
+                            pageId = pageId,
+                            oldConfigs = page.buttonConfigs,
+                            newConfigs = newConfigs,
+                            label = EditLabel(R.string.history_delete_button, listOf("")),
+                            icon = EditIcon.DELETE
+                        )
+                    )
+                }
+                if (commands.isNotEmpty()) {
+                    val label = EditLabel(
+                        resId = R.plurals.bulk_action_delete_buttons,
+                        args = listOf(totalCount),
+                        isPlural = true,
+                        quantity = totalCount
+                    )
+                    val composite = CompositeCommand(
+                        commands = commands,
+                        label = label,
+                        icon = EditIcon.DELETE
+                    )
+                    history.execute(composite)
+                }
+            }
+        }
+    }
+
+    fun bulkMoveButtonsToPageBatch(
+        selection: Map<String, List<Int>>,
+        toPageId: String,
+        forceMove: Boolean = false,
+        onResult: (MoveButtonToPageUseCase.MoveResult) -> Unit
+    ) {
+        scope.launch {
+            mutex.withLock {
+                val combinedList = mutableListOf<ButtonConfig>()
+                selection.forEach { (srcPageId, indices) ->
+                    if (srcPageId != toPageId) {
+                        val page = pageRepository.getPageById(srcPageId) ?: return@forEach
+                        indices.forEach { idx ->
+                            page.buttonConfigs.getOrNull(idx)?.let { btn ->
+                                combinedList.add(btn.copy(updatedAt = System.currentTimeMillis()))
+                            }
+                        }
+                    }
+                }
+                
+                val toPage = pageRepository.getPageById(toPageId) ?: return@withLock
+                val bulkResult = GridUtils.determineBulkTargetSlots(toPage, combinedList, forceMove)
+                if (bulkResult !is GridUtils.BulkPlacementResult.Success) {
+                    onResult(MoveButtonToPageUseCase.MoveResult.TargetFull)
+                    return@withLock
+                }
+                
+                val commands = mutableListOf<EditCommand>()
+                var totalCount = 0
+                var firstResult: MoveButtonToPageUseCase.MoveResult? = null
+                selection.forEach { (srcPageId, indices) ->
+                    if (srcPageId != toPageId) {
+                        totalCount += indices.size
+                        commands.add(
+                            MoveButtonToPageCommand(
+                                delegate = this@PageManagementDelegate,
+                                fromPageId = srcPageId,
+                                fromIndices = indices,
+                                toPageId = toPageId,
+                                forceMove = forceMove,
+                                label = EditLabel(R.string.history_move_button_to_page, listOf("", toPage.name)),
+                                onResult = { res ->
+                                    if (firstResult == null) {
+                                        firstResult = res
+                                    }
+                                }
+                            )
+                        )
+                    }
+                }
+                
+                if (commands.isNotEmpty()) {
+                    val label = EditLabel(
+                        resId = R.plurals.bulk_action_move_buttons,
+                        args = listOf(totalCount),
+                        isPlural = true,
+                        quantity = totalCount
+                    )
+                    val composite = CompositeCommand(
+                        commands = commands,
+                        label = label,
+                        icon = EditIcon.MOVE
+                    )
+                    history.execute(composite)
+                    firstResult?.let { onResult(it) } ?: onResult(MoveButtonToPageUseCase.MoveResult.Success(toPage, toPage))
+                } else {
+                    onResult(MoveButtonToPageUseCase.MoveResult.Success(toPage, toPage))
+                }
+            }
+        }
+    }
+
+    fun bulkDuplicateButtonsToPageBatch(
+        selection: Map<String, List<Int>>,
+        toPageId: String,
+        forceMove: Boolean = false,
+        onResult: (MoveButtonToPageUseCase.MoveResult) -> Unit
+    ) {
+        scope.launch {
+            mutex.withLock {
+                val combinedList = mutableListOf<ButtonConfig>()
+                selection.forEach { (srcPageId, indices) ->
+                    val page = pageRepository.getPageById(srcPageId) ?: return@forEach
+                    indices.forEach { idx ->
+                        page.buttonConfigs.getOrNull(idx)?.let { btn ->
+                            combinedList.add(btn.copy(updatedAt = System.currentTimeMillis()))
+                        }
+                    }
+                }
+                
+                val toPage = pageRepository.getPageById(toPageId) ?: return@withLock
+                val bulkResult = GridUtils.determineBulkTargetSlots(toPage, combinedList, forceMove)
+                if (bulkResult !is GridUtils.BulkPlacementResult.Success) {
+                    onResult(MoveButtonToPageUseCase.MoveResult.TargetFull)
+                    return@withLock
+                }
+                
+                val commands = mutableListOf<EditCommand>()
+                var totalCount = 0
+                var firstResult: MoveButtonToPageUseCase.MoveResult? = null
+                selection.forEach { (srcPageId, indices) ->
+                    totalCount += indices.size
+                    commands.add(
+                        DuplicateButtonToPageCommand(
+                            delegate = this@PageManagementDelegate,
+                            fromPageId = srcPageId,
+                            fromIndices = indices,
+                            toPageId = toPageId,
+                            forceMove = forceMove,
+                            label = EditLabel(R.string.history_duplicate_button_to_page, listOf("", toPage.name)),
+                            onResult = { res ->
+                                if (firstResult == null) {
+                                    firstResult = res
+                                }
+                            }
+                        )
+                    )
+                }
+                
+                if (commands.isNotEmpty()) {
+                    val label = EditLabel(
+                        resId = R.plurals.bulk_action_duplicate_buttons,
+                        args = listOf(totalCount),
+                        isPlural = true,
+                        quantity = totalCount
+                    )
+                    val composite = CompositeCommand(
+                        commands = commands,
+                        label = label,
+                        icon = EditIcon.EDIT
+                    )
+                    history.execute(composite)
+                    firstResult?.let { onResult(it) } ?: onResult(MoveButtonToPageUseCase.MoveResult.Success(toPage, toPage))
+                }
             }
         }
     }

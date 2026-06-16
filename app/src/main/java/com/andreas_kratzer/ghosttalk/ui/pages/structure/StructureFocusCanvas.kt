@@ -301,7 +301,7 @@ fun StructureFocusCanvas(
                                 val sourceName = pageNames[sourceId] ?: sourceId
                                 InputChip(
                                     selected = false,
-                                    onClick = { onFocus(sourceId) },
+                                    onClick = { if (!isMultiSelectMode) onFocus(sourceId) },
                                     label = { Text(sourceName) }
                                 )
                             }
@@ -354,9 +354,11 @@ fun StructureFocusCanvas(
                                 overflow = TextOverflow.Ellipsis
                             )
                         }
-                        // '+' action button in focused card header
-                        IconButton(onClick = { onAddButton(focusedPageId) }) {
-                            Icon(imageVector = Icons.Default.Add, contentDescription = "Button hinzufügen")
+                        if (!isMultiSelectMode) {
+                            // '+' action button in focused card header
+                            IconButton(onClick = { onAddButton(focusedPageId) }) {
+                                Icon(imageVector = Icons.Default.Add, contentDescription = "Button hinzufügen")
+                            }
                         }
                     }
 
@@ -465,7 +467,7 @@ fun StructureFocusCanvas(
                                                             action = btn.buttonAction,
                                                             selected = isMultiSelectMode && selection[focusedPageId].orEmpty().contains(index),
                                                             isDragged = dragDropState.isDragging && dragDropState.dragItem == dragItem,
-                                                            modifier = Modifier.dragSource(item = dragItem),
+                                                            modifier = if (isMultiSelectMode) Modifier else Modifier.dragSource(item = dragItem),
                                                             onClick = {
                                                                 onEditButton(focusedPageId, index)
                                                             }
@@ -614,7 +616,7 @@ fun StructureFocusCanvas(
                                         modifier = Modifier
                                             .fillMaxWidth()
                                             .dropTarget(key = StructureNodeTarget(edge.targetPageId))
-                                            .clickable { onFocus(edge.targetPageId) },
+                                            .clickable { if (!isMultiSelectMode) onFocus(edge.targetPageId) },
                                         border = if (isTargetHovered) BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else null,
                                         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
                                         colors = CardDefaults.cardColors(
@@ -671,7 +673,7 @@ fun StructureFocusCanvas(
                                                                     action = btn.buttonAction,
                                                                     selected = isMultiSelectMode && selection[edge.targetPageId].orEmpty().contains(btnIndex),
                                                                     isDragged = dragDropState.isDragging && dragDropState.dragItem == dragItem,
-                                                                    modifier = Modifier.dragSource(item = dragItem),
+                                                                    modifier = if (isMultiSelectMode) Modifier else Modifier.dragSource(item = dragItem),
                                                                     onClick = {
                                                                         onEditButton(edge.targetPageId, btnIndex)
                                                                     }
