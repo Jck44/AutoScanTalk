@@ -26,20 +26,20 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.res.stringResource
 import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.core.domain.pages.BookNavigationGraph
 import com.andreas_kratzer.ghosttalk.core.model.Page
 import com.andreas_kratzer.ghosttalk.ui.components.DraggableChip
 import com.andreas_kratzer.ghosttalk.ui.components.LocalDragDropState
-import com.andreas_kratzer.ghosttalk.ui.components.dragSource
-import com.andreas_kratzer.ghosttalk.ui.components.dropTarget
 import com.andreas_kratzer.ghosttalk.ui.components.StructureButtonDrag
 import com.andreas_kratzer.ghosttalk.ui.components.StructureNodeTarget
 import com.andreas_kratzer.ghosttalk.ui.components.StructureSlotTarget
+import com.andreas_kratzer.ghosttalk.ui.components.dragSource
+import com.andreas_kratzer.ghosttalk.ui.components.dropTarget
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable

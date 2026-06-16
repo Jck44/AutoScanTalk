@@ -21,8 +21,6 @@ import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Warning
-import com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons
-import com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkDialog
 import androidx.compose.material3.Badge
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -53,6 +51,8 @@ import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.core.data.ButtonUsageRepository.ButtonUsageEvent
 import com.andreas_kratzer.ghosttalk.core.model.Page
 import com.andreas_kratzer.ghosttalk.core.model.UserModeSession
+import com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkDialog
+import com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale

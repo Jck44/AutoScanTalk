@@ -55,6 +55,7 @@ import com.andreas_kratzer.ghosttalk.core.model.ButtonTemplate
 import com.andreas_kratzer.ghosttalk.core.model.GridItem
 import com.andreas_kratzer.ghosttalk.core.model.Page
 import com.andreas_kratzer.ghosttalk.core.model.PageTemplate
+import com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkDialog
 import com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalCurrentPageId
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
@@ -438,7 +439,7 @@ fun GridEditorContent(
             }
 
             if (showConfirmDeleteDialog) {
-                com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkDialog(
+                GhostTalkDialog(
                     title = stringResource(R.string.bulk_action_delete),
                     onDismiss = { showConfirmDeleteDialog = false },
                     confirmText = stringResource(R.string.bulk_action_delete),

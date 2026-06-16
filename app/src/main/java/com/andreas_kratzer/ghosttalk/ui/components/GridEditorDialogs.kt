@@ -5,12 +5,9 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.OutlinedTextField
-import com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkDialog
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -27,6 +24,7 @@ import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.core.model.GridItem
 import com.andreas_kratzer.ghosttalk.core.model.Page
 import com.andreas_kratzer.ghosttalk.core.model.PageTemplate
+import com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkDialog
 import com.andreas_kratzer.ghosttalk.ui.pages.ButtonConfigDialog
 import com.andreas_kratzer.ghosttalk.ui.pages.MoveHiddenPromptDialog
 import com.andreas_kratzer.ghosttalk.ui.pages.TargetPageSelectionDialog

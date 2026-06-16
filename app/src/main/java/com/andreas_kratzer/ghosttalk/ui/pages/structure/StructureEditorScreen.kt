@@ -2,6 +2,7 @@ package com.andreas_kratzer.ghosttalk.ui.pages.structure
 
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -10,14 +11,15 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.BottomSheetDefaults
-import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -28,6 +30,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
@@ -35,9 +38,9 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -63,8 +66,13 @@ import com.andreas_kratzer.ghosttalk.core.model.NavigateToPageButtonAction
 import com.andreas_kratzer.ghosttalk.core.ui.components.EditorTopBar
 import com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkDialog
 import com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons
+import com.andreas_kratzer.ghosttalk.ui.components.DragDropContainer
 import com.andreas_kratzer.ghosttalk.ui.components.EditorAssistantButton
+import com.andreas_kratzer.ghosttalk.ui.components.LocalDragDropState
+import com.andreas_kratzer.ghosttalk.ui.components.SplitWizardButtonDrag
 import com.andreas_kratzer.ghosttalk.ui.components.ValidatedTextField
+import com.andreas_kratzer.ghosttalk.ui.components.rememberDragDropState
+import com.andreas_kratzer.ghosttalk.ui.pages.ButtonConfigDialog
 import com.andreas_kratzer.ghosttalk.ui.pages.GridEditorViewModel
 import com.andreas_kratzer.ghosttalk.ui.pages.IncomingReferencesDialog
 import com.andreas_kratzer.ghosttalk.ui.pages.PageSplitViewModel
@@ -73,25 +81,9 @@ import com.andreas_kratzer.ghosttalk.ui.pages.history.EditIcon
 import com.andreas_kratzer.ghosttalk.ui.pages.pagesplit.PageSplitManualPromptDialog
 import com.andreas_kratzer.ghosttalk.ui.pages.pagesplit.PageSplitOptInDialog
 import com.andreas_kratzer.ghosttalk.ui.pages.resolveEditLabel
+import com.andreas_kratzer.ghosttalk.ui.templates.ButtonTemplatesPanel
 import kotlinx.coroutines.launch
 import com.andreas_kratzer.ghosttalk.core.ui.R as CoreR
-import androidx.compose.runtime.CompositionLocalProvider
-import com.andreas_kratzer.ghosttalk.ui.components.DragDropContainer
-import com.andreas_kratzer.ghosttalk.ui.components.rememberDragDropState
-import com.andreas_kratzer.ghosttalk.ui.components.LocalDragDropState
-import com.andreas_kratzer.ghosttalk.ui.components.StructureButtonDrag
-import com.andreas_kratzer.ghosttalk.ui.components.StructureNodeTarget
-import com.andreas_kratzer.ghosttalk.ui.components.StructureDeleteTarget
-import com.andreas_kratzer.ghosttalk.ui.components.StructureSlotTarget
-import com.andreas_kratzer.ghosttalk.ui.components.SplitWizardButtonDrag
-import com.andreas_kratzer.ghosttalk.ui.components.SplitWizardCategoryTarget
-import com.andreas_kratzer.ghosttalk.ui.components.SplitWizardUnassignedTarget
-import com.andreas_kratzer.ghosttalk.ui.templates.ButtonTemplatesPanel
-import com.andreas_kratzer.ghosttalk.ui.pages.ButtonConfigDialog
-import androidx.compose.material.icons.filled.List
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.foundation.layout.height
 
 enum class StructureViewMode {
     CARDS, GRAPH

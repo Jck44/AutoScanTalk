@@ -18,9 +18,6 @@ import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -47,6 +44,7 @@ import com.andreas_kratzer.ghosttalk.core.domain.pages.UsageLocation
 import com.andreas_kratzer.ghosttalk.core.model.PageTemplate
 import com.andreas_kratzer.ghosttalk.core.model.SortOrder
 import com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkCard
+import com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkDialog
 import com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkScaffold
 import com.andreas_kratzer.ghosttalk.core.ui.components.adaptiveCardHeight
 import com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons
@@ -234,7 +232,7 @@ fun TemplateScreen(
 
                 templateToDelete?.let { template ->
                     if (usagesToDelete.isEmpty()) {
-                        com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkDialog(
+                        GhostTalkDialog(
                             title = stringResource(R.string.template_delete_title),
                             onDismiss = { templateToDelete = null },
                             confirmText = "Löschen",
@@ -255,7 +253,7 @@ fun TemplateScreen(
                             Text(stringResource(R.string.template_delete_confirm, template.name))
                         }
                     } else {
-                        com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkDialog(
+                        GhostTalkDialog(
                             title = stringResource(R.string.template_dialog_in_use_title),
                             onDismiss = { 
                                 templateToDelete = null
@@ -303,7 +301,7 @@ fun AddTemplateDialog(
     var name by remember { mutableStateOf("") }
     val dimensions = LocalDimensions.current
 
-    com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkDialog(
+    GhostTalkDialog(
         title = stringResource(R.string.template_create_new),
         onDismiss = onDismiss,
         confirmText = stringResource(CoreR.string.action_create),

@@ -17,7 +17,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Info
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -41,6 +40,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.core.model.HierarchyPageNode
+import com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkDialog
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
@@ -298,7 +298,7 @@ fun AiRestructureSection(
                 var isSavingAndLoadingLayouts by remember { mutableStateOf(false) }
                 var savingProgressText by remember { mutableStateOf("") }
                 if (isSavingAndLoadingLayouts) {
-                    com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkDialog(
+                    GhostTalkDialog(
                         title = "Struktur anwenden...",
                         onDismiss = {},
                         confirmText = "",

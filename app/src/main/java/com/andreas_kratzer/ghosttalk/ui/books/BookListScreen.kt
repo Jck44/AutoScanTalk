@@ -48,6 +48,7 @@ import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.core.SecurityManager
 import com.andreas_kratzer.ghosttalk.core.data.SettingsRepository
 import com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkCard
+import com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkDialog
 import com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkScaffold
 import com.andreas_kratzer.ghosttalk.core.ui.components.SecurityEntryDialog
 import com.andreas_kratzer.ghosttalk.core.ui.components.adaptiveCardHeight
@@ -257,7 +258,7 @@ fun BookListScreen(
         if (showDeleteConfirm) {
             val bookToDelete = deletingBook
             if (bookToDelete != null) {
-                com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkDialog(
+                GhostTalkDialog(
                     title = stringResource(SettingsR.string.book_dialog_delete_title),
                     onDismiss = { showDeleteConfirm = false },
                     confirmText = stringResource(R.string.action_delete),
@@ -278,7 +279,7 @@ fun BookListScreen(
             val bookToEdit = editingBook
             if (bookToEdit != null) {
                 var editError by remember { mutableStateOf(false) }
-                com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkDialog(
+                GhostTalkDialog(
                     title = stringResource(R.string.book_dialog_rename_title),
                     onDismiss = { showEditDialog = false },
                     confirmText = stringResource(R.string.action_save),
@@ -334,7 +335,7 @@ fun BookListScreen(
             var newBookName by remember { mutableStateOf("") }
             var isError by remember { mutableStateOf(false) }
 
-            com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkDialog(
+            GhostTalkDialog(
                 title = stringResource(R.string.book_dialog_new_title),
                 onDismiss = { showAddDialog = false },
                 confirmText = stringResource(R.string.action_create),

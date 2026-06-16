@@ -32,6 +32,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkDialog
 import com.andreas_kratzer.ghosttalk.core.ui.components.PreferenceCategory
 import com.andreas_kratzer.ghosttalk.core.ui.components.SettingsDropdownItem
 import com.andreas_kratzer.ghosttalk.core.ui.components.SettingsEditTextItem
@@ -42,7 +43,6 @@ import com.andreas_kratzer.ghosttalk.feature.settings.R
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.SettingsViewModel
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.dialogs.DriveFolderPickerDialog
 import com.andreas_kratzer.ghosttalk.feature.settings.ui.dialogs.SyncLogDialog
-import com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkDialog
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale

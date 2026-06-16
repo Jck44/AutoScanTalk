@@ -11,9 +11,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.HorizontalDivider
-import com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkDialog
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
@@ -39,6 +37,7 @@ import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.core.model.ButtonEffortMetrics
 import com.andreas_kratzer.ghosttalk.core.model.Page
 import com.andreas_kratzer.ghosttalk.core.model.PageTemplate
+import com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkDialog
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
 import com.andreas_kratzer.ghosttalk.feature.settings.domain.FeatureGuard
 import com.andreas_kratzer.ghosttalk.ui.pages.analytics.buttonstats.ButtonStatisticsTabContent
@@ -177,7 +176,7 @@ fun ButtonConfigDialog(
         ActionTypeId.SPEAK -> "Sprechen"
         else -> "Gerät"
     }
-    com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkDialog(
+    GhostTalkDialog(
         title = "[$actionBadgeText] Bearbeiten",
         onDismiss = onDismiss,
         confirmText = "",

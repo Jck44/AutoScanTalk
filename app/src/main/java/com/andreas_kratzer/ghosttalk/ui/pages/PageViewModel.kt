@@ -20,6 +20,7 @@ import com.andreas_kratzer.ghosttalk.core.model.Page
 import com.andreas_kratzer.ghosttalk.core.scanning.ScanCoordinator
 import com.andreas_kratzer.ghosttalk.core.tts.TextToSpeechHelper
 import com.andreas_kratzer.ghosttalk.feature.settings.domain.FeatureGuard
+import com.andreas_kratzer.ghosttalk.ui.main.BookShellTab
 import com.andreas_kratzer.ghosttalk.ui.pages.delegates.InteractionDelegate
 import com.andreas_kratzer.ghosttalk.ui.pages.delegates.PageManagementDelegate
 import com.andreas_kratzer.ghosttalk.ui.pages.delegates.ScreenManagementDelegate
@@ -30,6 +31,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
@@ -37,8 +39,6 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
-import kotlinx.coroutines.flow.asSharedFlow
-import com.andreas_kratzer.ghosttalk.ui.main.BookShellTab
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel

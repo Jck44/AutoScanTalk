@@ -40,6 +40,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
+import com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkDialog
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
 import com.andreas_kratzer.ghosttalk.core.ui.theme.StatusActiveBgDark
 import com.andreas_kratzer.ghosttalk.core.ui.theme.StatusActiveBgLight
@@ -154,7 +155,7 @@ fun PermissionsSettingsSection(viewModel: SettingsViewModel) {
     }
 
     if (showOverlayExplanationDialog.value) {
-        com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkDialog(
+        GhostTalkDialog(
             title = stringResource(R.string.settings_permission_overlay_dialog_title),
             onDismiss = { showOverlayExplanationDialog.value = false },
             confirmText = stringResource(R.string.settings_permission_overlay_dialog_confirm),

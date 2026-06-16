@@ -54,6 +54,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkDialog
 import com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkScaffold
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
 import com.andreas_kratzer.ghosttalk.feature.settings.R
@@ -475,7 +476,7 @@ fun SettingsScreen(
     val showActionHistory by viewModel.showActionHistoryDialog.collectAsState()
 
     if (showDiscardChangesDialog) {
-        com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkDialog(
+        GhostTalkDialog(
             title = stringResource(R.string.settings_dialog_discard_changes_title),
             onDismiss = { showDiscardChangesDialog = false },
             confirmText = stringResource(R.string.settings_dialog_discard_changes_confirm),

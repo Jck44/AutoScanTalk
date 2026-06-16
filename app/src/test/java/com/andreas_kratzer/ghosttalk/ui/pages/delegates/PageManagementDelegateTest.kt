@@ -14,8 +14,10 @@ import com.andreas_kratzer.ghosttalk.core.domain.pages.GetFilteredPagesUseCase
 import com.andreas_kratzer.ghosttalk.core.domain.pages.GetPageUsagesUseCase
 import com.andreas_kratzer.ghosttalk.core.domain.pages.IdentifyActivePageLinksUseCase
 import com.andreas_kratzer.ghosttalk.core.domain.pages.ImportPageUseCase
+import com.andreas_kratzer.ghosttalk.core.domain.pages.InsertButtonConfigUseCase
 import com.andreas_kratzer.ghosttalk.core.domain.pages.MoveButtonToPageUseCase
 import com.andreas_kratzer.ghosttalk.core.domain.pages.MoveButtonUseCase
+import com.andreas_kratzer.ghosttalk.core.domain.pages.MoveButtonWithInsertUseCase
 import com.andreas_kratzer.ghosttalk.core.domain.pages.MoveRowUseCase
 import com.andreas_kratzer.ghosttalk.core.domain.pages.UpdateButtonConfigUseCase
 import com.andreas_kratzer.ghosttalk.core.domain.pages.UpdateMultipleButtonsUseCase
@@ -39,9 +41,6 @@ import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
-
-import com.andreas_kratzer.ghosttalk.core.domain.pages.InsertButtonConfigUseCase
-import com.andreas_kratzer.ghosttalk.core.domain.pages.MoveButtonWithInsertUseCase
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class PageManagementDelegateTest {

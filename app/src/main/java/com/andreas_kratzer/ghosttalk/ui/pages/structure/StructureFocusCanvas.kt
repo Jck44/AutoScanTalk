@@ -26,7 +26,6 @@ import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -66,15 +65,14 @@ import com.andreas_kratzer.ghosttalk.core.model.PageTemplate
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
 import com.andreas_kratzer.ghosttalk.ui.components.DraggableChip
 import com.andreas_kratzer.ghosttalk.ui.components.LocalDragDropState
-import com.andreas_kratzer.ghosttalk.ui.components.dragSource
-import com.andreas_kratzer.ghosttalk.ui.components.dropTarget
-import com.andreas_kratzer.ghosttalk.ui.components.StructureButtonDrag
-import com.andreas_kratzer.ghosttalk.ui.components.StructureNodeTarget
-import com.andreas_kratzer.ghosttalk.ui.components.StructureDeleteTarget
-import com.andreas_kratzer.ghosttalk.ui.components.StructureSlotTarget
 import com.andreas_kratzer.ghosttalk.ui.components.SplitWizardButtonDrag
 import com.andreas_kratzer.ghosttalk.ui.components.SplitWizardCategoryTarget
 import com.andreas_kratzer.ghosttalk.ui.components.SplitWizardUnassignedTarget
+import com.andreas_kratzer.ghosttalk.ui.components.StructureButtonDrag
+import com.andreas_kratzer.ghosttalk.ui.components.StructureDeleteTarget
+import com.andreas_kratzer.ghosttalk.ui.components.StructureNodeTarget
+import com.andreas_kratzer.ghosttalk.ui.components.dragSource
+import com.andreas_kratzer.ghosttalk.ui.components.dropTarget
 
 private const val MAX_VISIBLE_TARGETS = 12
 private const val MAX_VISIBLE_SOURCES = 12

@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -33,6 +32,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import com.andreas_kratzer.ghosttalk.R
+import com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkDialog
 import com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons
 import com.andreas_kratzer.ghosttalk.core.ui.R as CoreR
 
@@ -55,7 +55,7 @@ fun RowEditDialog(
     val context = LocalContext.current
     var isSuggesting by remember { mutableStateOf(false) }
 
-    com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkDialog(
+    GhostTalkDialog(
         title = stringResource(R.string.page_editor_row_name_label),
         onDismiss = onDismiss,
         confirmText = stringResource(CoreR.string.action_save),
