@@ -704,7 +704,7 @@
     <string name="structure_quick_fix_connect_orphan_msg">How do you want to connect the unreachable page \"%1$s\"?</string>
     <string name="structure_quick_fix_connect_to_start">Link from start page</string>
     <string name="structure_quick_fix_connect_to_focused">Link from active page (%1$s)</string>
-    <string name="structure_search">Search pages…</string>
+    <string name="structure_search">Search pages and buttons…</string>
     <string name="structure_search_no_results">No results</string>
     <string name="structure_show_more">Show %1$d more</string>
     <string name="structure_show_less">Show less</string>

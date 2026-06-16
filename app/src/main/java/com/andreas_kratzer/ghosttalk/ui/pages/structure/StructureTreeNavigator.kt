@@ -47,6 +47,12 @@ import com.andreas_kratzer.ghosttalk.core.domain.pages.TreeNode
 import com.andreas_kratzer.ghosttalk.core.model.Page
 import com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import com.andreas_kratzer.ghosttalk.core.domain.pages.SearchPagesUseCase
+import com.andreas_kratzer.ghosttalk.core.domain.pages.PageSearchResult
+import com.andreas_kratzer.ghosttalk.core.domain.pages.ButtonHit
+
 
 @Composable
 private fun WarningBadges(
@@ -88,7 +94,7 @@ private fun WarningBadges(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun StructureTreeNavigator(
     graph: BookNavigationGraph,
@@ -141,16 +147,10 @@ fun StructureTreeNavigator(
             .sortedBy { pageNames[it] ?: it }
     }
 
-    val searchResults = remember(searchQuery, graph.allPageIds, pageNames) {
-        val trimmedQuery = searchQuery.trim()
-        if (trimmedQuery.isBlank()) {
-            emptyList()
-        } else {
-            graph.allPageIds.filter { pageId ->
-                val pageName = pageNames[pageId] ?: pageId
-                pageName.contains(trimmedQuery, ignoreCase = true)
-            }.sortedBy { pageNames[it] ?: it }
-        }
+    val searchPagesUseCase = remember { SearchPagesUseCase() }
+    val searchResults = remember(searchQuery, pages, pageNames) {
+        searchPagesUseCase.execute(pages, searchQuery)
+            .sortedBy { pageNames[it.pageId] ?: it.pageId }
     }
 
     val dimensions = LocalDimensions.current
@@ -203,7 +203,8 @@ fun StructureTreeNavigator(
                         }
                     }
                 } else {
-                    items(searchResults) { pageId ->
+                    items(searchResults) { result ->
+                        val pageId = result.pageId
                         val pageName = pageNames[pageId] ?: pageId
                         val isFocused = pageId == focusedPageId
                         val page = pages.find { it.id == pageId }
@@ -215,55 +216,90 @@ fun StructureTreeNavigator(
                             shape = MaterialTheme.shapes.small,
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable {
-                                        onFocus(pageId)
-                                        searchQuery = ""
-                                    }
-                                    .padding(vertical = 10.dp, horizontal = 12.dp),
-                                verticalAlignment = Alignment.CenterVertically
+                            Column(
+                                modifier = Modifier.fillMaxWidth()
                             ) {
-                                Text(
-                                    text = pageName,
-                                    style = if (isFocused) {
-                                        MaterialTheme.typography.bodyLarge.copy(
-                                            fontWeight = FontWeight.Bold,
-                                            color = MaterialTheme.colorScheme.onPrimaryContainer
-                                        )
-                                    } else {
-                                        MaterialTheme.typography.bodyMedium
-                                    },
-                                    modifier = Modifier.weight(1f)
-                                )
-                                WarningBadges(
-                                    isOrphan = pageId in orphansSet,
-                                    isDeadEnd = pageId in deadEndsSet,
-                                    modifier = Modifier.padding(end = 8.dp)
-                                )
-
                                 Row(
-                                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    modifier = Modifier.padding(end = 8.dp)
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable {
+                                            onFocus(pageId)
+                                            searchQuery = ""
+                                        }
+                                        .padding(vertical = 10.dp, horizontal = 12.dp),
+                                    verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    val isDark = androidx.compose.foundation.isSystemInDarkTheme()
-                                    if (hasSpeech) {
-                                        val speechColor = if (isDark) com.andreas_kratzer.ghosttalk.core.ui.theme.SpeakTextBadgeTextDark else com.andreas_kratzer.ghosttalk.core.ui.theme.SpeakTextBadgeTextLight
-                                        Box(
-                                            modifier = Modifier
-                                                .size(8.dp)
-                                                .background(speechColor, shape = CircleShape)
-                                        )
+                                    Text(
+                                        text = pageName,
+                                        style = if (isFocused) {
+                                            MaterialTheme.typography.bodyLarge.copy(
+                                                fontWeight = FontWeight.Bold,
+                                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                                            )
+                                        } else {
+                                            MaterialTheme.typography.bodyMedium
+                                        },
+                                        modifier = Modifier.weight(1f)
+                                    )
+                                    WarningBadges(
+                                        isOrphan = pageId in orphansSet,
+                                        isDeadEnd = pageId in deadEndsSet,
+                                        modifier = Modifier.padding(end = 8.dp)
+                                    )
+
+                                    Row(
+                                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        modifier = Modifier.padding(end = 8.dp)
+                                    ) {
+                                        val isDark = androidx.compose.foundation.isSystemInDarkTheme()
+                                        if (hasSpeech) {
+                                            val speechColor = if (isDark) com.andreas_kratzer.ghosttalk.core.ui.theme.SpeakTextBadgeTextDark else com.andreas_kratzer.ghosttalk.core.ui.theme.SpeakTextBadgeTextLight
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(8.dp)
+                                                    .background(speechColor, shape = CircleShape)
+                                            )
+                                        }
+                                        if (hasNav) {
+                                            val navColor = if (isDark) com.andreas_kratzer.ghosttalk.core.ui.theme.NavigateBadgeTextDark else com.andreas_kratzer.ghosttalk.core.ui.theme.NavigateBadgeTextLight
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(8.dp)
+                                                    .background(navColor, shape = CircleShape)
+                                            )
+                                        }
                                     }
-                                    if (hasNav) {
-                                        val navColor = if (isDark) com.andreas_kratzer.ghosttalk.core.ui.theme.NavigateBadgeTextDark else com.andreas_kratzer.ghosttalk.core.ui.theme.NavigateBadgeTextLight
-                                        Box(
-                                            modifier = Modifier
-                                                .size(8.dp)
-                                                .background(navColor, shape = CircleShape)
-                                        )
+                                }
+
+                                if (result.buttonHits.isNotEmpty()) {
+                                    FlowRow(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(start = 12.dp, end = 12.dp, bottom = 10.dp),
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        result.buttonHits.forEach { hit ->
+                                            Surface(
+                                                color = MaterialTheme.colorScheme.surfaceVariant,
+                                                shape = MaterialTheme.shapes.small,
+                                                modifier = Modifier.clickable {
+                                                    onFocus(pageId)
+                                                    if (state != null) {
+                                                        state.editTarget = pageId to hit.index
+                                                    }
+                                                    searchQuery = ""
+                                                }
+                                            ) {
+                                                Text(
+                                                    text = hit.label,
+                                                    style = MaterialTheme.typography.bodySmall,
+                                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                )
+                                            }
+                                        }
                                     }
                                 }
                             }

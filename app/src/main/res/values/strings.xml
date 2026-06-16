@@ -708,7 +708,7 @@
     <string name="structure_quick_fix_connect_orphan_msg">Wie möchtest du die nicht erreichbare Seite „%1$s“ verbinden?</string>
     <string name="structure_quick_fix_connect_to_start">Von Startseite verlinken</string>
     <string name="structure_quick_fix_connect_to_focused">Von aktiver Seite (%1$s) verlinken</string>
-    <string name="structure_search">Seiten suchen…</string>
+    <string name="structure_search">Seiten und Tasten suchen…</string>
     <string name="structure_search_no_results">Keine Ergebnisse</string>
     <string name="structure_show_more">%1$d weitere anzeigen</string>
     <string name="structure_show_less">Weniger anzeigen</string>
