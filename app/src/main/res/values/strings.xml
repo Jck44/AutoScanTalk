@@ -697,6 +697,7 @@
     <string name="history_duplicate_button_to_page">Knopf „%1$s“ auf Seite „%2$s“ dupliziert</string>
     <string name="history_page_split">Seite „%1$s“ aufgeteilt</string>
     <string name="structure_search_clear">Suche löschen</string>
+    <string name="button_add">Button hinzufügen</string>
 
     <!-- AP 4 Strings -->
     <string name="book_list_empty_title">Keine Bücher</string>

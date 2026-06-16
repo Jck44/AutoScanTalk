@@ -19,6 +19,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Search
@@ -61,7 +62,8 @@ import com.andreas_kratzer.ghosttalk.ui.util.GridEditorActions
 fun ButtonTemplatesPanel(
     actions: GridEditorActions,
     modifier: Modifier = Modifier,
-    onEditTemplate: (ButtonTemplate) -> Unit = {}
+    onEditTemplate: (ButtonTemplate) -> Unit = {},
+    onTemplateClick: ((ButtonTemplate) -> Unit)? = null
 ) {
     val templates by actions.buttonTemplates.collectAsState()
     val dimensions = LocalDimensions.current
@@ -206,6 +208,7 @@ fun ButtonTemplatesPanel(
                                     TemplateItemCard(
                                         template = item,
                                         onEditTemplate = onEditTemplate,
+                                        onTemplateClick = onTemplateClick,
                                         onDelete = {
                                              actions.deleteButtonTemplate(item)
                                         }
@@ -261,6 +264,7 @@ fun CategoryHeader(
 fun TemplateItemCard(
     template: ButtonTemplate,
     onEditTemplate: (ButtonTemplate) -> Unit = {},
+    onTemplateClick: ((ButtonTemplate) -> Unit)? = null,
     onDelete: () -> Unit
 ) {
     val dimensions = LocalDimensions.current
@@ -270,7 +274,13 @@ fun TemplateItemCard(
         modifier = Modifier
             .fillMaxWidth()
             .dragSource(item = template)
-            .clickable { onEditTemplate(template) },
+            .clickable {
+                if (onTemplateClick != null) {
+                    onTemplateClick(template)
+                } else {
+                    onEditTemplate(template)
+                }
+            },
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
         )
@@ -326,6 +336,19 @@ fun TemplateItemCard(
                         maxLines = 1
                     )
                 }
+            }
+
+            // Pencil edit icon
+            IconButton(
+                onClick = { onEditTemplate(template) },
+                modifier = Modifier.size(24.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Edit,
+                    contentDescription = stringResource(R.string.action_edit),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(16.dp)
+                )
             }
 
             // Custom templates can be deleted

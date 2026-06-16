@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -27,7 +26,6 @@ import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
@@ -50,12 +48,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
-import androidx.compose.ui.layout.boundsInRoot
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import com.andreas_kratzer.ghosttalk.R
@@ -67,9 +65,16 @@ import com.andreas_kratzer.ghosttalk.core.model.Page
 import com.andreas_kratzer.ghosttalk.core.model.PageTemplate
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
 import com.andreas_kratzer.ghosttalk.ui.components.DraggableChip
-import com.andreas_kratzer.ghosttalk.ui.components.chipDropTarget
-import com.andreas_kratzer.ghosttalk.ui.components.rememberChipDragDropState
-import kotlin.math.roundToInt
+import com.andreas_kratzer.ghosttalk.ui.components.LocalDragDropState
+import com.andreas_kratzer.ghosttalk.ui.components.dragSource
+import com.andreas_kratzer.ghosttalk.ui.components.dropTarget
+import com.andreas_kratzer.ghosttalk.ui.components.StructureButtonDrag
+import com.andreas_kratzer.ghosttalk.ui.components.StructureNodeTarget
+import com.andreas_kratzer.ghosttalk.ui.components.StructureDeleteTarget
+import com.andreas_kratzer.ghosttalk.ui.components.StructureSlotTarget
+import com.andreas_kratzer.ghosttalk.ui.components.SplitWizardButtonDrag
+import com.andreas_kratzer.ghosttalk.ui.components.SplitWizardCategoryTarget
+import com.andreas_kratzer.ghosttalk.ui.components.SplitWizardUnassignedTarget
 
 private const val MAX_VISIBLE_TARGETS = 12
 private const val MAX_VISIBLE_SOURCES = 12
@@ -94,6 +99,9 @@ fun StructureFocusCanvas(
     onRemoveConnection: (pageId: String, buttonIndex: Int, targetPageName: String) -> Unit,
     onCreatePage: (name: String, rows: Int, cols: Int, templateId: String?, onCreated: (String) -> Unit) -> Unit,
     viewMode: StructureViewMode = StructureViewMode.CARDS,
+    onEditButton: (String, Int) -> Unit = { _, _ -> },
+    onAddButton: (String) -> Unit = {},
+    onRegisterSplitWizardDropCallback: (((SplitWizardButtonDrag, Any) -> Unit) -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     val page = remember(pages, focusedPageId) { pages.find { it.id == focusedPageId } }
@@ -105,15 +113,17 @@ fun StructureFocusCanvas(
         graph.startPageId ?: pages.minByOrNull { it.orderIndex }?.id
     }
 
-    val dragDropState = rememberChipDragDropState(focusedPageId to proposal)
+    val dragDropState = LocalDragDropState.current
     val scrollState = rememberScrollState()
+    var canvasBoundsInWindow by remember { mutableStateOf<Rect?>(null) }
 
-    LaunchedEffect(dragDropState.draggedKey) {
-        if (dragDropState.draggedKey != null) {
+    LaunchedEffect(dragDropState.isDragging) {
+        if (dragDropState.isDragging && (dragDropState.dragItem is StructureButtonDrag || dragDropState.dragItem is SplitWizardButtonDrag)) {
             while (true) {
-                val rootBounds = dragDropState.rootBoxBounds
+                val rootBounds = canvasBoundsInWindow
                 if (rootBounds != null) {
-                    val globalY = dragDropState.dragGlobalPos.y
+                    val pointerPos = dragDropState.dragPosition + dragDropState.touchOffset + dragDropState.dragOffset
+                    val globalY = pointerPos.y
                     val threshold = 200f // in pixels
                     val distToBottom = rootBounds.bottom - globalY
                     val distToTop = globalY - rootBounds.top
@@ -175,6 +185,35 @@ fun StructureFocusCanvas(
         mutableStateOf(initialData.second)
     }
 
+    // Register callback for split wizard drags/drops in the parent container
+    LaunchedEffect(categoryProposals, unassignedList) {
+        onRegisterSplitWizardDropCallback?.invoke { item, target ->
+            val buttonItem = unassignedList.find { it.buttonId == item.buttonId }
+                ?: categoryProposals.flatMap { it.items }.find { it.buttonId == item.buttonId }
+            if (buttonItem != null) {
+                if (target is SplitWizardCategoryTarget) {
+                    unassignedList = unassignedList.filter { it.buttonId != item.buttonId }
+                    categoryProposals = categoryProposals.map { cat ->
+                        if (cat.name == item.fromCategory) {
+                            cat.copy(items = cat.items.filter { it.buttonId != item.buttonId })
+                        } else if (cat.name == target.categoryName) {
+                            cat.copy(items = cat.items.filter { it.buttonId != item.buttonId } + buttonItem)
+                        } else cat
+                    }
+                } else if (target is SplitWizardUnassignedTarget) {
+                    categoryProposals = categoryProposals.map { cat ->
+                        if (cat.name == item.fromCategory) {
+                            cat.copy(items = cat.items.filter { it.buttonId != item.buttonId })
+                        } else cat
+                    }
+                    if (unassignedList.none { it.buttonId == item.buttonId }) {
+                        unassignedList = unassignedList + buttonItem
+                    }
+                }
+            }
+        }
+    }
+
     var showConnectDialog by remember { mutableStateOf(false) }
 
     var showAllSources by rememberSaveable(focusedPageId) { mutableStateOf(false) }
@@ -197,7 +236,7 @@ fun StructureFocusCanvas(
     Box(
         modifier = modifier
             .onGloballyPositioned { layoutCoordinates ->
-                dragDropState.rootBoxBounds = layoutCoordinates.boundsInRoot()
+                canvasBoundsInWindow = layoutCoordinates.boundsInWindow()
             }
     ) {
         if (viewMode == StructureViewMode.GRAPH) {
@@ -213,15 +252,15 @@ fun StructureFocusCanvas(
                 isFullView = true,
                 modifier = Modifier.fillMaxSize(),
                 pages = pages,
-                dragDropState = dragDropState,
-                onMoveButton = onMoveButton
+                onMoveButton = onMoveButton,
+                onEditButton = onEditButton,
+                onAddButton = onAddButton
             )
         } else {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
                     .verticalScroll(scrollState)
-                    // Bottom buffer so the last card clears the floating "Zielseite verbinden" button.
                     .padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 88.dp),
                 verticalArrangement = Arrangement.spacedBy(20.dp)
             ) {
@@ -283,15 +322,17 @@ fun StructureFocusCanvas(
             }
 
             // Middle Section: Focused Page Details and buttons
+            val isFocusedNodeHovered = dragDropState.currentHoveredTarget == StructureNodeTarget(focusedPageId)
             Card(
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
                 shape = MaterialTheme.shapes.medium,
                 elevation = CardDefaults.cardElevation(defaultElevation = dimensions.cardElevation),
+                border = if (isFocusedNodeHovered) BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else null,
                 modifier = Modifier
                     .fillMaxWidth()
                     .then(
-                        if (proposal != null) Modifier.chipDropTarget(dragDropState, "_unassigned")
-                        else Modifier.chipDropTarget(dragDropState, focusedPageId)
+                        if (proposal != null) Modifier.dropTarget(key = SplitWizardUnassignedTarget)
+                        else Modifier.dropTarget(key = StructureNodeTarget(focusedPageId))
                     )
             ) {
                 Column(modifier = Modifier.padding(dimensions.paddingLarge)) {
@@ -308,6 +349,10 @@ fun StructureFocusCanvas(
                                 maxLines = 2,
                                 overflow = TextOverflow.Ellipsis
                             )
+                        }
+                        // '+' action button in focused card header
+                        IconButton(onClick = { onAddButton(focusedPageId) }) {
+                            Icon(imageVector = Icons.Default.Add, contentDescription = "Button hinzufügen")
                         }
                     }
 
@@ -341,144 +386,92 @@ fun StructureFocusCanvas(
                                 )
                             }
                             Text(
-                                text = if (proposal != null) "Aufteilung (Hauptseite) - Verbleibende Tasten" else stringResource(R.string.structure_buttons_on_page),
-                                style = MaterialTheme.typography.titleSmall,
+                                text = if (proposal != null) "Tasten auf dieser Seite" else stringResource(R.string.structure_buttons_on_page),
+                                style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.primary
+                                color = MaterialTheme.colorScheme.onSurface
                             )
                         }
                     }
-                    Spacer(modifier = Modifier.height(dimensions.paddingMedium))
 
-                    if (isSplitLoading) {
-                        Box(modifier = Modifier.fillMaxWidth().padding(dimensions.paddingExtraLarge), contentAlignment = Alignment.Center) {
-                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                CircularProgressIndicator()
-                                Spacer(modifier = Modifier.height(16.dp))
-                                Text("Vorschlag wird generiert...", style = MaterialTheme.typography.bodyMedium)
-                            }
-                        }
-                    } else if (proposal != null) {
-                        // Proposal Mode unassigned list
-                        FlowRow(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    if (showMainButtons) {
+                        Spacer(modifier = Modifier.height(dimensions.paddingMedium))
+                        Column(
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            if (unassignedList.isEmpty()) {
-                                Text(
-                                    text = "Alle Tasten werden verschoben. Ziehe Tasten hierher, um sie auf der Hauptseite zu behalten.",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                                    modifier = Modifier.padding(vertical = 4.dp)
-                                )
-                            } else {
-                                unassignedList.forEach { item ->
-                                    key(item.buttonId) {
-                                        DraggableChip(
-                                            label = item.label,
-                                            isDragged = dragDropState.draggedKey == item.buttonId,
-                                            onDragStart = { initialCenter, size ->
-                                                dragDropState.onDragStart(item.buttonId, item.label, null, initialCenter, size)
-                                            },
-                                            onDrag = { amount ->
-                                                dragDropState.onDrag(amount)
-                                            },
-                                            onDragEnd = {
-                                                if (dragDropState.draggedKey == item.buttonId) {
-                                                    val targetCategory = dragDropState.targetBounds.entries.find { entry ->
-                                                        val rect = entry.value
-                                                        dragDropState.dragGlobalPos.y >= rect.top && dragDropState.dragGlobalPos.y <= rect.bottom
-                                                    }?.key
-
-                                                    if (targetCategory != null && targetCategory != "_unassigned") {
-                                                        unassignedList = unassignedList.filter { it.buttonId != item.buttonId }
-                                                        categoryProposals = categoryProposals.map { cat ->
-                                                            if (cat.name == targetCategory) {
-                                                                cat.copy(items = cat.items + item)
-                                                            } else cat
-                                                        }
-                                                    }
-                                                    dragDropState.clear()
-                                                }
-                                            },
-                                            onDragCancel = {
-                                                if (dragDropState.draggedKey == item.buttonId) {
-                                                    dragDropState.clear()
-                                                }
-                                            },
-                                            action = item.action
+                            if (proposal != null) {
+                                Column(
+                                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    if (unassignedList.isEmpty()) {
+                                        Text(
+                                            text = "Alle Tasten werden verschoben. Ziehe Tasten hierher, um sie auf der Hauptseite zu behalten.",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                                            modifier = Modifier.padding(vertical = 4.dp)
                                         )
-                                    }
-                                }
-                            }
-                        }
-                    } else {
-                        // Normal mode button configs list
-                        if (!hasValidButtons) {
-                            Text(
-                                text = stringResource(R.string.structure_no_active_buttons),
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        } else {
-                            FlowRow(
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                verticalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                if (showMainButtons) {
-                                    page.buttonConfigs.forEachIndexed { index, btn ->
-                                        val action = btn?.buttonAction
-                                        val isSelfLoop = if (btn == null) false else {
-                                            when (action) {
-                                                is NavigateToPageButtonAction -> {
-                                                    val target = action.pageId.ifEmpty { effectiveStartPageId }
-                                                    target == focusedPageId
-                                                }
-                                                is NavigateToStartPageButtonAction -> {
-                                                    effectiveStartPageId == focusedPageId
-                                                }
-                                                else -> false
+                                    } else {
+                                        unassignedList.forEach { item ->
+                                            key(item.buttonId) {
+                                                val dragItem = SplitWizardButtonDrag(item.buttonId, item.label, item.action, null)
+                                                DraggableChip(
+                                                    label = item.label,
+                                                    action = item.action,
+                                                    isDragged = dragDropState.isDragging && dragDropState.dragItem == dragItem,
+                                                    modifier = Modifier.dragSource(item = dragItem)
+                                                )
                                             }
                                         }
-                                        if (btn != null && btn.isActive && btn.label.isNotBlank() && index !in outgoingButtonIndices && !isSelfLoop) {
-                                            key(btn.id) {
-                                            DraggableChip(
-                                                label = btn.label,
-                                                isDragged = dragDropState.draggedKey == index.toString(),
-                                                onDragStart = { initialCenter, size ->
-                                                    dragDropState.onDragStart(index.toString(), btn.label, null, initialCenter, size)
-                                                },
-                                                onDrag = { amount ->
-                                                    dragDropState.onDrag(amount)
-                                                },
-                                                onDragEnd = {
-                                                    if (dragDropState.draggedKey == index.toString()) {
-                                                        val targetPageId = dragDropState.targetBounds.entries.find { entry ->
-                                                            entry.value.contains(dragDropState.dragGlobalPos)
-                                                        }?.key
-
-                                                        if (targetPageId != null) {
-                                                            if (targetPageId == "delete") {
-                                                                onRemoveConnection(focusedPageId, index, btn.label)
-                                                            } else {
-                                                                onMoveButton(focusedPageId, index, targetPageId)
-                                                            }
+                                    }
+                                }
+                            } else {
+                                // Normal mode button configs list
+                                if (!hasValidButtons) {
+                                    Text(
+                                        text = stringResource(R.string.structure_no_active_buttons),
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                } else {
+                                    FlowRow(
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        if (showMainButtons) {
+                                            page.buttonConfigs.forEachIndexed { index, btn ->
+                                                val action = btn?.buttonAction
+                                                val isSelfLoop = if (btn == null) false else {
+                                                    when (action) {
+                                                        is NavigateToPageButtonAction -> {
+                                                            val target = action.pageId.ifEmpty { effectiveStartPageId }
+                                                            target == focusedPageId
                                                         }
-                                                        dragDropState.clear()
+                                                        is NavigateToStartPageButtonAction -> {
+                                                            effectiveStartPageId == focusedPageId
+                                                        }
+                                                        else -> false
                                                     }
-                                                },
-                                                onDragCancel = {
-                                                    if (dragDropState.draggedKey == index.toString()) {
-                                                        dragDropState.clear()
+                                                }
+
+                                                if (btn != null && btn.isActive && btn.label.isNotBlank() && index !in outgoingButtonIndices && !isSelfLoop) {
+                                                    key(btn.id) {
+                                                        val dragItem = StructureButtonDrag(focusedPageId, index, btn.label, btn.buttonAction)
+                                                        DraggableChip(
+                                                            label = btn.label,
+                                                            action = btn.buttonAction,
+                                                            isDragged = dragDropState.isDragging && dragDropState.dragItem == dragItem,
+                                                            modifier = Modifier.dragSource(item = dragItem),
+                                                            onClick = {
+                                                                onEditButton(focusedPageId, index)
+                                                            }
+                                                        )
                                                     }
-                                                },
-                                                action = btn.buttonAction
-                                            )
+                                                }
+                                            }
                                         }
                                     }
                                 }
                             }
-                        }
                         }
                     }
                 }
@@ -501,15 +494,19 @@ fun StructureFocusCanvas(
                         )
 
                         categoryProposals.forEach { category ->
+                            val isCatHovered = dragDropState.currentHoveredTarget == SplitWizardCategoryTarget(category.name)
                             Card(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .zIndex(if (dragDropState.draggedKey != null && dragDropState.dragSourceCategory == category.name) 10f else 1f)
-                                    .chipDropTarget(dragDropState, category.name),
+                                    .zIndex(if (dragDropState.isDragging && (dragDropState.dragItem as? SplitWizardButtonDrag)?.fromCategory == category.name) 10f else 1f)
+                                    .dropTarget(key = SplitWizardCategoryTarget(category.name)),
                                 colors = CardDefaults.cardColors(
                                     containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.15f)
                                 ),
-                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.4f))
+                                border = BorderStroke(
+                                    width = if (isCatHovered) 2.dp else 1.dp,
+                                    color = if (isCatHovered) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.primary.copy(alpha = 0.4f)
+                                )
                             ) {
                                 Column(modifier = Modifier.padding(12.dp)) {
                                     Text(
@@ -533,49 +530,12 @@ fun StructureFocusCanvas(
                                         } else {
                                             category.items.forEach { item ->
                                                 key(item.buttonId) {
+                                                    val dragItem = SplitWizardButtonDrag(item.buttonId, item.label, item.action, category.name)
                                                     DraggableChip(
                                                         label = item.label,
-                                                        isDragged = dragDropState.draggedKey == item.buttonId,
-                                                        onDragStart = { initialCenter, size ->
-                                                            dragDropState.onDragStart(item.buttonId, item.label, category.name, initialCenter, size)
-                                                        },
-                                                        onDrag = { amount ->
-                                                            dragDropState.onDrag(amount)
-                                                        },
-                                                        onDragEnd = {
-                                                            if (dragDropState.draggedKey == item.buttonId) {
-                                                                val targetCategory = dragDropState.targetBounds.entries.find { entry ->
-                                                                    val rect = entry.value
-                                                                    dragDropState.dragGlobalPos.y >= rect.top && dragDropState.dragGlobalPos.y <= rect.bottom
-                                                                }?.key
-
-                                                                if (targetCategory != null && targetCategory != category.name) {
-                                                                    if (targetCategory == "_unassigned") {
-                                                                        categoryProposals = categoryProposals.map { cat ->
-                                                                            if (cat.name == category.name) {
-                                                                                cat.copy(items = cat.items.filter { it.buttonId != item.buttonId })
-                                                                            } else cat
-                                                                        }
-                                                                        unassignedList = unassignedList + item
-                                                                    } else {
-                                                                        categoryProposals = categoryProposals.map { cat ->
-                                                                            if (cat.name == category.name) {
-                                                                                cat.copy(items = cat.items.filter { it.buttonId != item.buttonId })
-                                                                            } else if (cat.name == targetCategory) {
-                                                                                cat.copy(items = cat.items + item)
-                                                                            } else cat
-                                                                        }
-                                                                    }
-                                                                }
-                                                                dragDropState.clear()
-                                                            }
-                                                        },
-                                                        onDragCancel = {
-                                                            if (dragDropState.draggedKey == item.buttonId) {
-                                                                dragDropState.clear()
-                                                            }
-                                                        },
-                                                        action = item.action
+                                                        action = item.action,
+                                                        isDragged = dragDropState.isDragging && dragDropState.dragItem == dragItem,
+                                                        modifier = Modifier.dragSource(item = dragItem)
                                                     )
                                                 }
                                             }
@@ -644,12 +604,15 @@ fun StructureFocusCanvas(
                                     val isExpanded = expandedTargets.contains(edge.targetPageId)
                                     val targetButtons = targetPage?.buttonConfigs?.filterNotNull()?.filter { it.isActive && it.label.isNotBlank() } ?: emptyList()
 
-                                    ElevatedCard(
+                                    val isTargetHovered = dragDropState.currentHoveredTarget == StructureNodeTarget(edge.targetPageId)
+                                    Card(
                                         modifier = Modifier
                                             .fillMaxWidth()
-                                            .chipDropTarget(dragDropState, edge.targetPageId)
+                                            .dropTarget(key = StructureNodeTarget(edge.targetPageId))
                                             .clickable { onFocus(edge.targetPageId) },
-                                        colors = CardDefaults.elevatedCardColors(
+                                        border = if (isTargetHovered) BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else null,
+                                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+                                        colors = CardDefaults.cardColors(
                                             containerColor = MaterialTheme.colorScheme.surface
                                         )
                                     ) {
@@ -695,37 +658,17 @@ fun StructureFocusCanvas(
                                                 ) {
                                                     targetButtons.forEach { btn ->
                                                         val btnIndex = targetPage?.buttonConfigs?.indexOf(btn) ?: -1
-                                                        val dragKey = "target_${edge.targetPageId}_$btnIndex"
                                                         if (btnIndex != -1) {
                                                             key(btn.id) {
+                                                                val dragItem = StructureButtonDrag(edge.targetPageId, btnIndex, btn.label, btn.buttonAction)
                                                                 DraggableChip(
                                                                     label = btn.label,
-                                                                    isDragged = dragDropState.draggedKey == dragKey,
-                                                                    onDragStart = { initialCenter, size ->
-                                                                        dragDropState.onDragStart(dragKey, btn.label, null, initialCenter, size)
-                                                                    },
-                                                                    onDrag = { amount ->
-                                                                        dragDropState.onDrag(amount)
-                                                                    },
-                                                                    onDragEnd = {
-                                                                        if (dragDropState.draggedKey == dragKey) {
-                                                                            val dropTarget = dragDropState.targetBounds.entries.find { entry ->
-                                                                                entry.value.contains(dragDropState.dragGlobalPos)
-                                                                            }?.key
-                                                                            if (dropTarget == focusedPageId) {
-                                                                                onMoveButton(edge.targetPageId, btnIndex, focusedPageId)
-                                                                            } else if (dropTarget == "delete") {
-                                                                                onRemoveConnection(edge.targetPageId, btnIndex, btn.label)
-                                                                            }
-                                                                            dragDropState.clear()
-                                                                        }
-                                                                    },
-                                                                    onDragCancel = {
-                                                                        if (dragDropState.draggedKey == dragKey) {
-                                                                            dragDropState.clear()
-                                                                        }
-                                                                    },
-                                                                    action = btn.buttonAction
+                                                                    action = btn.buttonAction,
+                                                                    isDragged = dragDropState.isDragging && dragDropState.dragItem == dragItem,
+                                                                    modifier = Modifier.dragSource(item = dragItem),
+                                                                    onClick = {
+                                                                        onEditButton(edge.targetPageId, btnIndex)
+                                                                    }
                                                                 )
                                                             }
                                                         }
@@ -759,7 +702,7 @@ fun StructureFocusCanvas(
         }
 
         // Delete Drop Target Overlay
-        if (dragDropState.draggedKey != null && proposal == null) {
+        if (dragDropState.isDragging && dragDropState.dragItem is StructureButtonDrag && proposal == null) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -767,7 +710,7 @@ fun StructureFocusCanvas(
                     .zIndex(10f),
                 contentAlignment = Alignment.TopCenter
             ) {
-                val isHovered = dragDropState.targetBounds["delete"]?.contains(dragDropState.dragGlobalPos) == true
+                val isHovered = dragDropState.currentHoveredTarget == StructureDeleteTarget
                 val containerColor = if (isHovered) MaterialTheme.colorScheme.error
                                      else MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.95f)
                 val contentColor = if (isHovered) MaterialTheme.colorScheme.onError
@@ -787,7 +730,7 @@ fun StructureFocusCanvas(
                         .fillMaxWidth(0.9f)
                         .height(56.dp)
                         .scale(scale)
-                        .chipDropTarget(dragDropState, "delete")
+                        .dropTarget(key = StructureDeleteTarget)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Row(
@@ -807,38 +750,6 @@ fun StructureFocusCanvas(
                             )
                         }
                     }
-                }
-            }
-        }
-
-        // Floating Drag Overlay
-        if (dragDropState.draggedKey != null && dragDropState.rootBoxBounds != null) {
-            val relativeX = dragDropState.dragGlobalPos.x - dragDropState.rootBoxBounds!!.left - dragDropState.draggedSize.x / 2
-            val relativeY = dragDropState.dragGlobalPos.y - dragDropState.rootBoxBounds!!.top - dragDropState.draggedSize.y / 2
-
-            Box(
-                modifier = Modifier
-                    .align(Alignment.TopStart)
-                    .offset {
-                        IntOffset(
-                            relativeX.roundToInt(),
-                            relativeY.roundToInt()
-                        )
-                    }
-                    .zIndex(100f)
-            ) {
-                Surface(
-                    shape = MaterialTheme.shapes.small,
-                    color = MaterialTheme.colorScheme.primaryContainer,
-                    tonalElevation = 8.dp
-                ) {
-                    Text(
-                        text = dragDropState.draggedLabel,
-                        style = MaterialTheme.typography.bodyMedium,
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer
-                    )
                 }
             }
         }

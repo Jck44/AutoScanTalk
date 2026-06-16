@@ -693,6 +693,7 @@
     <string name="history_duplicate_button_to_page">Button \"%1$s\" duplicated to page \"%2$s\"</string>
     <string name="history_page_split">Page \"%1$s\" split</string>
     <string name="structure_search_clear">Clear search</string>
+    <string name="button_add">Add button</string>
 
     <!-- AP 4 Strings -->
     <string name="book_list_empty_title">No books</string>

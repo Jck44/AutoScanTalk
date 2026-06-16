@@ -243,3 +243,12 @@ fun Modifier.dropTarget(
 data class TemplateDropTarget(val template: com.andreas_kratzer.ghosttalk.core.model.ButtonTemplate)
 data class CategoryHeaderDropTarget(val groupName: String)
 
+data class StructureButtonDrag(val pageId: String, val index: Int, val label: String, val action: com.andreas_kratzer.ghosttalk.core.model.ButtonAction?)
+data class StructureNodeTarget(val pageId: String)
+object StructureDeleteTarget
+data class StructureSlotTarget(val pageId: String, val index: Int)
+
+data class SplitWizardButtonDrag(val buttonId: String, val label: String, val action: com.andreas_kratzer.ghosttalk.core.model.ButtonAction?, val fromCategory: String?)
+data class SplitWizardCategoryTarget(val categoryName: String)
+object SplitWizardUnassignedTarget
+

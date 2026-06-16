@@ -49,8 +49,8 @@ fun DialogActionBar(
     buildCurrentAction: () -> ButtonAction,
     onDismiss: () -> Unit,
     onTest: (ButtonConfig) -> Unit,
-    onMove: () -> Unit,
-    onDuplicate: () -> Unit,
+    onMove: (() -> Unit)? = null,
+    onDuplicate: (() -> Unit)? = null,
     onDelete: () -> Unit,
     onSaveAsTemplate: ((ButtonConfig) -> Unit)? = null,
     context: Context = androidx.compose.ui.platform.LocalContext.current
@@ -60,8 +60,8 @@ fun DialogActionBar(
     BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
         val availableWidth = maxWidth
         val showTest = availableWidth > 420.dp
-        val showMove = availableWidth > 550.dp
-        val showDuplicate = availableWidth > 680.dp
+        val showMove = availableWidth > 550.dp && onMove != null
+        val showDuplicate = availableWidth > 680.dp && onDuplicate != null
         val showDelete = availableWidth > 810.dp
 
         Row(
@@ -134,7 +134,7 @@ fun DialogActionBar(
             }
 
             // Overflow Menu
-            val hasHiddenItems = !showTest || !showMove || !showDuplicate || !showDelete
+            val hasHiddenItems = !showTest || (!showMove && onMove != null) || (!showDuplicate && onDuplicate != null) || !showDelete
             if (hasHiddenItems) {
                 Box {
                     IconButton(
@@ -186,7 +186,7 @@ fun DialogActionBar(
                                 }
                             )
                         }
-                        if (!showMove) {
+                        if (!showMove && onMove != null) {
                             DropdownMenuItem(
                                 text = { Text(stringResource(R.string.button_action_move)) },
                                 onClick = {
@@ -195,7 +195,7 @@ fun DialogActionBar(
                                 }
                             )
                         }
-                        if (!showDuplicate) {
+                        if (!showDuplicate && onDuplicate != null) {
                             DropdownMenuItem(
                                 text = { Text(stringResource(R.string.action_duplicate)) },
                                 leadingIcon = { Icon(Icons.Default.Add, contentDescription = null) },

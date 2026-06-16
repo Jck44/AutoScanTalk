@@ -76,6 +76,23 @@ import com.andreas_kratzer.ghosttalk.ui.pages.pagesplit.PageSplitOptInDialog
 import com.andreas_kratzer.ghosttalk.ui.pages.resolveEditLabel
 import kotlinx.coroutines.launch
 import com.andreas_kratzer.ghosttalk.core.ui.R as CoreR
+import androidx.compose.runtime.CompositionLocalProvider
+import com.andreas_kratzer.ghosttalk.ui.components.DragDropContainer
+import com.andreas_kratzer.ghosttalk.ui.components.rememberDragDropState
+import com.andreas_kratzer.ghosttalk.ui.components.LocalDragDropState
+import com.andreas_kratzer.ghosttalk.ui.components.StructureButtonDrag
+import com.andreas_kratzer.ghosttalk.ui.components.StructureNodeTarget
+import com.andreas_kratzer.ghosttalk.ui.components.StructureDeleteTarget
+import com.andreas_kratzer.ghosttalk.ui.components.StructureSlotTarget
+import com.andreas_kratzer.ghosttalk.ui.components.SplitWizardButtonDrag
+import com.andreas_kratzer.ghosttalk.ui.components.SplitWizardCategoryTarget
+import com.andreas_kratzer.ghosttalk.ui.components.SplitWizardUnassignedTarget
+import com.andreas_kratzer.ghosttalk.ui.templates.ButtonTemplatesPanel
+import com.andreas_kratzer.ghosttalk.ui.pages.ButtonConfigDialog
+import androidx.compose.material.icons.filled.List
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.foundation.layout.height
 
 enum class StructureViewMode {
     CARDS, GRAPH
@@ -100,6 +117,7 @@ fun StructureEditorScreen(
     val startPageId by pageViewModel.defaultStartPageIdFlow.collectAsState(initial = null)
     val activeBookId by pageViewModel.activeBookId.collectAsState(initial = null)
     val context = LocalContext.current
+    val dragDropState = rememberDragDropState()
 
     val graph = remember(pages, startPageId) {
         BookNavigationGraph.from(pages, startPageId)
@@ -191,6 +209,16 @@ fun StructureEditorScreen(
     val sheetState = rememberModalBottomSheetState()
     val scope = rememberCoroutineScope()
     var showBottomSheet by remember { mutableStateOf(false) }
+    var templatesPanelExpanded by rememberSaveable { mutableStateOf(false) }
+    var showTemplatesBottomSheet by remember { mutableStateOf(false) }
+
+    var editTarget by remember { mutableStateOf<Pair<String, Int>?>(null) }
+    var addTargetPageId by remember { mutableStateOf<String?>(null) }
+    var editingTemplate by remember { mutableStateOf<com.andreas_kratzer.ghosttalk.core.model.ButtonTemplate?>(null) }
+    val showSaveTemplateDialogConfig = remember { mutableStateOf<com.andreas_kratzer.ghosttalk.core.model.ButtonConfig?>(null) }
+    var newTemplateName by remember { mutableStateOf("") }
+
+    var onSplitWizardDropCallback by remember { mutableStateOf<((SplitWizardButtonDrag, Any) -> Unit)?>(null) }
 
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -243,6 +271,95 @@ fun StructureEditorScreen(
                 }
                 else -> {}
             }
+        }
+    }
+    val onTemplateClick: (com.andreas_kratzer.ghosttalk.core.model.ButtonTemplate) -> Unit = { template ->
+        val page = pages.find { it.id == focusedPageId }
+        val firstFreeIndex = page?.buttonConfigs?.indexOfFirst { it == null || !it.isActive } ?: -1
+        val targetIndex = if (firstFreeIndex != -1) firstFreeIndex else page?.buttonConfigs?.size ?: 0
+        val newConfig = template.buttonConfig.copy(
+            id = java.util.UUID.randomUUID().toString()
+        )
+        gridEditorViewModel.insertButtonConfig(focusedPageId, targetIndex, newConfig, false) { success ->
+            if (success) {
+                showSuccessSnackbarWithUndo()
+            } else {
+                scope.launch {
+                    snackbarHostState.showSnackbar(
+                        message = pageViewModel.getApplication<android.app.Application>().getString(R.string.structure_page_full)
+                    )
+                }
+            }
+        }
+    }
+
+    val onDrop: (Any, Any) -> Unit = { item, target ->
+        if (item is SplitWizardButtonDrag) {
+            onSplitWizardDropCallback?.invoke(item, target)
+        } else {
+            StructureDragDropHandler.handleDrop(
+                draggedItem = item,
+                target = target,
+                onMoveButton = { fromPageId, fromIndex, targetPageId ->
+                    onMoveButton(fromPageId, fromIndex, targetPageId)
+                },
+                onMoveButtonToSlot = { fromPageId, fromIndex, targetPageId, targetIndex ->
+                    if (fromPageId == targetPageId) {
+                        gridEditorViewModel.moveButton(fromPageId, fromIndex, targetIndex)
+                    } else {
+                        val draggedButton = pages.find { it.id == fromPageId }?.buttonConfigs?.getOrNull(fromIndex)
+                        val buttonId = draggedButton?.id
+                        gridEditorViewModel.moveButtonToPage(
+                            fromPageId = fromPageId,
+                            fromIndices = listOf(fromIndex),
+                            toPageId = targetPageId,
+                            forceMove = false
+                        ) { result ->
+                            if (result is com.andreas_kratzer.ghosttalk.core.domain.pages.MoveButtonToPageUseCase.MoveResult.Success) {
+                                val actualPlacedIdx = result.toPage.buttonConfigs.indexOfFirst { it?.id == buttonId }
+                                if (actualPlacedIdx != -1 && actualPlacedIdx != targetIndex) {
+                                    gridEditorViewModel.moveButton(targetPageId, actualPlacedIdx, targetIndex)
+                                }
+                                showSuccessSnackbarWithUndo()
+                            } else if (result is com.andreas_kratzer.ghosttalk.core.domain.pages.MoveButtonToPageUseCase.MoveResult.TargetFull) {
+                                scope.launch {
+                                    snackbarHostState.showSnackbar(
+                                        message = pageViewModel.getApplication<android.app.Application>().getString(R.string.structure_target_full)
+                                    )
+                                }
+                            }
+                        }
+                    }
+                },
+                onDeleteButton = { pageId, index ->
+                    gridEditorViewModel.updateButtonConfig(pageId, index, null)
+                    showSuccessSnackbarWithUndo()
+                },
+                onInsertTemplate = { pageId, targetIndex, template ->
+                    val newConfig = template.buttonConfig.copy(
+                        id = java.util.UUID.randomUUID().toString()
+                    )
+                    val actualIndex = if (targetIndex != -1) targetIndex else {
+                        val page = pages.find { it.id == pageId }
+                        val firstFreeIndex = page?.buttonConfigs?.indexOfFirst { it == null || !it.isActive } ?: -1
+                        if (firstFreeIndex != -1) firstFreeIndex else page?.buttonConfigs?.size ?: 0
+                    }
+                    gridEditorViewModel.insertButtonConfig(pageId, actualIndex, newConfig, false) { success ->
+                        if (success) {
+                            showSuccessSnackbarWithUndo()
+                        } else {
+                            scope.launch {
+                                snackbarHostState.showSnackbar(
+                                    message = pageViewModel.getApplication<android.app.Application>().getString(R.string.structure_page_full)
+                                )
+                            }
+                        }
+                    }
+                },
+                showSnackbar = { msg ->
+                    scope.launch { snackbarHostState.showSnackbar(msg) }
+                }
+            )
         }
     }
 
@@ -352,6 +469,24 @@ fun StructureEditorScreen(
                             imageVector = GhostTalkIcons.Undo,
                             contentDescription = stringResource(R.string.structure_action_undo),
                             tint = if (historyState.canUndo) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f)
+                        )
+                    }
+
+                    // Inline Action 3: Templates panel toggle
+                    IconButton(
+                        onClick = {
+                            if (isTablet) {
+                                templatesPanelExpanded = !templatesPanelExpanded
+                            } else {
+                                showTemplatesBottomSheet = true
+                            }
+                        },
+                        modifier = Modifier.testTag("structure_editor_templates_button")
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.List,
+                            contentDescription = stringResource(R.string.template_panel_title),
+                            tint = if (templatesPanelExpanded && isTablet) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
 
@@ -486,111 +621,191 @@ fun StructureEditorScreen(
         },
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { paddingValues ->
-        Column(
+        DragDropContainer(
+            state = dragDropState,
+            onDrop = onDrop,
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
+                .padding(paddingValues),
+            floatingPreview = { draggedItem ->
+                val label = when (draggedItem) {
+                    is com.andreas_kratzer.ghosttalk.ui.components.StructureButtonDrag -> draggedItem.label
+                    is com.andreas_kratzer.ghosttalk.core.model.ButtonTemplate -> draggedItem.buttonConfig.label
+                    is com.andreas_kratzer.ghosttalk.ui.components.SplitWizardButtonDrag -> draggedItem.label
+                    else -> ""
+                }
+                val action = when (draggedItem) {
+                    is com.andreas_kratzer.ghosttalk.ui.components.StructureButtonDrag -> draggedItem.action
+                    is com.andreas_kratzer.ghosttalk.core.model.ButtonTemplate -> draggedItem.buttonConfig.buttonAction
+                    is com.andreas_kratzer.ghosttalk.ui.components.SplitWizardButtonDrag -> draggedItem.action
+                    else -> null
+                }
+                val isDark = androidx.compose.foundation.isSystemInDarkTheme()
+                val (bgColor, textColor) = remember(action, isDark) {
+                    com.andreas_kratzer.ghosttalk.core.ui.theme.ActionVisualTokens.getColors(action, isDark)
+                }
+                Card(
+                    shape = MaterialTheme.shapes.small,
+                    colors = CardDefaults.cardColors(containerColor = bgColor),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Text(
+                            text = label,
+                            style = MaterialTheme.typography.labelMedium,
+                            color = textColor,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                        )
+                    }
+                }
+            }
         ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .weight(1f)
+            Column(
+                modifier = Modifier.fillMaxSize()
             ) {
-                if (isTablet) {
-                    if (sidePanelExpanded) {
-                        // Left Column: TreeView (~34%)
+                Row(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .weight(1f)
+                ) {
+                    if (isTablet) {
+                        if (sidePanelExpanded) {
+                            // Left Column: TreeView (~34%)
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxHeight()
+                                    .width(300.dp)
+                                    .padding(start = 16.dp, top = 16.dp, bottom = 16.dp),
+                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                            ) {
+                                Column(modifier = Modifier.fillMaxSize()) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.End
+                                    ) {
+                                        IconButton(onClick = { sidePanelExpanded = false }) {
+                                            Icon(
+                                                imageVector = GhostTalkIcons.ArrowBack,
+                                                contentDescription = stringResource(R.string.side_panel_collapse)
+                                            )
+                                        }
+                                    }
+                                    StructureTreeNavigator(
+                                        graph = graph,
+                                        pages = pages,
+                                        pageNames = pageNames,
+                                        focusedPageId = focusedPageId,
+                                        onFocus = { navigateToPage(it) },
+                                        onOrphanClick = { orphanId -> orphanToConnectId = orphanId },
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .fillMaxWidth()
+                                    )
+                                }
+                            }
+                        } else {
+                            // Collapsed rail: button to re-open the side panel
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxHeight()
+                                    .padding(start = 8.dp, top = 16.dp)
+                            ) {
+                                IconButton(onClick = { sidePanelExpanded = true }) {
+                                    Icon(
+                                        imageVector = GhostTalkIcons.ArrowForward,
+                                        contentDescription = stringResource(R.string.side_panel_expand)
+                                    )
+                                }
+                            }
+                        }
+
+                        // Split divider
+                        Spacer(modifier = Modifier.width(8.dp))
+                    }
+
+                    // Right Column / Main: Focus Canvas
+                    StructureFocusCanvas(
+                        focusedPageId = focusedPageId,
+                        pages = pages,
+                        templates = templates,
+                        graph = graph,
+                        pageNames = pageNames,
+                        viewMode = viewMode,
+                        proposal = pageSplitProposal,
+                        isSplitLoading = isPageSplitLoading,
+                        onTriggerSplit = {
+                            val accepted = pageSplitViewModel.hasAcceptedPageSplitOptIn
+                            if (accepted) {
+                                pageSplitViewModel.generatePageSplitProposal(focusedPageId)
+                            } else {
+                                showOptInDialog.value = true
+                            }
+                        },
+                        onApplySplit = { proposalVal ->
+                            pageSplitViewModel.applyPageSplit(focusedPageId, proposalVal)
+                            pageSplitViewModel.clearPageSplitProposal()
+                        },
+                        onDiscardSplit = {
+                            pageSplitViewModel.clearPageSplitProposal()
+                        },
+                        onFocus = { navigateToPage(it) },
+                        onEditPageInGrid = onEditPageInGrid,
+                        onMoveButton = onMoveButton,
+                        onAddConnection = onAddConnection,
+                        onRemoveConnection = { pageId, buttonIndex, targetPageName ->
+                            pageToRemoveConnectionFromPageId = pageId
+                            pageToRemoveConnectionByButtonIndex = buttonIndex
+                            pageToRemoveConnectionTargetName = targetPageName
+                        },
+                        onCreatePage = onCreatePage,
+                        onEditButton = { pageId, idx -> editTarget = pageId to idx },
+                        onAddButton = { pageId -> addTargetPageId = pageId },
+                        onRegisterSplitWizardDropCallback = { callback -> onSplitWizardDropCallback = callback },
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxHeight()
+                    )
+
+                    if (isTablet && templatesPanelExpanded) {
+                        Spacer(modifier = Modifier.width(8.dp))
                         Card(
                             modifier = Modifier
                                 .fillMaxHeight()
                                 .width(300.dp)
-                                .padding(start = 16.dp, top = 16.dp, bottom = 16.dp),
+                                .padding(end = 16.dp, top = 16.dp, bottom = 16.dp),
                             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
                         ) {
                             Column(modifier = Modifier.fillMaxSize()) {
                                 Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.End
+                                    modifier = Modifier.fillMaxWidth().padding(16.dp),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    IconButton(onClick = { sidePanelExpanded = false }) {
+                                    Text(
+                                        text = stringResource(R.string.template_panel_title),
+                                        style = MaterialTheme.typography.titleMedium
+                                    )
+                                    IconButton(onClick = { templatesPanelExpanded = false }) {
                                         Icon(
-                                            imageVector = GhostTalkIcons.ArrowBack,
-                                            contentDescription = stringResource(R.string.side_panel_collapse)
+                                            imageVector = Icons.Default.Close,
+                                            contentDescription = "Vorlagen schließen"
                                         )
                                     }
                                 }
-                                StructureTreeNavigator(
-                                    graph = graph,
-                                    pages = pages,
-                                    pageNames = pageNames,
-                                    focusedPageId = focusedPageId,
-                                    onFocus = { navigateToPage(it) },
-                                    onOrphanClick = { orphanId -> orphanToConnectId = orphanId },
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .fillMaxWidth()
-                                )
-                            }
-                        }
-                    } else {
-                        // Collapsed rail: button to re-open the side panel
-                        Column(
-                            modifier = Modifier
-                                .fillMaxHeight()
-                                .padding(start = 8.dp, top = 16.dp)
-                        ) {
-                            IconButton(onClick = { sidePanelExpanded = true }) {
-                                Icon(
-                                    imageVector = GhostTalkIcons.ArrowForward,
-                                    contentDescription = stringResource(R.string.side_panel_expand)
+                                ButtonTemplatesPanel(
+                                    actions = gridEditorViewModel,
+                                    onEditTemplate = { template -> editingTemplate = template },
+                                    onTemplateClick = onTemplateClick,
+                                    modifier = Modifier.weight(1f).fillMaxWidth()
                                 )
                             }
                         }
                     }
-
-                    // Split divider
-                    Spacer(modifier = Modifier.width(8.dp))
                 }
-
-            // Right Column / Main: Focus Canvas
-            StructureFocusCanvas(
-                focusedPageId = focusedPageId,
-                pages = pages,
-                templates = templates,
-                graph = graph,
-                pageNames = pageNames,
-                viewMode = viewMode,
-                proposal = pageSplitProposal,
-                isSplitLoading = isPageSplitLoading,
-                onTriggerSplit = {
-                    val accepted = pageSplitViewModel.hasAcceptedPageSplitOptIn
-                    if (accepted) {
-                        pageSplitViewModel.generatePageSplitProposal(focusedPageId)
-                    } else {
-                        showOptInDialog.value = true
-                    }
-                },
-                onApplySplit = { proposalVal ->
-                    pageSplitViewModel.applyPageSplit(focusedPageId, proposalVal)
-                    pageSplitViewModel.clearPageSplitProposal()
-                },
-                onDiscardSplit = {
-                    pageSplitViewModel.clearPageSplitProposal()
-                },
-                onFocus = { navigateToPage(it) },
-                onEditPageInGrid = onEditPageInGrid,
-                onMoveButton = onMoveButton,
-                onAddConnection = onAddConnection,
-                onRemoveConnection = { pageId, buttonIndex, targetPageName ->
-                    pageToRemoveConnectionFromPageId = pageId
-                    pageToRemoveConnectionByButtonIndex = buttonIndex
-                    pageToRemoveConnectionTargetName = targetPageName
-                },
-                onCreatePage = onCreatePage,
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxHeight()
-            )
-        }
+            }
         }
 
         // Drawer / BottomSheet for tree view on phones
@@ -864,6 +1079,192 @@ fun StructureEditorScreen(
                             }
                         }
                     }
+                }
+            }
+        }
+    }
+
+    if (editTarget != null) {
+        val (pageId, index) = editTarget!!
+        val page = pages.find { it.id == pageId }
+        val buttonConfig = page?.buttonConfigs?.getOrNull(index) ?: ButtonConfig()
+        ButtonConfigDialog(
+            buttonConfig = buttonConfig,
+            pages = pages,
+            templates = templates,
+            defaultStartPageId = startPageId,
+            onDismiss = { editTarget = null },
+            onSave = { newConfig ->
+                gridEditorViewModel.updateButtonConfig(pageId, index, newConfig)
+                editTarget = null
+            },
+            onTest = { config ->
+                gridEditorViewModel.executeButtonAction(config)
+            },
+            onSuggestLabel = if (gridEditorViewModel.isGeminiEnabled) { config, callback ->
+                gridEditorViewModel.suggestButtonLabel(config, callback)
+            } else null,
+            onDelete = {
+                gridEditorViewModel.updateButtonConfig(pageId, index, null)
+                editTarget = null
+                showSuccessSnackbarWithUndo()
+            },
+            onCreatePage = onCreatePage,
+            isTextCached = { gridEditorViewModel.isTextCached(it) },
+            onPrefetchText = { text, onComplete -> gridEditorViewModel.prefetchText(text, onComplete) },
+            onSaveAsTemplate = { config ->
+                showSaveTemplateDialogConfig.value = config
+                newTemplateName = config.label
+            }
+        )
+    }
+
+    if (addTargetPageId != null) {
+        val pageId = addTargetPageId!!
+        val page = pages.find { it.id == pageId }
+        ButtonConfigDialog(
+            buttonConfig = ButtonConfig(id = java.util.UUID.randomUUID().toString()),
+            pages = pages,
+            templates = templates,
+            defaultStartPageId = startPageId,
+            onDismiss = { addTargetPageId = null },
+            onSave = { newConfig ->
+                val firstFreeIndex = page?.buttonConfigs?.indexOfFirst { it == null || !it.isActive } ?: -1
+                val targetIndex = if (firstFreeIndex != -1) firstFreeIndex else page?.buttonConfigs?.size ?: 0
+                gridEditorViewModel.insertButtonConfig(pageId, targetIndex, newConfig, false) { success ->
+                    if (success) {
+                        showSuccessSnackbarWithUndo()
+                    } else {
+                        scope.launch {
+                            snackbarHostState.showSnackbar(
+                                message = pageViewModel.getApplication<android.app.Application>().getString(R.string.structure_page_full)
+                            )
+                        }
+                    }
+                }
+                addTargetPageId = null
+            },
+            onTest = { config ->
+                gridEditorViewModel.executeButtonAction(config)
+            },
+            onSuggestLabel = if (gridEditorViewModel.isGeminiEnabled) { config, callback ->
+                gridEditorViewModel.suggestButtonLabel(config, callback)
+            } else null,
+            onDelete = {
+                addTargetPageId = null
+            },
+            onCreatePage = onCreatePage,
+            isTextCached = { gridEditorViewModel.isTextCached(it) },
+            onPrefetchText = { text, onComplete -> gridEditorViewModel.prefetchText(text, onComplete) },
+            onSaveAsTemplate = { config ->
+                showSaveTemplateDialogConfig.value = config
+                newTemplateName = config.label
+            }
+        )
+    }
+
+    if (editingTemplate != null) {
+        val template = editingTemplate!!
+        ButtonConfigDialog(
+            buttonConfig = template.buttonConfig,
+            pages = pages,
+            templates = templates,
+            defaultStartPageId = startPageId,
+            onDismiss = { editingTemplate = null },
+            onSave = { newConfig ->
+                gridEditorViewModel.updateButtonTemplate(template.copy(name = newConfig.label, buttonConfig = newConfig))
+                editingTemplate = null
+            },
+            onTest = { config ->
+                gridEditorViewModel.executeButtonAction(config)
+            },
+            onDelete = {
+                gridEditorViewModel.deleteButtonTemplate(template)
+                editingTemplate = null
+            },
+            onCreatePage = onCreatePage,
+            isTextCached = { gridEditorViewModel.isTextCached(it) },
+            onPrefetchText = { text, onComplete -> gridEditorViewModel.prefetchText(text, onComplete) },
+            onSaveAsTemplate = {}
+        )
+    }
+
+    if (showSaveTemplateDialogConfig.value != null) {
+        AlertDialog(
+            onDismissRequest = { showSaveTemplateDialogConfig.value = null },
+            title = { Text("Als Vorlage speichern") },
+            text = {
+                Column {
+                    Text("Geben Sie einen Namen für die Button-Vorlage ein:")
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = newTemplateName,
+                        onValueChange = { newTemplateName = it },
+                        label = { Text("Name der Vorlage") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        val config = showSaveTemplateDialogConfig.value
+                        if (config != null && newTemplateName.isNotBlank()) {
+                            gridEditorViewModel.saveButtonAsTemplate(newTemplateName, config)
+                            android.widget.Toast.makeText(context, "Vorlage gespeichert", android.widget.Toast.LENGTH_SHORT).show()
+                        }
+                        showSaveTemplateDialogConfig.value = null
+                    }
+                ) {
+                    Text("Speichern")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showSaveTemplateDialogConfig.value = null }) {
+                    Text("Abbrechen")
+                }
+            }
+        )
+    }
+
+    if (!isTablet && showTemplatesBottomSheet) {
+        ModalBottomSheet(
+            onDismissRequest = { showTemplatesBottomSheet = false },
+            dragHandle = { BottomSheetDefaults.DragHandle() }
+        ) {
+            CompositionLocalProvider(LocalDragDropState provides dragDropState) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .fillMaxHeight(0.85f)
+                        .padding(horizontal = 16.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = stringResource(R.string.template_panel_title),
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                        IconButton(onClick = { showTemplatesBottomSheet = false }) {
+                            Icon(imageVector = Icons.Default.Close, contentDescription = "Schließen")
+                        }
+                    }
+                    ButtonTemplatesPanel(
+                        actions = gridEditorViewModel,
+                        onEditTemplate = { template ->
+                            editingTemplate = template
+                            showTemplatesBottomSheet = false
+                        },
+                        onTemplateClick = { template ->
+                            onTemplateClick(template)
+                            showTemplatesBottomSheet = false
+                        },
+                        modifier = Modifier.weight(1f)
+                    )
                 }
             }
         }

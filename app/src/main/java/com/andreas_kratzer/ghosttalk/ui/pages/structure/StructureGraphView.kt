@@ -5,6 +5,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
@@ -38,21 +39,23 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.SubcomposeLayout
+import androidx.compose.ui.layout.boundsInWindow
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
-import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.core.domain.pages.BookNavigationGraph
 import com.andreas_kratzer.ghosttalk.core.domain.pages.NavEdge
 import com.andreas_kratzer.ghosttalk.core.model.Page
-import com.andreas_kratzer.ghosttalk.ui.components.ChipDragDropState
+import com.andreas_kratzer.ghosttalk.ui.components.LocalDragDropState
+import com.andreas_kratzer.ghosttalk.ui.components.StructureButtonDrag
 import kotlinx.coroutines.flow.first
 
 private val expandedPageIdsSaver = listSaver<Set<String>, String>(
@@ -73,13 +76,13 @@ fun StructureGraphView(
     isFullView: Boolean = false,
     modifier: Modifier = Modifier,
     pages: List<Page>,
-    dragDropState: ChipDragDropState,
-    onMoveButton: (String, Int, String) -> Unit
+    onMoveButton: (String, Int, String) -> Unit,
+    onEditButton: (String, Int) -> Unit,
+    onAddButton: (String) -> Unit
 ) {
     var expandedPageIds: Set<String> by rememberSaveable(stateSaver = expandedPageIdsSaver) {
         mutableStateOf(emptySet<String>())
     }
-    var activeMoveButtonInfo by remember { mutableStateOf<Triple<String, Int, String>?>(null) }
     var selectedEdgeForDeletion by remember { mutableStateOf<NavEdge?>(null) }
 
     // Reset armed connection delete overlay when focused page or expanded pages change (G2)
@@ -113,6 +116,8 @@ fun StructureGraphView(
 
     val scrollStateX = rememberScrollState()
     val scrollStateY = rememberScrollState()
+    val dragDropState = LocalDragDropState.current
+    var graphBoundsInWindow by remember { mutableStateOf<Rect?>(null) }
 
     // Center the focused node once, after layout settles. Keyed on focusedPageId only,
     // so expanding/collapsing a card (which changes maxValue) does NOT re-scroll the view.
@@ -128,12 +133,54 @@ fun StructureGraphView(
         }
     }
 
+    // Auto-Panning while dragging a chip/template near the screen edges in the graph editor.
+    LaunchedEffect(dragDropState.isDragging) {
+        if (dragDropState.isDragging && (dragDropState.dragItem is StructureButtonDrag || dragDropState.dragItem is com.andreas_kratzer.ghosttalk.core.model.ButtonTemplate)) {
+            while (true) {
+                val bounds = graphBoundsInWindow
+                if (bounds != null) {
+                    val pointerPos = dragDropState.dragPosition + dragDropState.touchOffset + dragDropState.dragOffset
+                    val threshold = 150f // pixels from boundary
+                    val distToRight = bounds.right - pointerPos.x
+                    val distToLeft = pointerPos.x - bounds.left
+                    val distToBottom = bounds.bottom - pointerPos.y
+                    val distToTop = pointerPos.y - bounds.top
+
+                    if (distToRight < threshold && scrollStateX.value < scrollStateX.maxValue) {
+                        val speedFactor = ((threshold - distToRight) / threshold).coerceIn(0f, 1f)
+                        val scrollAmount = (25f * speedFactor).coerceAtLeast(8f)
+                        scrollStateX.scrollBy(scrollAmount)
+                    } else if (distToLeft < threshold && scrollStateX.value > 0) {
+                        val speedFactor = ((threshold - distToLeft) / threshold).coerceIn(0f, 1f)
+                        val scrollAmount = (25f * speedFactor).coerceAtLeast(8f)
+                        scrollStateX.scrollBy(-scrollAmount)
+                    }
+
+                    if (distToBottom < threshold && scrollStateY.value < scrollStateY.maxValue) {
+                        val speedFactor = ((threshold - distToBottom) / threshold).coerceIn(0f, 1f)
+                        val scrollAmount = (25f * speedFactor).coerceAtLeast(8f)
+                        scrollStateY.scrollBy(scrollAmount)
+                    } else if (distToTop < threshold && scrollStateY.value > 0) {
+                        val speedFactor = ((threshold - distToTop) / threshold).coerceIn(0f, 1f)
+                        val scrollAmount = (25f * speedFactor).coerceAtLeast(8f)
+                        scrollStateY.scrollBy(-scrollAmount)
+                    }
+                }
+                kotlinx.coroutines.delay(16) // ~60fps
+            }
+        }
+    }
+
     val configuration = LocalConfiguration.current
     val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
 
     Card(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)),
-        modifier = if (isFullView) modifier.fillMaxSize() else modifier.fillMaxWidth()
+        modifier = if (isFullView) {
+            modifier.fillMaxSize().onGloballyPositioned { graphBoundsInWindow = it.boundsInWindow() }
+        } else {
+            modifier.fillMaxWidth()
+        }
     ) {
         Column(
             modifier = if (isFullView) Modifier.fillMaxSize().padding(12.dp) else Modifier.padding(12.dp)
@@ -173,7 +220,6 @@ fun StructureGraphView(
                 val targetColumnsCount = outgoingColumns.size.coerceAtLeast(1)
 
                 val primaryColor = MaterialTheme.colorScheme.primary
-                val secondaryColor = MaterialTheme.colorScheme.secondary
                 val errorColor = MaterialTheme.colorScheme.error
 
                 SubcomposeLayout { constraints ->
@@ -186,7 +232,6 @@ fun StructureGraphView(
                             isExpanded = expandedPageIds.contains(focusedPageId),
                             pages = pages,
                             graph = graph,
-                            dragDropState = dragDropState,
                             onToggleExpand = {
                                 expandedPageIds = if (expandedPageIds.contains(focusedPageId)) {
                                     expandedPageIds - focusedPageId
@@ -196,7 +241,8 @@ fun StructureGraphView(
                             },
                             onFocus = {},
                             onMoveButton = onMoveButton,
-                            onMoveClick = { src, idx, lbl -> activeMoveButtonInfo = Triple(src, idx, lbl) }
+                            onEditButton = onEditButton,
+                            onAddButton = onAddButton
                         )
                     }.map { it.measure(Constraints.fixedWidth(with(density) { centerWidthDp.roundToPx() })) }
                     val centerPlaceable = centerPlaceables.first()
@@ -229,7 +275,6 @@ fun StructureGraphView(
                                     isExpanded = expandedPageIds.contains(sourceId),
                                     pages = pages,
                                     graph = graph,
-                                    dragDropState = dragDropState,
                                     onToggleExpand = {
                                         expandedPageIds = if (expandedPageIds.contains(sourceId)) {
                                             expandedPageIds - sourceId
@@ -239,7 +284,8 @@ fun StructureGraphView(
                                     },
                                     onFocus = { onFocus(sourceId) },
                                     onMoveButton = onMoveButton,
-                                    onMoveClick = { src, idx, lbl -> activeMoveButtonInfo = Triple(src, idx, lbl) }
+                                    onEditButton = onEditButton,
+                                    onAddButton = onAddButton
                                 )
                             }
                         }
@@ -273,7 +319,6 @@ fun StructureGraphView(
                                     isExpanded = expandedPageIds.contains(targetId),
                                     pages = pages,
                                     graph = graph,
-                                    dragDropState = dragDropState,
                                     onToggleExpand = {
                                         expandedPageIds = if (expandedPageIds.contains(targetId)) {
                                             expandedPageIds - targetId
@@ -283,7 +328,8 @@ fun StructureGraphView(
                                     },
                                     onFocus = { onFocus(targetId) },
                                     onMoveButton = onMoveButton,
-                                    onMoveClick = { src, idx, lbl -> activeMoveButtonInfo = Triple(src, idx, lbl) }
+                                    onEditButton = onEditButton,
+                                    onAddButton = onAddButton
                                 )
                             }
                         }
@@ -292,10 +338,6 @@ fun StructureGraphView(
                     // Layout size and coordinates calculation
                     val spacingPx = with(density) { verticalSpacing.roundToPx() }
                     val hSpacingPx = with(density) { horizontalSpacing.roundToPx() }
-
-                    val incomingMaxHeight = incomingPlaceables.maxOfOrNull { it.height } ?: 0
-                    val centerMaxHeight = centerPlaceable.height
-                    val outgoingMaxHeight = outgoingPlaceables.maxOfOrNull { it.height } ?: 0
 
                     val layoutWidth: Int
                     val layoutHeight: Int
@@ -356,7 +398,6 @@ fun StructureGraphView(
 
                         val col3StartX = col2StartX + col2Width + hSpacingPx
                         if (outgoingPlaceables.isNotEmpty()) {
-                            var flatIndex = 0
                             outgoingColumnsPlaceables.forEachIndexed { colIdx, colPls ->
                                 val colStagger = if (colIdx % 2 == 0) -rowOffsetPx / 2f else rowOffsetPx / 2f
                                 // Center every column on the SAME (tallest) baseline so rows align to
@@ -369,7 +410,6 @@ fun StructureGraphView(
                                     val cy = currentY + p.height / 2f
                                     outgoingPoints.add(Pair(cx, cy))
                                     currentY += p.height + spacingPx
-                                    flatIndex++
                                 }
                             }
                         }
@@ -378,7 +418,7 @@ fun StructureGraphView(
                         val incomingColWidth = with(density) { incomingWidthDp.roundToPx() }
                         val centerColWidth = with(density) { centerWidthDp.roundToPx() }
                         val outgoingColWidth = with(density) { outgoingColWidthDp.roundToPx() }
-                        
+
                         // Rooted-tree layout: a vertical trunk at the focused node's centre,
                         // child nodes offset to the right with elbow connectors (uses the
                         // horizontal space and avoids a bundle of overlapping vertical curves).
@@ -474,11 +514,7 @@ fun StructureGraphView(
                                             }
                                         }
 
-                                        if (closestEdge != null) {
-                                            selectedEdgeForDeletion = closestEdge
-                                        } else {
-                                            selectedEdgeForDeletion = null
-                                        }
+                                        selectedEdgeForDeletion = closestEdge
                                     }
                                 }
                         ) {
@@ -548,8 +584,6 @@ fun StructureGraphView(
                                         val isSelected = selectedEdgeForDeletion == matchingEdge
 
                                         val path = androidx.compose.ui.graphics.Path()
-                                        val startX: Float
-                                        val startY: Float
                                         val endX: Float
                                         val endY: Float
                                         val c2x: Float
@@ -560,8 +594,8 @@ fun StructureGraphView(
                                             // vertical bus, run along it to the target's row, then a
                                             // horizontal stub into the chip. The stub for the outer column
                                             // threads through the gaps between the inner column's chips.
-                                            startX = centerPoint.first + (centerWidthDp / 2).toPx()
-                                            startY = centerPoint.second
+                                            val startX = centerPoint.first + (centerWidthDp / 2).toPx()
+                                            val startY = centerPoint.second
                                             val busX = startX + 24.dp.toPx()
                                             endX = pt.first - (outgoingColWidthDp / 2).toPx()
                                             endY = pt.second
@@ -575,8 +609,8 @@ fun StructureGraphView(
                                             path.lineTo(endX, endY)
                                         } else {
                                             // Elbow: trunk down from the centre node, then a short stub into the target's left edge.
-                                            startX = centerPoint.first
-                                            startY = centerPoint.second + centerPlaceable.height / 2f
+                                            val startX = centerPoint.first
+                                            val startY = centerPoint.second + centerPlaceable.height / 2f
                                             endX = pt.first - (outgoingColWidthDp / 2).toPx()
                                             endY = pt.second
 
@@ -738,20 +772,5 @@ fun StructureGraphView(
                 }
             }
         }
-    }
-
-    val info = activeMoveButtonInfo
-    if (info != null) {
-        SearchablePagePicker(
-            title = stringResource(R.string.structure_move_button_dialog_title, info.third),
-            subtitle = stringResource(R.string.structure_move_button_dialog_select_target),
-            excludePageId = info.first,
-            pages = pages,
-            onDismissRequest = { activeMoveButtonInfo = null },
-            onPageSelected = { targetPageId: String ->
-                onMoveButton(info.first, info.second, targetPageId)
-                activeMoveButtonInfo = null
-            }
-        )
     }
 }
