@@ -100,7 +100,7 @@ fun AnalyticsOverviewTab(
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text("Gesamtaufrufe", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f))
+                            Text(stringResource(R.string.analytics_kpi_total_clicks), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f))
                             trendBadge(currentClicks, previousClicks, Modifier, false)
                         }
                         Text("$totalClicks", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimaryContainer)
@@ -121,10 +121,10 @@ fun AnalyticsOverviewTab(
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text("Aktiver Wortschatz", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.8f))
+                            Text(stringResource(R.string.analytics_kpi_active_vocab), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.8f))
                             trendBadge(currentVocab.toDouble(), previousVocab.toDouble(), Modifier, false)
                         }
-                        Text("$activeVocabCount Wörter", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSecondaryContainer)
+                        Text(stringResource(R.string.analytics_kpi_vocab_words_format, activeVocabCount), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSecondaryContainer)
                     }
                 }
             }
@@ -181,12 +181,12 @@ fun AnalyticsOverviewTab(
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text("Kommunikationsrate", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f))
+                            Text(stringResource(R.string.analytics_kpi_comm_rate), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f))
                             trendBadge(currentCommRate, previousCommRate, Modifier, false)
                         }
                         val displayRate = String.format(java.util.Locale.US, "%.1f", currentCommRate)
                         Text(
-                            text = "$displayRate Klicks/Min",
+                            text = stringResource(R.string.analytics_kpi_comm_rate_format, displayRate),
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -210,7 +210,7 @@ fun AnalyticsOverviewTab(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = "Scan-Effizienz",
+                                text = stringResource(R.string.analytics_kpi_scan_efficiency),
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
                             )
@@ -218,7 +218,7 @@ fun AnalyticsOverviewTab(
                         }
                         val displayEff = String.format(java.util.Locale.US, "%.1f", totalScanEff)
                         Text(
-                            text = "Ø $displayEff Scan-Zyklen",
+                            text = stringResource(R.string.analytics_kpi_scan_efficiency_format, displayEff),
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onPrimaryContainer
@@ -254,7 +254,7 @@ fun AnalyticsOverviewTab(
                     tint = MaterialTheme.colorScheme.primary
                 )
                 Text(
-                    text = "Eingabe & Selbstständigkeit",
+                    text = stringResource(R.string.analytics_section_input_independence),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
@@ -273,7 +273,7 @@ fun AnalyticsOverviewTab(
                         verticalArrangement = Arrangement.SpaceBetween
                     ) {
                         Text(
-                            text = "Taster-Auslösungen",
+                            text = stringResource(R.string.analytics_kpi_hardware_triggers),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.8f)
                         )
@@ -296,7 +296,7 @@ fun AnalyticsOverviewTab(
                         verticalArrangement = Arrangement.SpaceBetween
                     ) {
                         Text(
-                            text = "Touch-Eingriffe",
+                            text = stringResource(R.string.analytics_kpi_touch_interventions),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.8f)
                         )
@@ -312,7 +312,7 @@ fun AnalyticsOverviewTab(
             }
 
             Text(
-                text = "Ein hoher Taster-Anteil und wenige Touch-Eingriffe (Eingriffe von Betreuern) weisen auf eine hohe Selbstständigkeit bei der Nutzung hin.",
+                text = stringResource(R.string.analytics_input_independence_hint),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(horizontal = 4.dp)

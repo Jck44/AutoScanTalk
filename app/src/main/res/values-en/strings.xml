@@ -433,6 +433,33 @@
     <string name="analytics_duration_hours_minutes">%1$d hr. %2$d min.</string>
     <string name="analytics_duration_less_than_minute">&lt; 1 min.</string>
 
+    <!-- Swept Analytics Strings -->
+    <string name="analytics_page_in_use">Page is in use</string>
+    <string name="analytics_page_used_at">The page \"%1$s\" is used for navigation at the following places:</string>
+    <string name="analytics_page_delete_warning">Deleting will also remove all buttons pointing to this page.</string>
+    <string name="analytics_delete_all">Delete All</string>
+    <string name="analytics_captured_from_to">Statistics captured from %1$s to %2$s</string>
+    <string name="analytics_kpi_total_clicks">Total Clicks</string>
+    <string name="analytics_kpi_active_vocab">Active Vocabulary</string>
+    <string name="analytics_kpi_vocab_words_format">%1$d words</string>
+    <string name="analytics_kpi_comm_rate">Communication Rate</string>
+    <string name="analytics_kpi_comm_rate_format">%1$s clicks/min</string>
+    <string name="analytics_kpi_scan_efficiency">Scan Efficiency</string>
+    <string name="analytics_kpi_scan_efficiency_format">Ø %1$s scan cycles</string>
+    <string name="analytics_section_input_independence">Input &amp; Independence</string>
+    <string name="analytics_kpi_hardware_triggers">Switch Activations</string>
+    <string name="analytics_kpi_touch_interventions">Touch Interventions</string>
+    <string name="analytics_input_independence_hint">A high switch percentage and few touch interventions (caregiver interventions) indicate high user independence during use.</string>
+    <string name="analytics_section_common_transitions">Frequent Navigation Paths</string>
+    <string name="analytics_transitions_empty">Not enough navigation data available yet.</string>
+    <string name="analytics_transition_count_format">%1$d transitions</string>
+    <string name="analytics_section_page_cleanup">Page Analysis &amp; Cleanup Assistant</string>
+    <string name="analytics_section_top_used_pages">Most Used Pages</string>
+    <string name="analytics_top_pages_empty">No click data available for pages.</string>
+    <string name="analytics_page_clicks_format">%1$d clicks (%2$d%%)</string>
+    <string name="analytics_section_cleanup_recommendations">Cleanup Recommendations</string>
+    <string name="analytics_no_unused_pages">Excellent! All pages in this book are active. There are no unused pages.</string>
+
     <!-- Analytics & Recommendations generic strings -->
     <string name="analytics_dashboard_info">This dashboard reactively analyzes the usage history. It detects navigation detours and suggests shortcuts to reduce scan times.</string>
     <string name="analytics_recommendation_shortcut_desc">The user frequently navigates from page \"%1$s\" to \"%2$s\". A shortcut directly on \"%1$s\" saves time.</string>

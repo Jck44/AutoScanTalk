@@ -82,7 +82,7 @@ internal fun AnalyticsDetailsTab(
             tint = MaterialTheme.colorScheme.primary
         )
         Text(
-            text = "Häufige Navigations-Wege",
+            text = stringResource(R.string.analytics_section_common_transitions),
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.primary
@@ -97,7 +97,7 @@ internal fun AnalyticsDetailsTab(
         ) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Text(
-                    text = "Noch nicht genügend Navigationsdaten vorhanden.",
+                    text = stringResource(R.string.analytics_transitions_empty),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
                 )
@@ -145,7 +145,7 @@ internal fun AnalyticsDetailsTab(
                             shape = MaterialTheme.shapes.extraSmall
                         ) {
                             Text(
-                                text = "${flow.count} Übergänge",
+                                text = stringResource(R.string.analytics_transition_count_format, flow.count),
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSecondaryContainer,
                                 modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
@@ -172,7 +172,7 @@ internal fun AnalyticsDetailsTab(
             tint = MaterialTheme.colorScheme.primary
         )
         Text(
-            text = "Seiten-Analyse & Aufräum-Assistent",
+            text = stringResource(R.string.analytics_section_page_cleanup),
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.primary
@@ -201,7 +201,7 @@ internal fun AnalyticsDetailsTab(
                         tint = MaterialTheme.colorScheme.primary
                     )
                     Text(
-                        text = "Meistgenutzte Seiten",
+                        text = stringResource(R.string.analytics_section_top_used_pages),
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
@@ -209,7 +209,7 @@ internal fun AnalyticsDetailsTab(
                 }
                 if (topUsedPages.isEmpty()) {
                     Text(
-                        text = "Keine Klickdaten für Seiten vorhanden.",
+                        text = stringResource(R.string.analytics_top_pages_empty),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                     )
@@ -227,7 +227,7 @@ internal fun AnalyticsDetailsTab(
                                     fontWeight = FontWeight.Medium
                                 )
                                 Text(
-                                    text = "${pageUsage.count} Klicks (${(pageUsage.percentage * 100).toInt()}%)",
+                                    text = stringResource(R.string.analytics_page_clicks_format, pageUsage.count, (pageUsage.percentage * 100).toInt()),
                                     style = MaterialTheme.typography.labelSmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -259,7 +259,7 @@ internal fun AnalyticsDetailsTab(
                         tint = MaterialTheme.colorScheme.error
                     )
                     Text(
-                        text = "Aufräum-Empfehlungen",
+                        text = stringResource(R.string.analytics_section_cleanup_recommendations),
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
@@ -283,7 +283,7 @@ internal fun AnalyticsDetailsTab(
                                 tint = MaterialTheme.colorScheme.primary
                             )
                             Text(
-                                text = "Hervorragend! Alle Seiten in diesem Buch werden aktiv verwendet. Es gibt keine ungenutzten Seiten.",
+                                text = stringResource(R.string.analytics_no_unused_pages),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onPrimaryContainer
                             )

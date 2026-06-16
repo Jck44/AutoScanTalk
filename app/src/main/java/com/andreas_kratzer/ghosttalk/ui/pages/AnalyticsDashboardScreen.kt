@@ -112,7 +112,7 @@ fun AnalyticsDashboardScreen(
             context.getString(R.string.analytics_empty_stats)
         } else {
             val dateForm = SimpleDateFormat("dd.MM.yyyy HH:mm", locale)
-            "Statistiken erfasst von ${dateForm.format(Date(minTime))} bis ${dateForm.format(Date(maxTime))}"
+            context.getString(R.string.analytics_captured_from_to, dateForm.format(Date(minTime)), dateForm.format(Date(maxTime)))
         }
     }
 
@@ -246,12 +246,12 @@ fun AnalyticsDashboardScreen(
     if (page != null) {
         val usages = usagesToDelete.value
         GhostTalkDialog(
-            title = if (usages.isEmpty()) stringResource(R.string.page_dialog_delete_title) else "Seite wird verwendet",
+            title = if (usages.isEmpty()) stringResource(R.string.page_dialog_delete_title) else stringResource(R.string.analytics_page_in_use),
             onDismiss = {
                 pageToDelete.value = null
                 usagesToDelete.value = emptyList()
             },
-            confirmText = if (usages.isEmpty()) stringResource(CoreR.string.action_delete) else "Alles Löschen",
+            confirmText = if (usages.isEmpty()) stringResource(CoreR.string.action_delete) else stringResource(R.string.analytics_delete_all),
             onConfirm = {
                 pageViewModel.deletePage(page, deleteUsages = usages.isNotEmpty())
                 pageToDelete.value = null
@@ -263,7 +263,7 @@ fun AnalyticsDashboardScreen(
             if (usages.isEmpty()) {
                 Text(stringResource(R.string.page_dialog_delete_confirm, page.name))
             } else {
-                Text("Die Seite \"${page.name}\" wird an folgenden Stellen zur Navigation verwendet:")
+                Text(stringResource(R.string.analytics_page_used_at, page.name))
                 
                 val scrollState = rememberScrollState()
                 androidx.compose.foundation.layout.Box(
@@ -279,7 +279,7 @@ fun AnalyticsDashboardScreen(
                     }
                 }
                 
-                Text("Beim Löschen werden auch alle Buttons entfernt, die auf diese Seite verweisen.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
+                Text(stringResource(R.string.analytics_page_delete_warning), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
             }
         }
     }

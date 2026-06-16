@@ -48,8 +48,8 @@ Gruppiert nach Bereich; je Datei stehen Beispiele, die genaue Zeilenmenge liefer
 - `ui/pages/components/AudioRecordingController.kt`, `ui/pages/components/SpokenTextSection.kt` — Aufnahme-Toasts („Fehler bei der Aufnahme: …", „Aufnahme gelöscht").
 - `ui/pages/delegates/PageSplitDelegate.kt`, `ui/pages/delegates/AiRestructureDelegate.kt`, `ui/pages/delegates/SuggestionsDelegate.kt` — Ergebnis-/Fehler-Toasts.
 - `ui/pages/analytics/recommendations/LayoutOptimizationSection.kt`, `…/AiRestructureSection.kt`, `…/AiRestructureDialogs.kt`, `…/AiProposalCards.kt` — Toasts + sichtbare Labels.
-- `ui/pages/analytics/AnalyticsDashboardScreen.kt:259` — „Seite wird verwendet" (Dialog-Titel; **Rest aus dem Consistency-Plan AP4 ist erledigt**).
-- `ui/pages/analytics/AnalyticsOverviewTab.kt`, `…/AnalyticsDetailsTab.kt`, `…/buttonstats/*` — sichtbare Labels (nicht: KPI-Format-Defaults „Keine" als reine Anzeige? → ja, übersetzen).
+- [x] `ui/pages/analytics/AnalyticsDashboardScreen.kt:259` — „Seite wird verwendet" (Dialog-Titel; **Rest aus dem Consistency-Plan AP4 ist erledigt**).
+- [x] `ui/pages/analytics/AnalyticsOverviewTab.kt`, `…/AnalyticsDetailsTab.kt`, `…/buttonstats/*` — sichtbare Labels (nicht: KPI-Format-Defaults „Keine" als reine Anzeige? → ja, übersetzen).
 - `ui/pages/actions/PlayMediaActionFields.kt`, `…/SmartHomeActionFields.kt` — Feld-Labels/Hinweise.
 - `ui/pages/pagesplit/PageSplitManualPromptDialog.kt`, `…/PageSplitOptInDialog.kt` — sichtbare Texte (**nicht** der an die KI gesendete Prompt-Body).
 - **Neu aus Editor-Kohäsion (Teil B):** `ui/pages/PageWorkbenchScreen.kt` Modus-Umschalter „Raster"/„Struktur"; `core-ui/.../components/EditorTopBar.kt` `contentDescription` „Editor beenden". (Kanonische Modus-Begriffe → als Ressourcen, damit überall identisch.)
