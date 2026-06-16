@@ -55,6 +55,8 @@ fun StructureGraphNode(
     onMoveButton: (String, Int, String) -> Unit,
     onEditButton: (String, Int) -> Unit,
     onAddButton: (String) -> Unit,
+    isMultiSelectMode: Boolean = false,
+    selectedIndices: Set<Int> = emptySet(),
     modifier: Modifier = Modifier
 ) {
     val dragDropState = LocalDragDropState.current
@@ -136,6 +138,7 @@ fun StructureGraphNode(
                         DraggableChip(
                             label = btn.label,
                             action = btn.buttonAction,
+                            selected = isMultiSelectMode && selectedIndices.contains(btnIdx),
                             isDragged = dragDropState.isDragging && dragDropState.dragItem == dragItem,
                             modifier = Modifier.dragSource(item = dragItem),
                             onClick = {

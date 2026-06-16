@@ -74,6 +74,8 @@ fun StructureGraphView(
     onFocus: (String) -> Unit,
     onRemoveConnection: ((pageId: String, buttonIndex: Int, targetPageName: String) -> Unit)? = null,
     isFullView: Boolean = false,
+    isMultiSelectMode: Boolean = false,
+    selection: Map<String, Set<Int>> = emptyMap(),
     modifier: Modifier = Modifier,
     pages: List<Page>,
     onMoveButton: (String, Int, String) -> Unit,
@@ -242,7 +244,9 @@ fun StructureGraphView(
                             onFocus = {},
                             onMoveButton = onMoveButton,
                             onEditButton = onEditButton,
-                            onAddButton = onAddButton
+                            onAddButton = onAddButton,
+                            isMultiSelectMode = isMultiSelectMode,
+                            selectedIndices = selection[focusedPageId].orEmpty()
                         )
                     }.map { it.measure(Constraints.fixedWidth(with(density) { centerWidthDp.roundToPx() })) }
                     val centerPlaceable = centerPlaceables.first()
@@ -285,7 +289,9 @@ fun StructureGraphView(
                                     onFocus = { onFocus(sourceId) },
                                     onMoveButton = onMoveButton,
                                     onEditButton = onEditButton,
-                                    onAddButton = onAddButton
+                                    onAddButton = onAddButton,
+                                    isMultiSelectMode = isMultiSelectMode,
+                                    selectedIndices = selection[sourceId].orEmpty()
                                 )
                             }
                         }
@@ -329,7 +335,9 @@ fun StructureGraphView(
                                     onFocus = { onFocus(targetId) },
                                     onMoveButton = onMoveButton,
                                     onEditButton = onEditButton,
-                                    onAddButton = onAddButton
+                                    onAddButton = onAddButton,
+                                    isMultiSelectMode = isMultiSelectMode,
+                                    selectedIndices = selection[targetId].orEmpty()
                                 )
                             }
                         }

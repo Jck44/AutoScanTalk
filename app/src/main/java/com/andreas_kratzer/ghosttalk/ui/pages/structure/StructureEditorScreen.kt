@@ -227,6 +227,14 @@ fun StructureEditorScreen(
     var incomingUsages by remember { mutableStateOf<List<com.andreas_kratzer.ghosttalk.core.domain.pages.UsageLocation>>(emptyList()) }
     var showOverflowMenu by remember { mutableStateOf(false) }
 
+    var isMultiSelectMode by remember { mutableStateOf(false) }
+    var selection by remember { mutableStateOf<Map<String, Set<Int>>>(emptyMap()) }
+    var showBulkMoveDialog by remember { mutableStateOf(false) }
+    var showBulkCopyDialog by remember { mutableStateOf(false) }
+    var showBulkDeleteConfirm by remember { mutableStateOf(false) }
+    val selectedCount = remember(selection) { selection.values.sumOf { it.size } }
+    val clearSelection = { selection = emptyMap(); isMultiSelectMode = false }
+
     var pageToRemoveConnectionFromPageId by remember { mutableStateOf("") }
     var pageToRemoveConnectionByButtonIndex by remember { mutableStateOf<Int?>(null) }
     var pageToRemoveConnectionTargetName by remember { mutableStateOf("") }
@@ -423,26 +431,52 @@ fun StructureEditorScreen(
 
     Scaffold(
         topBar = {
-            EditorTopBar(
-                titleContent = {
-                    Text(
-                        text = localName,
-                        style = MaterialTheme.typography.titleLarge,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier
-                            .weight(1f, fill = false)
-                            .testTag("structure_editor_title")
-                    )
-                },
-                onNavigateBack = onNavigateBack,
-                onExitEditor = null, // Disable top-right exit button in TopBar
-                modeSwitcher = modeSwitcher,
-                actions = {
-                    val historyState by gridEditorViewModel.historyState.collectAsState()
+            if (isMultiSelectMode) {
+                com.andreas_kratzer.ghosttalk.ui.components.BulkActionTopBar(
+                    selectedCount = selectedCount,
+                    onCancel = { clearSelection() },
+                    onMove = { showBulkMoveDialog = true },
+                    onCopy = { showBulkCopyDialog = true },
+                    onDelete = { showBulkDeleteConfirm = true }
+                )
+            } else {
+                EditorTopBar(
+                    titleContent = {
+                        Text(
+                            text = localName,
+                            style = MaterialTheme.typography.titleLarge,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier
+                                .weight(1f, fill = false)
+                                .testTag("structure_editor_title")
+                        )
+                    },
+                    onNavigateBack = onNavigateBack,
+                    onExitEditor = null, // Disable top-right exit button in TopBar
+                    modeSwitcher = modeSwitcher,
+                    actions = {
+                        val historyState by gridEditorViewModel.historyState.collectAsState()
 
-                    // Inline Action 1: Assistent (icon)
-                    EditorAssistantButton(
+                        // Multi-select toggle button
+                        IconButton(
+                            onClick = {
+                                isMultiSelectMode = !isMultiSelectMode
+                                if (!isMultiSelectMode) {
+                                    selection = emptyMap()
+                                }
+                            },
+                            modifier = Modifier.testTag("structure_editor_multiselect_toggle")
+                        ) {
+                            Icon(
+                                imageVector = GhostTalkIcons.CheckCircle,
+                                contentDescription = stringResource(R.string.bulk_action_toggle_multi_select),
+                                tint = if (isMultiSelectMode) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+
+                        // Inline Action 1: Assistent (icon)
+                        EditorAssistantButton(
                         onClick = {
                             val accepted = pageSplitViewModel.hasAcceptedPageSplitOptIn
                             if (accepted) {
@@ -618,7 +652,8 @@ fun StructureEditorScreen(
                     }
                 }
             )
-        },
+        }
+    },
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { paddingValues ->
         DragDropContainer(
@@ -761,9 +796,19 @@ fun StructureEditorScreen(
                             pageToRemoveConnectionTargetName = targetPageName
                         },
                         onCreatePage = onCreatePage,
-                        onEditButton = { pageId, idx -> editTarget = pageId to idx },
+                        onEditButton = { pageId, idx ->
+                            if (isMultiSelectMode) {
+                                val cur = selection[pageId].orEmpty()
+                                val next = if (cur.contains(idx)) cur - idx else cur + idx
+                                selection = if (next.isEmpty()) selection - pageId else selection + (pageId to next)
+                            } else {
+                                editTarget = pageId to idx
+                            }
+                        },
                         onAddButton = { pageId -> addTargetPageId = pageId },
                         onRegisterSplitWizardDropCallback = { callback -> onSplitWizardDropCallback = callback },
+                        isMultiSelectMode = isMultiSelectMode,
+                        selection = selection,
                         modifier = Modifier
                             .weight(1f)
                             .fillMaxHeight()
@@ -1268,5 +1313,100 @@ fun StructureEditorScreen(
                 }
             }
         }
+    }
+
+    if (showBulkDeleteConfirm) {
+        AlertDialog(
+            onDismissRequest = { showBulkDeleteConfirm = false },
+            title = { Text(stringResource(R.string.bulk_action_delete)) },
+            text = { Text(stringResource(R.string.bulk_action_confirm_delete)) },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        selection.forEach { (pageId, indices) ->
+                            gridEditorViewModel.bulkDeleteButtons(pageId, indices.toList())
+                        }
+                        showSuccessSnackbarWithUndo(R.string.button_delete_success)
+                        clearSelection()
+                        showBulkDeleteConfirm = false
+                    }
+                ) {
+                    Text(stringResource(R.string.bulk_action_delete))
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showBulkDeleteConfirm = false }
+                ) {
+                    Text(stringResource(R.string.action_cancel))
+                }
+            }
+        )
+    }
+
+    if (showBulkMoveDialog) {
+        SearchablePagePicker(
+            title = stringResource(R.string.bulk_action_move),
+            subtitle = null,
+            excludePageId = "",
+            pages = pages,
+            onDismissRequest = { showBulkMoveDialog = false },
+            onPageSelected = { targetPageId ->
+                selection.forEach { (srcPageId, indices) ->
+                    if (srcPageId != targetPageId) {
+                        gridEditorViewModel.moveButtonToPage(
+                            fromPageId = srcPageId,
+                            fromIndices = indices.toList(),
+                            toPageId = targetPageId,
+                            forceMove = false
+                        ) { result ->
+                            if (result is com.andreas_kratzer.ghosttalk.core.domain.pages.MoveButtonToPageUseCase.MoveResult.TargetFull) {
+                                scope.launch {
+                                    snackbarHostState.showSnackbar(
+                                        message = pageViewModel.getApplication<android.app.Application>()
+                                            .getString(R.string.structure_target_full)
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+                showSuccessSnackbarWithUndo(R.string.button_move_success)
+                clearSelection()
+                showBulkMoveDialog = false
+            }
+        )
+    }
+
+    if (showBulkCopyDialog) {
+        SearchablePagePicker(
+            title = stringResource(R.string.bulk_action_copy),
+            subtitle = null,
+            excludePageId = "",
+            pages = pages,
+            onDismissRequest = { showBulkCopyDialog = false },
+            onPageSelected = { targetPageId ->
+                selection.forEach { (srcPageId, indices) ->
+                    gridEditorViewModel.duplicateButtonToPage(
+                        fromPageId = srcPageId,
+                        fromIndices = indices.toList(),
+                        toPageId = targetPageId,
+                        forceMove = false
+                    ) { result ->
+                        if (result is com.andreas_kratzer.ghosttalk.core.domain.pages.MoveButtonToPageUseCase.MoveResult.TargetFull) {
+                            scope.launch {
+                                snackbarHostState.showSnackbar(
+                                    message = pageViewModel.getApplication<android.app.Application>()
+                                        .getString(R.string.structure_target_full)
+                                )
+                            }
+                        }
+                    }
+                }
+                showSuccessSnackbarWithUndo(R.string.button_duplicate_success)
+                clearSelection()
+                showBulkCopyDialog = false
+            }
+        )
     }
 }

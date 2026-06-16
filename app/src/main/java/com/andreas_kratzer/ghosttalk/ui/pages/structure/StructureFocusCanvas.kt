@@ -102,6 +102,8 @@ fun StructureFocusCanvas(
     onEditButton: (String, Int) -> Unit = { _, _ -> },
     onAddButton: (String) -> Unit = {},
     onRegisterSplitWizardDropCallback: (((SplitWizardButtonDrag, Any) -> Unit) -> Unit)? = null,
+    isMultiSelectMode: Boolean = false,
+    selection: Map<String, Set<Int>> = emptyMap(),
     modifier: Modifier = Modifier
 ) {
     val page = remember(pages, focusedPageId) { pages.find { it.id == focusedPageId } }
@@ -250,6 +252,8 @@ fun StructureFocusCanvas(
                 onFocus = onFocus,
                 onRemoveConnection = onRemoveConnection,
                 isFullView = true,
+                isMultiSelectMode = isMultiSelectMode,
+                selection = selection,
                 modifier = Modifier.fillMaxSize(),
                 pages = pages,
                 onMoveButton = onMoveButton,
@@ -459,6 +463,7 @@ fun StructureFocusCanvas(
                                                         DraggableChip(
                                                             label = btn.label,
                                                             action = btn.buttonAction,
+                                                            selected = isMultiSelectMode && selection[focusedPageId].orEmpty().contains(index),
                                                             isDragged = dragDropState.isDragging && dragDropState.dragItem == dragItem,
                                                             modifier = Modifier.dragSource(item = dragItem),
                                                             onClick = {
@@ -664,6 +669,7 @@ fun StructureFocusCanvas(
                                                                 DraggableChip(
                                                                     label = btn.label,
                                                                     action = btn.buttonAction,
+                                                                    selected = isMultiSelectMode && selection[edge.targetPageId].orEmpty().contains(btnIndex),
                                                                     isDragged = dragDropState.isDragging && dragDropState.dragItem == dragItem,
                                                                     modifier = Modifier.dragSource(item = dragItem),
                                                                     onClick = {
