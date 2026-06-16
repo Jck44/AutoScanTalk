@@ -20,6 +20,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
@@ -64,6 +65,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import com.andreas_kratzer.ghosttalk.core.ui.R as CoreR
 
+@Suppress("UNUSED_VALUE", "AssignedValueDoubleCheck")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PageEditorScreen(
@@ -212,7 +214,7 @@ fun PageEditorScreen(
                                 )
                         ) {
                             Icon(
-                                imageVector = com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons.CheckCircle,
+                                imageVector = GhostTalkIcons.CheckCircle,
                                 contentDescription = stringResource(R.string.bulk_action_toggle_multi_select),
                                 tint = if (isMultiSelectMode) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -546,10 +548,10 @@ fun PageEditorScreen(
 
         if (showHistoryPanel) {
             val historyState by gridEditorViewModel.historyState.collectAsState()
-            androidx.compose.material3.ModalBottomSheet(
+            ModalBottomSheet(
                 onDismissRequest = { showHistoryPanel = false }
             ) {
-                androidx.compose.foundation.layout.Column(
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(16.dp)
@@ -574,12 +576,12 @@ fun PageEditorScreen(
                         }
                     } else {
                         androidx.compose.foundation.lazy.LazyColumn(
-                            verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             items(historyState.entries.size) { index ->
                                 val entry = historyState.entries[index]
-                                androidx.compose.material3.Surface(
+                                Surface(
                                     onClick = {
                                         gridEditorViewModel.undoTo(index)
                                         showHistoryPanel = false
@@ -591,7 +593,7 @@ fun PageEditorScreen(
                                     androidx.compose.foundation.layout.Row(
                                         modifier = Modifier.padding(12.dp),
                                         verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(12.dp)
+                                        horizontalArrangement = Arrangement.spacedBy(12.dp)
                                     ) {
                                         val icon = when (entry.icon) {
                                             EditIcon.DELETE -> Icons.Default.Close
@@ -624,7 +626,6 @@ fun PageEditorScreen(
 
 @Composable
 fun resolveEditLabel(label: EditLabel): String {
-    val context = LocalContext.current
     val formatArgs = label.args.map { arg ->
         if (arg is EditLabel) {
             resolveEditLabel(arg)
@@ -633,8 +634,8 @@ fun resolveEditLabel(label: EditLabel): String {
         }
     }.toTypedArray()
     return if (label.isPlural) {
-        context.resources.getQuantityString(label.resId, label.quantity, *formatArgs)
+        androidx.compose.ui.res.pluralStringResource(label.resId, label.quantity, *formatArgs)
     } else {
-        context.getString(label.resId, *formatArgs)
+        stringResource(label.resId, *formatArgs)
     }
 }

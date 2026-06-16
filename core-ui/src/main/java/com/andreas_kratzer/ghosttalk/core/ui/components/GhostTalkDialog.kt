@@ -18,11 +18,11 @@ import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
 
 @Composable
 fun GhostTalkDialog(
-    title: String = "",
     onDismiss: () -> Unit,
     confirmText: String,
     onConfirm: () -> Unit,
     modifier: Modifier = Modifier,
+    title: String = "",
     titleContent: @Composable (() -> Unit)? = null,
     icon: @Composable (() -> Unit)? = null,
     dismissText: String? = null,          // null = kein Abbrechen-Button

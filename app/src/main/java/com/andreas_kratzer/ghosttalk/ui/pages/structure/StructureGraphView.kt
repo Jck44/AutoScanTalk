@@ -78,7 +78,6 @@ fun StructureGraphView(
     selection: Map<String, Set<Int>> = emptyMap(),
     modifier: Modifier = Modifier,
     pages: List<Page>,
-    onMoveButton: (String, Int, String) -> Unit,
     onEditButton: (String, Int) -> Unit,
     onAddButton: (String) -> Unit
 ) {
@@ -242,7 +241,6 @@ fun StructureGraphView(
                                 }
                             },
                             onFocus = {},
-                            onMoveButton = onMoveButton,
                             onEditButton = onEditButton,
                             onAddButton = onAddButton,
                             isMultiSelectMode = isMultiSelectMode,
@@ -287,7 +285,6 @@ fun StructureGraphView(
                                         }
                                     },
                                     onFocus = { onFocus(sourceId) },
-                                    onMoveButton = onMoveButton,
                                     onEditButton = onEditButton,
                                     onAddButton = onAddButton,
                                     isMultiSelectMode = isMultiSelectMode,
@@ -333,7 +330,6 @@ fun StructureGraphView(
                                         }
                                     },
                                     onFocus = { onFocus(targetId) },
-                                    onMoveButton = onMoveButton,
                                     onEditButton = onEditButton,
                                     onAddButton = onAddButton,
                                     isMultiSelectMode = isMultiSelectMode,

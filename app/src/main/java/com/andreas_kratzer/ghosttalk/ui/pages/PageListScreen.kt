@@ -460,7 +460,7 @@ fun PageListScreen(
 
             if (allPages.isEmpty()) {
                 com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkEmptyState(
-                    icon = com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons.Description,
+                    icon = GhostTalkIcons.Description,
                     title = stringResource(R.string.page_list_empty_title),
                     description = stringResource(R.string.page_list_empty_desc),
                     actionLabel = stringResource(R.string.page_list_empty_action),

@@ -89,7 +89,7 @@ fun GridEditorGrid(
                 android.provider.Settings.Global.ANIMATOR_DURATION_SCALE,
                 1.0f
             ) == 0.0f
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             false
         }
     }

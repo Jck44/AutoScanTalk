@@ -50,7 +50,7 @@ fun AudioCacheDialog(
         cacheItems.groupBy { it.text }
     }
 
-    var showClearConfirmation by remember { mutableStateOf(false) }
+    val showClearConfirmationState = remember { mutableStateOf(false) }
 
     GhostTalkDialog(
         title = "Gecachte Audios",
@@ -59,7 +59,7 @@ fun AudioCacheDialog(
         onDismiss = onDismiss,
         neutralButton = {
             if (cacheItems.isNotEmpty()) {
-                TextButton(onClick = { showClearConfirmation = true }) {
+                TextButton(onClick = { showClearConfirmationState.value = true }) {
                     Text("Alle löschen", color = MaterialTheme.colorScheme.error)
                 }
             }
@@ -89,7 +89,7 @@ fun AudioCacheDialog(
                                             setOnCompletionListener { mp -> mp.release() }
                                             start()
                                         }
-                                    } catch (e: Exception) { /* ignore */ }
+                                    } catch (_: Exception) { /* ignore */ }
                                 },
                                 onDelete = { onDelete(it) }
                             )
@@ -103,7 +103,7 @@ fun AudioCacheDialog(
                                             setOnCompletionListener { mp -> mp.release() }
                                             start()
                                         }
-                                    } catch (e: Exception) { /* ignore */ }
+                                    } catch (_: Exception) { /* ignore */ }
                                 },
                                 onDelete = { onDelete(it) }
                             )
@@ -114,7 +114,7 @@ fun AudioCacheDialog(
         }
     )
 
-    if (showClearConfirmation) {
+    if (showClearConfirmationState.value) {
         GhostTalkDialog(
             title = "Gesamten Cache löschen?",
             confirmText = "Ja, löschen",
@@ -122,9 +122,9 @@ fun AudioCacheDialog(
             isDestructive = true,
             onConfirm = {
                 onClearAll()
-                showClearConfirmation = false
+                showClearConfirmationState.value = false
             },
-            onDismiss = { showClearConfirmation = false },
+            onDismiss = { showClearConfirmationState.value = false },
             content = {
                 Text("Es werden alle ${cacheItems.size} Audio-Dateien vom Gerät gelöscht. Dies verursacht bei erneuter Verwendung erneute API-Kosten.")
             }

@@ -15,8 +15,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.BottomSheetDefaults
@@ -51,7 +51,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -89,6 +88,7 @@ enum class StructureViewMode {
     CARDS, GRAPH
 }
 
+@Suppress("UNUSED_VALUE", "AssignedValueDoubleCheck")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun StructureEditorScreen(
@@ -97,7 +97,6 @@ fun StructureEditorScreen(
     initialFocusedPageId: String? = null,
     initialTriggerSplit: Boolean = false,
     pageSplitViewModel: PageSplitViewModel = hiltViewModel(),
-    onEditPageInGrid: (pageId: String) -> Unit,
     onNavigateBack: () -> Unit,
     viewMode: StructureViewMode = StructureViewMode.CARDS,
     modeSwitcher: (@Composable () -> Unit)? = null,
@@ -151,7 +150,6 @@ fun StructureEditorScreen(
     }
 
     val pageSplitProposal by pageSplitViewModel.pageSplitProposal.collectAsState()
-    val isPageSplitLoading by pageSplitViewModel.isPageSplitLoading.collectAsState()
 
     val showOptInDialog = remember { mutableStateOf(false) }
     val showManualPromptDialog = remember { mutableStateOf(false) }
@@ -194,8 +192,9 @@ fun StructureEditorScreen(
         }
     }
 
-    val configuration = LocalConfiguration.current
-    val isTablet = configuration.screenWidthDp >= 600
+    val windowInfo = androidx.compose.ui.platform.LocalWindowInfo.current
+    val density = androidx.compose.ui.platform.LocalDensity.current
+    val isTablet = with(density) { windowInfo.containerSize.width.toDp() } >= 600.dp
 
     val sheetState = rememberModalBottomSheetState()
     val scope = rememberCoroutineScope()
@@ -206,7 +205,7 @@ fun StructureEditorScreen(
     var editTarget by remember { mutableStateOf<Pair<String, Int>?>(null) }
     var addTargetPageId by remember { mutableStateOf<String?>(null) }
     var editingTemplate by remember { mutableStateOf<com.andreas_kratzer.ghosttalk.core.model.ButtonTemplate?>(null) }
-    val showSaveTemplateDialogConfig = remember { mutableStateOf<com.andreas_kratzer.ghosttalk.core.model.ButtonConfig?>(null) }
+    val showSaveTemplateDialogConfig = remember { mutableStateOf<ButtonConfig?>(null) }
     var newTemplateName by remember { mutableStateOf("") }
 
     var onSplitWizardDropCallback by remember { mutableStateOf<((SplitWizardButtonDrag, Any) -> Unit)?>(null) }
@@ -511,7 +510,7 @@ fun StructureEditorScreen(
                         modifier = Modifier.testTag("structure_editor_templates_button")
                     ) {
                         Icon(
-                            imageVector = Icons.Default.List,
+                            imageVector = Icons.AutoMirrored.Filled.List,
                             contentDescription = stringResource(R.string.template_panel_title),
                             tint = if (templatesPanelExpanded && isTablet) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -659,13 +658,13 @@ fun StructureEditorScreen(
                 val label = when (draggedItem) {
                     is com.andreas_kratzer.ghosttalk.ui.components.StructureButtonDrag -> draggedItem.label
                     is com.andreas_kratzer.ghosttalk.core.model.ButtonTemplate -> draggedItem.buttonConfig.label
-                    is com.andreas_kratzer.ghosttalk.ui.components.SplitWizardButtonDrag -> draggedItem.label
+                    is SplitWizardButtonDrag -> draggedItem.label
                     else -> ""
                 }
                 val action = when (draggedItem) {
                     is com.andreas_kratzer.ghosttalk.ui.components.StructureButtonDrag -> draggedItem.action
                     is com.andreas_kratzer.ghosttalk.core.model.ButtonTemplate -> draggedItem.buttonConfig.buttonAction
-                    is com.andreas_kratzer.ghosttalk.ui.components.SplitWizardButtonDrag -> draggedItem.action
+                    is SplitWizardButtonDrag -> draggedItem.action
                     else -> null
                 }
                 val isDark = androidx.compose.foundation.isSystemInDarkTheme()
@@ -758,20 +757,16 @@ fun StructureEditorScreen(
                     StructureFocusCanvas(
                         focusedPageId = focusedPageId,
                         pages = pages,
-                        templates = templates,
                         graph = graph,
                         pageNames = pageNames,
-                        viewMode = viewMode,
-                        proposal = pageSplitProposal,
-                        isSplitLoading = isPageSplitLoading,
-                        onTriggerSplit = {
-                            val accepted = pageSplitViewModel.hasAcceptedPageSplitOptIn
-                            if (accepted) {
-                                pageSplitViewModel.generatePageSplitProposal(focusedPageId)
-                            } else {
-                                showOptInDialog.value = true
-                            }
+                        onFocus = { navigateToPage(it) },
+                        onAddConnection = onAddConnection,
+                        onRemoveConnection = { pageId, buttonIndex, targetPageName ->
+                            pageToRemoveConnectionFromPageId = pageId
+                            pageToRemoveConnectionByButtonIndex = buttonIndex
+                            pageToRemoveConnectionTargetName = targetPageName
                         },
+                        proposal = pageSplitProposal,
                         onApplySplit = { proposalVal ->
                             pageSplitViewModel.applyPageSplit(focusedPageId, proposalVal)
                             pageSplitViewModel.clearPageSplitProposal()
@@ -779,16 +774,7 @@ fun StructureEditorScreen(
                         onDiscardSplit = {
                             pageSplitViewModel.clearPageSplitProposal()
                         },
-                        onFocus = { navigateToPage(it) },
-                        onEditPageInGrid = onEditPageInGrid,
-                        onMoveButton = onMoveButton,
-                        onAddConnection = onAddConnection,
-                        onRemoveConnection = { pageId, buttonIndex, targetPageName ->
-                            pageToRemoveConnectionFromPageId = pageId
-                            pageToRemoveConnectionByButtonIndex = buttonIndex
-                            pageToRemoveConnectionTargetName = targetPageName
-                        },
-                        onCreatePage = onCreatePage,
+                        viewMode = viewMode,
                         onEditButton = { pageId, idx ->
                             if (isMultiSelectMode) {
                                 val cur = selection[pageId].orEmpty()
@@ -1215,7 +1201,7 @@ fun StructureEditorScreen(
                 val config = showSaveTemplateDialogConfig.value
                 if (config != null && newTemplateName.isNotBlank()) {
                     gridEditorViewModel.saveButtonAsTemplate(newTemplateName, config)
-                    android.widget.Toast.makeText(context, "Vorlage gespeichert", android.widget.Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, "Vorlage gespeichert", Toast.LENGTH_SHORT).show()
                 }
                 showSaveTemplateDialogConfig.value = null
             },

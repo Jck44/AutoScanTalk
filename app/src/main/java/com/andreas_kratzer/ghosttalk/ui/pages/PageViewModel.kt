@@ -56,17 +56,17 @@ class PageViewModel @Inject constructor(
     private val callManagementDelegate: com.andreas_kratzer.ghosttalk.ui.pages.delegates.CallManagementDelegate,
     private val navigationDelegate: com.andreas_kratzer.ghosttalk.ui.pages.delegates.NavigationDelegate,
     private val analyticsDelegate: com.andreas_kratzer.ghosttalk.ui.pages.delegates.AnalyticsDelegate,
-    private val smartIntegrationDelegate: com.andreas_kratzer.ghosttalk.ui.pages.delegates.SmartIntegrationDelegate,
-    private val suggestionsDelegate: com.andreas_kratzer.ghosttalk.ui.pages.delegates.SuggestionsDelegate,
-    private val ttsPreviewDelegate: com.andreas_kratzer.ghosttalk.ui.pages.delegates.TtsPreviewDelegate,
-    private val buttonTemplateDelegate: com.andreas_kratzer.ghosttalk.ui.pages.delegates.ButtonTemplateDelegate,
+    smartIntegrationDelegate: com.andreas_kratzer.ghosttalk.ui.pages.delegates.SmartIntegrationDelegate,
+    suggestionsDelegate: com.andreas_kratzer.ghosttalk.ui.pages.delegates.SuggestionsDelegate,
+    ttsPreviewDelegate: com.andreas_kratzer.ghosttalk.ui.pages.delegates.TtsPreviewDelegate,
+    buttonTemplateDelegate: com.andreas_kratzer.ghosttalk.ui.pages.delegates.ButtonTemplateDelegate,
     private val pageResolutionDelegate: com.andreas_kratzer.ghosttalk.ui.pages.delegates.PageResolutionDelegate,
     updateSmartPredictionsUseCase: UpdateSmartPredictionsUseCase,
     private val actionExecutor: ActionExecutor,
     private val scanCoordinator: ScanCoordinator,
-    private val geminiUseCase: GeminiUseCase,
-    private val philipsHueManager: PhilipsHueManager,
-    private val createPageUseCase: CreatePageUseCase,
+    geminiUseCase: GeminiUseCase,
+    philipsHueManager: PhilipsHueManager,
+    createPageUseCase: CreatePageUseCase,
     private val buttonUsageRepository: com.andreas_kratzer.ghosttalk.core.data.ButtonUsageRepository
 ) : AndroidViewModel(application) {
 
@@ -125,9 +125,7 @@ class PageViewModel @Inject constructor(
     val isGeminiEnabled get() = settingsRepository.isGeminiEnabled
     val defaultStartPageIdFlow = settingsRepository.defaultStartPageIdFlow
 
-    val spotifyUserDisplayName = smartIntegrationDelegate.spotifyUserDisplayName
-    val spotifyPlaylists = smartIntegrationDelegate.spotifyPlaylists
-    val isLoadingPlaylists = smartIntegrationDelegate.isLoadingPlaylists
+
 
     val staticRowPage: StateFlow<Page?> = pageResolutionDelegate.getStaticRowPage(
         scope = viewModelScope,
@@ -175,12 +173,7 @@ class PageViewModel @Inject constructor(
         analyticsDelegate.toggleAnalyticsOverlay()
     }
 
-    val pageMetrics = analyticsDelegate.pageMetrics
 
-    suspend fun getMarkovSuccessors(buttonId: String): List<Pair<String, Int>> {
-        val bookId = activeBookId.value ?: return emptyList()
-        return buttonUsageRepository.getMarkovSuccessors(bookId, buttonId)
-    }
 
     val focusedButtonIndex = scanCoordinator.focusedButtonIndex
     val focusedRowIndex = scanCoordinator.focusedRowIndex

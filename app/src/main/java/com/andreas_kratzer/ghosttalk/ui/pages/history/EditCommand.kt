@@ -1,7 +1,5 @@
 package com.andreas_kratzer.ghosttalk.ui.pages.history
 
-import androidx.annotation.StringRes
-
 interface EditCommand {
     val pageId: String?
     val label: EditLabel
@@ -12,7 +10,7 @@ interface EditCommand {
 }
 
 data class EditLabel(
-    @StringRes val resId: Int,
+    val resId: Int,
     val args: List<Any> = emptyList(),
     val isPlural: Boolean = false,
     val quantity: Int = 1

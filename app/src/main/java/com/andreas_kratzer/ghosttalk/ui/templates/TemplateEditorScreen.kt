@@ -76,7 +76,7 @@ fun TemplateEditorScreen(
                 com.andreas_kratzer.ghosttalk.ui.components.BulkActionTopBar(
                     selectedCount = selectedButtonIndices.size,
                     onCancel = {
-                        isMultiSelectMode = false
+                        isMultiSelectModeState.value = false
                         selectedButtonIndices = emptySet()
                     },
                     onMove = { showMoveDialogState.value = true },

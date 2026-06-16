@@ -550,10 +550,10 @@
     <string name="settings_vocal_test_not_recognized">Nicht erkannt / Blockiert</string>
 
     <!-- Phase 15 Refactoring Strings -->
-    <string name="settings_elevenlabs_testing">ElevenLabs Verbindung wird getestet...</string>
+    <string name="settings_elevenlabs_testing">ElevenLabs Verbindung wird getestet&#8230;</string>
     <string name="settings_error_delete_book">Fehler beim Löschen des Buches</string>
     <string name="settings_error_share_logs">Fehler beim Teilen des Fehlerberichts: %1$s</string>
-    <string name="settings_logs_uploading">Fehlerbericht wird hochgeladen...</string>
+    <string name="settings_logs_uploading">Fehlerbericht wird hochgeladen&#8230;</string>
     <string name="settings_error_upload_failed">Upload fehlgeschlagen: %1$s</string>
     <string name="settings_error_delete_last_profile">Das einzige verbleibende Profil kann nicht gelöscht werden.</string>
     <string name="settings_selected_saf_folder">Ausgewählter SAF-Ordner</string>
@@ -570,7 +570,7 @@
 
     <!-- AP 4 Strings -->
     <string name="content_manage_configure_static_row">Statische Zeile konfigurieren</string>
-    <string name="hue_toast_searching">Suche nach Hue Bridges...</string>
+    <string name="hue_toast_searching">Suche nach Hue Bridges&#8230;</string>
     <string name="hue_toast_bridge_found">Bridge gefunden: %1$s</string>
     <string name="hue_toast_no_bridge_found">Keine Hue Bridge im Netzwerk gefunden.</string>
     <string name="hue_toast_missing_ip">Bitte zuerst die Bridge-IP angeben oder suchen.</string>
@@ -579,7 +579,7 @@
     <string name="hue_toast_devices_cached">%1$d Lampen geladen und im Cache gespeichert.</string>
     <string name="hue_toast_bridge_unreachable">Konnte Bridge nicht erreichen. Alter Cache wird beibehalten.</string>
     <string name="hue_toast_cert_accepted_press_button">Zertifikat akzeptiert. Bitte den Knopf auf der Bridge drücken!</string>
-    <string name="hue_pairing_press_link_button">Bitte drücken Sie jetzt den Link-Button auf Ihrer Hue Bridge...</string>
+    <string name="hue_pairing_press_link_button">Bitte drücken Sie jetzt den Link-Button auf Ihrer Hue Bridge&#8230;</string>
     <string name="hue_toast_pairing_success">Erfolgreich gekoppelt!</string>
     <string name="hue_toast_pairing_failed">Kopplung fehlgeschlagen. Haben Sie den Knopf gedrückt?</string>
     <string name="cloud_sync_no_backups_in_folder">Keine Backups in dem ausgewählten Ordner gefunden.</string>

@@ -146,7 +146,7 @@ fun TemplateScreen(
 
                 if (templates.isEmpty()) {
                     com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkEmptyState(
-                        icon = com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons.GridView,
+                        icon = GhostTalkIcons.GridView,
                         title = stringResource(R.string.template_list_empty_title),
                         description = stringResource(R.string.template_list_empty_desc),
                         actionLabel = stringResource(R.string.template_list_empty_action),

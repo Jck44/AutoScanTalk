@@ -91,7 +91,7 @@ fun SettingsScreen(
     val editingProfileId by viewModel.editingProfileId.collectAsState()
     val editingProfileName by viewModel.editingProfileName.collectAsState()
     val hasUnsavedChanges by viewModel.hasUnsavedChanges.collectAsState()
-    var showDiscardChangesDialog by remember { mutableStateOf(false) }
+    val showDiscardChangesDialogState = remember { mutableStateOf(false) }
 
     val authIntent by viewModel.authIntentFlow.collectAsState(null)
     val signInError by viewModel.signInErrorMessage.collectAsState()
@@ -132,6 +132,9 @@ fun SettingsScreen(
     }
 
 
+    val defaultSafFolderDisplayName = stringResource(R.string.settings_selected_saf_folder)
+    val safImportErrorTemplate = stringResource(R.string.settings_error_import)
+
     val safImportFolderLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocumentTree()
     ) { uri ->
@@ -141,11 +144,11 @@ fun SettingsScreen(
             try {
                 context.contentResolver.takePersistableUriPermission(it, takeFlags)
                 val doc = androidx.documentfile.provider.DocumentFile.fromTreeUri(context, it)
-                val displayName = doc?.name ?: it.lastPathSegment ?: context.getString(R.string.settings_selected_saf_folder)
+                val displayName = doc?.name ?: it.lastPathSegment ?: defaultSafFolderDisplayName
                 viewModel.fetchAvailableBackupsFromSaf(it.toString(), displayName)
             } catch (e: Exception) {
                 e.printStackTrace()
-                Toast.makeText(context, context.getString(R.string.settings_error_import, e.message), Toast.LENGTH_LONG).show()
+                Toast.makeText(context, safImportErrorTemplate.format(e.message ?: ""), Toast.LENGTH_LONG).show()
             }
         }
     }
@@ -158,15 +161,14 @@ fun SettingsScreen(
 
     // Track previous editingProfileId to detect transitions synchronously (same frame)
     // LaunchedEffect runs *after* the frame, causing a 1-frame flash of stale content.
-    var previousEditingId by remember { mutableStateOf(editingProfileId) }
-    if (previousEditingId != editingProfileId) {
-        val wasEditing = previousEditingId != null
-        previousEditingId = editingProfileId
+    val previousEditingIdState = remember { mutableStateOf(editingProfileId) }
+    if (previousEditingIdState.value != editingProfileId) {
+        previousEditingIdState.value = editingProfileId
 
         if (editingProfileId != null) {
             // Entering edit mode
             selectedSection = if (isLargeScreen) SettingsSection.GENERAL else null
-        } else if (wasEditing) {
+        } else {
             // Leaving edit mode → navigate back to profile list
             selectedSection = SettingsSection.PROFILE
         }
@@ -181,7 +183,7 @@ fun SettingsScreen(
             } else {
                 // On tablet or mobile root edit menu, prompt/cancel edit session
                 if (hasUnsavedChanges) {
-                    showDiscardChangesDialog = true
+                    showDiscardChangesDialogState.value = true
                 } else {
                     viewModel.cancelEditingProfile()
                 }
@@ -199,7 +201,7 @@ fun SettingsScreen(
         }
     }
 
-    val isProfileSyncing by viewModel.isProfileSyncing.collectAsState()
+
 
     val screenTitle = if (editingProfileId != null) {
         val editingTitle = if (isGlobal) stringResource(R.string.settings_edit_global_profile) else stringResource(R.string.settings_edit_profile)
@@ -475,13 +477,13 @@ fun SettingsScreen(
 
     val showActionHistory by viewModel.showActionHistoryDialog.collectAsState()
 
-    if (showDiscardChangesDialog) {
+    if (showDiscardChangesDialogState.value) {
         GhostTalkDialog(
             title = stringResource(R.string.settings_dialog_discard_changes_title),
-            onDismiss = { showDiscardChangesDialog = false },
+            onDismiss = { showDiscardChangesDialogState.value = false },
             confirmText = stringResource(R.string.settings_dialog_discard_changes_confirm),
             onConfirm = {
-                showDiscardChangesDialog = false
+                showDiscardChangesDialogState.value = false
                 viewModel.cancelEditingProfile()
             },
             dismissText = stringResource(CoreR.string.action_cancel),

@@ -445,7 +445,7 @@ fun GridEditorContent(
                     confirmText = stringResource(R.string.bulk_action_delete),
                     onConfirm = {
                         showConfirmDeleteDialog = false
-                        val itemId = (item as? Page)?.id ?: (item as? com.andreas_kratzer.ghosttalk.core.model.PageTemplate)?.id
+                        val itemId = (item as? Page)?.id ?: (item as? PageTemplate)?.id
                         if (itemId != null) {
                             scope.launch {
                                 actions.bulkDeleteButtons(itemId, selectedButtonIndices.toList())

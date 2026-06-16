@@ -549,10 +549,10 @@
     <string name="settings_vocal_test_not_recognized">Not recognized / Blocked</string>
 
     <!-- Phase 15 Refactoring Strings -->
-    <string name="settings_elevenlabs_testing">Testing ElevenLabs connection...</string>
+    <string name="settings_elevenlabs_testing">Testing ElevenLabs connection&#8230;</string>
     <string name="settings_error_delete_book">Error deleting book</string>
     <string name="settings_error_share_logs">Error sharing error report: %1$s</string>
-    <string name="settings_logs_uploading">Uploading error report...</string>
+    <string name="settings_logs_uploading">Uploading error report&#8230;</string>
     <string name="settings_error_upload_failed">Upload failed: %1$s</string>
     <string name="settings_error_delete_last_profile">The only remaining profile cannot be deleted.</string>
     <string name="settings_selected_saf_folder">Selected SAF folder</string>
@@ -569,7 +569,7 @@
 
     <!-- AP 4 Strings -->
     <string name="content_manage_configure_static_row">Configure Static Row</string>
-    <string name="hue_toast_searching">Searching for Hue Bridges...</string>
+    <string name="hue_toast_searching">Searching for Hue Bridges&#8230;</string>
     <string name="hue_toast_bridge_found">Bridge found: %1$s</string>
     <string name="hue_toast_no_bridge_found">No Hue Bridge found in network.</string>
     <string name="hue_toast_missing_ip">Please enter or search bridge IP first.</string>
@@ -578,7 +578,7 @@
     <string name="hue_toast_devices_cached">%1$d lights loaded and stored in cache.</string>
     <string name="hue_toast_bridge_unreachable">Could not reach Bridge. Keeping old cache.</string>
     <string name="hue_toast_cert_accepted_press_button">Certificate accepted. Please press the link button on the Bridge!</string>
-    <string name="hue_pairing_press_link_button">Please press the link button on your Hue Bridge now...</string>
+    <string name="hue_pairing_press_link_button">Please press the link button on your Hue Bridge now&#8230;</string>
     <string name="hue_toast_pairing_success">Successfully paired!</string>
     <string name="hue_toast_pairing_failed">Pairing failed. Did you press the button?</string>
     <string name="cloud_sync_no_backups_in_folder">No backups found in the selected folder.</string>

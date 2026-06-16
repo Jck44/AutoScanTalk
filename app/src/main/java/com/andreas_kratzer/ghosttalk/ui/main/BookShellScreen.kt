@@ -84,7 +84,7 @@ fun BookShellScreen(
 ) {
     val BookShellTabSaver = Saver<BookShellTab, String>(
         save = { it.name },
-        restore = { value -> try { BookShellTab.valueOf(value) } catch (e: Exception) { BookShellTab.Inhalte } }
+        restore = { value -> try { BookShellTab.valueOf(value) } catch (_: Exception) { BookShellTab.Inhalte } }
     )
     var currentTab by rememberSaveable(stateSaver = BookShellTabSaver) { mutableStateOf(BookShellTab.Inhalte) }
     var menuExpanded by remember { mutableStateOf(false) }

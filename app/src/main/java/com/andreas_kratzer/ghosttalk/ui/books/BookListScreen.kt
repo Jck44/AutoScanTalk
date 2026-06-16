@@ -113,7 +113,6 @@ fun BookListScreen(
             .padding(paddingValues)
             .padding(horizontal = dimensions.screenPaddingHorizontal)
     ) {
-        val isLandscape = maxWidth > maxHeight
         val dynamicCardHeight = adaptiveCardHeight()
 
         if (isLoading) {
@@ -121,7 +120,7 @@ fun BookListScreen(
             Box(modifier = Modifier.fillMaxSize())
         } else if (allBooks.isEmpty()) {
             com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkEmptyState(
-                icon = com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons.Book,
+                icon = GhostTalkIcons.Book,
                 title = stringResource(R.string.book_list_empty_title),
                 description = stringResource(R.string.book_list_empty_desc),
                 actionLabel = stringResource(R.string.book_list_empty_action),

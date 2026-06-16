@@ -52,12 +52,11 @@ fun StructureGraphNode(
     graph: BookNavigationGraph,
     onToggleExpand: () -> Unit,
     onFocus: () -> Unit,
-    onMoveButton: (String, Int, String) -> Unit,
     onEditButton: (String, Int) -> Unit,
     onAddButton: (String) -> Unit,
+    modifier: Modifier = Modifier,
     isMultiSelectMode: Boolean = false,
-    selectedIndices: Set<Int> = emptySet(),
-    modifier: Modifier = Modifier
+    selectedIndices: Set<Int> = emptySet()
 ) {
     val dragDropState = LocalDragDropState.current
     val isNodeHovered = dragDropState.currentHoveredTarget == StructureNodeTarget(pageId)

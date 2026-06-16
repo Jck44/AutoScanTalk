@@ -132,7 +132,7 @@ fun ProfileSettingsSection(
                                 .size(40.dp)
                                 .clip(CircleShape)
                                 .background(avatarBg),
-                            contentAlignment = androidx.compose.ui.Alignment.Center
+                            contentAlignment = Alignment.Center
                         ) {
                             Icon(
                                 imageVector = avatarIcon,

@@ -82,27 +82,21 @@ private const val MAX_VISIBLE_SOURCES = 12
 fun StructureFocusCanvas(
     focusedPageId: String,
     pages: List<Page>,
-    templates: List<PageTemplate>,
     graph: BookNavigationGraph,
     pageNames: Map<String, String>,
-    proposal: SplitPageUseCase.PageSplitProposal? = null,
-    isSplitLoading: Boolean = false,
-    onTriggerSplit: () -> Unit = {},
-    onApplySplit: (SplitPageUseCase.PageSplitProposal) -> Unit = {},
-    onDiscardSplit: () -> Unit = {},
     onFocus: (String) -> Unit,
-    onEditPageInGrid: (String) -> Unit,
-    onMoveButton: (fromPageId: String, fromIndex: Int, toPageId: String) -> Unit,
     onAddConnection: (targetPageId: String) -> Unit,
     onRemoveConnection: (pageId: String, buttonIndex: Int, targetPageName: String) -> Unit,
-    onCreatePage: (name: String, rows: Int, cols: Int, templateId: String?, onCreated: (String) -> Unit) -> Unit,
+    modifier: Modifier = Modifier,
+    proposal: SplitPageUseCase.PageSplitProposal? = null,
+    onApplySplit: (SplitPageUseCase.PageSplitProposal) -> Unit = {},
+    onDiscardSplit: () -> Unit = {},
     viewMode: StructureViewMode = StructureViewMode.CARDS,
     onEditButton: (String, Int) -> Unit = { _, _ -> },
     onAddButton: (String) -> Unit = {},
     onRegisterSplitWizardDropCallback: (((SplitWizardButtonDrag, Any) -> Unit) -> Unit)? = null,
     isMultiSelectMode: Boolean = false,
-    selection: Map<String, Set<Int>> = emptyMap(),
-    modifier: Modifier = Modifier
+    selection: Map<String, Set<Int>> = emptyMap()
 ) {
     val page = remember(pages, focusedPageId) { pages.find { it.id == focusedPageId } }
     val incomingSources = remember(graph, focusedPageId) { graph.incoming[focusedPageId] ?: emptyList() }
@@ -214,7 +208,7 @@ fun StructureFocusCanvas(
         }
     }
 
-    var showConnectDialog by remember { mutableStateOf(false) }
+    val showConnectDialogState = remember { mutableStateOf(false) }
 
     var showAllSources by rememberSaveable(focusedPageId) { mutableStateOf(false) }
     var showAllTargets by rememberSaveable(focusedPageId) { mutableStateOf(false) }
@@ -254,7 +248,6 @@ fun StructureFocusCanvas(
                 selection = selection,
                 modifier = Modifier.fillMaxSize(),
                 pages = pages,
-                onMoveButton = onMoveButton,
                 onEditButton = onEditButton,
                 onAddButton = onAddButton
             )
@@ -763,7 +756,7 @@ fun StructureFocusCanvas(
         // Floating Action Button for adding connection
         if (proposal == null) {
             FloatingActionButton(
-                onClick = { showConnectDialog = true },
+                onClick = { showConnectDialogState.value = true },
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
                     .padding(16.dp),
@@ -782,16 +775,16 @@ fun StructureFocusCanvas(
         }
     }
 
-    if (showConnectDialog) {
+    if (showConnectDialogState.value) {
         SearchablePagePicker(
             title = stringResource(R.string.structure_add_connection_title),
             subtitle = null,
             excludePageId = focusedPageId,
             pages = pages,
-            onDismissRequest = { showConnectDialog = false },
+            onDismissRequest = { showConnectDialogState.value = false },
             onPageSelected = { targetPageId ->
                 onAddConnection(targetPageId)
-                showConnectDialog = false
+                showConnectDialogState.value = false
             }
         )
     }

@@ -349,7 +349,7 @@ class PageManagementDelegateTest {
             )
         )
         coEvery { pageRepository.getAllPages() } returns listOf(pageToDelete, refPage)
-        coEvery { templateRepository.getAllTemplates() } returns kotlinx.coroutines.flow.MutableStateFlow(emptyList())
+        coEvery { templateRepository.getAllTemplates() } returns MutableStateFlow(emptyList())
 
         delegate.init(backgroundScope)
 

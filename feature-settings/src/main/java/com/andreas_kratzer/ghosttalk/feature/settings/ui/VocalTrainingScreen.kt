@@ -66,6 +66,7 @@ import com.andreas_kratzer.ghosttalk.feature.settings.R
 import com.andreas_kratzer.ghosttalk.core.ui.R as CoreR
 
 @OptIn(ExperimentalMaterial3Api::class)
+@Suppress("UNUSED_VALUE", "AssignedValueDoubleCheck")
 @Composable
 fun VocalTrainingScreen(
     onNavigateBack: () -> Unit,

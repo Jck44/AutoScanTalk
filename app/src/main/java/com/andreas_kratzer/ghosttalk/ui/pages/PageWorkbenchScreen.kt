@@ -112,11 +112,6 @@ fun PageWorkbenchScreen(
             initialFocusedPageId = focusedPageId,
             initialTriggerSplit = triggerSplit,
             viewMode = structureView,
-            onEditPageInGrid = { targetPageId ->
-                focusedPageId = targetPageId
-                currentButtonId = null
-                mode = EditorMode.RASTER
-            },
             onNavigateBack = onNavigateBack,
             modeSwitcher = modeSwitcher,
             onExitEditor = onExitEditor

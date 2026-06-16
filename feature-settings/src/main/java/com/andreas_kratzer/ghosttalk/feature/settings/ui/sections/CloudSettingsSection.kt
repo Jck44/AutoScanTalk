@@ -53,9 +53,7 @@ fun CloudSettingsSection(
     viewModel: SettingsViewModel,
     showSyncSettings: Boolean
 ) {
-    val context = LocalContext.current
     val isSyncing by viewModel.isSyncing.collectAsState()
-    val userEmail by viewModel.userEmail.collectAsState()
     val driveFolders by viewModel.driveFolders.collectAsState()
     val isBrowsingFolders by viewModel.isBrowsingFolders.collectAsState()
     val showFolderPicker = remember { mutableStateOf(false) }
