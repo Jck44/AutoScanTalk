@@ -198,6 +198,44 @@ fun AnalyticsDashboardScreen(
 
     val previousUsageMinutes = previousUsageMs / (1000.0 * 60.0)
     val previousCommRate = if (previousUsageMinutes > 0.0) previousClicks / previousUsageMinutes else 0.0
+
+    // Scan-Effizienz KPI
+    val totalScanEvents = remember(historyEvents) {
+        historyEvents.filter { it.scanCyclesBeforeClick != null }
+    }
+    val totalScanEff = remember(totalScanEvents) {
+        if (totalScanEvents.isNotEmpty()) totalScanEvents.mapNotNull { it.scanCyclesBeforeClick }.average() else 0.0
+    }
+    val currentScanEvents = remember(currentPeriodEvents) {
+        currentPeriodEvents.filter { it.scanCyclesBeforeClick != null }
+    }
+    val currentScanEff = remember(currentScanEvents) {
+        if (currentScanEvents.isNotEmpty()) currentScanEvents.mapNotNull { it.scanCyclesBeforeClick }.average() else 0.0
+    }
+    val previousScanEvents = remember(previousPeriodEvents) {
+        previousPeriodEvents.filter { it.scanCyclesBeforeClick != null }
+    }
+    val previousScanEff = remember(previousScanEvents) {
+        if (previousScanEvents.isNotEmpty()) previousScanEvents.mapNotNull { it.scanCyclesBeforeClick }.average() else 0.0
+    }
+
+    // Hardware vs. Touch
+    val totalHardwareCount = remember(historyEvents) {
+        historyEvents.count { it.isHardwareTriggered }
+    }
+    val totalHardwarePercent = remember(totalHardwareCount, historyEvents) {
+        if (historyEvents.isNotEmpty()) (totalHardwareCount.toDouble() / historyEvents.size.toDouble()) * 100.0 else 0.0
+    }
+
+    // Touch interventions
+    val totalInterventionCount = remember(historyEvents) {
+        historyEvents.count { it.isTouchIntervention }
+    }
+    val totalInterventionPercent = remember(totalInterventionCount, historyEvents) {
+        if (historyEvents.isNotEmpty()) (totalInterventionCount.toDouble() / historyEvents.size.toDouble()) * 100.0 else 0.0
+    }
+
+    val hasScanData = totalScanEvents.isNotEmpty()
     
     val pageToDelete = remember { mutableStateOf<Page?>(null) }
     val usagesToDelete = remember { mutableStateOf<List<UsageLocation>>(emptyList()) }
@@ -333,8 +371,15 @@ fun AnalyticsDashboardScreen(
                             previousCommRate = previousCommRate,
                             userModeSessions = userModeSessions,
                             historyEvents = historyEvents,
-                            trendBadge = { current, previous, modifier ->
-                                TrendBadge(current, previous, modifier)
+                            totalScanEff = totalScanEff,
+                            currentScanEff = currentScanEff,
+                            previousScanEff = previousScanEff,
+                            totalHardwarePercent = totalHardwarePercent,
+                            totalInterventionCount = totalInterventionCount,
+                            totalInterventionPercent = totalInterventionPercent,
+                            hasScanData = hasScanData,
+                            trendBadge = { current, previous, modifier, lowerIsBetter ->
+                                TrendBadge(current, previous, modifier, lowerIsBetter)
                             }
                         )
                     }
@@ -482,7 +527,8 @@ fun AnalyticsDashboardScreen(
 internal fun TrendBadge(
     current: Double,
     previous: Double,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    lowerIsBetter: Boolean = false
 ) {
     if (previous <= 0.0) return // No baseline comparison available
 
@@ -490,15 +536,17 @@ internal fun TrendBadge(
     val isPositive = percentChange > 0.0
     val isNeutral = kotlin.math.abs(percentChange) < 0.1
 
+    val isBetter = if (lowerIsBetter) !isPositive else isPositive
+
     val badgeColor = when {
         isNeutral -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.1f)
-        isPositive -> MaterialTheme.colorScheme.primaryContainer
+        isBetter -> MaterialTheme.colorScheme.primaryContainer
         else -> MaterialTheme.colorScheme.errorContainer
     }
 
     val contentColor = when {
         isNeutral -> MaterialTheme.colorScheme.onSurfaceVariant
-        isPositive -> MaterialTheme.colorScheme.onPrimaryContainer
+        isBetter -> MaterialTheme.colorScheme.onPrimaryContainer
         else -> MaterialTheme.colorScheme.onErrorContainer
     }
 
