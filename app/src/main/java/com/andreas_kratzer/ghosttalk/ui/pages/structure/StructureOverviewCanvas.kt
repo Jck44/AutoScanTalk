@@ -35,14 +35,30 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.pointer.PointerInputScope
 import androidx.compose.ui.input.pointer.changedToUp
+import androidx.compose.ui.input.pointer.positionChanged
+import androidx.compose.ui.input.pointer.util.VelocityTracker
+import androidx.compose.ui.input.pointer.util.addPointerInputChange
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import kotlin.math.abs
+import kotlin.math.PI
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.VectorConverter
+import androidx.compose.animation.core.exponentialDecay
+import kotlinx.coroutines.Job
+import androidx.compose.foundation.gestures.calculateCentroid
+import androidx.compose.foundation.gestures.calculateCentroidSize
+import androidx.compose.foundation.gestures.calculatePan
+import androidx.compose.foundation.gestures.calculateZoom
+import androidx.compose.foundation.gestures.calculateRotation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.LocalIndication
@@ -153,6 +169,10 @@ fun StructureOverviewCanvas(
     var offset by remember { mutableStateOf(Offset.Zero) }
     var canvasSize by remember { mutableStateOf(IntSize.Zero) }
 
+    val scope = rememberCoroutineScope()
+    val decaySpec = remember { exponentialDecay<Offset>() }
+    var flingJob by remember { mutableStateOf<Job?>(null) }
+
     // Auto-center on focused page
     LaunchedEffect(focusedPageId, layout, canvasSize) {
         if (canvasSize.width > 0 && canvasSize.height > 0) {
@@ -203,12 +223,26 @@ fun StructureOverviewCanvas(
                 canvasSize = layoutCoordinates.size
             }
             .pointerInput(Unit) {
-                detectTransformGestures { centroid, pan, zoom, _ ->
-                    val oldScale = scale
-                    val newScale = (oldScale * zoom).coerceIn(0.15f, 3.0f)
-                    offset = (offset - centroid) * (newScale / oldScale) + centroid + pan
-                    scale = newScale
-                }
+                detectTransformGesturesWithFling(
+                    onGestureStart = {
+                        flingJob?.cancel()
+                        flingJob = null
+                    },
+                    onGestureEnd = { velocity ->
+                        flingJob = scope.launch {
+                            val animatable = Animatable(offset, Offset.VectorConverter)
+                            animatable.animateDecay(velocity, decaySpec) {
+                                offset = this.value
+                            }
+                        }
+                    },
+                    onGesture = { centroid, pan, zoom, _ ->
+                        val oldScale = scale
+                        val newScale = (oldScale * zoom).coerceIn(0.15f, 3.0f)
+                        offset = (offset - centroid) * (newScale / oldScale) + centroid + pan
+                        scale = newScale
+                    }
+                )
             }
             .pointerInput(Unit) {
                 coroutineScope {
@@ -217,6 +251,8 @@ fun StructureOverviewCanvas(
                     
                     awaitEachGesture {
                         val down = awaitFirstDown(requireUnconsumed = false)
+                        flingJob?.cancel()
+                        flingJob = null
                         
                         val canvasDownX = (down.position.x - offset.x) / scale
                         val canvasDownY = (down.position.y - offset.y) / scale
@@ -325,15 +361,33 @@ fun StructureOverviewCanvas(
                 isFocusedConnection: Boolean
             ) {
                 val isBackward = edge.isBackward
-                val startX = if (isBackward) edge.sourcePos.x else edge.sourcePos.x + nodeWidthPx
+                val isSameColumn = edge.sourcePos.x == edge.targetPos.x
+
+                val startX = if (isSameColumn) {
+                    edge.sourcePos.x
+                } else if (isBackward) {
+                    edge.sourcePos.x
+                } else {
+                    edge.sourcePos.x + nodeWidthPx
+                }
                 val startY = edge.sourcePos.y + nodeHeightPx / 2f
 
-                val endX = if (isBackward) edge.targetPos.x + nodeWidthPx else edge.targetPos.x
+                val endX = if (isSameColumn) {
+                    edge.targetPos.x
+                } else if (isBackward) {
+                    edge.targetPos.x + nodeWidthPx
+                } else {
+                    edge.targetPos.x
+                }
                 val endY = edge.targetPos.y + nodeHeightPx / 2f
 
                 val path = Path().apply {
                     moveTo(startX, startY)
-                    val midX = startX + (endX - startX) / 2f
+                    val midX = if (isSameColumn) {
+                        edge.sourcePos.x - 20.dp.toPx()
+                    } else {
+                        startX + (endX - startX) / 2f
+                    }
                     lineTo(midX, startY)
                     lineTo(midX, endY)
                     lineTo(endX, endY)
@@ -518,7 +572,11 @@ fun StructureOverviewCanvas(
         ) {
             // Zoom In
             FloatingActionButton(
-                onClick = { scale = (scale * 1.2f).coerceAtMost(3.0f) },
+                onClick = {
+                    flingJob?.cancel()
+                    flingJob = null
+                    scale = (scale * 1.2f).coerceAtMost(3.0f)
+                },
                 modifier = Modifier.size(40.dp),
                 containerColor = MaterialTheme.colorScheme.surface,
                 contentColor = MaterialTheme.colorScheme.primary
@@ -527,7 +585,11 @@ fun StructureOverviewCanvas(
             }
             // Zoom Out
             FloatingActionButton(
-                onClick = { scale = (scale / 1.2f).coerceAtLeast(0.15f) },
+                onClick = {
+                    flingJob?.cancel()
+                    flingJob = null
+                    scale = (scale / 1.2f).coerceAtLeast(0.15f)
+                },
                 modifier = Modifier.size(40.dp),
                 containerColor = MaterialTheme.colorScheme.surface,
                 contentColor = MaterialTheme.colorScheme.primary
@@ -537,6 +599,8 @@ fun StructureOverviewCanvas(
             // Recenter
             FloatingActionButton(
                 onClick = {
+                    flingJob?.cancel()
+                    flingJob = null
                     scale = 0.9f
                     val targetPos = layout[rootId]
                     if (targetPos != null && canvasSize.width > 0) {
@@ -619,7 +683,7 @@ private fun calculateOverviewLayout(
         val totalComponentHeight = maxLevelHeight * (nodeHeightPx + verticalGapPx)
 
         levels.forEachIndexed { levelIndex, nodesInLevel ->
-            val colX = levelIndex * (nodeWidthPx + horizontalGapPx)
+            val colX = horizontalGapPx * 0.48f + levelIndex * (nodeWidthPx + horizontalGapPx)
             val levelHeight = nodesInLevel.size * (nodeHeightPx + verticalGapPx)
             val startYForLevel = startY + (totalComponentHeight - levelHeight) / 2f
 
@@ -650,6 +714,104 @@ private fun calculateOverviewLayout(
     }
 
     return positions
+}
+
+suspend fun PointerInputScope.detectTransformGesturesWithFling(
+    panZoomLock: Boolean = false,
+    onGestureStart: () -> Unit,
+    onGestureEnd: (velocity: Offset) -> Unit,
+    onGesture: (centroid: Offset, pan: Offset, zoom: Float, rotation: Float) -> Unit
+) {
+    awaitEachGesture {
+        var rotation = 0f
+        var zoom = 1f
+        var pan = Offset.Zero
+        var pastTouchSlop = false
+        val touchSlop = viewConfiguration.touchSlop
+        var lockedToPanZoom = false
+        
+        val velocityTracker = VelocityTracker()
+
+        awaitFirstDown(requireUnconsumed = false)
+        onGestureStart()
+        
+        var lastActivePointerCount = 1
+        var hasMultiplePointers = false
+        var gestureLocked = false
+        
+        do {
+            val event = awaitPointerEvent()
+            val canceled = event.changes.any { it.isConsumed }
+            if (!canceled) {
+                // Add pointer input change to tracker for all movements, so velocity is accurate
+                event.changes.forEach { change ->
+                    if (change.positionChanged()) {
+                        velocityTracker.addPointerInputChange(change)
+                    }
+                }
+
+                val activePointerCount = event.changes.count { it.pressed }
+                if (activePointerCount > 1) {
+                    hasMultiplePointers = true
+                }
+                if (hasMultiplePointers && activePointerCount < 2) {
+                    gestureLocked = true
+                }
+
+                var zoomChange = event.calculateZoom()
+                var rotationChange = event.calculateRotation()
+                var panChange = event.calculatePan()
+
+                if (gestureLocked || activePointerCount != lastActivePointerCount) {
+                    lastActivePointerCount = activePointerCount
+                    zoomChange = 1f
+                    rotationChange = 0f
+                    panChange = Offset.Zero
+                }
+
+                if (!pastTouchSlop) {
+                    zoom *= zoomChange
+                    rotation += rotationChange
+                    pan += panChange
+
+                    val centroidSize = event.calculateCentroidSize(useCurrent = false)
+                    val zoomMotion = abs(1 - zoom) * centroidSize
+                    val rotationMotion = abs(rotation * PI.toFloat() * centroidSize / 180f)
+                    val panMotion = pan.getDistance()
+
+                    if (zoomMotion > touchSlop ||
+                        rotationMotion > touchSlop ||
+                        panMotion > touchSlop
+                    ) {
+                        pastTouchSlop = true
+                        lockedToPanZoom = panZoomLock && rotationMotion < touchSlop
+                    }
+                }
+
+                if (pastTouchSlop) {
+                    val centroid = event.calculateCentroid(useCurrent = false)
+                    val effectiveRotation = if (lockedToPanZoom) 0f else rotationChange
+                    if (effectiveRotation != 0f ||
+                        zoomChange != 1f ||
+                        panChange != Offset.Zero
+                    ) {
+                        onGesture(centroid, panChange, zoomChange, effectiveRotation)
+                    }
+                    
+                    event.changes.forEach { change ->
+                        if (change.positionChanged()) {
+                            change.consume()
+                        }
+                    }
+                }
+            }
+        } while (!canceled && event.changes.any { it.pressed })
+        
+        if (pastTouchSlop && !hasMultiplePointers) {
+            val velocity = velocityTracker.calculateVelocity()
+            onGestureEnd(Offset(velocity.x, velocity.y))
+        }
+    }
 }
 
 
