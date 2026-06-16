@@ -25,6 +25,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -32,7 +33,9 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.pointer.changedToUp
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
@@ -42,6 +45,14 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.LocalIndication
+import androidx.compose.foundation.indication
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.PressInteraction
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
 import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.core.domain.pages.BookNavigationGraph
 import com.andreas_kratzer.ghosttalk.core.domain.pages.SearchPagesUseCase
@@ -92,6 +103,12 @@ fun StructureOverviewCanvas(
             verticalGapPx = verticalGapPx
         )
     }
+
+    val currentLayout by rememberUpdatedState(layout)
+    val currentFocusedPageId by rememberUpdatedState(focusedPageId)
+    val currentOnFocus by rememberUpdatedState(onFocus)
+    val currentOnNavigateToGraph by rememberUpdatedState(onNavigateToGraph)
+    val interactionSources = remember { mutableMapOf<String, MutableInteractionSource>() }
 
     val matchingPageIds = remember(searchQuery, pages) {
         if (searchQuery.isBlank()) {
@@ -193,6 +210,102 @@ fun StructureOverviewCanvas(
                     scale = newScale
                 }
             }
+            .pointerInput(Unit) {
+                coroutineScope {
+                    var pressedNodeId: String? = null
+                    var pressInteraction: PressInteraction.Press? = null
+                    
+                    awaitEachGesture {
+                        val down = awaitFirstDown(requireUnconsumed = false)
+                        
+                        val canvasDownX = (down.position.x - offset.x) / scale
+                        val canvasDownY = (down.position.y - offset.y) / scale
+                        
+                        val hitNode = currentLayout.entries.find { (pageId, nodeOffset) ->
+                            canvasDownX >= nodeOffset.x && canvasDownX <= nodeOffset.x + nodeWidthPx &&
+                            canvasDownY >= nodeOffset.y && canvasDownY <= nodeOffset.y + nodeHeightPx
+                        }
+                        
+                        if (hitNode != null) {
+                            val pageId = hitNode.key
+                            val interactionSource = interactionSources.getOrPut(pageId) { MutableInteractionSource() }
+                            launch {
+                                val press = PressInteraction.Press(down.position)
+                                interactionSource.emit(press)
+                                pressInteraction = press
+                                pressedNodeId = pageId
+                            }
+                        }
+                        
+                        var isClick = true
+                        var pointerCount = 1
+                        val touchSlop = viewConfiguration.touchSlop
+                        
+                        try {
+                            while (true) {
+                                val event = awaitPointerEvent()
+                                pointerCount = maxOf(pointerCount, event.changes.size)
+                                
+                                if (pointerCount > 1) {
+                                    isClick = false
+                                }
+                                
+                                val hasMovedPastSlop = event.changes.any { change ->
+                                    (change.position - down.position).getDistance() > touchSlop
+                                }
+                                if (hasMovedPastSlop) {
+                                    isClick = false
+                                }
+                                
+                                if (!isClick && pressedNodeId != null) {
+                                    val pageId = pressedNodeId
+                                    val interactionSource = interactionSources[pageId]
+                                    val press = pressInteraction
+                                    if (interactionSource != null && press != null) {
+                                        launch {
+                                            interactionSource.emit(PressInteraction.Cancel(press))
+                                        }
+                                    }
+                                    pressedNodeId = null
+                                    pressInteraction = null
+                                }
+                                
+                                val allUp = event.changes.all { it.changedToUp() }
+                                if (allUp) {
+                                    if (isClick && pointerCount == 1 && pressedNodeId != null) {
+                                        val pageId = pressedNodeId!!
+                                        val interactionSource = interactionSources[pageId]
+                                        val press = pressInteraction
+                                        if (interactionSource != null && press != null) {
+                                            launch {
+                                                interactionSource.emit(PressInteraction.Release(press))
+                                            }
+                                        }
+                                        
+                                        if (pageId == currentFocusedPageId) {
+                                            currentOnNavigateToGraph(pageId)
+                                        } else {
+                                            currentOnFocus(pageId)
+                                        }
+                                    }
+                                    break
+                                }
+                            }
+                        } finally {
+                            val pageId = pressedNodeId
+                            val interactionSource = pageId?.let { interactionSources[it] }
+                            val press = pressInteraction
+                            if (interactionSource != null && press != null) {
+                                launch {
+                                    interactionSource.emit(PressInteraction.Cancel(press))
+                                }
+                            }
+                            pressedNodeId = null
+                            pressInteraction = null
+                        }
+                    }
+                }
+            }
     ) {
         val primaryColor = MaterialTheme.colorScheme.primary
 
@@ -204,6 +317,7 @@ fun StructureOverviewCanvas(
                     scaleY = scale
                     translationX = offset.x
                     translationY = offset.y
+                    transformOrigin = TransformOrigin(0f, 0f)
                 }
         ) {
             fun androidx.compose.ui.graphics.drawscope.DrawScope.drawEdge(
@@ -303,12 +417,16 @@ fun StructureOverviewCanvas(
                     scaleY = scale
                     translationX = offset.x
                     translationY = offset.y
+                    transformOrigin = TransformOrigin(0f, 0f)
                 }
         ) {
             layout.forEach { (pageId, nodeOffset) ->
                 val pageName = pageNames[pageId] ?: pageId
                 val isFocused = pageId == focusedPageId
                 val isMatched = matchingPageIds.contains(pageId)
+                val interactionSource = remember(pageId) {
+                    interactionSources.getOrPut(pageId) { MutableInteractionSource() }
+                }
 
                 Box(
                     modifier = Modifier
@@ -336,13 +454,7 @@ fun StructureOverviewCanvas(
                         tonalElevation = if (isFocused || isMatched) 6.dp else 2.dp,
                         modifier = Modifier
                             .size(nodeWidth, nodeHeight)
-                            .clickable {
-                                if (pageId == focusedPageId) {
-                                    onNavigateToGraph(pageId)
-                                } else {
-                                    onFocus(pageId)
-                                }
-                            }
+                            .indication(interactionSource, LocalIndication.current)
                     ) {
                         Box(
                             modifier = Modifier
@@ -539,3 +651,5 @@ private fun calculateOverviewLayout(
 
     return positions
 }
+
+
