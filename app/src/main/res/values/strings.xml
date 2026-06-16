@@ -667,7 +667,7 @@
     <string name="structure_mode_graph">Graph</string>
     <string name="side_panel_collapse">Seitenleiste einklappen</string>
     <string name="side_panel_expand">Seitenleiste ausklappen</string>
-    <string name="structure_connect_dialog_search_hint">Nach Seiten suchen...</string>
+    <string name="structure_connect_dialog_search_hint">Nach Seiten suchen…</string>
     <string name="structure_editor_title">Struktur-Editor</string>
     <string name="structure_editor_open">Struktur bearbeiten</string>
     <string name="structure_incoming">Führt hierher ("kommt von")</string>

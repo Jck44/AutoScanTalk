@@ -58,8 +58,6 @@ fun StructureEditorDialogs(
     startPageId: String?,
     pageNames: Map<String, String>,
     historyState: HistoryState,
-    isGeminiEnabled: Boolean,
-    hasAcceptedPageSplitOptIn: Boolean,
     onSetAcceptedPageSplitOptIn: (Boolean) -> Unit,
     onGeneratePageSplitProposal: (String) -> Unit,
     onShouldFilterButtonFromSplit: (ButtonConfig?, String?, String) -> Boolean,
@@ -82,7 +80,7 @@ fun StructureEditorDialogs(
     isTextCached: (String) -> Boolean,
     onPrefetchText: (String, () -> Unit) -> Unit,
     showSuccessSnackbarWithUndo: (Int) -> Unit,
-    showSnackbar: (String) -> Unit
+    showSnackbar: (Int) -> Unit
 ) {
     val context = LocalContext.current
     val focusedPage = remember(pages, state.focusedPageId) { pages.find { it.id == state.focusedPageId } }
@@ -348,7 +346,7 @@ fun StructureEditorDialogs(
                     if (success) {
                         showSuccessSnackbarWithUndo(R.string.button_add_success)
                     } else {
-                        showSnackbar(context.getString(R.string.structure_page_full))
+                        showSnackbar(R.string.structure_page_full)
                     }
                 }
                 state.addTargetPageId = null
@@ -465,7 +463,7 @@ fun StructureEditorDialogs(
                         showSuccessSnackbarWithUndo(R.string.button_move_success)
                         state.clearSelection()
                     } else if (result is MoveResult.TargetFull) {
-                        showSnackbar(context.getString(R.string.structure_target_full))
+                        showSnackbar(R.string.structure_target_full)
                     }
                 }
                 state.showBulkMoveDialog = false
@@ -488,7 +486,7 @@ fun StructureEditorDialogs(
                         showSuccessSnackbarWithUndo(R.string.button_duplicate_success)
                         state.clearSelection()
                     } else if (result is MoveResult.TargetFull) {
-                        showSnackbar(context.getString(R.string.structure_target_full))
+                        showSnackbar(R.string.structure_target_full)
                     }
                 }
                 state.showBulkCopyDialog = false

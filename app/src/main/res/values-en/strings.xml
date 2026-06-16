@@ -309,6 +309,8 @@
     <string name="editor_template_duplicate_not_supported">Duplicating is not supported for templates</string>
     <string name="editor_template_saved">Template saved</string>
     <string name="template_panel_title">Button Templates</string>
+    <string name="structure_more_options">More options</string>
+    <string name="structure_close_templates">Close templates</string>
     <string name="template_search_placeholder">Search templates…</string>
     <string name="template_drag_drop_hint">💡 Drag template to grid to place it. Drag button from grid here to create template.</string>
     <string name="content_desc_collapse">Collapse</string>
@@ -661,7 +663,7 @@
     <string name="structure_mode_graph">Graph</string>
     <string name="side_panel_collapse">Collapse side panel</string>
     <string name="side_panel_expand">Expand side panel</string>
-    <string name="structure_connect_dialog_search_hint">Search pages...</string>
+    <string name="structure_connect_dialog_search_hint">Search pages…</string>
     <string name="structure_editor_title">Structure Editor</string>
     <string name="structure_editor_open">Edit Structure</string>
     <string name="structure_incoming">Comes from</string>

@@ -21,7 +21,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.andreas_kratzer.ghosttalk.R
@@ -29,8 +28,6 @@ import com.andreas_kratzer.ghosttalk.core.domain.pages.BookNavigationGraph
 import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.core.model.GridSettingsUpdate
 import com.andreas_kratzer.ghosttalk.core.model.NavigateToPageButtonAction
-import com.andreas_kratzer.ghosttalk.core.model.PageTemplate
-import com.andreas_kratzer.ghosttalk.core.ai.domain.SplitPageUseCase.PageSplitProposal
 import com.andreas_kratzer.ghosttalk.ui.components.SplitWizardButtonDrag
 import com.andreas_kratzer.ghosttalk.ui.pages.GridEditorViewModel
 import com.andreas_kratzer.ghosttalk.ui.pages.PageSplitViewModel
@@ -44,7 +41,6 @@ enum class StructureViewMode {
     CARDS, GRAPH
 }
 
-@Suppress("AssignedValueIsNeverRead")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun StructureEditorScreen(
@@ -62,7 +58,6 @@ fun StructureEditorScreen(
     val templates by pageViewModel.templates.collectAsState(initial = emptyList())
     val startPageId by pageViewModel.defaultStartPageIdFlow.collectAsState(initial = null)
     val activeBookId by pageViewModel.activeBookId.collectAsState(initial = null)
-    val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -399,8 +394,6 @@ fun StructureEditorScreen(
             startPageId = startPageId,
             pageNames = pageNames,
             historyState = historyState,
-            isGeminiEnabled = gridEditorViewModel.isGeminiEnabled,
-            hasAcceptedPageSplitOptIn = pageSplitViewModel.hasAcceptedPageSplitOptIn,
             onSetAcceptedPageSplitOptIn = { accepted ->
                 pageSplitViewModel.hasAcceptedPageSplitOptIn = accepted
             },
@@ -466,7 +459,8 @@ fun StructureEditorScreen(
                 gridEditorViewModel.prefetchText(text, onComplete)
             },
             showSuccessSnackbarWithUndo = showSuccessSnackbarWithUndo,
-            showSnackbar = { msg ->
+            showSnackbar = { resId ->
+                val msg = pageViewModel.getApplication<android.app.Application>().getString(resId)
                 scope.launch { snackbarHostState.showSnackbar(msg) }
             }
         )
