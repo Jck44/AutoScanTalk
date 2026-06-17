@@ -68,7 +68,7 @@ fun PageWorkbenchScreen(
     onExitEditor: () -> Unit
 ) {
     var mode by rememberSaveable { mutableStateOf(EditorMode.fromRoute(initialMode)) }
-    var structureView by rememberSaveable { mutableStateOf(StructureViewMode.CARDS) }
+    var structureView by rememberSaveable { mutableStateOf(StructureViewMode.GRAPH) }
     var focusedPageId by rememberSaveable { mutableStateOf(pageId) }
     var currentButtonId by rememberSaveable { mutableStateOf(initialButtonId) }
 
@@ -98,7 +98,7 @@ fun PageWorkbenchScreen(
             }
             ZoomLevel.FOCUSED -> {
                 mode = EditorMode.STRUKTUR
-                structureView = if (preferredFocusedStyle == StructureViewMode.CARDS) StructureViewMode.CARDS else StructureViewMode.GRAPH
+                structureView = preferredFocusedStyle
             }
             ZoomLevel.GRID -> {
                 mode = EditorMode.RASTER
