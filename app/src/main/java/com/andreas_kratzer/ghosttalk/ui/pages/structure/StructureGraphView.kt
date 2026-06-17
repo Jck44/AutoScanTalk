@@ -43,8 +43,8 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.SubcomposeLayout
-import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.boundsInParent
+import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
@@ -60,8 +60,9 @@ import com.andreas_kratzer.ghosttalk.ui.components.LocalDragDropState
 import com.andreas_kratzer.ghosttalk.ui.components.StructureButtonDrag
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.first
-import kotlin.math.roundToInt
 import kotlinx.coroutines.launch
+import kotlin.math.roundToInt
+
 private val expandedPageIdsSaver = listSaver<Set<String>, String>(
     save = { it.toList() },
     restore = { it.toSet() }

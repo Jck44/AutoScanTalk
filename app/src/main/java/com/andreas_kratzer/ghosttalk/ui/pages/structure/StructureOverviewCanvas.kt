@@ -36,6 +36,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -77,6 +78,7 @@ import androidx.compose.ui.unit.sp
 import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.core.domain.pages.BookNavigationGraph
 import com.andreas_kratzer.ghosttalk.core.model.Page
+import com.andreas_kratzer.ghosttalk.core.model.PageTemplate
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlin.math.PI
@@ -102,7 +104,9 @@ fun StructureOverviewCanvas(
     matchingPageIds: Set<String>,
     modifier: Modifier = Modifier,
     onZoomInto: (String) -> Unit,
-    selection: Map<String, Set<Int>> = emptyMap()
+    selection: Map<String, Set<Int>> = emptyMap(),
+    templates: List<PageTemplate> = emptyList(),
+    onCreatePage: ((String, Int, Int, String?, (String) -> Unit) -> Unit)? = null
 ) {
     val problems = rememberStructureProblems(graph)
     val orphans = problems.orphans
@@ -507,48 +511,89 @@ fun StructureOverviewCanvas(
                 }
             }
 
-            if (orphans.isNotEmpty()) {
-                val orphansMinY = orphans.mapNotNull { layout[it]?.y }.minOrNull()
-                if (orphansMinY != null) {
-                    Surface(
-                        onClick = { orphansExpanded = !orphansExpanded },
-                        color = MaterialTheme.colorScheme.surfaceVariant,
-                        shape = MaterialTheme.shapes.medium,
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-                        modifier = Modifier
-                            .offset {
-                                IntOffset(
-                                    (horizontalGapPx * 0.48f).roundToInt(),
-                                    (orphansMinY - 48.dp.toPx()).roundToInt()
-                                )
-                            }
+        }
+
+        if (orphans.isNotEmpty()) {
+            Surface(
+                onClick = { orphansExpanded = !orphansExpanded },
+                color = MaterialTheme.colorScheme.surfaceVariant,
+                shape = MaterialTheme.shapes.medium,
+                tonalElevation = 2.dp,
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .padding(16.dp)
+                    .widthIn(max = 280.dp)
+            ) {
+                Column(modifier = Modifier.padding(12.dp)) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        Text(
+                            text = "⚠",
+                            color = MaterialTheme.colorScheme.error,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 14.sp
+                        )
+                        Text(
+                            text = "Verwaiste Seiten (${orphans.size})",
+                            style = MaterialTheme.typography.labelLarge,
+                            modifier = Modifier.weight(1f)
+                        )
+                        Text(
+                            text = if (orphansExpanded) "▾" else "▸",
+                            style = MaterialTheme.typography.labelLarge
+                        )
+                    }
+
+                    if (orphansExpanded) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Column(
+                            modifier = Modifier
+                                .heightIn(max = 200.dp)
+                                .verticalScroll(rememberScrollState()),
+                            verticalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
-                            Text(
-                                text = "⚠",
-                                color = MaterialTheme.colorScheme.error,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 14.sp
-                            )
-                            Text(
-                                text = "Verwaiste Seiten (${orphans.size})",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Text(
-                                text = if (orphansExpanded) "▾" else "▸",
-                                style = MaterialTheme.typography.titleMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
+                            orphans.sortedBy { pageNames[it] ?: it }.forEach { orphanId ->
+                                val name = pageNames[orphanId] ?: orphanId
+                                Surface(
+                                    onClick = { onFocus(orphanId) },
+                                    shape = MaterialTheme.shapes.small,
+                                    color = if (orphanId == focusedPageId) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface,
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Text(
+                                        text = name,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                }
+                            }
                         }
                     }
                 }
             }
+        }
+
+        var showAddPageDialog by remember { mutableStateOf(false) }
+
+        if (showAddPageDialog) {
+            com.andreas_kratzer.ghosttalk.ui.pages.TargetPageSelectionDialog(
+                availablePages = emptyList(),
+                templates = templates,
+                onPageSelected = {},
+                onCreatePage = { name, rows, cols, templateId, onCreated ->
+                    onCreatePage?.invoke(name, rows, cols, templateId) { newPageId ->
+                        onFocus(newPageId)
+                        onCreated(newPageId)
+                    }
+                    showAddPageDialog = false
+                },
+                onDismiss = { showAddPageDialog = false }
+            )
         }
 
         // Control HUD (Zoom +/- & Reset)
@@ -558,6 +603,18 @@ fun StructureOverviewCanvas(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
+            // Add Page FAB
+            FloatingActionButton(
+                onClick = { showAddPageDialog = true },
+                modifier = Modifier.size(40.dp),
+                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Add,
+                    contentDescription = "Seite hinzufügen"
+                )
+            }
             // Zoom In
             FloatingActionButton(
                 onClick = {

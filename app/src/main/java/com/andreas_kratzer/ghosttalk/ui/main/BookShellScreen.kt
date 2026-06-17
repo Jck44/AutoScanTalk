@@ -43,6 +43,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -59,7 +60,9 @@ import com.andreas_kratzer.ghosttalk.ui.pages.PageViewModel
 import com.andreas_kratzer.ghosttalk.core.ui.R as CoreR
 
 enum class BookShellTab {
-    Inhalte,
+    GlobalerEditor,
+    Seiten,
+    Vorlagen,
     Statistik
 }
 
@@ -84,9 +87,9 @@ fun BookShellScreen(
 ) {
     val BookShellTabSaver = Saver<BookShellTab, String>(
         save = { it.name },
-        restore = { value -> try { BookShellTab.valueOf(value) } catch (_: Exception) { BookShellTab.Inhalte } }
+        restore = { value -> try { BookShellTab.valueOf(value) } catch (_: Exception) { BookShellTab.GlobalerEditor } }
     )
-    var currentTab by rememberSaveable(stateSaver = BookShellTabSaver) { mutableStateOf(BookShellTab.Inhalte) }
+    var currentTab by rememberSaveable(stateSaver = BookShellTabSaver) { mutableStateOf(BookShellTab.GlobalerEditor) }
     var menuExpanded by remember { mutableStateOf(false) }
     // tabSelected: tracks whether the user explicitly chose a tab. While false,
     // the big "Nutzermodus" landing is shown so user mode stays in focus.
@@ -225,13 +228,31 @@ fun BookShellScreen(
                     modifier = Modifier.testTag("start_card_user_mode")
                 )
                 item(
-                    selected = !showLanding && currentTab == BookShellTab.Inhalte,
+                    selected = !showLanding && currentTab == BookShellTab.GlobalerEditor,
                     onClick = {
                         if (isLocked) onRequestUnlock()
-                        else { tabSelected = true; currentTab = BookShellTab.Inhalte }
+                        else { tabSelected = true; currentTab = BookShellTab.GlobalerEditor }
+                    },
+                    icon = { Icon(GhostTalkIcons.Book, contentDescription = stringResource(R.string.nav_editor)) },
+                    label = { Text(stringResource(R.string.nav_editor)) }
+                )
+                item(
+                    selected = !showLanding && currentTab == BookShellTab.Seiten,
+                    onClick = {
+                        if (isLocked) onRequestUnlock()
+                        else { tabSelected = true; currentTab = BookShellTab.Seiten }
                     },
                     icon = { Icon(Icons.AutoMirrored.Filled.List, contentDescription = stringResource(R.string.nav_content)) },
                     label = { Text(stringResource(R.string.nav_content)) }
+                )
+                item(
+                    selected = !showLanding && currentTab == BookShellTab.Vorlagen,
+                    onClick = {
+                        if (isLocked) onRequestUnlock()
+                        else { tabSelected = true; currentTab = BookShellTab.Vorlagen }
+                    },
+                    icon = { Icon(GhostTalkIcons.Description, contentDescription = stringResource(R.string.nav_templates)) },
+                    label = { Text(stringResource(R.string.nav_templates)) }
                 )
                 item(
                     selected = !showLanding && currentTab == BookShellTab.Statistik,
@@ -252,7 +273,24 @@ fun BookShellScreen(
                 )
             } else {
                 when (currentTab) {
-                    BookShellTab.Inhalte -> {
+                    BookShellTab.GlobalerEditor -> {
+                        val activeBookIdVal = activeBookId ?: "book-default"
+                        val unfilteredPages by pageViewModel.unfilteredPages.collectAsState(initial = emptyList())
+                        val finalPage = remember(unfilteredPages, activeBookIdVal) {
+                            unfilteredPages.find { it.id == settingsRepository.defaultStartPageId }
+                                ?: unfilteredPages.minByOrNull { it.orderIndex }
+                        }
+                        if (finalPage != null) {
+                            com.andreas_kratzer.ghosttalk.ui.pages.PageWorkbenchScreen(
+                                pageId = finalPage.id,
+                                initialMode = "global",
+                                pageViewModel = pageViewModel,
+                                onNavigateBack = { tabSelected = false },
+                                onExitEditor = { tabSelected = false }
+                            )
+                        }
+                    }
+                    BookShellTab.Seiten -> {
                         PageListScreen(
                             pageViewModel = pageViewModel,
                             onNavigateBack = null,
@@ -262,6 +300,14 @@ fun BookShellScreen(
                             onNavigateToTemplates = onNavigateToTemplates,
                             onNavigateToStaticRow = onNavigateToStaticRow,
                             showTopBar = false
+                        )
+                    }
+                    BookShellTab.Vorlagen -> {
+                        val templateViewModel = hiltViewModel<com.andreas_kratzer.ghosttalk.ui.templates.TemplateViewModel>()
+                        com.andreas_kratzer.ghosttalk.ui.templates.TemplatesWorkbenchScreen(
+                            templateViewModel = templateViewModel,
+                            onNavigateBack = { tabSelected = false },
+                            onTemplateClick = onEditTemplate
                         )
                     }
                     BookShellTab.Statistik -> {

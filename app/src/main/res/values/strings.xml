@@ -754,7 +754,9 @@
     <string name="suggestions_no_active_buttons">Keine aktiven Buttons in dieser Zeile vorhanden.</string>
     <string name="smart_integration_please_pair">Bitte zuerst in den Einstellungen koppeln.</string>
     <string name="nav_speak">Nutzermodus</string>
-    <string name="nav_content">Inhalte</string>
+    <string name="nav_content">Seiten</string>
+    <string name="nav_editor">Editor</string>
+    <string name="nav_templates">Vorlagen</string>
     <string name="nav_stats">Statistik</string>
 
     <!-- Bulk Edit/Multi-Select Strings -->

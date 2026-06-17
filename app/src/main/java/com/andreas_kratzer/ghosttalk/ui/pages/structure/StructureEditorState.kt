@@ -11,9 +11,8 @@ import androidx.compose.runtime.setValue
 import com.andreas_kratzer.ghosttalk.core.domain.pages.UsageLocation
 import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.core.model.ButtonTemplate
-import com.andreas_kratzer.ghosttalk.ui.components.SplitWizardButtonDrag
-
 import com.andreas_kratzer.ghosttalk.core.ui.components.SidePanelTab
+import com.andreas_kratzer.ghosttalk.ui.components.SplitWizardButtonDrag
 
 @Stable
 class StructureEditorState(

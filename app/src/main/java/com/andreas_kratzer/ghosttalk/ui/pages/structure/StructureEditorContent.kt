@@ -21,9 +21,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -217,6 +214,8 @@ fun StructureEditorContent(
                         matchingPageIds = matchingPageIds,
                         onZoomInto = onZoomInto,
                         selection = state.selection,
+                        templates = templates,
+                        onCreatePage = onCreatePage,
                         modifier = Modifier
                             .weight(1f)
                             .fillMaxHeight()

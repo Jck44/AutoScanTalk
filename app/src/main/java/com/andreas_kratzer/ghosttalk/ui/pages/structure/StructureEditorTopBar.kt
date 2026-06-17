@@ -2,7 +2,6 @@ package com.andreas_kratzer.ghosttalk.ui.pages.structure
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
@@ -18,7 +17,6 @@ import com.andreas_kratzer.ghosttalk.core.ui.components.EditorTopBar
 import com.andreas_kratzer.ghosttalk.core.ui.components.SidePanelTab
 import com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons
 import com.andreas_kratzer.ghosttalk.ui.components.BulkActionTopBar
-import com.andreas_kratzer.ghosttalk.core.ui.R as CoreR
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

@@ -9,6 +9,7 @@ import com.andreas_kratzer.ghosttalk.core.domain.templates.DeleteTemplateUseCase
 import com.andreas_kratzer.ghosttalk.core.domain.templates.GetTemplateUsagesUseCase
 import com.andreas_kratzer.ghosttalk.core.domain.templates.UpdateButtonConfigInTemplateUseCase
 import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
+import com.andreas_kratzer.ghosttalk.core.model.ButtonTemplate
 import com.andreas_kratzer.ghosttalk.core.model.GridSettingsUpdate
 import com.andreas_kratzer.ghosttalk.core.model.PageTemplate
 import com.andreas_kratzer.ghosttalk.core.model.SortOrder
@@ -33,8 +34,20 @@ class TemplateViewModel @Inject constructor(
     private val deleteTemplateUseCase: DeleteTemplateUseCase,
     private val updateButtonConfigInTemplateUseCase: UpdateButtonConfigInTemplateUseCase,
     private val getTemplateUsagesUseCase: GetTemplateUsagesUseCase,
-    private val geminiUseCase: com.andreas_kratzer.ghosttalk.core.ai.domain.GeminiUseCase
+    private val geminiUseCase: com.andreas_kratzer.ghosttalk.core.ai.domain.GeminiUseCase,
+    private val buttonTemplateDelegate: com.andreas_kratzer.ghosttalk.ui.pages.delegates.ButtonTemplateDelegate
 ) : ViewModel(), com.andreas_kratzer.ghosttalk.ui.util.GridEditorActions {
+
+    override val buttonTemplates: StateFlow<List<ButtonTemplate>>
+        get() = buttonTemplateDelegate.buttonTemplates
+
+    override fun updateButtonTemplate(template: ButtonTemplate) {
+        buttonTemplateDelegate.updateButtonTemplate(template)
+    }
+
+    override fun deleteButtonTemplate(template: ButtonTemplate) {
+        buttonTemplateDelegate.deleteButtonTemplate(template)
+    }
 
     override val availableGeminiTools = geminiUseCase.getAvailableTools()
 
@@ -94,6 +107,7 @@ class TemplateViewModel @Inject constructor(
     )
 
     init {
+        buttonTemplateDelegate.init(viewModelScope)
         // Ensure default templates exist when VM starts
         viewModelScope.launch {
             templateRepository.ensureBuiltInTemplates()

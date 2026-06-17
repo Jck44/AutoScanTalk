@@ -50,6 +50,7 @@ class TemplateViewModelTest {
         updateButtonConfigInTemplateUseCase = mockk<UpdateButtonConfigInTemplateUseCase>(relaxed = true)
         getTemplateUsagesUseCase = mockk<GetTemplateUsagesUseCase>(relaxed = true)
         geminiUseCase = mockk<com.andreas_kratzer.ghosttalk.core.ai.domain.GeminiUseCase>(relaxed = true)
+        val buttonTemplateDelegate = mockk<com.andreas_kratzer.ghosttalk.ui.pages.delegates.ButtonTemplateDelegate>(relaxed = true)
 
         every { settingsRepository.templateSortOrderFlow } returns MutableStateFlow(SortOrder.A_Z.name)
         every { templateRepository.getAllTemplates() } returns flowOf(emptyList())
@@ -63,7 +64,8 @@ class TemplateViewModelTest {
             deleteTemplateUseCase,
             updateButtonConfigInTemplateUseCase,
             getTemplateUsagesUseCase,
-            geminiUseCase
+            geminiUseCase,
+            buttonTemplateDelegate
         )
     }
 
@@ -111,7 +113,8 @@ class TemplateViewModelTest {
             deleteTemplateUseCase,
             updateButtonConfigInTemplateUseCase,
             getTemplateUsagesUseCase,
-            geminiUseCase
+            geminiUseCase,
+            mockk(relaxed = true)
         )
         advanceUntilIdle()
 
@@ -154,7 +157,8 @@ class TemplateViewModelTest {
             deleteTemplateUseCase,
             updateButtonConfigInTemplateUseCase,
             getTemplateUsagesUseCase,
-            geminiUseCase
+            geminiUseCase,
+            mockk(relaxed = true)
         )
         advanceUntilIdle()
 
