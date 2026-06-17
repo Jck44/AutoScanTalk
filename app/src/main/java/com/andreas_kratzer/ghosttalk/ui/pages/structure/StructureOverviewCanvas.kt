@@ -146,6 +146,7 @@ fun StructureOverviewCanvas(
     val edgesToDraw = remember(graph, layout, pages, focusedPageId, rootId) {
         val forward = mutableListOf<OverviewEdge>()
         val backward = mutableListOf<OverviewEdge>()
+        val seen = mutableSetOf<Pair<String, String>>()
         graph.outgoing.forEach { (sourceId, edges) ->
             val sourcePos = layout[sourceId] ?: return@forEach
             edges.forEach { edge ->
@@ -153,6 +154,8 @@ fun StructureOverviewCanvas(
                 if (targetId == rootId) return@forEach
                 
                 val targetPos = layout[targetId] ?: return@forEach
+                
+                if (!seen.add(sourceId to targetId)) return@forEach
                 
                 if (targetPos.x < sourcePos.x) {
                     // Backward edge: only draw if sourceId or targetId is focused
