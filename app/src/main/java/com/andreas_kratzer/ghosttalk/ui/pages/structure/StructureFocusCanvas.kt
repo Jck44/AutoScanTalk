@@ -107,8 +107,9 @@ fun StructureFocusCanvas(
     onCreatePage: ((String, Int, Int, String?, (String) -> Unit) -> Unit)? = null
 ) {
     val page = remember(pages, focusedPageId) { pages.find { it.id == focusedPageId } }
-    val orphans = remember(graph) { graph.orphans().toSet() }
-    val deadEnds = remember(graph) { graph.deadEnds().toSet() }
+    val problems = rememberStructureProblems(graph)
+    val orphans = problems.orphans
+    val deadEnds = problems.deadEnds
     val incomingSources = remember(graph, focusedPageId) { graph.incoming[focusedPageId] ?: emptyList() }
     val outgoingEdges = remember(graph, focusedPageId) { 
         (graph.outgoing[focusedPageId] ?: emptyList()).filter { it.targetPageId != focusedPageId }

@@ -95,8 +95,9 @@ fun StructureOverviewCanvas(
     matchingPageIds: Set<String>,
     modifier: Modifier = Modifier
 ) {
-    val orphans = remember(graph) { graph.orphans().toSet() }
-    val deadEnds = remember(graph) { graph.deadEnds().toSet() }
+    val problems = rememberStructureProblems(graph)
+    val orphans = problems.orphans
+    val deadEnds = problems.deadEnds
 
     val nodeWidth = 160.dp
     val nodeHeight = 54.dp

@@ -113,11 +113,12 @@ fun StructureTreeNavigator(
         rootNode?.let { flattenTree(it) } ?: emptyList()
     }
 
-    val orphans = remember(graph) { graph.orphans() }
-    val orphansSet = remember(graph) { graph.orphans().toSet() }
-    val deadEndsSet = remember(graph) { graph.deadEnds().toSet() }
+    val problems = rememberStructureProblems(graph)
+    val orphans = remember(problems) { problems.orphans.toList() }
+    val orphansSet = problems.orphans
+    val deadEndsSet = problems.deadEnds
 
-    val problemPages = remember(graph, orphansSet, deadEndsSet) {
+    val problemPages = remember(graph, problems) {
         graph.allPageIds.filter { it in orphansSet || it in deadEndsSet }
             .sortedBy { pageNames[it] ?: it }
     }

@@ -81,8 +81,9 @@ fun StructureGraphView(
     isMultiSelectMode: Boolean = false,
     selection: Map<String, Set<Int>> = emptyMap()
 ) {
-    val orphans = remember(graph) { graph.orphans().toSet() }
-    val deadEnds = remember(graph) { graph.deadEnds().toSet() }
+    val problems = rememberStructureProblems(graph)
+    val orphans = problems.orphans
+    val deadEnds = problems.deadEnds
 
     var expandedPageIds: Set<String> by rememberSaveable(stateSaver = expandedPageIdsSaver) {
         mutableStateOf(emptySet<String>())
