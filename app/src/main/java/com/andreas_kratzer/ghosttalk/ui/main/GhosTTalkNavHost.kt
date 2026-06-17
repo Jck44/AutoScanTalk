@@ -312,7 +312,7 @@ fun GhostTalkNavHost(
                         val finalPage = resolveStartPage(bookId, settingsRepository, pageRepository)
                         if (finalPage != null) {
                             runOnMainThread {
-                                navigateWithSecurity("editor/${finalPage.id}?mode=${EditorMode.STRUKTUR.route}")
+                                navigateWithSecurity("editor/${finalPage.id}?mode=global")
                             }
                         }
                     }

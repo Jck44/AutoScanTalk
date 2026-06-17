@@ -202,13 +202,7 @@ fun StructureGraphView(
         Column(
             modifier = if (isFullView) Modifier.fillMaxSize().padding(12.dp) else Modifier.padding(12.dp)
         ) {
-            Text(
-                text = "Visueller Navigations-Graph",
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary
-            )
-            Spacer(modifier = Modifier.height(12.dp))
+
 
             Box(
                 modifier = Modifier

@@ -67,8 +67,12 @@ fun PageWorkbenchScreen(
     onNavigateBack: () -> Unit,
     onExitEditor: () -> Unit
 ) {
-    var mode by rememberSaveable { mutableStateOf(EditorMode.fromRoute(initialMode)) }
-    var structureView by rememberSaveable { mutableStateOf(StructureViewMode.GRAPH) }
+    var mode by rememberSaveable { 
+        mutableStateOf(if (initialMode == "global") EditorMode.STRUKTUR else EditorMode.fromRoute(initialMode)) 
+    }
+    var structureView by rememberSaveable { 
+        mutableStateOf(if (initialMode == "global") StructureViewMode.OVERVIEW else StructureViewMode.GRAPH) 
+    }
     var focusedPageId by rememberSaveable { mutableStateOf(pageId) }
     var currentButtonId by rememberSaveable { mutableStateOf(initialButtonId) }
 
