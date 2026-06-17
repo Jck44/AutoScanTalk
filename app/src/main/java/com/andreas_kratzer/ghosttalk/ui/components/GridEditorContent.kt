@@ -255,7 +255,7 @@ fun GridEditorContent(
             }
         ) {
             Row(modifier = Modifier.fillMaxSize()) {
-                var activeSidePanelTab by rememberSaveable { mutableStateOf("templates") } // "templates" or "tree"
+                var activeSidePanelTab by rememberSaveable { mutableStateOf(com.andreas_kratzer.ghosttalk.core.ui.components.SidePanelTab.TEMPLATES) }
                 var sidePanelExpanded by rememberSaveable { mutableStateOf(true) }
 
                 if ((isLandscape || dimensions.isTablet) && !sidePanelExpanded) {
@@ -276,71 +276,39 @@ fun GridEditorContent(
                 }
 
                 if ((isLandscape || dimensions.isTablet) && sidePanelExpanded) {
-                    Card(
-                        modifier = Modifier
-                            .width(300.dp)
-                            .fillMaxHeight()
-                            .padding(start = dimensions.paddingMedium, top = dimensions.paddingMedium, bottom = dimensions.paddingMedium),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
-                    ) {
-                        Column(modifier = Modifier.fillMaxSize()) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.End
-                            ) {
-                                IconButton(onClick = { sidePanelExpanded = false }) {
-                                    Icon(
-                                        imageVector = GhostTalkIcons.ArrowBack,
-                                        contentDescription = stringResource(R.string.side_panel_collapse)
-                                    )
-                                }
+                    com.andreas_kratzer.ghosttalk.core.ui.components.EditorSidePanel(
+                        selectedTab = activeSidePanelTab,
+                        onSelectTab = { activeSidePanelTab = it },
+                        onCollapse = { sidePanelExpanded = false },
+                        modifier = Modifier.padding(start = dimensions.paddingMedium, top = dimensions.paddingMedium, bottom = dimensions.paddingMedium),
+                        treeContent = {
+                            val graph = remember(availablePages, defaultStartPageId) {
+                                com.andreas_kratzer.ghosttalk.core.domain.pages.BookNavigationGraph.from(availablePages, defaultStartPageId)
                             }
-                            androidx.compose.material3.SecondaryTabRow(
-                                selectedTabIndex = if (activeSidePanelTab == "templates") 0 else 1,
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                androidx.compose.material3.Tab(
-                                    selected = activeSidePanelTab == "templates",
-                                    onClick = { activeSidePanelTab = "templates" },
-                                    text = { Text(stringResource(R.string.template_panel_title)) }
-                                )
-                                androidx.compose.material3.Tab(
-                                    selected = activeSidePanelTab == "tree",
-                                    onClick = { activeSidePanelTab = "tree" },
-                                    text = { Text("Seitenbaum") }
-                                )
+                            val pageNames = remember(availablePages) {
+                                availablePages.associate { it.id to it.name }
                             }
-
-                            Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
-                                if (activeSidePanelTab == "templates") {
-                                    ButtonTemplatesPanel(
-                                        actions = actions,
-                                        onEditTemplate = { template -> editingTemplateId = template.id },
-                                        modifier = Modifier
-                                            .fillMaxSize()
-                                            .dropTarget(key = TemplatesPanelTarget)
-                                    )
-                                } else {
-                                    val graph = remember(availablePages, defaultStartPageId) {
-                                        com.andreas_kratzer.ghosttalk.core.domain.pages.BookNavigationGraph.from(availablePages, defaultStartPageId)
-                                    }
-                                    val pageNames = remember(availablePages) {
-                                        availablePages.associate { it.id to it.name }
-                                    }
-                                    StructureTreeNavigator(
-                                        graph = graph,
-                                        pages = availablePages,
-                                        pageNames = pageNames,
-                                        focusedPageId = item.id,
-                                        onFocus = { targetPageId ->
-                                            onEditPage?.invoke(targetPageId, null)
-                                        },
-                                        modifier = Modifier.fillMaxSize()
-                                    )
-                                }
-                            }
+                            StructureTreeNavigator(
+                                graph = graph,
+                                pages = availablePages,
+                                pageNames = pageNames,
+                                focusedPageId = item.id,
+                                onFocus = { targetPageId ->
+                                    onEditPage?.invoke(targetPageId, null)
+                                },
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        },
+                        templatesContent = {
+                            ButtonTemplatesPanel(
+                                actions = actions,
+                                onEditTemplate = { template -> editingTemplateId = template.id },
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .dropTarget(key = TemplatesPanelTarget)
+                            )
                         }
-                    }
+                    )
                     Spacer(modifier = Modifier.width(dimensions.paddingSmall))
                 }
 

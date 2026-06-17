@@ -72,9 +72,13 @@ fun StructureEditorScreen(
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
 
-    val graph = remember(pages, startPageId) {
+    val cachedGraph by pageViewModel.cachedNavigationGraph.collectAsState()
+    val fallbackGraph = remember(pages, startPageId) {
         BookNavigationGraph.from(pages, startPageId)
     }
+    val graph = cachedGraph ?: fallbackGraph
+
+    val overviewLayout by pageViewModel.cachedOverviewLayout.collectAsState()
 
     val pageNames = remember(pages) {
         pages.associate { it.id to it.name }
@@ -406,6 +410,7 @@ fun StructureEditorScreen(
         StructureEditorContent(
             state = state,
             graph = graph,
+            overviewLayout = overviewLayout,
             pages = pages,
             templates = templates,
             pageNames = pageNames,

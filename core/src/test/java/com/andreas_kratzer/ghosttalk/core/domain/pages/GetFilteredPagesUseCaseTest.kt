@@ -14,7 +14,9 @@ import org.junit.Test
 
 class GetFilteredPagesUseCaseTest {
 
-    private val settingsRepository = mockk<SettingsRepository>()
+    private val settingsRepository = mockk<SettingsRepository>().apply {
+        every { defaultStartPageIdFlow } returns MutableStateFlow<String?>(null)
+    }
     private val useCase = GetFilteredPagesUseCase(settingsRepository)
 
     @Test

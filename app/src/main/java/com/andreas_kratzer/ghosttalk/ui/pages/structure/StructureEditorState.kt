@@ -13,8 +13,7 @@ import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.core.model.ButtonTemplate
 import com.andreas_kratzer.ghosttalk.ui.components.SplitWizardButtonDrag
 
-/** Which content the unified left side panel currently shows (tablet). */
-enum class SidePanelTab { TREE, TEMPLATES }
+import com.andreas_kratzer.ghosttalk.core.ui.components.SidePanelTab
 
 @Stable
 class StructureEditorState(

@@ -1,5 +1,4 @@
 package com.andreas_kratzer.ghosttalk.ui.pages.structure
-
 import android.content.res.Configuration
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.VectorConverter
@@ -45,6 +44,7 @@ import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.SubcomposeLayout
 import androidx.compose.ui.layout.boundsInWindow
+import androidx.compose.ui.layout.boundsInParent
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
@@ -60,13 +60,12 @@ import com.andreas_kratzer.ghosttalk.ui.components.LocalDragDropState
 import com.andreas_kratzer.ghosttalk.ui.components.StructureButtonDrag
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.first
+import kotlin.math.roundToInt
 import kotlinx.coroutines.launch
-
 private val expandedPageIdsSaver = listSaver<Set<String>, String>(
     save = { it.toList() },
     restore = { it.toSet() }
 )
-
 @Composable
 fun StructureGraphView(
     focusedPageId: String,
@@ -90,26 +89,21 @@ fun StructureGraphView(
     val problems = rememberStructureProblems(graph)
     val orphans = problems.orphans
     val deadEnds = problems.deadEnds
-
     var expandedPageIds: Set<String> by rememberSaveable(stateSaver = expandedPageIdsSaver) {
         mutableStateOf(emptySet<String>())
     }
     var selectedEdgeForDeletion by remember { mutableStateOf<NavEdge?>(null) }
-
     // Reset armed connection delete overlay when focused page or expanded pages change (G2)
     LaunchedEffect(expandedPageIds, focusedPageId) {
         selectedEdgeForDeletion = null
     }
-
     val distinctIncoming = incomingSources.distinct()
     val distinctOutgoing = outgoingEdges.map { it.targetPageId }.distinct()
-
     val maxIncomingRows = if (isFullView) 8 else 4
     var incomingLimit by remember(focusedPageId) { mutableStateOf(maxIncomingRows) }
     val showIncomingMore = distinctIncoming.size > incomingLimit
     val visibleIncoming = if (showIncomingMore) distinctIncoming.take(incomingLimit - 1) else distinctIncoming
     val incomingNodeIds = if (showIncomingMore) visibleIncoming + "more_incoming" else visibleIncoming
-
     val maxOutgoingRows = if (isFullView) 8 else 4
     val maxOutgoingColumns = if (isFullView) 2 else 1
     val maxOutgoingTotal = maxOutgoingRows * maxOutgoingColumns
@@ -124,26 +118,27 @@ fun StructureGraphView(
         (outgoingNodeIds.size + maxOutgoingColumns - 1) / maxOutgoingColumns
     )
     val outgoingColumns = outgoingNodeIds.chunked(outgoingRowsPerColumn)
-
     val scrollStateX = rememberScrollState()
     val scrollStateY = rememberScrollState()
     val dragDropState = LocalDragDropState.current
     var graphBoundsInWindow by remember { mutableStateOf<Rect?>(null) }
-
+    var centerNodeRect by remember { mutableStateOf(Rect.Zero) }
+    var viewportSize by remember { mutableStateOf(androidx.compose.ui.unit.IntSize.Zero) }
     // Center the focused node once, after layout settles. Keyed on focusedPageId only,
     // so expanding/collapsing a card (which changes maxValue) does NOT re-scroll the view.
     LaunchedEffect(focusedPageId) {
         // Wait until the layout has been measured (at least one axis has scroll range).
-        snapshotFlow { scrollStateX.maxValue to scrollStateY.maxValue }
-            .first { (x, y) -> x > 0 || y > 0 }
+        snapshotFlow { scrollStateX.maxValue to centerNodeRect }
+            .first { (xMax, rect) -> xMax > 0 && rect.width > 0f && viewportSize.width > 0 }
+        val cx = centerNodeRect.center.x
+        val cy = centerNodeRect.center.y
         if (scrollStateX.maxValue > 0) {
-            scrollStateX.animateScrollTo(scrollStateX.maxValue / 2)
+            scrollStateX.animateScrollTo((cx - viewportSize.width / 2f).roundToInt().coerceIn(0, scrollStateX.maxValue))
         }
         if (scrollStateY.maxValue > 0) {
-            scrollStateY.animateScrollTo(scrollStateY.maxValue / 2)
+            scrollStateY.animateScrollTo((cy - viewportSize.height / 2f).roundToInt().coerceIn(0, scrollStateY.maxValue))
         }
     }
-
     // Auto-Panning while dragging a chip/template near the screen edges in the graph editor.
     LaunchedEffect(dragDropState.isDragging) {
         if (dragDropState.isDragging && (dragDropState.dragItem is StructureButtonDrag || dragDropState.dragItem is com.andreas_kratzer.ghosttalk.core.model.ButtonTemplate)) {
@@ -156,7 +151,6 @@ fun StructureGraphView(
                     val distToLeft = pointerPos.x - bounds.left
                     val distToBottom = bounds.bottom - pointerPos.y
                     val distToTop = pointerPos.y - bounds.top
-
                     if (distToRight < threshold && scrollStateX.value < scrollStateX.maxValue) {
                         val speedFactor = ((threshold - distToRight) / threshold).coerceIn(0f, 1f)
                         val scrollAmount = (25f * speedFactor).coerceAtLeast(8f)
@@ -166,7 +160,6 @@ fun StructureGraphView(
                         val scrollAmount = (25f * speedFactor).coerceAtLeast(8f)
                         scrollStateX.scrollBy(-scrollAmount)
                     }
-
                     if (distToBottom < threshold && scrollStateY.value < scrollStateY.maxValue) {
                         val speedFactor = ((threshold - distToBottom) / threshold).coerceIn(0f, 1f)
                         val scrollAmount = (25f * speedFactor).coerceAtLeast(8f)
@@ -181,14 +174,11 @@ fun StructureGraphView(
             }
         }
     }
-
     val configuration = LocalConfiguration.current
     val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
-    
     val scope = rememberCoroutineScope()
     var flingJob by remember { mutableStateOf<Job?>(null) }
     val decaySpec = remember { exponentialDecay<Offset>() }
-
     Card(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)),
         modifier = if (isFullView) {
@@ -200,12 +190,11 @@ fun StructureGraphView(
         Column(
             modifier = if (isFullView) Modifier.fillMaxSize().padding(12.dp) else Modifier.padding(12.dp)
         ) {
-
-
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .then(if (isFullView) Modifier.weight(1f) else Modifier)
+                    .onGloballyPositioned { viewportSize = it.size }
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null
@@ -247,24 +236,23 @@ fun StructureGraphView(
                     .then(if (isFullView) Modifier.padding(bottom = 88.dp) else Modifier)
             ) {
                 val density = LocalDensity.current
-
                 val incomingWidthDp = if (incomingNodeIds.isEmpty()) 0.dp else 200.dp
                 val centerWidthDp = 240.dp
                 val outgoingColWidthDp = if (outgoingNodeIds.isEmpty()) 0.dp else 210.dp
                 val horizontalSpacing = 40.dp
                 val verticalSpacing = 16.dp
-
                 val targetColumnsCount = outgoingColumns.size.coerceAtLeast(1)
-
                 val primaryColor = MaterialTheme.colorScheme.primary
                 val errorColor = MaterialTheme.colorScheme.error
-
                 SubcomposeLayout { constraints ->
                     // 1. Compose & Measure Center Node
                     val centerPlaceables = subcompose("center") {
-                        StructureGraphNode(
-                            pageId = focusedPageId,
-                            pageName = focusedPageName,
+                        Box(modifier = Modifier.onGloballyPositioned { coords ->
+                            centerNodeRect = coords.boundsInParent()
+                        }) {
+                            StructureGraphNode(
+                                pageId = focusedPageId,
+                                pageName = focusedPageName,
                             isCenter = true,
                             isExpanded = expandedPageIds.contains(focusedPageId),
                             pages = pages,
@@ -284,11 +272,11 @@ fun StructureGraphView(
                             isOrphan = focusedPageId in orphans,
                             isDeadEnd = focusedPageId in deadEnds,
                             onZoomInto = { onZoomInto(focusedPageId) },
-                            isMatched = focusedPageId in matchingPageIds
-                        )
+                                isMatched = focusedPageId in matchingPageIds
+                            )
+                        }
                     }.map { it.measure(Constraints.fixedWidth(with(density) { centerWidthDp.roundToPx() })) }
                     val centerPlaceable = centerPlaceables.first()
-
                     // 2. Compose & Measure Incoming Nodes
                     val incomingPlaceables = subcompose("incoming") {
                         incomingNodeIds.forEach { sourceId ->
@@ -337,7 +325,6 @@ fun StructureGraphView(
                             }
                         }
                     }.map { it.measure(Constraints.fixedWidth(with(density) { incomingWidthDp.roundToPx() })) }
-
                     // 3. Compose & Measure Outgoing Nodes
                     val outgoingPlaceables = subcompose("outgoing") {
                         outgoingNodeIds.forEach { targetId ->
@@ -386,53 +373,41 @@ fun StructureGraphView(
                             }
                         }
                     }.map { it.measure(Constraints.fixedWidth(with(density) { outgoingColWidthDp.roundToPx() })) }
-
                     // Layout size and coordinates calculation
                     val spacingPx = with(density) { verticalSpacing.roundToPx() }
                     val hSpacingPx = with(density) { horizontalSpacing.roundToPx() }
-
                     val layoutWidth: Int
                     val layoutHeight: Int
-
                     val incomingPoints = mutableListOf<Pair<Float, Float>>()
                     val outgoingPoints = mutableListOf<Pair<Float, Float>>()
                     var centerPoint = Pair(0f, 0f)
-
                     if (isLandscape) {
                         // Landscape arrangement: Left-to-Right
                         val incomingTotalHeight = if (incomingPlaceables.isEmpty()) 0 else {
                             incomingPlaceables.sumOf { it.height } + spacingPx * (incomingPlaceables.size - 1)
                         }
                         val centerTotalHeight = centerPlaceable.height
-
                         val outgoingColumnsPlaceables = outgoingPlaceables.chunked(outgoingRowsPerColumn)
                         val outgoingColumnHeights = outgoingColumnsPlaceables.map { col ->
                             col.sumOf { it.height } + spacingPx * (col.size - 1)
                         }
                         val maxOutgoingHeight = outgoingColumnHeights.maxOrNull() ?: 0
-
                         // Offset every other target column by half a row so the outer column's
                         // chips sit in the gaps of the inner column — the long connector lines to
                         // the outer chips then thread between the inner chips instead of over them.
                         val rowOffsetPx = if (targetColumnsCount > 1) ((outgoingPlaceables.firstOrNull()?.height ?: 0) + spacingPx) / 2 else 0
-
                         val maxColumnHeight = maxOf(incomingTotalHeight, centerTotalHeight, maxOutgoingHeight)
                         layoutHeight = if (isFullView) maxOf(maxColumnHeight + rowOffsetPx, with(density) { 450.dp.roundToPx() })
                                        else maxOf(maxColumnHeight + rowOffsetPx, with(density) { 240.dp.roundToPx() })
-
                         val incomingColWidth = with(density) { incomingWidthDp.roundToPx() }
                         val centerColWidth = with(density) { centerWidthDp.roundToPx() }
                         val outgoingColWidth = with(density) { outgoingColWidthDp.roundToPx() }
-
                         val col1Width = if (incomingPlaceables.isNotEmpty()) incomingColWidth else 0
                         val col2Width = centerColWidth
                         val col3Width = if (outgoingPlaceables.isNotEmpty()) outgoingColWidth * targetColumnsCount + hSpacingPx * (targetColumnsCount - 1) else 0
-
                         val spacingCount = (if (col1Width > 0) 1 else 0) + (if (col3Width > 0) 1 else 0)
                         layoutWidth = col1Width + col2Width + col3Width + spacingCount * hSpacingPx
-
                         val centerY = layoutHeight / 2f
-
                         // Compute points
                         val col1StartX = 0f
                         if (incomingPlaceables.isNotEmpty()) {
@@ -444,10 +419,8 @@ fun StructureGraphView(
                                 currentY += p.height + spacingPx
                             }
                         }
-
                         val col2StartX = if (incomingPlaceables.isNotEmpty()) (col1Width + hSpacingPx).toFloat() else 0f
                         centerPoint = Pair(col2StartX + col2Width / 2f, centerY)
-
                         val col3StartX = col2StartX + col2Width + hSpacingPx
                         if (outgoingPlaceables.isNotEmpty()) {
                             outgoingColumnsPlaceables.forEachIndexed { colIdx, colPls ->
@@ -470,7 +443,6 @@ fun StructureGraphView(
                         val incomingColWidth = with(density) { incomingWidthDp.roundToPx() }
                         val centerColWidth = with(density) { centerWidthDp.roundToPx() }
                         val outgoingColWidth = with(density) { outgoingColWidthDp.roundToPx() }
-
                         // Rooted-tree layout: a vertical trunk at the focused node's centre,
                         // child nodes offset to the right with elbow connectors (uses the
                         // horizontal space and avoids a bundle of overlapping vertical curves).
@@ -482,7 +454,6 @@ fun StructureGraphView(
                             (childLeftX + incomingColWidth).toInt(),
                             (childLeftX + outgoingColWidth).toInt()
                         )
-
                         val incomingTotalHeight = if (incomingPlaceables.isEmpty()) 0 else {
                             incomingPlaceables.sumOf { it.height } + spacingPx * (incomingPlaceables.size - 1)
                         }
@@ -490,10 +461,8 @@ fun StructureGraphView(
                         val outgoingTotalHeight = if (outgoingPlaceables.isEmpty()) 0 else {
                             outgoingPlaceables.sumOf { it.height } + spacingPx * (outgoingPlaceables.size - 1)
                         }
-
                         val rowSpacingCount = (if (incomingPlaceables.isNotEmpty()) 1 else 0) + (if (outgoingPlaceables.isNotEmpty()) 1 else 0)
                         layoutHeight = incomingTotalHeight + centerTotalHeight + outgoingTotalHeight + rowSpacingCount * spacingPx
-
                         // Compute points
                         var currentY = 0f
                         if (incomingPlaceables.isNotEmpty()) {
@@ -503,10 +472,8 @@ fun StructureGraphView(
                                 currentY += p.height + spacingPx
                             }
                         }
-
                         centerPoint = Pair(trunkX, currentY + centerTotalHeight / 2f)
                         currentY += centerTotalHeight + spacingPx
-
                         if (outgoingPlaceables.isNotEmpty()) {
                             outgoingPlaceables.forEach { p ->
                                 val cy = currentY + p.height / 2f
@@ -515,7 +482,6 @@ fun StructureGraphView(
                             }
                         }
                     }
-
                     // Compose Canvas Curves & Tap handler directly on line (G3)
                     val canvasPlaceables = subcompose("canvas") {
                         Canvas(
@@ -526,7 +492,6 @@ fun StructureGraphView(
                                         var closestEdge: NavEdge? = null
                                         var minDistance = Float.MAX_VALUE
                                         val threshold = 24.dp.toPx()
-
                                         var flatIndex = 0
                                         outgoingColumns.forEach { colNodes ->
                                             colNodes.forEach { targetId ->
@@ -536,7 +501,6 @@ fun StructureGraphView(
                                                     val startY: Float
                                                     val endX: Float
                                                     val endY: Float
-
                                                     if (isLandscape) {
                                                         // Horizontal stub of the bus connector (unique per edge).
                                                         startX = centerPoint.first + (centerWidthDp / 2).toPx() + 24.dp.toPx()
@@ -550,7 +514,6 @@ fun StructureGraphView(
                                                         endX = pt.first - (outgoingColWidthDp / 2).toPx()
                                                         endY = pt.second
                                                     }
-
                                                     val dist = distanceToSegment(
                                                         tapOffset,
                                                         Offset(startX, startY),
@@ -565,27 +528,23 @@ fun StructureGraphView(
                                                 flatIndex++
                                             }
                                         }
-
                                         selectedEdgeForDeletion = closestEdge
                                     }
                                 }
                         ) {
                             val arrowLength = 8.dp.toPx()
                             val arrowWidth = 5.dp.toPx()
-
                             // 1. Draw curves from incoming nodes to center
                             incomingNodeIds.forEachIndexed { index, sourceId ->
                                 if (index < incomingPoints.size) {
                                     val pt = incomingPoints[index]
                                     val isMoreNode = sourceId.startsWith("more_")
-
                                     val path = androidx.compose.ui.graphics.Path()
                                     if (isLandscape) {
                                         val startX = pt.first + (incomingWidthDp / 2).toPx()
                                         val startY = pt.second
                                         val endX = centerPoint.first - (centerWidthDp / 2).toPx()
                                         val endY = centerPoint.second
-
                                         path.moveTo(startX, startY)
                                         path.cubicTo(
                                             startX + (endX - startX) * 0.6f, startY,
@@ -598,12 +557,10 @@ fun StructureGraphView(
                                         val startY = pt.second
                                         val trunkX = centerPoint.first
                                         val endY = centerPoint.second - centerPlaceable.height / 2f
-
                                         path.moveTo(startX, startY)
                                         path.lineTo(trunkX, startY)
                                         path.lineTo(trunkX, endY)
                                     }
-
                                     val stroke = if (isMoreNode) {
                                         androidx.compose.ui.graphics.drawscope.Stroke(
                                             width = 1.5.dp.toPx(),
@@ -615,7 +572,6 @@ fun StructureGraphView(
                                     } else {
                                         androidx.compose.ui.graphics.drawscope.Stroke(width = 2.dp.toPx())
                                     }
-
                                     drawPath(
                                         path = path,
                                         color = primaryColor.copy(alpha = if (isMoreNode) 0.4f else 0.6f),
@@ -623,7 +579,6 @@ fun StructureGraphView(
                                     )
                                 }
                             }
-
                             // 2. Draw curves from center to outgoing nodes
                             var flatIndex = 0
                             outgoingColumns.forEach { colNodes ->
@@ -631,16 +586,13 @@ fun StructureGraphView(
                                     if (flatIndex < outgoingPoints.size) {
                                         val pt = outgoingPoints[flatIndex]
                                         val isMoreNode = targetId.startsWith("more_")
-
                                         val matchingEdge = outgoingEdges.find { it.targetPageId == targetId }
                                         val isSelected = selectedEdgeForDeletion == matchingEdge
-
                                         val path = androidx.compose.ui.graphics.Path()
                                         val endX: Float
                                         val endY: Float
                                         val c2x: Float
                                         val c2y: Float
-
                                         if (isLandscape) {
                                             // Orthogonal bus: exit the centre horizontally to a shared
                                             // vertical bus, run along it to the target's row, then a
@@ -651,7 +603,6 @@ fun StructureGraphView(
                                             val busX = startX + 24.dp.toPx()
                                             endX = pt.first - (outgoingColWidthDp / 2).toPx()
                                             endY = pt.second
-
                                             // Control point left of the end so the arrowhead points horizontally into the node.
                                             c2x = busX
                                             c2y = endY
@@ -665,7 +616,6 @@ fun StructureGraphView(
                                             val startY = centerPoint.second + centerPlaceable.height / 2f
                                             endX = pt.first - (outgoingColWidthDp / 2).toPx()
                                             endY = pt.second
-
                                             // Control point left of the end so the arrowhead points horizontally into the node.
                                             c2x = startX
                                             c2y = endY
@@ -673,7 +623,6 @@ fun StructureGraphView(
                                             path.lineTo(startX, endY)
                                             path.lineTo(endX, endY)
                                         }
-
                                         val stroke = if (isMoreNode) {
                                             androidx.compose.ui.graphics.drawscope.Stroke(
                                                 width = 1.5.dp.toPx(),
@@ -685,15 +634,12 @@ fun StructureGraphView(
                                         } else {
                                             androidx.compose.ui.graphics.drawscope.Stroke(width = (if (isSelected) 3.5.dp else 2.dp).toPx())
                                         }
-
                                         val color = if (isSelected) errorColor else primaryColor.copy(alpha = if (isMoreNode) 0.4f else 0.6f)
-
                                         drawPath(
                                             path = path,
                                             color = color,
                                             style = stroke
                                         )
-
                                         if (!isMoreNode) {
                                             // arrowhead oriented along the curve's end tangent (end - c2)
                                             var tx = endX - c2x
@@ -715,7 +661,6 @@ fun StructureGraphView(
                             }
                         }
                     }.map { it.measure(Constraints.fixed(layoutWidth, layoutHeight)) }
-
                     // 5. Compose active deletion tooltip dialog triggers at exact midpoint (0.5f) (G3)
                     val tooltipPlaceables = subcompose("tooltip") {
                         if (onRemoveConnection != null && selectedEdgeForDeletion != null) {
@@ -728,7 +673,6 @@ fun StructureGraphView(
                                 val startY: Float
                                 val endX: Float
                                 val endY: Float
-
                                 if (isLandscape) {
                                     startX = centerPoint.first + with(density) { (centerWidthDp / 2).toPx() + 24.dp.toPx() }
                                     startY = pt.second
@@ -740,13 +684,10 @@ fun StructureGraphView(
                                     endX = pt.first - with(density) { (outgoingColWidthDp / 2).toPx() }
                                     endY = pt.second
                                 }
-
                                 val curveEndX = startX + (endX - startX) * 0.5f
                                 val endCurveY = startY + (endY - startY) * 0.5f
-
                                 val tooltipWidth = with(density) { 36.dp.toPx() }
                                 val tooltipHeight = with(density) { 24.dp.toPx() }
-
                                 Box(
                                     modifier = Modifier
                                         .offset {
@@ -783,10 +724,8 @@ fun StructureGraphView(
                             }
                         }
                     }.map { it.measure(constraints) }
-
                     layout(layoutWidth, layoutHeight) {
                         canvasPlaceables.forEach { it.place(0, 0) }
-
                         // Place incoming
                         var incPlIdx = 0
                         if (incomingPlaceables.isNotEmpty()) {
@@ -799,13 +738,11 @@ fun StructureGraphView(
                                 incPlIdx++
                             }
                         }
-
                         // Place center
                         centerPlaceable.place(
                             (centerPoint.first - centerPlaceable.width / 2f).toInt(),
                             (centerPoint.second - centerPlaceable.height / 2f).toInt()
                         )
-
                         // Place outgoing
                         var outPlIdx = 0
                         if (outgoingPlaceables.isNotEmpty()) {
@@ -818,7 +755,6 @@ fun StructureGraphView(
                                 outPlIdx++
                             }
                         }
-
                         tooltipPlaceables.forEach { it.place(0, 0) }
                     }
                 }

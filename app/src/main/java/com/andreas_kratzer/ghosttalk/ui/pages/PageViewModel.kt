@@ -33,6 +33,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -128,6 +129,24 @@ class PageViewModel @Inject constructor(
     )
 
     val isEditPreviewActive = pageResolutionDelegate.isEditPreviewActive
+
+    val cachedNavigationGraph: StateFlow<com.andreas_kratzer.ghosttalk.core.domain.pages.BookNavigationGraph?> = kotlinx.coroutines.flow.combine(allPages, defaultStartPageIdFlow) { pages, startId ->
+        if (pages.isEmpty()) null else com.andreas_kratzer.ghosttalk.core.domain.pages.BookNavigationGraph.from(pages, startId)
+    }.flowOn(kotlinx.coroutines.Dispatchers.Default).stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
+    val cachedOverviewLayout: StateFlow<Map<String, androidx.compose.ui.geometry.Offset>> = kotlinx.coroutines.flow.combine(cachedNavigationGraph, allPages) { graph, pages ->
+        if (graph == null) emptyMap()
+        else {
+            com.andreas_kratzer.ghosttalk.ui.pages.structure.calculateOverviewLayout(
+                graph = graph,
+                pages = pages,
+                nodeWidthPx = 160f, // DP values
+                nodeHeightPx = 54f,
+                horizontalGapPx = 100f,
+                verticalGapPx = 32f
+            )
+        }
+    }.flowOn(kotlinx.coroutines.Dispatchers.Default).stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
 
     private val _shellTabRequest = kotlinx.coroutines.flow.MutableSharedFlow<BookShellTab>()
     val shellTabRequest = _shellTabRequest.asSharedFlow()

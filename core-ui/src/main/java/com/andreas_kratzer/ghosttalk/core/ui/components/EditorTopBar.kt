@@ -4,7 +4,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
@@ -29,7 +29,6 @@ fun EditorTopBar(
     onNavigateBack: (() -> Unit)? = null,
     modeSwitcher: (@Composable () -> Unit)? = null,
     actions: List<EditorAction> = emptyList(),
-    isTablet: Boolean = false,
     overflowTestTag: String = "editor_overflow_menu_trigger",
     onExitEditor: (() -> Unit)? = null,
     exitTestTag: String = "page_editor_exit_button",
@@ -38,15 +37,16 @@ fun EditorTopBar(
     val resolvedExitContentDescription = exitContentDescription ?: stringResource(R.string.editor_exit)
     TopAppBar(
         title = {
-            Row(
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                titleContent()
-                if (modeSwitcher != null) {
-                    Spacer(modifier = Modifier.width(16.dp))
-                    modeSwitcher()
-                }
-            }
+            AdaptiveEditorBar(
+                titleContent = titleContent,
+                modeSwitcher = modeSwitcher,
+                actions = actions,
+                onExitEditor = onExitEditor,
+                overflowTestTag = overflowTestTag,
+                exitTestTag = exitTestTag,
+                exitContentDescription = resolvedExitContentDescription,
+                modifier = Modifier.fillMaxWidth()
+            )
         },
         navigationIcon = {
             if (onNavigateBack != null) {
@@ -58,28 +58,7 @@ fun EditorTopBar(
                 }
             }
         },
-        actions = {
-            val configuration = androidx.compose.ui.platform.LocalConfiguration.current
-            val maxActionsWidth = (configuration.screenWidthDp * 0.5f).dp
-            
-            AdaptiveActionBar(
-                actions = actions,
-                isTablet = isTablet,
-                overflowTestTag = overflowTestTag,
-                modifier = Modifier.widthIn(max = maxActionsWidth)
-            )
-            if (onExitEditor != null) {
-                IconButton(
-                    onClick = onExitEditor,
-                    modifier = Modifier.testTag(exitTestTag)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Close,
-                        contentDescription = resolvedExitContentDescription
-                    )
-                }
-            }
-        },
+        actions = {},
         colors = TopAppBarDefaults.topAppBarColors(
             containerColor = MaterialTheme.colorScheme.surface
         )

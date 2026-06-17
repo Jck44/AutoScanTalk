@@ -23,9 +23,17 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.background
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material3.FloatingActionButton
@@ -41,6 +49,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
@@ -85,8 +94,8 @@ data class OverviewEdge(
 @Composable
 fun StructureOverviewCanvas(
     focusedPageId: String,
-    pages: List<Page>,
     graph: BookNavigationGraph,
+    overviewLayout: Map<String, androidx.compose.ui.geometry.Offset>,
     pageNames: Map<String, String>,
     onFocus: (String) -> Unit,
     onNavigateToGraph: (String) -> Unit,
@@ -108,15 +117,11 @@ fun StructureOverviewCanvas(
     val horizontalGapPx = with(density) { 100.dp.toPx() }
     val verticalGapPx = with(density) { 32.dp.toPx() }
 
-    val layout = remember(graph, pages) {
-        calculateOverviewLayout(
-            graph = graph,
-            pages = pages,
-            nodeWidthPx = nodeWidthPx,
-            nodeHeightPx = nodeHeightPx,
-            horizontalGapPx = horizontalGapPx,
-            verticalGapPx = verticalGapPx
-        )
+    val layout = remember(overviewLayout) {
+        val scale = density.density
+        overviewLayout.mapValues { (_, dpOffset) ->
+            Offset(dpOffset.x * scale, dpOffset.y * scale)
+        }
     }
 
     val currentLayout by rememberUpdatedState(layout)
@@ -138,16 +143,19 @@ fun StructureOverviewCanvas(
         }
     }
 
-    val rootId = remember(graph, pages) {
+    var orphansExpanded by rememberSaveable { mutableStateOf(false) }
+
+    val rootId = remember(graph) {
         graph.startPageId?.takeIf { it in graph.allPageIds }
-            ?: pages.minByOrNull { it.orderIndex }?.id
+            ?: overviewLayout.keys.firstOrNull() // pages removed so use fallback
     }
 
-    val edgesToDraw = remember(graph, layout, pages, focusedPageId, rootId) {
+    val edgesToDraw = remember(graph, layout, focusedPageId, rootId, orphansExpanded) {
         val forward = mutableListOf<OverviewEdge>()
         val backward = mutableListOf<OverviewEdge>()
         val seen = mutableSetOf<Pair<String, String>>()
         graph.outgoing.forEach { (sourceId, edges) ->
+            if (sourceId in orphans && !orphansExpanded && sourceId != focusedPageId) return@forEach
             val sourcePos = layout[sourceId] ?: return@forEach
             edges.forEach { edge ->
                 val targetId = edge.targetPageId
@@ -178,6 +186,7 @@ fun StructureOverviewCanvas(
     val scope = rememberCoroutineScope()
     val decaySpec = remember { exponentialDecay<Offset>() }
     var flingJob by remember { mutableStateOf<Job?>(null) }
+    var hasCentered by remember(focusedPageId) { mutableStateOf(false) }
 
     // Auto-center on focused page
     LaunchedEffect(focusedPageId, layout, canvasSize) {
@@ -190,6 +199,7 @@ fun StructureOverviewCanvas(
                     canvasSize.height / 2f - targetCenter.y * scale
                 )
             }
+            hasCentered = true
         }
     }
 
@@ -225,7 +235,9 @@ fun StructureOverviewCanvas(
     Box(
         modifier = modifier
             .fillMaxSize()
+            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
             .clipToBounds()
+            .graphicsLayer { alpha = if (hasCentered) 1f else 0f }
             .onGloballyPositioned { layoutCoordinates ->
                 canvasSize = layoutCoordinates.size
             }
@@ -418,6 +430,9 @@ fun StructureOverviewCanvas(
                 }
         ) {
             layout.forEach { (pageId, nodeOffset) ->
+                if (pageId in orphans && !orphansExpanded && pageId != focusedPageId) {
+                    return@forEach
+                }
                 val pageName = pageNames[pageId] ?: pageId
                 val isFocused = pageId == focusedPageId
                 val isMatched = matchingPageIds.contains(pageId)
@@ -487,6 +502,49 @@ fun StructureOverviewCanvas(
                                     fontSize = 12.sp
                                 )
                             }
+                        }
+                    }
+                }
+            }
+
+            if (orphans.isNotEmpty()) {
+                val orphansMinY = orphans.mapNotNull { layout[it]?.y }.minOrNull()
+                if (orphansMinY != null) {
+                    Surface(
+                        onClick = { orphansExpanded = !orphansExpanded },
+                        color = MaterialTheme.colorScheme.surfaceVariant,
+                        shape = MaterialTheme.shapes.medium,
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                        modifier = Modifier
+                            .offset {
+                                IntOffset(
+                                    (horizontalGapPx * 0.48f).roundToInt(),
+                                    (orphansMinY - 48.dp.toPx()).roundToInt()
+                                )
+                            }
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Text(
+                                text = "⚠",
+                                color = MaterialTheme.colorScheme.error,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 14.sp
+                            )
+                            Text(
+                                text = "Verwaiste Seiten (${orphans.size})",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Text(
+                                text = if (orphansExpanded) "▾" else "▸",
+                                style = MaterialTheme.typography.titleMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
                         }
                     }
                 }
@@ -564,7 +622,7 @@ fun StructureOverviewCanvas(
     }
 }
 
-private fun calculateOverviewLayout(
+fun calculateOverviewLayout(
     graph: BookNavigationGraph,
     pages: List<Page>,
     nodeWidthPx: Float,
@@ -572,13 +630,15 @@ private fun calculateOverviewLayout(
     horizontalGapPx: Float,
     verticalGapPx: Float
 ): Map<String, Offset> {
+    val orphansSet = graph.orphans().toSet()
     val components = graph.connectedComponents()
+    val reachableComponents = components.map { it - orphansSet }.filter { it.isNotEmpty() }
 
     val rootId = graph.startPageId?.takeIf { it in graph.allPageIds }
         ?: pages.minByOrNull { it.orderIndex }?.id
 
-    val mainComponent = components.find { rootId in it } ?: emptySet()
-    val otherComponents = components.filter { it != mainComponent }
+    val mainComponent = reachableComponents.find { rootId in it } ?: emptySet()
+    val otherComponents = reachableComponents.filter { it != mainComponent }
 
     val positions = mutableMapOf<String, Offset>()
     var currentYOffset = 0f
@@ -698,14 +758,19 @@ private fun calculateOverviewLayout(
         currentYOffset = layoutComponent(mainComponent, firstNode, currentYOffset)
     }
 
-    otherComponents.forEach { comp ->
-        if (comp.isNotEmpty()) {
-            val bestRoot = comp.minByOrNull { pageId ->
-                val incomingCount = graph.incoming[pageId]?.count { it in comp } ?: 0
-                incomingCount * 10000 + (pages.find { it.id == pageId }?.orderIndex ?: 0)
-            } ?: comp.first()
-            currentYOffset = layoutComponent(comp, bestRoot, currentYOffset)
+    val orphanNodes = orphansSet.sortedBy { pages.find { p -> p.id == it }?.orderIndex ?: 0 }
+    
+    if (orphanNodes.isNotEmpty()) {
+        currentYOffset += 300f // Gap before orphans
+        val columns = 4
+        orphanNodes.forEachIndexed { index, pageId ->
+            val row = index / columns
+            val col = index % columns
+            val x = horizontalGapPx * 0.48f + col * (nodeWidthPx + horizontalGapPx)
+            val y = currentYOffset + row * (nodeHeightPx + verticalGapPx)
+            positions[pageId] = Offset(x, y)
         }
+        currentYOffset += ((orphanNodes.size + columns - 1) / columns) * (nodeHeightPx + verticalGapPx) + 100f
     }
 
     return positions

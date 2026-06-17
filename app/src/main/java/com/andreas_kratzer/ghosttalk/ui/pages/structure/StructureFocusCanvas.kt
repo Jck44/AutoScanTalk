@@ -44,12 +44,14 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.layout.boundsInWindow
+import androidx.compose.ui.layout.boundsInParent
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -76,6 +78,8 @@ import com.andreas_kratzer.ghosttalk.ui.components.StructureNodeTarget
 import com.andreas_kratzer.ghosttalk.ui.components.dragSource
 import com.andreas_kratzer.ghosttalk.ui.components.dropTarget
 import com.andreas_kratzer.ghosttalk.ui.pages.TargetPageSelectionDialog
+import kotlinx.coroutines.flow.first
+import kotlin.math.roundToInt
 
 private const val MAX_VISIBLE_TARGETS = 12
 private const val MAX_VISIBLE_SOURCES = 12
@@ -133,6 +137,18 @@ fun StructureFocusCanvas(
     val dragDropState = LocalDragDropState.current
     val scrollState = rememberScrollState()
     var canvasBoundsInWindow by remember { mutableStateOf<Rect?>(null) }
+    var centerCardRect by remember { mutableStateOf(Rect.Zero) }
+    var viewportHeight by remember { mutableStateOf(0) }
+
+    LaunchedEffect(focusedPageId) {
+        snapshotFlow { scrollState.maxValue to centerCardRect }
+            .first { (yMax, rect) -> yMax > 0 && rect.height > 0f && viewportHeight > 0 }
+        
+        val cy = centerCardRect.center.y
+        if (scrollState.maxValue > 0) {
+            scrollState.animateScrollTo((cy - viewportHeight / 2f).roundToInt().coerceIn(0, scrollState.maxValue))
+        }
+    }
 
     LaunchedEffect(dragDropState.isDragging) {
         if (dragDropState.isDragging && (dragDropState.dragItem is StructureButtonDrag || dragDropState.dragItem is SplitWizardButtonDrag)) {
@@ -281,6 +297,7 @@ fun StructureFocusCanvas(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
+                    .onGloballyPositioned { viewportHeight = it.size.height }
                     .verticalScroll(scrollState)
                     .padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 88.dp),
                 verticalArrangement = Arrangement.spacedBy(20.dp)
@@ -351,6 +368,7 @@ fun StructureFocusCanvas(
                 border = if (isFocusedNodeHovered) BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else null,
                 modifier = Modifier
                     .fillMaxWidth()
+                    .onGloballyPositioned { centerCardRect = it.boundsInParent() }
                     .then(
                         if (proposal != null) Modifier.dropTarget(key = SplitWizardUnassignedTarget)
                         else Modifier.dropTarget(key = StructureNodeTarget(focusedPageId))

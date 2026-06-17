@@ -143,9 +143,10 @@ fun PageEditorScreen(
     }
 
     val handleNavigateBack = {
-        if (localName.isNotBlank()) {
-            onNavigateBack()
-        }
+        // Back must always work — never silently swallow it. A blank name simply
+        // isn't persisted (see LaunchedEffect below); fall back to the saved name.
+        if (localName.isBlank()) localName = page.name
+        onNavigateBack()
     }
 
     BackHandler {
@@ -271,6 +272,7 @@ fun PageEditorScreen(
                             label = stringResource(R.string.history_panel_title),
                             onClick = { showHistoryPanel = true },
                             priority = 2,
+                            alwaysOverflow = true,
                             testTag = "page_editor_history_button"
                         )
                     )
@@ -297,6 +299,7 @@ fun PageEditorScreen(
                                 }
                             },
                             priority = 2,
+                            alwaysOverflow = true,
                             testTag = "page_editor_incoming_links"
                         )
                     )
@@ -317,21 +320,10 @@ fun PageEditorScreen(
                             icon = GhostTalkIcons.Edit,
                             label = stringResource(R.string.page_dialog_rename_title),
                             onClick = { showRenameDialog = true },
-                            priority = 2
+                            priority = 2,
+                            alwaysOverflow = true
                         )
                     )
-                    if (onExitEditor != null) {
-                        add(
-                            EditorAction(
-                                key = "exit",
-                                icon = Icons.Default.Close,
-                                label = stringResource(com.andreas_kratzer.ghosttalk.core.ui.R.string.editor_exit),
-                                onClick = { onExitEditor() },
-                                priority = 2,
-                                testTag = "page_editor_exit_button"
-                            )
-                        )
-                    }
                 }
 
                 EditorTopBar(
@@ -353,10 +345,9 @@ fun PageEditorScreen(
                         )
                     },
                     onNavigateBack = handleNavigateBack,
-                    onExitEditor = null,
+                    onExitEditor = onExitEditor,
                     modeSwitcher = modeSwitcher,
                     actions = actionsList,
-                    isTablet = isTablet,
                     overflowTestTag = "page_editor_overflow_menu_trigger"
                 ) // Close EditorTopBar
             } // Close `if` / `else` for topBar

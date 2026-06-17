@@ -94,6 +94,7 @@ class PageManagementDelegateTest {
         getFilteredPagesUseCase = GetFilteredPagesUseCase(settingsRepository)
 
         every { settingsRepository.pageSortOrderFlow } returns MutableStateFlow(SortOrder.A_Z.name)
+        every { settingsRepository.defaultStartPageIdFlow } returns MutableStateFlow<String?>(null)
         every { getPagesUseCase.execute(any()) } returns MutableStateFlow(emptyList())
         every { templateRepository.getAllTemplates() } returns MutableStateFlow(emptyList())
 

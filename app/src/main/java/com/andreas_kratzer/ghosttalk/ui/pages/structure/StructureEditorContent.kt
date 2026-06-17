@@ -66,6 +66,7 @@ import kotlinx.coroutines.withContext
 fun StructureEditorContent(
     state: StructureEditorState,
     graph: BookNavigationGraph,
+    overviewLayout: Map<String, androidx.compose.ui.geometry.Offset>,
     pages: List<Page>,
     templates: List<PageTemplate>,
     pageNames: Map<String, String>,
@@ -157,65 +158,33 @@ fun StructureEditorContent(
                     if (state.sidePanelExpanded) {
                         // Unified left panel: one place for both Tree and Templates,
                         // switched via a segmented toggle (no second sidebar on the right).
-                        Card(
-                            modifier = Modifier
-                                .fillMaxHeight()
-                                .width(300.dp)
-                                .padding(start = 16.dp, top = 16.dp, bottom = 16.dp),
-                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
-                        ) {
-                            Column(modifier = Modifier.fillMaxSize()) {
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(start = 12.dp, end = 4.dp, top = 8.dp),
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    SingleChoiceSegmentedButtonRow(modifier = Modifier.weight(1f)) {
-                                        SegmentedButton(
-                                            selected = state.sidePanelTab == SidePanelTab.TREE,
-                                            onClick = { state.sidePanelTab = SidePanelTab.TREE },
-                                            shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2)
-                                        ) { Text("Baum") }
-                                        SegmentedButton(
-                                            selected = state.sidePanelTab == SidePanelTab.TEMPLATES,
-                                            onClick = { state.sidePanelTab = SidePanelTab.TEMPLATES },
-                                            shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2)
-                                        ) { Text("Vorlagen") }
-                                    }
-                                    IconButton(onClick = { state.sidePanelExpanded = false }) {
-                                        Icon(
-                                            imageVector = GhostTalkIcons.ArrowBack,
-                                            contentDescription = stringResource(R.string.side_panel_collapse)
-                                        )
-                                    }
-                                }
-                                when (state.sidePanelTab) {
-                                    SidePanelTab.TREE -> StructureTreeNavigator(
-                                        state = state,
-                                        graph = graph,
-                                        pages = pages,
-                                        pageNames = pageNames,
-                                        focusedPageId = state.focusedPageId,
-                                        onFocus = { state.navigateToPage(it) },
-                                        searchResults = searchResults,
-                                        onOrphanClick = { orphanId -> state.orphanToConnectId = orphanId },
-                                        modifier = Modifier
-                                            .weight(1f)
-                                            .fillMaxWidth()
-                                    )
-                                    SidePanelTab.TEMPLATES -> ButtonTemplatesPanel(
-                                        actions = templatesPanelActions,
-                                        onEditTemplate = onEditButtonTemplate,
-                                        onTemplateClick = onTemplateClick,
-                                        modifier = Modifier
-                                            .weight(1f)
-                                            .fillMaxWidth()
-                                    )
-                                }
+                        com.andreas_kratzer.ghosttalk.core.ui.components.EditorSidePanel(
+                            selectedTab = state.sidePanelTab,
+                            onSelectTab = { state.sidePanelTab = it },
+                            onCollapse = { state.sidePanelExpanded = false },
+                            modifier = Modifier.padding(start = 16.dp, top = 16.dp, bottom = 16.dp),
+                            treeContent = {
+                                StructureTreeNavigator(
+                                    state = state,
+                                    graph = graph,
+                                    pages = pages,
+                                    pageNames = pageNames,
+                                    focusedPageId = state.focusedPageId,
+                                    onFocus = { state.navigateToPage(it) },
+                                    searchResults = searchResults,
+                                    onOrphanClick = { orphanId -> state.orphanToConnectId = orphanId },
+                                    modifier = Modifier.fillMaxSize()
+                                )
+                            },
+                            templatesContent = {
+                                ButtonTemplatesPanel(
+                                    actions = templatesPanelActions,
+                                    onEditTemplate = onEditButtonTemplate,
+                                    onTemplateClick = onTemplateClick,
+                                    modifier = Modifier.fillMaxSize()
+                                )
                             }
-                        }
+                        )
                     } else {
                         // Collapsed rail: button to re-open the side panel
                         Column(
@@ -240,8 +209,8 @@ fun StructureEditorContent(
                 if (viewMode == StructureViewMode.OVERVIEW) {
                     StructureOverviewCanvas(
                         focusedPageId = state.focusedPageId,
-                        pages = pages,
                         graph = graph,
+                        overviewLayout = overviewLayout,
                         pageNames = pageNames,
                         onFocus = { state.navigateToPage(it) },
                         onNavigateToGraph = onNavigateToGraph,

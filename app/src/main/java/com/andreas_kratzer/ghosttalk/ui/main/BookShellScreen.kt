@@ -203,6 +203,7 @@ fun BookShellScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(top = innerPadding.calculateTopPadding()),
+            layoutType = androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteType.NavigationBar,
             navigationSuiteItems = {
                 item(
                     selected = false,

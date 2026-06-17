@@ -15,6 +15,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.core.ui.components.EditorAction
 import com.andreas_kratzer.ghosttalk.core.ui.components.EditorTopBar
+import com.andreas_kratzer.ghosttalk.core.ui.components.SidePanelTab
 import com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons
 import com.andreas_kratzer.ghosttalk.ui.components.BulkActionTopBar
 import com.andreas_kratzer.ghosttalk.core.ui.R as CoreR
@@ -154,6 +155,7 @@ fun StructureEditorTopBar(
                     label = stringResource(R.string.history_panel_title),
                     onClick = { state.showHistoryPanel = true },
                     priority = 2,
+                    alwaysOverflow = true,
                     testTag = "structure_editor_history_button"
                 )
             )
@@ -164,6 +166,7 @@ fun StructureEditorTopBar(
                     label = stringResource(R.string.page_incoming_links_title),
                     onClick = onShowIncomingLinks,
                     priority = 2,
+                    alwaysOverflow = true,
                     testTag = "structure_editor_incoming_links"
                 )
             )
@@ -173,21 +176,10 @@ fun StructureEditorTopBar(
                     icon = GhostTalkIcons.Edit,
                     label = stringResource(R.string.page_dialog_rename_title),
                     onClick = { state.showRenameDialog = true },
-                    priority = 2
+                    priority = 2,
+                    alwaysOverflow = true
                 )
             )
-            if (onExitEditor != null) {
-                add(
-                    EditorAction(
-                        key = "exit",
-                        icon = Icons.Default.Close,
-                        label = stringResource(CoreR.string.editor_exit),
-                        onClick = { onExitEditor() },
-                        priority = 2,
-                        testTag = "structure_editor_exit_button"
-                    )
-                )
-            }
         }
 
         EditorTopBar(
@@ -203,10 +195,9 @@ fun StructureEditorTopBar(
                 )
             },
             onNavigateBack = onNavigateBack,
-            onExitEditor = null,
+            onExitEditor = onExitEditor,
             modeSwitcher = modeSwitcher,
             actions = actionsList,
-            isTablet = isTablet,
             overflowTestTag = "structure_editor_overflow_menu_trigger"
         )
     }

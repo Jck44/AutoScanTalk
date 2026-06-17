@@ -137,7 +137,7 @@ fun PageWorkbenchScreen(
                     icon = {}
                 ) {
                     Icon(
-                        imageVector = GhostTalkIcons.BarChart,
+                        imageVector = GhostTalkIcons.Book,
                         contentDescription = "Übersicht"
                     )
                 }
@@ -164,19 +164,6 @@ fun PageWorkbenchScreen(
                     )
                 }
             }
-        }
-    }
-
-    val context = androidx.compose.ui.platform.LocalContext.current
-    val isReducedMotion = remember(context) {
-        try {
-            android.provider.Settings.Global.getFloat(
-                context.contentResolver,
-                android.provider.Settings.Global.ANIMATOR_DURATION_SCALE,
-                1.0f
-            ) == 0f
-        } catch (_: Exception) {
-            false
         }
     }
 

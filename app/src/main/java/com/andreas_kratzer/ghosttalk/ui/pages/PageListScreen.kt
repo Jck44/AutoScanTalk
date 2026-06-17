@@ -260,7 +260,7 @@ fun PageListScreen(
             
             IconButton(onClick = onOpenStructureEditor) {
                 Icon(
-                    imageVector = GhostTalkIcons.Link,
+                    imageVector = GhostTalkIcons.Book,
                     contentDescription = stringResource(R.string.structure_editor_title)
                 )
             }
@@ -426,7 +426,7 @@ fun PageListScreen(
                         onClick = onOpenStructureEditor,
                         modifier = buttonModifier
                     ) {
-                        Icon(GhostTalkIcons.Link, contentDescription = null, modifier = Modifier.padding(end = 4.dp))
+                        Icon(GhostTalkIcons.Book, contentDescription = null, modifier = Modifier.padding(end = 4.dp))
                         Text(
                             text = stringResource(R.string.structure_editor_title),
                             maxLines = 1,
