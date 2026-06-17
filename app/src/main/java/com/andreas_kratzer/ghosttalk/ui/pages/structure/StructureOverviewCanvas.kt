@@ -64,7 +64,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.core.domain.pages.BookNavigationGraph
-import com.andreas_kratzer.ghosttalk.core.domain.pages.SearchPagesUseCase
+import com.andreas_kratzer.ghosttalk.core.model.NavigateBackButtonAction
+import com.andreas_kratzer.ghosttalk.core.model.NavigateToStartPageButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.Page
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.coroutineScope
@@ -89,7 +90,7 @@ fun StructureOverviewCanvas(
     pageNames: Map<String, String>,
     onFocus: (String) -> Unit,
     onNavigateToGraph: (String) -> Unit,
-    searchQuery: String,
+    matchingPageIds: Set<String>,
     modifier: Modifier = Modifier
 ) {
     val orphans = remember(graph) { graph.orphans().toSet() }
@@ -121,15 +122,6 @@ fun StructureOverviewCanvas(
     val currentOnFocus by rememberUpdatedState(onFocus)
     val currentOnNavigateToGraph by rememberUpdatedState(onNavigateToGraph)
     val interactionSources = remember { mutableMapOf<String, MutableInteractionSource>() }
-
-    val matchingPageIds = remember(searchQuery, pages) {
-        if (searchQuery.isBlank()) {
-            emptySet()
-        } else {
-            val useCase = SearchPagesUseCase()
-            useCase.execute(pages, searchQuery).map { it.pageId }.toSet()
-        }
-    }
 
     val rootId = remember(graph, pages) {
         graph.startPageId?.takeIf { it in graph.allPageIds }

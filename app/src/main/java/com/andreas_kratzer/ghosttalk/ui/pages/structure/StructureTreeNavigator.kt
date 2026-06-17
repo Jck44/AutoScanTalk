@@ -45,6 +45,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.core.domain.pages.BookNavigationGraph
+import com.andreas_kratzer.ghosttalk.core.domain.pages.PageSearchResult
 import com.andreas_kratzer.ghosttalk.core.domain.pages.SearchPagesUseCase
 import com.andreas_kratzer.ghosttalk.core.domain.pages.TreeNode
 import com.andreas_kratzer.ghosttalk.core.model.Page
@@ -102,6 +103,7 @@ fun StructureTreeNavigator(
     onFocus: (String) -> Unit,
     modifier: Modifier = Modifier,
     state: StructureEditorState? = null,
+    searchResults: List<PageSearchResult> = emptyList(),
     onOrphanClick: ((String) -> Unit)? = null
 ) {
     val rootNode = remember(graph) { graph.buildTree() }
@@ -153,10 +155,17 @@ fun StructureTreeNavigator(
             .sortedBy { pageNames[it] ?: it }
     }
 
-    val searchPagesUseCase = remember { SearchPagesUseCase() }
-    val searchResults = remember(searchQuery, pages, pageNames) {
-        searchPagesUseCase.execute(pages, searchQuery)
-            .sortedBy { pageNames[it.pageId] ?: it.pageId }
+    val localSearchResults = if (state == null) {
+        val searchPagesUseCase = remember { SearchPagesUseCase() }
+        remember(searchQuery, pages) {
+            searchPagesUseCase.execute(pages, searchQuery)
+        }
+    } else {
+        searchResults
+    }
+
+    val sortedSearchResults = remember(localSearchResults, pageNames) {
+        localSearchResults.sortedBy { pageNames[it.pageId] ?: it.pageId }
     }
 
     val dimensions = LocalDimensions.current
@@ -193,7 +202,7 @@ fun StructureTreeNavigator(
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             if (searchQuery.isNotBlank()) {
-                if (searchResults.isEmpty()) {
+                if (sortedSearchResults.isEmpty()) {
                     item {
                         Box(
                             modifier = Modifier
@@ -209,7 +218,7 @@ fun StructureTreeNavigator(
                         }
                     }
                 } else {
-                    items(searchResults) { result ->
+                    items(sortedSearchResults) { result ->
                         val pageId = result.pageId
                         val pageName = pageNames[pageId] ?: pageId
                         val isFocused = pageId == focusedPageId

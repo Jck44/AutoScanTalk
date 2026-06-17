@@ -32,9 +32,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.runtime.produceState
+import androidx.compose.runtime.snapshotFlow
+import androidx.compose.runtime.getValue
 import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.core.ai.domain.SplitPageUseCase.PageSplitProposal
 import com.andreas_kratzer.ghosttalk.core.domain.pages.BookNavigationGraph
+import com.andreas_kratzer.ghosttalk.core.domain.pages.SearchPagesUseCase
+import com.andreas_kratzer.ghosttalk.core.domain.pages.PageSearchResult
 import com.andreas_kratzer.ghosttalk.core.model.ButtonTemplate
 import com.andreas_kratzer.ghosttalk.core.model.Page
 import com.andreas_kratzer.ghosttalk.core.model.PageTemplate
@@ -46,8 +51,14 @@ import com.andreas_kratzer.ghosttalk.ui.components.rememberDragDropState
 import com.andreas_kratzer.ghosttalk.ui.templates.ButtonTemplatesPanel
 import com.andreas_kratzer.ghosttalk.ui.util.GridEditorActions
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.mapLatest
+import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, FlowPreview::class, ExperimentalCoroutinesApi::class)
 @Composable
 fun StructureEditorContent(
     state: StructureEditorState,
@@ -73,6 +84,22 @@ fun StructureEditorContent(
     val dragDropState = rememberDragDropState()
     val scope = rememberCoroutineScope()
     val sheetState = rememberModalBottomSheetState()
+
+    val searchPagesUseCase = remember { SearchPagesUseCase() }
+    val searchResults by produceState(emptyList<PageSearchResult>(), state.searchQuery, pages) {
+        snapshotFlow { state.searchQuery }
+            .debounce(200)
+            .mapLatest { q ->
+                if (q.isBlank()) emptyList()
+                else withContext(Dispatchers.Default) {
+                    searchPagesUseCase.execute(pages, q)
+                }
+            }
+            .collect { value = it }
+    }
+    val matchingPageIds = remember(searchResults) {
+        searchResults.map { it.pageId }.toSet()
+    }
 
     DragDropContainer(
         state = dragDropState,
@@ -151,6 +178,7 @@ fun StructureEditorContent(
                                     pageNames = pageNames,
                                     focusedPageId = state.focusedPageId,
                                     onFocus = { state.navigateToPage(it) },
+                                    searchResults = searchResults,
                                     onOrphanClick = { orphanId -> state.orphanToConnectId = orphanId },
                                     modifier = Modifier
                                         .weight(1f)
@@ -187,7 +215,7 @@ fun StructureEditorContent(
                         pageNames = pageNames,
                         onFocus = { state.navigateToPage(it) },
                         onNavigateToGraph = onNavigateToGraph,
-                        searchQuery = state.searchQuery,
+                        matchingPageIds = matchingPageIds,
                         modifier = Modifier
                             .weight(1f)
                             .fillMaxHeight()
@@ -300,6 +328,7 @@ fun StructureEditorContent(
                                 }
                             }
                         },
+                        searchResults = searchResults,
                         onOrphanClick = { orphanId ->
                             scope.launch { sheetState.hide() }.invokeOnCompletion {
                                 if (!sheetState.isVisible) {
