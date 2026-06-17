@@ -81,45 +81,7 @@ import com.andreas_kratzer.ghosttalk.ui.pages.TargetPageSelectionDialog
 private const val MAX_VISIBLE_TARGETS = 12
 private const val MAX_VISIBLE_SOURCES = 12
 
-@Composable
-private fun WarningBadges(
-    isOrphan: Boolean,
-    isDeadEnd: Boolean,
-    modifier: Modifier = Modifier
-) {
-    if (isOrphan || isDeadEnd) {
-        Row(
-            modifier = modifier,
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            if (isOrphan) {
-                val orphanDesc = stringResource(R.string.structure_warning_orphan)
-                Text(
-                    text = "⚠",
-                    color = MaterialTheme.colorScheme.error,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 16.sp,
-                    modifier = Modifier.semantics {
-                        contentDescription = orphanDesc
-                    }
-                )
-            }
-            if (isDeadEnd) {
-                val deadEndDesc = stringResource(R.string.structure_warning_dead_end)
-                Text(
-                    text = "⛔",
-                    color = MaterialTheme.colorScheme.error,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 16.sp,
-                    modifier = Modifier.semantics {
-                        contentDescription = deadEndDesc
-                    }
-                )
-            }
-        }
-    }
-}
+
 
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -399,7 +361,8 @@ fun StructureFocusCanvas(
                             )
                             WarningBadges(
                                 isOrphan = focusedPageId in orphans,
-                                isDeadEnd = focusedPageId in deadEnds
+                                isDeadEnd = focusedPageId in deadEnds,
+                                fontSize = 16.sp
                             )
                         }
                         if (!isMultiSelectMode) {
@@ -689,7 +652,8 @@ fun StructureFocusCanvas(
                                                         )
                                                         WarningBadges(
                                                             isOrphan = edge.targetPageId in orphans,
-                                                            isDeadEnd = edge.targetPageId in deadEnds
+                                                            isDeadEnd = edge.targetPageId in deadEnds,
+                                                            fontSize = 16.sp
                                                         )
                                                     }
                                                     Text(

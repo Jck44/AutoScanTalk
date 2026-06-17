@@ -536,29 +536,11 @@ fun StructureOverviewCanvas(
                                     modifier = Modifier.weight(1f)
                                 )
 
-                                if (pageId in orphans || pageId in deadEnds) {
-                                    Row(
-                                        horizontalArrangement = Arrangement.spacedBy(2.dp),
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        if (pageId in orphans) {
-                                            Text(
-                                                text = "⚠",
-                                                color = MaterialTheme.colorScheme.error,
-                                                fontWeight = FontWeight.Bold,
-                                                fontSize = 12.sp
-                                            )
-                                        }
-                                        if (pageId in deadEnds) {
-                                            Text(
-                                                text = "⛔",
-                                                color = MaterialTheme.colorScheme.error,
-                                                fontWeight = FontWeight.Bold,
-                                                fontSize = 12.sp
-                                            )
-                                        }
-                                    }
-                                }
+                                WarningBadges(
+                                    isOrphan = pageId in orphans,
+                                    isDeadEnd = pageId in deadEnds,
+                                    fontSize = 12.sp
+                                )
                             }
                         }
                     }

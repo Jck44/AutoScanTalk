@@ -44,45 +44,7 @@ import com.andreas_kratzer.ghosttalk.ui.components.StructureSlotTarget
 import com.andreas_kratzer.ghosttalk.ui.components.dragSource
 import com.andreas_kratzer.ghosttalk.ui.components.dropTarget
 
-@Composable
-private fun WarningBadges(
-    isOrphan: Boolean,
-    isDeadEnd: Boolean,
-    modifier: Modifier = Modifier
-) {
-    if (isOrphan || isDeadEnd) {
-        Row(
-            modifier = modifier,
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            if (isOrphan) {
-                val orphanDesc = stringResource(R.string.structure_warning_orphan)
-                Text(
-                    text = "⚠",
-                    color = MaterialTheme.colorScheme.error,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 14.sp,
-                    modifier = Modifier.semantics {
-                        contentDescription = orphanDesc
-                    }
-                )
-            }
-            if (isDeadEnd) {
-                val deadEndDesc = stringResource(R.string.structure_warning_dead_end)
-                Text(
-                    text = "⛔",
-                    color = MaterialTheme.colorScheme.error,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 14.sp,
-                    modifier = Modifier.semantics {
-                        contentDescription = deadEndDesc
-                    }
-                )
-            }
-        }
-    }
-}
+
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable

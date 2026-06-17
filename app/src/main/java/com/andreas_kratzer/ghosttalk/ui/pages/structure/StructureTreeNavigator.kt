@@ -46,8 +46,6 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -61,45 +59,6 @@ import com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
 
 
-@Composable
-private fun WarningBadges(
-    isOrphan: Boolean,
-    isDeadEnd: Boolean,
-    modifier: Modifier = Modifier
-) {
-    if (isOrphan || isDeadEnd) {
-        Row(
-            modifier = modifier,
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            if (isOrphan) {
-                val orphanDesc = stringResource(R.string.structure_warning_orphan)
-                Text(
-                    text = "⚠",
-                    color = MaterialTheme.colorScheme.error,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 16.sp,
-                    modifier = Modifier.semantics {
-                        contentDescription = orphanDesc
-                    }
-                )
-            }
-            if (isDeadEnd) {
-                val deadEndDesc = stringResource(R.string.structure_warning_dead_end)
-                Text(
-                    text = "⛔",
-                    color = MaterialTheme.colorScheme.error,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 16.sp,
-                    modifier = Modifier.semantics {
-                        contentDescription = deadEndDesc
-                    }
-                )
-            }
-        }
-    }
-}
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class, FlowPreview::class, ExperimentalCoroutinesApi::class)
 @Composable
@@ -274,7 +233,8 @@ fun StructureTreeNavigator(
                                     WarningBadges(
                                         isOrphan = pageId in orphansSet,
                                         isDeadEnd = pageId in deadEndsSet,
-                                        modifier = Modifier.padding(end = 8.dp)
+                                        modifier = Modifier.padding(end = 8.dp),
+                                        fontSize = 16.sp
                                     )
 
                                     Row(
@@ -395,7 +355,8 @@ fun StructureTreeNavigator(
                                 WarningBadges(
                                     isOrphan = node.pageId in orphansSet,
                                     isDeadEnd = node.pageId in deadEndsSet,
-                                    modifier = Modifier.padding(end = 8.dp)
+                                    modifier = Modifier.padding(end = 8.dp),
+                                    fontSize = 16.sp
                                 )
 
                                 val page = pages.find { it.id == node.pageId }
@@ -498,7 +459,8 @@ fun StructureTreeNavigator(
                                     WarningBadges(
                                         isOrphan = orphanId in orphansSet,
                                         isDeadEnd = orphanId in deadEndsSet,
-                                        modifier = Modifier.padding(end = 8.dp)
+                                        modifier = Modifier.padding(end = 8.dp),
+                                        fontSize = 16.sp
                                     )
 
                                     val page = pages.find { it.id == orphanId }
@@ -594,7 +556,8 @@ fun StructureTreeNavigator(
                                     WarningBadges(
                                         isOrphan = isOrphan,
                                         isDeadEnd = isDeadEnd,
-                                        modifier = Modifier.padding(end = 8.dp)
+                                        modifier = Modifier.padding(end = 8.dp),
+                                        fontSize = 16.sp
                                     )
 
                                     if (state != null) {
