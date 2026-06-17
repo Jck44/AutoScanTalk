@@ -67,7 +67,6 @@ abstract class AppDatabase : RoomDatabase() {
         val MIGRATION_35_36: Migration = object : Migration(35, 36) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("CREATE INDEX IF NOT EXISTS `index_pages_bookId` ON `pages` (`bookId`)")
-                db.execSQL("CREATE INDEX IF NOT EXISTS `index_button_usage_history_bookId_timestamp` ON `button_usage_history` (`bookId`, `timestamp`)")
             }
         }
 
