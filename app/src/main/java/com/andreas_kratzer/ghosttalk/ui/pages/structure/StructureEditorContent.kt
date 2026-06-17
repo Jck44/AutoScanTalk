@@ -25,21 +25,21 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.runtime.produceState
-import androidx.compose.runtime.snapshotFlow
-import androidx.compose.runtime.getValue
 import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.core.ai.domain.SplitPageUseCase.PageSplitProposal
 import com.andreas_kratzer.ghosttalk.core.domain.pages.BookNavigationGraph
-import com.andreas_kratzer.ghosttalk.core.domain.pages.SearchPagesUseCase
 import com.andreas_kratzer.ghosttalk.core.domain.pages.PageSearchResult
+import com.andreas_kratzer.ghosttalk.core.domain.pages.SearchPagesUseCase
 import com.andreas_kratzer.ghosttalk.core.model.ButtonTemplate
 import com.andreas_kratzer.ghosttalk.core.model.Page
 import com.andreas_kratzer.ghosttalk.core.model.PageTemplate
@@ -50,13 +50,13 @@ import com.andreas_kratzer.ghosttalk.ui.components.SplitWizardButtonDrag
 import com.andreas_kratzer.ghosttalk.ui.components.rememberDragDropState
 import com.andreas_kratzer.ghosttalk.ui.templates.ButtonTemplatesPanel
 import com.andreas_kratzer.ghosttalk.ui.util.GridEditorActions
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.mapLatest
-import kotlinx.coroutines.FlowPreview
-import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @OptIn(ExperimentalMaterial3Api::class, FlowPreview::class, ExperimentalCoroutinesApi::class)
 @Composable

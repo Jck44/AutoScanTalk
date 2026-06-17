@@ -1,5 +1,6 @@
 package com.andreas_kratzer.ghosttalk.ui.pages.structure
 
+import android.provider.Settings
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.VectorConverter
 import androidx.compose.animation.core.exponentialDecay
@@ -54,20 +55,17 @@ import androidx.compose.ui.input.pointer.positionChanged
 import androidx.compose.ui.input.pointer.util.VelocityTracker
 import androidx.compose.ui.input.pointer.util.addPointerInputChange
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
-import android.provider.Settings
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.core.domain.pages.BookNavigationGraph
-import com.andreas_kratzer.ghosttalk.core.model.NavigateBackButtonAction
-import com.andreas_kratzer.ghosttalk.core.model.NavigateToStartPageButtonAction
 import com.andreas_kratzer.ghosttalk.core.model.Page
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.coroutineScope
