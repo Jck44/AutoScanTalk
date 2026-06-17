@@ -78,8 +78,8 @@ fun StructureEditorContent(
     onEditButtonTemplate: (ButtonTemplate) -> Unit,
     onButtonTemplateClick: (ButtonTemplate) -> Unit,
     templatesPanelActions: GridEditorActions,
-    onNavigateToGraph: (String) -> Unit = {},
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onNavigateToGraph: (String) -> Unit = {}
 ) {
     val dragDropState = rememberDragDropState()
     val scope = rememberCoroutineScope()

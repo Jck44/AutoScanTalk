@@ -106,11 +106,10 @@ fun StructureOverviewCanvas(
     val horizontalGapPx = with(density) { 100.dp.toPx() }
     val verticalGapPx = with(density) { 32.dp.toPx() }
 
-    val layout = remember(graph, pages, pageNames) {
+    val layout = remember(graph, pages) {
         calculateOverviewLayout(
             graph = graph,
             pages = pages,
-            pageNames = pageNames,
             nodeWidthPx = nodeWidthPx,
             nodeHeightPx = nodeHeightPx,
             horizontalGapPx = horizontalGapPx,
@@ -132,7 +131,7 @@ fun StructureOverviewCanvas(
                 Settings.Global.ANIMATOR_DURATION_SCALE,
                 1.0f
             ) == 0f
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             false
         }
     }
@@ -243,7 +242,7 @@ fun StructureOverviewCanvas(
                             }
                         }
                     },
-                    onGesture = { centroid, pan, zoom, rotation ->
+                    onGesture = { centroid, pan, zoom, _ ->
                         // The rotation parameter is ignored because rotation is not supported on this map overview canvas
                         val oldScale = scale
                         val newScale = (oldScale * zoom).coerceIn(0.15f, 3.0f)
@@ -265,7 +264,7 @@ fun StructureOverviewCanvas(
                         val canvasDownX = (down.position.x - offset.x) / scale
                         val canvasDownY = (down.position.y - offset.y) / scale
                         
-                        val hitNode = currentLayout.entries.find { (pageId, nodeOffset) ->
+                        val hitNode = currentLayout.entries.find { (_, nodeOffset) ->
                             canvasDownX >= nodeOffset.x && canvasDownX <= nodeOffset.x + nodeWidthPx &&
                             canvasDownY >= nodeOffset.y && canvasDownY <= nodeOffset.y + nodeHeightPx
                         }
@@ -613,7 +612,6 @@ fun StructureOverviewCanvas(
 private fun calculateOverviewLayout(
     graph: BookNavigationGraph,
     pages: List<Page>,
-    pageNames: Map<String, String>,
     nodeWidthPx: Float,
     nodeHeightPx: Float,
     horizontalGapPx: Float,

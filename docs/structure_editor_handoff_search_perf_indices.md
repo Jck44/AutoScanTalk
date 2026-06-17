@@ -21,7 +21,7 @@
 ### 1.1 Neuer Helper (core)
 Neue Datei `core/.../core/model/ButtonSearchText.kt` (oder neben dem UseCase) mit einer Extension:
 
-```kotlin
+```text
 /** Alle für die Volltextsuche relevanten Textfelder eines Buttons, leere/null gefiltert. */
 fun ButtonConfig.searchableText(): List<String> {
     val texts = mutableListOf<String?>()
@@ -48,7 +48,7 @@ fun ButtonConfig.searchableText(): List<String> {
 ### 1.2 UseCase umstellen
 In `SearchPagesUseCase.execute(...)` den Button-Match ersetzen:
 
-```kotlin
+```text
 val buttonHits = page.buttonConfigs.mapIndexedNotNull { index, btn ->
     if (btn != null && btn.isActive &&
         btn.searchableText().any { it.contains(trimmedQuery, ignoreCase = true) }
@@ -80,7 +80,7 @@ soll das nicht mehr im Compose-Frame laufen.
 - Suche **debouncen** (~200 ms) und auf `Dispatchers.Default` rechnen. Bevorzugt das Ergebnis als State
   bereitstellen, z. B. via `snapshotFlow`:
 
-```kotlin
+```text
 val matchingPageIds by produceState(emptySet<String>(), searchQuery, pages) {
     snapshotFlow { searchQuery }
         .debounce(200)
@@ -124,7 +124,7 @@ abgefragt. Datei: `core-database/.../AppDatabase.kt` (aktuell `version = 35`, `e
 
 In `AppDatabase.kt` neben den anderen Migrationen:
 
-```kotlin
+```text
 val MIGRATION_35_36: Migration = object : Migration(35, 36) {
     override fun migrate(db: SupportSQLiteDatabase) {
         db.execSQL("CREATE INDEX IF NOT EXISTS `index_pages_bookId` ON `pages` (`bookId`)")

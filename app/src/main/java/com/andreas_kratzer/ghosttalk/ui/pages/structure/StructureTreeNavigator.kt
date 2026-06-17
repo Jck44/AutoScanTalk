@@ -59,6 +59,9 @@ import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.withContext
 
 
+// localSearchQuery is written in the uncontrolled (state == null) path and read via recomposition in
+// `searchQuery` — the AssignedValueIsNeverRead inspection can't see the Compose-state read, so suppress it.
+@Suppress("AssignedValueIsNeverRead")
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class, FlowPreview::class, ExperimentalCoroutinesApi::class)
 @Composable
 fun StructureTreeNavigator(
