@@ -1,6 +1,7 @@
 package com.andreas_kratzer.ghosttalk.core.domain.pages
 
 import com.andreas_kratzer.ghosttalk.core.model.Page
+import com.andreas_kratzer.ghosttalk.core.model.searchableText
 import javax.inject.Inject
 
 data class ButtonHit(
@@ -22,7 +23,9 @@ class SearchPagesUseCase @Inject constructor() {
         return pages.mapNotNull { page ->
             val matchedOnName = page.name.contains(trimmedQuery, ignoreCase = true)
             val buttonHits = page.buttonConfigs.mapIndexedNotNull { index, btn ->
-                if (btn != null && btn.isActive && btn.label.contains(trimmedQuery, ignoreCase = true)) {
+                if (btn != null && btn.isActive &&
+                    btn.searchableText().any { it.contains(trimmedQuery, ignoreCase = true) }
+                ) {
                     ButtonHit(index, btn.label)
                 } else null
             }
