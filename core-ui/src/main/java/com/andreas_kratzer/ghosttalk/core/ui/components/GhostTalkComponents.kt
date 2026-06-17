@@ -143,7 +143,7 @@ fun GhostTalkCard(
                 Text(
                     text = title,
                     style = MaterialTheme.typography.titleLarge,
-                    maxLines = 2,
+                    maxLines = 1,
                     softWrap = true,
                     overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                 )

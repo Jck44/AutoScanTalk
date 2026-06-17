@@ -21,14 +21,15 @@ class GetFilteredPagesUseCase @Inject constructor(
             allPages,
             settingsRepository.pageSortOrderFlow,
             searchQuery,
-            activePageIds
-        ) { pages, sortOrderStr, query, activeIds ->
+            activePageIds,
+            settingsRepository.defaultStartPageIdFlow
+        ) { pages, sortOrderStr, query, activeIds, startPageId ->
             val sortOrder = try {
                 SortOrder.valueOf(sortOrderStr)
             } catch (_: Exception) {
                 SortOrder.MANUAL
             }
-            pages.filterAndSort(query, sortOrder, activeIds)
+            pages.filterAndSort(query, sortOrder, activeIds, startPageId)
         }
     }
 }

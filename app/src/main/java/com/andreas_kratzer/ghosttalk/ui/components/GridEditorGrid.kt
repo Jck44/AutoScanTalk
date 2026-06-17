@@ -188,16 +188,21 @@ private fun EditorButtonCell(
         )
     }
 
-    val infiniteTransition = rememberInfiniteTransition(label = "pulse")
-    val pulseAlpha by infiniteTransition.animateFloat(
-        initialValue = 0.4f,
-        targetValue = 1.0f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(800, easing = LinearEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "pulseAlpha"
-    )
+    val pulseAlpha = if (isDraggedHovered && !isReducedMotion) {
+        val infiniteTransition = rememberInfiniteTransition(label = "pulse")
+        val alpha by infiniteTransition.animateFloat(
+            initialValue = 0.4f,
+            targetValue = 1.0f,
+            animationSpec = infiniteRepeatable(
+                animation = tween(800, easing = LinearEasing),
+                repeatMode = RepeatMode.Reverse
+            ),
+            label = "pulseAlpha"
+        )
+        alpha
+    } else {
+        1f
+    }
     
     val isHighlighted = isTarget || isDraggedHovered
  

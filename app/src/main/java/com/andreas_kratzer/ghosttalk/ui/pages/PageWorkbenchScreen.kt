@@ -182,18 +182,7 @@ fun PageWorkbenchScreen(
     AnimatedContent(
         targetState = currentLevel,
         transitionSpec = {
-            if (isReducedMotion) {
-                fadeIn(animationSpec = tween(300)) togetherWith fadeOut(animationSpec = tween(300))
-            } else {
-                val isZoomIn = targetState.ordinal > initialState.ordinal
-                if (isZoomIn) {
-                    (scaleIn(initialScale = 0.8f, animationSpec = tween(300)) + fadeIn(animationSpec = tween(300))) togetherWith
-                    (scaleOut(targetScale = 1.2f, animationSpec = tween(300)) + fadeOut(animationSpec = tween(300)))
-                } else {
-                    (scaleIn(initialScale = 1.2f, animationSpec = tween(300)) + fadeIn(animationSpec = tween(300))) togetherWith
-                    (scaleOut(targetScale = 0.8f, animationSpec = tween(300)) + fadeOut(animationSpec = tween(300)))
-                }
-            }
+            fadeIn(animationSpec = tween(200)) togetherWith fadeOut(animationSpec = tween(200))
         },
         label = "zoom_level_transition",
         modifier = Modifier.fillMaxSize()
