@@ -2,9 +2,15 @@ package com.andreas_kratzer.ghosttalk.core.model
 
 import androidx.room.Entity
 import androidx.room.Ignore
+import androidx.room.Index
 import androidx.room.PrimaryKey
 
-@Entity(tableName = "pages")
+@Entity(
+    tableName = "pages",
+    indices = [
+        Index("bookId")
+    ]
+)
 data class Page(
     @PrimaryKey override val id: String,
     val bookId: String,

@@ -35,7 +35,7 @@ import java.util.UUID
         UserModeSessionEntity::class, VocalProfileEntity::class, DeletedEntity::class,
         SettingsProfileEntity::class
     ],
-    version = 35,
+    version = 36,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -62,6 +62,13 @@ abstract class AppDatabase : RoomDatabase() {
 
         fun resetMigrationErrorsCount() {
             migrationErrorsCount = 0
+        }
+
+        val MIGRATION_35_36: Migration = object : Migration(35, 36) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_pages_bookId` ON `pages` (`bookId`)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_button_usage_history_bookId_timestamp` ON `button_usage_history` (`bookId`, `timestamp`)")
+            }
         }
 
         val MIGRATION_34_35: Migration = object : Migration(34, 35) {
@@ -606,7 +613,8 @@ abstract class AppDatabase : RoomDatabase() {
                     MIGRATION_31_32,
                     MIGRATION_32_33,
                     MIGRATION_33_34,
-                    MIGRATION_34_35
+                    MIGRATION_34_35,
+                    MIGRATION_35_36
                 )
                 .build()
                 INSTANCE = instance
