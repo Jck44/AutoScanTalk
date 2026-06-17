@@ -119,6 +119,12 @@ fun StructureGraphView(
         (outgoingNodeIds.size + maxOutgoingColumns - 1) / maxOutgoingColumns
     )
     val outgoingColumns = outgoingNodeIds.chunked(outgoingRowsPerColumn)
+    val outgoingEdgeByTarget = remember(outgoingEdges) {
+        outgoingEdges.associateBy { it.targetPageId }
+    }
+    val outgoingNodeIndices = remember(outgoingNodeIds) {
+        outgoingNodeIds.withIndex().associate { it.value to it.index }
+    }
     val scrollStateX = rememberScrollState()
     val scrollStateY = rememberScrollState()
     val dragDropState = LocalDragDropState.current
@@ -520,7 +526,7 @@ fun StructureGraphView(
                                                         Offset(startX, startY),
                                                         Offset(endX, endY)
                                                     )
-                                                    val matchingEdge = outgoingEdges.find { it.targetPageId == targetId }
+                                                    val matchingEdge = outgoingEdgeByTarget[targetId]
                                                     if (matchingEdge != null && dist < threshold && dist < minDistance) {
                                                         minDistance = dist
                                                         closestEdge = matchingEdge
@@ -535,7 +541,45 @@ fun StructureGraphView(
                         ) {
                             val arrowLength = 8.dp.toPx()
                             val arrowWidth = 5.dp.toPx()
-                            // 1. Draw curves from incoming nodes to center
+                            val dashIntervals = floatArrayOf(10f, 10f)
+                            val dashEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(dashIntervals, 0f)
+                            val strokeMore = androidx.compose.ui.graphics.drawscope.Stroke(
+                                width = 1.5.dp.toPx(),
+                                pathEffect = dashEffect
+                            )
+                            val strokeNormal = androidx.compose.ui.graphics.drawscope.Stroke(width = 2.dp.toPx())
+                            val strokeSelected = androidx.compose.ui.graphics.drawscope.Stroke(width = 3.5.dp.toPx())
+                            
+                            // Draw shared incoming trunk/bus if there are any incoming nodes
+                            if (incomingPoints.isNotEmpty()) {
+                                val sharedPath = androidx.compose.ui.graphics.Path().apply {
+                                    if (isLandscape) {
+                                        val busX = centerPoint.first - (centerWidthDp / 2).toPx() - 24.dp.toPx()
+                                        val endX = centerPoint.first - (centerWidthDp / 2).toPx()
+                                        val endY = centerPoint.second
+                                        val minY = minOf(incomingPoints.minOf { it.second }, endY)
+                                        val maxY = maxOf(incomingPoints.maxOf { it.second }, endY)
+                                        moveTo(busX, minY)
+                                        lineTo(busX, maxY)
+                                        moveTo(busX, endY)
+                                        lineTo(endX, endY)
+                                    } else {
+                                        val trunkX = centerPoint.first
+                                        val endY = centerPoint.second - centerPlaceable.height / 2f
+                                        val minY = minOf(incomingPoints.minOf { it.second }, endY)
+                                        val maxY = maxOf(incomingPoints.maxOf { it.second }, endY)
+                                        moveTo(trunkX, minY)
+                                        lineTo(trunkX, maxY)
+                                    }
+                                }
+                                drawPath(
+                                    path = sharedPath,
+                                    color = primaryColor.copy(alpha = 0.6f),
+                                    style = strokeNormal
+                                )
+                            }
+
+                            // 1. Draw curves from incoming nodes to center (stubs)
                             incomingNodeIds.forEachIndexed { index, sourceId ->
                                 if (index < incomingPoints.size) {
                                     val pt = incomingPoints[index]
@@ -544,35 +588,17 @@ fun StructureGraphView(
                                     if (isLandscape) {
                                         val startX = pt.first + (incomingWidthDp / 2).toPx()
                                         val startY = pt.second
-                                        val endX = centerPoint.first - (centerWidthDp / 2).toPx()
-                                        val endY = centerPoint.second
+                                        val busX = centerPoint.first - (centerWidthDp / 2).toPx() - 24.dp.toPx()
                                         path.moveTo(startX, startY)
-                                        path.cubicTo(
-                                            startX + (endX - startX) * 0.6f, startY,
-                                            endX - (endX - startX) * 0.6f, endY,
-                                            endX, endY
-                                        )
+                                        path.lineTo(busX, startY)
                                     } else {
-                                        // Elbow: from the source's left edge across to the trunk, then down to the centre node.
                                         val startX = pt.first - (incomingWidthDp / 2).toPx()
                                         val startY = pt.second
                                         val trunkX = centerPoint.first
-                                        val endY = centerPoint.second - centerPlaceable.height / 2f
                                         path.moveTo(startX, startY)
                                         path.lineTo(trunkX, startY)
-                                        path.lineTo(trunkX, endY)
                                     }
-                                    val stroke = if (isMoreNode) {
-                                        androidx.compose.ui.graphics.drawscope.Stroke(
-                                            width = 1.5.dp.toPx(),
-                                            pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(
-                                                intervals = floatArrayOf(10f, 10f),
-                                                phase = 0f
-                                            )
-                                        )
-                                    } else {
-                                        androidx.compose.ui.graphics.drawscope.Stroke(width = 2.dp.toPx())
-                                    }
+                                    val stroke = if (isMoreNode) strokeMore else strokeNormal
                                     drawPath(
                                         path = path,
                                         color = primaryColor.copy(alpha = if (isMoreNode) 0.4f else 0.6f),
@@ -580,14 +606,44 @@ fun StructureGraphView(
                                     )
                                 }
                             }
-                            // 2. Draw curves from center to outgoing nodes
+
+                            // Draw shared outgoing trunk/bus if there are any outgoing nodes
+                            if (outgoingPoints.isNotEmpty()) {
+                                val sharedPath = androidx.compose.ui.graphics.Path().apply {
+                                    if (isLandscape) {
+                                        val startX = centerPoint.first + (centerWidthDp / 2).toPx()
+                                        val busX = startX + 24.dp.toPx()
+                                        val centerY = centerPoint.second
+                                        val minY = minOf(outgoingPoints.minOf { it.second }, centerY)
+                                        val maxY = maxOf(outgoingPoints.maxOf { it.second }, centerY)
+                                        moveTo(startX, centerY)
+                                        lineTo(busX, centerY)
+                                        moveTo(busX, minY)
+                                        lineTo(busX, maxY)
+                                    } else {
+                                        val startX = centerPoint.first
+                                        val startY = centerPoint.second + centerPlaceable.height / 2f
+                                        val minY = minOf(outgoingPoints.minOf { it.second }, startY)
+                                        val maxY = maxOf(outgoingPoints.maxOf { it.second }, startY)
+                                        moveTo(startX, minY)
+                                        lineTo(startX, maxY)
+                                    }
+                                }
+                                drawPath(
+                                    path = sharedPath,
+                                    color = primaryColor.copy(alpha = 0.6f),
+                                    style = strokeNormal
+                                )
+                            }
+
+                            // 2. Draw curves from center to outgoing nodes (stubs)
                             var flatIndex = 0
                             outgoingColumns.forEach { colNodes ->
                                 colNodes.forEach { targetId ->
                                     if (flatIndex < outgoingPoints.size) {
                                         val pt = outgoingPoints[flatIndex]
                                         val isMoreNode = targetId.startsWith("more_")
-                                        val matchingEdge = outgoingEdges.find { it.targetPageId == targetId }
+                                        val matchingEdge = outgoingEdgeByTarget[targetId]
                                         val isSelected = selectedEdgeForDeletion == matchingEdge
                                         val path = androidx.compose.ui.graphics.Path()
                                         val endX: Float
@@ -595,46 +651,24 @@ fun StructureGraphView(
                                         val c2x: Float
                                         val c2y: Float
                                         if (isLandscape) {
-                                            // Orthogonal bus: exit the centre horizontally to a shared
-                                            // vertical bus, run along it to the target's row, then a
-                                            // horizontal stub into the chip. The stub for the outer column
-                                            // threads through the gaps between the inner column's chips.
                                             val startX = centerPoint.first + (centerWidthDp / 2).toPx()
-                                            val startY = centerPoint.second
                                             val busX = startX + 24.dp.toPx()
                                             endX = pt.first - (outgoingColWidthDp / 2).toPx()
                                             endY = pt.second
-                                            // Control point left of the end so the arrowhead points horizontally into the node.
                                             c2x = busX
                                             c2y = endY
-                                            path.moveTo(startX, startY)
-                                            path.lineTo(busX, startY)
-                                            path.lineTo(busX, endY)
+                                            path.moveTo(busX, endY)
                                             path.lineTo(endX, endY)
                                         } else {
-                                            // Elbow: trunk down from the centre node, then a short stub into the target's left edge.
                                             val startX = centerPoint.first
-                                            val startY = centerPoint.second + centerPlaceable.height / 2f
                                             endX = pt.first - (outgoingColWidthDp / 2).toPx()
                                             endY = pt.second
-                                            // Control point left of the end so the arrowhead points horizontally into the node.
                                             c2x = startX
                                             c2y = endY
-                                            path.moveTo(startX, startY)
-                                            path.lineTo(startX, endY)
+                                            path.moveTo(startX, endY)
                                             path.lineTo(endX, endY)
                                         }
-                                        val stroke = if (isMoreNode) {
-                                            androidx.compose.ui.graphics.drawscope.Stroke(
-                                                width = 1.5.dp.toPx(),
-                                                pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(
-                                                    intervals = floatArrayOf(10f, 10f),
-                                                    phase = 0f
-                                                )
-                                            )
-                                        } else {
-                                            androidx.compose.ui.graphics.drawscope.Stroke(width = (if (isSelected) 3.5.dp else 2.dp).toPx())
-                                        }
+                                        val stroke = if (isMoreNode) strokeMore else if (isSelected) strokeSelected else strokeNormal
                                         val color = if (isSelected) errorColor else primaryColor.copy(alpha = if (isMoreNode) 0.4f else 0.6f)
                                         drawPath(
                                             path = path,
@@ -667,7 +701,7 @@ fun StructureGraphView(
                         if (onRemoveConnection != null && selectedEdgeForDeletion != null) {
                             val matchingEdge = selectedEdgeForDeletion!!
                             val targetId = matchingEdge.targetPageId
-                            val outgoingFlatIndex = outgoingNodeIds.indexOf(targetId)
+                            val outgoingFlatIndex = outgoingNodeIndices[targetId] ?: -1
                             if (outgoingFlatIndex != -1 && outgoingFlatIndex < outgoingPoints.size) {
                                 val pt = outgoingPoints[outgoingFlatIndex]
                                 val startX: Float

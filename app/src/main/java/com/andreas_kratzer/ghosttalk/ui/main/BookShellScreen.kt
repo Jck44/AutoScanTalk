@@ -24,6 +24,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.ScaffoldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -43,8 +44,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.compose.ui.unit.dp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -145,48 +146,16 @@ fun BookShellScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    Box {
-                        TextButton(
-                            onClick = { menuExpanded = true },
-                            modifier = Modifier.testTag("book_switcher_button")
-                        ) {
-                            Text(
-                                text = bookName,
-                                style = MaterialTheme.typography.titleLarge,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                            Icon(
-                                imageVector = Icons.Default.ArrowDropDown,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onSurface
-                            )
-                        }
-                        DropdownMenu(
-                            expanded = menuExpanded,
-                            onDismissRequest = { menuExpanded = false }
-                        ) {
-                            allBooks.forEach { book ->
-                                DropdownMenuItem(
-                                    text = { Text(book.name) },
-                                    onClick = {
-                                        menuExpanded = false
-                                        pageViewModel.setActiveBookId(book.id)
-                                        settingsRepository.activeBookId = book.id
-                                        settingsViewModel.refresh()
-                                    }
-                                )
-                            }
-                            HorizontalDivider()
-                            DropdownMenuItem(
-                                text = { Text(stringResource(R.string.start_back_to_books)) },
-                                onClick = {
-                                    menuExpanded = false
-                                    onNavigateToBooks()
-                                },
-                                modifier = Modifier.testTag("book_switcher_back_to_books")
-                            )
-                        }
-                    }
+                    BookSwitcher(
+                        bookName = bookName,
+                        allBooks = allBooks,
+                        onBookSelected = { book ->
+                            pageViewModel.setActiveBookId(book.id)
+                            settingsRepository.activeBookId = book.id
+                            settingsViewModel.refresh()
+                        },
+                        onNavigateToBooks = onNavigateToBooks
+                    )
                 },
                 actions = {
                     IconButton(
@@ -200,7 +169,8 @@ fun BookShellScreen(
                     }
                 }
             )
-        }
+        },
+        contentWindowInsets = ScaffoldDefaults.contentWindowInsets
     ) { innerPadding ->
         NavigationSuiteScaffold(
             modifier = Modifier
@@ -286,7 +256,8 @@ fun BookShellScreen(
                                 initialMode = "global",
                                 pageViewModel = pageViewModel,
                                 onNavigateBack = { tabSelected = false },
-                                onExitEditor = { tabSelected = false }
+                                onExitEditor = { tabSelected = false },
+                                isEmbedded = true
                             )
                         }
                     }
@@ -307,7 +278,8 @@ fun BookShellScreen(
                         com.andreas_kratzer.ghosttalk.ui.templates.TemplatesWorkbenchScreen(
                             templateViewModel = templateViewModel,
                             onNavigateBack = { tabSelected = false },
-                            onTemplateClick = onEditTemplate
+                            onTemplateClick = onEditTemplate,
+                            showTopBar = false
                         )
                     }
                     BookShellTab.Statistik -> {
@@ -366,6 +338,57 @@ private fun BookShellLanding(
                 Spacer(modifier = Modifier.size(6.dp))
                 Text(stringResource(R.string.book_shell_unlock_editor))
             }
+        }
+    }
+}
+
+@Composable
+private fun BookSwitcher(
+    bookName: String,
+    allBooks: List<com.andreas_kratzer.ghosttalk.core.model.Book>,
+    onBookSelected: (com.andreas_kratzer.ghosttalk.core.model.Book) -> Unit,
+    onNavigateToBooks: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    var menuExpanded by remember { mutableStateOf(false) }
+    Box(modifier = modifier) {
+        TextButton(
+            onClick = { menuExpanded = true },
+            modifier = Modifier.testTag("book_switcher_button")
+        ) {
+            Text(
+                text = bookName,
+                style = MaterialTheme.typography.titleLarge,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            Icon(
+                imageVector = Icons.Default.ArrowDropDown,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurface
+            )
+        }
+        DropdownMenu(
+            expanded = menuExpanded,
+            onDismissRequest = { menuExpanded = false }
+        ) {
+            allBooks.forEach { book ->
+                DropdownMenuItem(
+                    text = { Text(book.name) },
+                    onClick = {
+                        menuExpanded = false
+                        onBookSelected(book)
+                    }
+                )
+            }
+            HorizontalDivider()
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.start_back_to_books)) },
+                onClick = {
+                    menuExpanded = false
+                    onNavigateToBooks()
+                },
+                modifier = Modifier.testTag("book_switcher_back_to_books")
+            )
         }
     }
 }

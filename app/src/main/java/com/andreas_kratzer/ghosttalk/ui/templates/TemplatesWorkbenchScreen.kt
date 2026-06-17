@@ -18,9 +18,6 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -28,22 +25,22 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.core.model.ButtonTemplate
 import com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkScaffold
+import com.andreas_kratzer.ghosttalk.core.ui.components.adaptiveCardHeight
 import com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons
 import com.andreas_kratzer.ghosttalk.core.ui.theme.LocalDimensions
-import com.andreas_kratzer.ghosttalk.core.ui.components.adaptiveCardHeight
-import com.andreas_kratzer.ghosttalk.ui.util.GridEditorActions
 
 @Composable
 fun TemplatesWorkbenchScreen(
     templateViewModel: TemplateViewModel,
     onNavigateBack: () -> Unit,
-    onTemplateClick: (String) -> Unit
+    onTemplateClick: (String) -> Unit,
+    showTopBar: Boolean = true
 ) {
     var editingButtonTemplate by remember { mutableStateOf<ButtonTemplate?>(null) }
     val configuration = LocalConfiguration.current
@@ -53,7 +50,8 @@ fun TemplatesWorkbenchScreen(
 
     GhostTalkScaffold(
         title = stringResource(R.string.nav_templates),
-        onNavigateBack = onNavigateBack
+        onNavigateBack = onNavigateBack,
+        showTopBar = showTopBar
     ) { innerPadding ->
         if (isTablet) {
             Row(
@@ -99,7 +97,8 @@ fun TemplatesWorkbenchScreen(
                         ButtonTemplatesPanel(
                             actions = templateViewModel,
                             onEditTemplate = { editingButtonTemplate = it },
-                            modifier = Modifier.weight(1f)
+                            modifier = Modifier.weight(1f),
+                            enableDragDrop = false
                         )
                     }
                 }
@@ -139,7 +138,8 @@ fun TemplatesWorkbenchScreen(
                         ButtonTemplatesPanel(
                             actions = templateViewModel,
                             onEditTemplate = { editingButtonTemplate = it },
-                            modifier = Modifier.fillMaxSize()
+                            modifier = Modifier.fillMaxSize(),
+                            enableDragDrop = false
                         )
                     }
                 }

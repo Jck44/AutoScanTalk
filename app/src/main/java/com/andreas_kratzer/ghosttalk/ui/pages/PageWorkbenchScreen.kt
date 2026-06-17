@@ -61,7 +61,8 @@ fun PageWorkbenchScreen(
     pageViewModel: PageViewModel,
     gridEditorViewModel: GridEditorViewModel = hiltViewModel(),
     onNavigateBack: () -> Unit,
-    onExitEditor: () -> Unit
+    onExitEditor: () -> Unit,
+    isEmbedded: Boolean = false
 ) {
     var mode by rememberSaveable { 
         mutableStateOf(if (initialMode == "global") EditorMode.STRUKTUR else EditorMode.fromRoute(initialMode)) 
@@ -198,7 +199,8 @@ fun PageWorkbenchScreen(
                         triggerSplit = isSplit
                         setLevel(ZoomLevel.FOCUSED)
                     },
-                    modeSwitcher = modeSwitcher
+                    modeSwitcher = modeSwitcher,
+                    isEmbedded = isEmbedded
                 )
             }
             ZoomLevel.GLOBAL -> {
@@ -229,7 +231,8 @@ fun PageWorkbenchScreen(
                     onMultiSelectModeChange = { isMultiSelectMode = it },
                     selection = selection,
                     onSelectionChange = { selection = it },
-                    onStyleToggleClick = null
+                    onStyleToggleClick = null,
+                    isEmbedded = isEmbedded
                 )
             }
             ZoomLevel.FOCUSED -> {
@@ -268,7 +271,8 @@ fun PageWorkbenchScreen(
                         }
                         structureView = nextView
                         preferredFocusedStyle = nextView
-                    }
+                    },
+                    isEmbedded = isEmbedded
                 )
             }
         }

@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -17,12 +18,14 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.ScaffoldDefaults
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -79,7 +82,8 @@ fun PageEditorScreen(
     onOpenStructureEditor: ((String, Boolean) -> Unit)? = null,
     modeSwitcher: (@Composable () -> Unit)? = null,
     initialOpenAssistant: Boolean = false,
-    onAssistantConsumed: () -> Unit = {}
+    onAssistantConsumed: () -> Unit = {},
+    isEmbedded: Boolean = false
 ) {
     val allPages by pageViewModel.allPages.collectAsState()
     val unfilteredPages by pageViewModel.unfilteredPages.collectAsState()
@@ -172,6 +176,7 @@ fun PageEditorScreen(
     }
 
     Scaffold(
+        contentWindowInsets = if (isEmbedded) WindowInsets(0.dp) else ScaffoldDefaults.contentWindowInsets,
         topBar = {
             if (isMultiSelectMode) {
                 com.andreas_kratzer.ghosttalk.ui.components.BulkActionTopBar(
@@ -348,7 +353,8 @@ fun PageEditorScreen(
                     onExitEditor = onExitEditor,
                     modeSwitcher = modeSwitcher,
                     actions = actionsList,
-                    overflowTestTag = "page_editor_overflow_menu_trigger"
+                    overflowTestTag = "page_editor_overflow_menu_trigger",
+                    windowInsets = if (isEmbedded) WindowInsets(0.dp) else TopAppBarDefaults.windowInsets
                 ) // Close EditorTopBar
             } // Close `if` / `else` for topBar
         },

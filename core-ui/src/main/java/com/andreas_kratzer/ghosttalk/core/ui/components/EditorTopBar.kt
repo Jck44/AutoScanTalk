@@ -1,6 +1,7 @@
 package com.andreas_kratzer.ghosttalk.core.ui.components
 
 import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -25,7 +26,8 @@ fun EditorTopBar(
     overflowTestTag: String = "editor_overflow_menu_trigger",
     onExitEditor: (() -> Unit)? = null,
     exitTestTag: String = "page_editor_exit_button",
-    exitContentDescription: String? = null
+    exitContentDescription: String? = null,
+    windowInsets: WindowInsets = TopAppBarDefaults.windowInsets
 ) {
     val resolvedExitContentDescription = exitContentDescription ?: stringResource(R.string.editor_exit)
     TopAppBar(
@@ -52,6 +54,7 @@ fun EditorTopBar(
             }
         },
         actions = {},
+        windowInsets = windowInsets,
         colors = TopAppBarDefaults.topAppBarColors(
             containerColor = MaterialTheme.colorScheme.surface
         )

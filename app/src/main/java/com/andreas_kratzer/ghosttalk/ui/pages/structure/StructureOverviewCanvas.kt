@@ -7,6 +7,7 @@ import androidx.compose.animation.core.exponentialDecay
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.LocalIndication
+import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.calculateCentroid
@@ -23,20 +24,12 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.background
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -50,7 +43,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
@@ -133,6 +125,10 @@ fun StructureOverviewCanvas(
     val currentOnFocus by rememberUpdatedState(onFocus)
     val currentOnZoomInto by rememberUpdatedState(onZoomInto)
     val interactionSources = remember { mutableMapOf<String, MutableInteractionSource>() }
+    LaunchedEffect(graph.allPageIds) {
+        val activeIds = graph.allPageIds
+        interactionSources.keys.retainAll { it in activeIds }
+    }
 
     val context = LocalContext.current
     val isReducedMotion = remember(context) {
@@ -147,7 +143,7 @@ fun StructureOverviewCanvas(
         }
     }
 
-    var orphansExpanded by rememberSaveable { mutableStateOf(false) }
+    var orphansExpanded by remember { mutableStateOf(false) }
 
     val rootId = remember(graph) {
         graph.startPageId?.takeIf { it in graph.allPageIds }
@@ -155,14 +151,17 @@ fun StructureOverviewCanvas(
     }
 
     val edgesToDraw = remember(graph, layout, focusedPageId, rootId, orphansExpanded) {
-        val forward = mutableListOf<OverviewEdge>()
+        val focusedForward = mutableListOf<OverviewEdge>()
+        val unfocusedForward = mutableListOf<OverviewEdge>()
         val backward = mutableListOf<OverviewEdge>()
         val seen = mutableSetOf<Pair<String, String>>()
         graph.outgoing.forEach { (sourceId, edges) ->
+            if (sourceId == "__orphans_container__") return@forEach
             if (sourceId in orphans && !orphansExpanded && sourceId != focusedPageId) return@forEach
             val sourcePos = layout[sourceId] ?: return@forEach
             edges.forEach { edge ->
                 val targetId = edge.targetPageId
+                if (targetId == "__orphans_container__") return@forEach
                 if (targetId == rootId) return@forEach
                 
                 val targetPos = layout[targetId] ?: return@forEach
@@ -176,11 +175,16 @@ fun StructureOverviewCanvas(
                     }
                 } else {
                     // Forward edge: always draw
-                    forward.add(OverviewEdge(sourceId, targetId, sourcePos, targetPos, isBackward = false))
+                    val overviewEdge = OverviewEdge(sourceId, targetId, sourcePos, targetPos, isBackward = false)
+                    if (sourceId == focusedPageId || targetId == focusedPageId) {
+                        focusedForward.add(overviewEdge)
+                    } else {
+                        unfocusedForward.add(overviewEdge)
+                    }
                 }
             }
         }
-        forward to backward
+        Triple(focusedForward, unfocusedForward, backward)
     }
 
     var scale by remember { mutableStateOf(0.9f) }
@@ -275,7 +279,8 @@ fun StructureOverviewCanvas(
                 fun hitTest(pos: Offset): String? {
                     val canvasX = (pos.x - offset.x) / scale
                     val canvasY = (pos.y - offset.y) / scale
-                    return currentLayout.entries.firstOrNull { (_, nodeOffset) ->
+                    return currentLayout.entries.firstOrNull { (pageId, nodeOffset) ->
+                        pageId != "__orphans_container__" &&
                         canvasX >= nodeOffset.x && canvasX <= nodeOffset.x + nodeWidthPx &&
                         canvasY >= nodeOffset.y && canvasY <= nodeOffset.y + nodeHeightPx
                     }?.key
@@ -309,6 +314,8 @@ fun StructureOverviewCanvas(
             }
     ) {
         val primaryColor = MaterialTheme.colorScheme.primary
+        val orphansOutlineColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
+        val orphansBgColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f)
 
         Canvas(
             modifier = Modifier
@@ -321,103 +328,174 @@ fun StructureOverviewCanvas(
                     transformOrigin = TransformOrigin(0f, 0f)
                 }
         ) {
-            fun androidx.compose.ui.graphics.drawscope.DrawScope.drawEdge(
-                edge: OverviewEdge,
+            val widthFocused = 3.5.dp.toPx()
+            val widthUnfocused = 1.5.dp.toPx()
+            val dashEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 10f), 0f)
+
+            val strokeFocusedForward = Stroke(width = widthFocused)
+            val strokeFocusedBackward = Stroke(width = widthFocused, pathEffect = dashEffect)
+            val strokeUnfocusedForward = Stroke(width = widthUnfocused)
+            val strokeUnfocusedBackward = Stroke(width = widthUnfocused, pathEffect = dashEffect)
+
+            val arrowLengthFocused = 10.dp.toPx()
+            val arrowWidthFocused = 6.dp.toPx()
+            val arrowLengthUnfocused = 7.dp.toPx()
+            val arrowWidthUnfocused = 4.dp.toPx()
+
+            fun androidx.compose.ui.graphics.drawscope.DrawScope.drawEdgeGroup(
+                edges: List<OverviewEdge>,
                 isFocusedConnection: Boolean
             ) {
-                val isBackward = edge.isBackward
-                val isSameColumn = edge.sourcePos.x == edge.targetPos.x
+                if (edges.isEmpty()) return
 
-                val startX = if (isSameColumn) {
-                    edge.sourcePos.x
-                } else if (isBackward) {
-                    edge.sourcePos.x
-                } else {
-                    edge.sourcePos.x + nodeWidthPx
+                // Group by sourceId, target column x coordinate, and direction (isBackward)
+                val groups = edges.groupBy { edge ->
+                    val isSameColumn = edge.sourcePos.x == edge.targetPos.x
+                    val endX = if (isSameColumn) {
+                        edge.targetPos.x
+                    } else if (edge.isBackward) {
+                        edge.targetPos.x + nodeWidthPx
+                    } else {
+                        edge.targetPos.x
+                    }
+                    Triple(edge.sourceId, endX, edge.isBackward)
                 }
-                val startY = edge.sourcePos.y + nodeHeightPx / 2f
 
-                val endX = if (isSameColumn) {
-                    edge.targetPos.x
-                } else if (isBackward) {
-                    edge.targetPos.x + nodeWidthPx
-                } else {
-                    edge.targetPos.x
-                }
-                val endY = edge.targetPos.y + nodeHeightPx / 2f
+                groups.forEach { (key, groupEdges) ->
+                    val (sourceId, endX, isBackward) = key
+                    val firstEdge = groupEdges.first()
+                    val isSameColumn = firstEdge.sourcePos.x == firstEdge.targetPos.x
+                    val startX = if (isSameColumn) {
+                        firstEdge.sourcePos.x
+                    } else if (isBackward) {
+                        firstEdge.sourcePos.x
+                    } else {
+                        firstEdge.sourcePos.x + nodeWidthPx
+                    }
+                    val startY = firstEdge.sourcePos.y + nodeHeightPx / 2f
 
-                val path = Path().apply {
-                    moveTo(startX, startY)
                     val midX = if (isSameColumn) {
-                        edge.sourcePos.x - 20.dp.toPx()
+                        firstEdge.sourcePos.x - 20.dp.toPx()
                     } else {
                         startX + (endX - startX) / 2f
                     }
-                    lineTo(midX, startY)
-                    lineTo(midX, endY)
-                    lineTo(endX, endY)
-                }
 
-                val strokeWidth = if (isFocusedConnection) 3.5.dp.toPx() else 1.5.dp.toPx()
-                val stroke = if (isBackward) {
-                    Stroke(
-                        width = strokeWidth,
-                        pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 10f), 0f)
-                    )
-                } else {
-                    Stroke(width = strokeWidth)
-                }
-
-                val alpha = if (isFocusedConnection) {
-                    if (isBackward) 0.85f else 0.8f
-                } else {
-                    0.15f
-                }
-
-                drawPath(
-                    path = path,
-                    color = primaryColor.copy(alpha = alpha),
-                    style = stroke
-                )
-
-                // Draw arrowhead
-                val arrowLength = if (isFocusedConnection) 10.dp.toPx() else 7.dp.toPx()
-                val arrowWidth = if (isFocusedConnection) 6.dp.toPx() else 4.dp.toPx()
-                val arrowPath = Path().apply {
-                    moveTo(endX, endY)
-                    if (isBackward) {
-                        lineTo(endX + arrowLength, endY - arrowWidth)
-                        lineTo(endX + arrowLength, endY + arrowWidth)
+                    val groupStroke = if (isFocusedConnection) {
+                        if (isBackward) strokeFocusedBackward else strokeFocusedForward
                     } else {
-                        lineTo(endX - arrowLength, endY - arrowWidth)
-                        lineTo(endX - arrowLength, endY + arrowWidth)
+                        if (isBackward) strokeUnfocusedBackward else strokeUnfocusedForward
                     }
-                    close()
+
+                    val alpha = if (isFocusedConnection) {
+                        if (isBackward) 0.85f else 0.8f
+                    } else {
+                        0.15f
+                    }
+
+                    // 1. Draw shared horizontal and vertical segments of elbow path
+                    val sharedPath = Path().apply {
+                        moveTo(startX, startY)
+                        lineTo(midX, startY)
+                        val endYs = groupEdges.map { it.targetPos.y + nodeHeightPx / 2f }
+                        val minY = minOf(endYs.minOrNull() ?: startY, startY)
+                        val maxY = maxOf(endYs.maxOrNull() ?: startY, startY)
+                        moveTo(midX, minY)
+                        lineTo(midX, maxY)
+                    }
+
+                    drawPath(
+                        path = sharedPath,
+                        color = primaryColor.copy(alpha = alpha),
+                        style = groupStroke
+                    )
+
+                    // 2. Draw individual horizontal stubs and arrowheads for each edge
+                    groupEdges.forEach { edge ->
+                        val endY = edge.targetPos.y + nodeHeightPx / 2f
+                        val stubPath = Path().apply {
+                            moveTo(midX, endY)
+                            lineTo(endX, endY)
+                        }
+                        drawPath(
+                            path = stubPath,
+                            color = primaryColor.copy(alpha = alpha),
+                            style = groupStroke
+                        )
+
+                        // Draw arrowhead
+                        val arrowLength = if (isFocusedConnection) arrowLengthFocused else arrowLengthUnfocused
+                        val arrowWidth = if (isFocusedConnection) arrowWidthFocused else arrowWidthUnfocused
+                        val arrowPath = Path().apply {
+                            moveTo(endX, endY)
+                            if (isBackward) {
+                                lineTo(endX + arrowLength, endY - arrowWidth)
+                                lineTo(endX + arrowLength, endY + arrowWidth)
+                            } else {
+                                lineTo(endX - arrowLength, endY - arrowWidth)
+                                lineTo(endX - arrowLength, endY + arrowWidth)
+                            }
+                            close()
+                        }
+                        drawPath(
+                            path = arrowPath,
+                            color = primaryColor.copy(alpha = if (isFocusedConnection) alpha else alpha + 0.15f)
+                        )
+                    }
                 }
-                drawPath(
-                    path = arrowPath,
-                    color = primaryColor.copy(alpha = if (isFocusedConnection) alpha else alpha + 0.15f)
-                )
             }
 
-            val forwardEdges = edgesToDraw.first
-            val backwardEdges = edgesToDraw.second
-
-            val (focusedForward, unfocusedForward) = forwardEdges.partition {
-                it.sourceId == focusedPageId || it.targetId == focusedPageId
-            }
+            val (focusedForward, unfocusedForward, backwardEdges) = edgesToDraw
 
             // Draw all unfocused edges first
-            unfocusedForward.forEach { edge ->
-                drawEdge(edge, isFocusedConnection = false)
-            }
+            drawEdgeGroup(unfocusedForward, isFocusedConnection = false)
 
             // Draw all focused edges on top
-            focusedForward.forEach { edge ->
-                drawEdge(edge, isFocusedConnection = true)
-            }
-            backwardEdges.forEach { edge ->
-                drawEdge(edge, isFocusedConnection = true)
+            drawEdgeGroup(focusedForward, isFocusedConnection = true)
+            drawEdgeGroup(backwardEdges, isFocusedConnection = true)
+            
+            // Orphans Container Border (Moved to Canvas to avoid Box clipping)
+            if (orphans.isNotEmpty() && orphansExpanded) {
+                val containerOffset = layout["__orphans_container__"]
+                if (containerOffset != null) {
+                    val maxOrphanY = orphans.mapNotNull { layout[it]?.y }.maxOrNull()
+                    val paddingPx = 12.dp.toPx()
+                    
+                    val groupHeightPx = if (maxOrphanY != null) {
+                        (maxOrphanY + nodeHeightPx) - containerOffset.y
+                    } else {
+                        val N = orphans.size
+                        nodeHeightPx + 40.dp.toPx() + (nodeHeightPx + 32.dp.toPx()) * ((N - 1).coerceAtLeast(0).toFloat()) + nodeHeightPx
+                    }
+                    
+                    
+                    val rectTopLeft = Offset(containerOffset.x - paddingPx, containerOffset.y - paddingPx)
+                    val rectSize = androidx.compose.ui.geometry.Size(nodeWidthPx + paddingPx * 2, groupHeightPx + paddingPx * 2)
+                    val cornerRadius = androidx.compose.ui.geometry.CornerRadius(12.dp.toPx(), 12.dp.toPx())
+                    
+                    drawRoundRect(
+                        color = orphansBgColor,
+                        topLeft = rectTopLeft,
+                        size = rectSize,
+                        cornerRadius = cornerRadius
+                    )
+                    
+                    val densityVal = density.density
+                    val borderStroke = Stroke(
+                        width = 1.dp.toPx(),
+                        pathEffect = PathEffect.dashPathEffect(
+                            floatArrayOf(12f * densityVal, 8f * densityVal),
+                            0f
+                        )
+                    )
+                    
+                    drawRoundRect(
+                        color = orphansOutlineColor,
+                        topLeft = rectTopLeft,
+                        size = rectSize,
+                        cornerRadius = cornerRadius,
+                        style = borderStroke
+                    )
+                }
             }
         }
 
@@ -433,7 +511,9 @@ fun StructureOverviewCanvas(
                     transformOrigin = TransformOrigin(0f, 0f)
                 }
         ) {
+
             layout.forEach { (pageId, nodeOffset) ->
+                if (pageId == "__orphans_container__") return@forEach
                 if (pageId in orphans && !orphansExpanded && pageId != focusedPageId) {
                     return@forEach
                 }
@@ -511,71 +591,53 @@ fun StructureOverviewCanvas(
                 }
             }
 
-        }
-
-        if (orphans.isNotEmpty()) {
-            Surface(
-                onClick = { orphansExpanded = !orphansExpanded },
-                color = MaterialTheme.colorScheme.surfaceVariant,
-                shape = MaterialTheme.shapes.medium,
-                tonalElevation = 2.dp,
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-                modifier = Modifier
-                    .align(Alignment.TopStart)
-                    .padding(16.dp)
-                    .widthIn(max = 280.dp)
-            ) {
-                Column(modifier = Modifier.padding(12.dp)) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+            if (orphans.isNotEmpty()) {
+                val containerOffset = layout["__orphans_container__"]
+                if (containerOffset != null) {
+                    Box(
+                        modifier = Modifier
+                            .offset { IntOffset(containerOffset.x.roundToInt(), containerOffset.y.roundToInt()) }
                     ) {
-                        Text(
-                            text = "⚠",
-                            color = MaterialTheme.colorScheme.error,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 14.sp
-                        )
-                        Text(
-                            text = "Verwaiste Seiten (${orphans.size})",
-                            style = MaterialTheme.typography.labelLarge,
-                            modifier = Modifier.weight(1f)
-                        )
-                        Text(
-                            text = if (orphansExpanded) "▾" else "▸",
-                            style = MaterialTheme.typography.labelLarge
-                        )
-                    }
-
-                    if (orphansExpanded) {
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Column(
-                            modifier = Modifier
-                                .heightIn(max = 200.dp)
-                                .verticalScroll(rememberScrollState()),
-                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                        Surface(
+                            onClick = { orphansExpanded = !orphansExpanded },
+                            color = MaterialTheme.colorScheme.surfaceVariant,
+                            shape = MaterialTheme.shapes.medium,
+                            tonalElevation = 2.dp,
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                            modifier = Modifier.size(nodeWidth, nodeHeight)
                         ) {
-                            orphans.sortedBy { pageNames[it] ?: it }.forEach { orphanId ->
-                                val name = pageNames[orphanId] ?: orphanId
-                                Surface(
-                                    onClick = { onFocus(orphanId) },
-                                    shape = MaterialTheme.shapes.small,
-                                    color = if (orphanId == focusedPageId) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface,
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    Text(
-                                        text = name,
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis
-                                    )
-                                }
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .padding(horizontal = 10.dp, vertical = 6.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                Text(
+                                    text = "⚠",
+                                    color = MaterialTheme.colorScheme.error,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 14.sp
+                                )
+                                Text(
+                                    text = "Verwaist (${orphans.size})",
+                                    style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.weight(1f)
+                                )
+                                Text(
+                                    text = if (orphansExpanded) "▾" else "▸",
+                                    style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold),
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
                             }
                         }
                     }
                 }
             }
+
         }
 
         var showAddPageDialog by remember { mutableStateOf(false) }
@@ -815,19 +877,24 @@ fun calculateOverviewLayout(
         currentYOffset = layoutComponent(mainComponent, firstNode, currentYOffset)
     }
 
-    val orphanNodes = orphansSet.sortedBy { pages.find { p -> p.id == it }?.orderIndex ?: 0 }
-    
-    if (orphanNodes.isNotEmpty()) {
-        currentYOffset += 300f // Gap before orphans
-        val columns = 4
-        orphanNodes.forEachIndexed { index, pageId ->
-            val row = index / columns
-            val col = index % columns
-            val x = horizontalGapPx * 0.48f + col * (nodeWidthPx + horizontalGapPx)
-            val y = currentYOffset + row * (nodeHeightPx + verticalGapPx)
-            positions[pageId] = Offset(x, y)
+    val col0X = horizontalGapPx * 0.48f
+    val startNodeOffset = rootId?.let { positions[it] }
+
+    val containerY = if (startNodeOffset != null) {
+        startNodeOffset.y + nodeHeightPx + 100f
+    } else {
+        currentYOffset + 100f
+    }
+
+    if (orphansSet.isNotEmpty()) {
+        positions["__orphans_container__"] = Offset(col0X, containerY)
+        
+        var nextOrphanY = containerY + nodeHeightPx + 40f
+        val sortedOrphans = orphansSet.sortedBy { pages.find { p -> p.id == it }?.orderIndex ?: 0 }
+        sortedOrphans.forEach { pageId ->
+            positions[pageId] = Offset(col0X, nextOrphanY)
+            nextOrphanY += nodeHeightPx + verticalGapPx
         }
-        currentYOffset += ((orphanNodes.size + columns - 1) / columns) * (nodeHeightPx + verticalGapPx) + 100f
     }
 
     return positions

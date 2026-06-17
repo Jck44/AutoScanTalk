@@ -2,15 +2,18 @@ package com.andreas_kratzer.ghosttalk.ui.pages.structure
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.ScaffoldDefaults
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -63,7 +66,8 @@ fun StructureEditorScreen(
     onMultiSelectModeChange: (Boolean) -> Unit = {},
     selection: Map<String, Set<Int>> = emptyMap(),
     onSelectionChange: (Map<String, Set<Int>>) -> Unit = {},
-    onStyleToggleClick: (() -> Unit)? = null
+    onStyleToggleClick: (() -> Unit)? = null,
+    isEmbedded: Boolean = false
 ) {
     val pages by pageViewModel.unfilteredPages.collectAsState()
     val templates by pageViewModel.templates.collectAsState(initial = emptyList())
@@ -367,6 +371,7 @@ fun StructureEditorScreen(
     val historyState by gridEditorViewModel.historyState.collectAsState()
 
     Scaffold(
+        contentWindowInsets = if (isEmbedded) WindowInsets(0.dp) else ScaffoldDefaults.contentWindowInsets,
         topBar = {
             StructureEditorTopBar(
                 state = state,
@@ -402,7 +407,8 @@ fun StructureEditorScreen(
                     }
                 },
                 viewMode = viewMode,
-                onStyleToggleClick = onStyleToggleClick
+                onStyleToggleClick = onStyleToggleClick,
+                windowInsets = if (isEmbedded) WindowInsets(0.dp) else TopAppBarDefaults.windowInsets
             )
         },
         snackbarHost = { SnackbarHost(snackbarHostState) }

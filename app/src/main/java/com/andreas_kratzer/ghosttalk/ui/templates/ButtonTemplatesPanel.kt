@@ -63,7 +63,8 @@ fun ButtonTemplatesPanel(
     actions: GridEditorActions,
     modifier: Modifier = Modifier,
     onEditTemplate: (ButtonTemplate) -> Unit = {},
-    onTemplateClick: ((ButtonTemplate) -> Unit)? = null
+    onTemplateClick: ((ButtonTemplate) -> Unit)? = null,
+    enableDragDrop: Boolean = true
 ) {
     val templates by actions.buttonTemplates.collectAsState()
     val dimensions = LocalDimensions.current
@@ -139,19 +140,21 @@ fun ButtonTemplatesPanel(
         )
 
         // Drag/Drop hint
-        Surface(
-            color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f),
-            shape = MaterialTheme.shapes.small,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = dimensions.paddingMedium)
-        ) {
-            Text(
-                text = stringResource(R.string.template_drag_drop_hint),
-                style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
-                color = MaterialTheme.colorScheme.onPrimaryContainer,
-                modifier = Modifier.padding(dimensions.paddingMedium)
-            )
+        if (enableDragDrop) {
+            Surface(
+                color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f),
+                shape = MaterialTheme.shapes.small,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = dimensions.paddingMedium)
+            ) {
+                Text(
+                    text = stringResource(R.string.template_drag_drop_hint),
+                    style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                    modifier = Modifier.padding(dimensions.paddingMedium)
+                )
+            }
         }
 
         if (flatItems.isEmpty()) {
@@ -181,7 +184,7 @@ fun ButtonTemplatesPanel(
                                 Box(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .dropTarget(key = CategoryHeaderDropTarget(item))
+                                        .then(if (enableDragDrop) Modifier.dropTarget(key = CategoryHeaderDropTarget(item)) else Modifier)
                                 ) {
                                     val isExpanded = expandedCategories.contains(item)
                                     CategoryHeader(
@@ -203,12 +206,13 @@ fun ButtonTemplatesPanel(
                                 Box(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .dropTarget(key = TemplateDropTarget(item))
+                                        .then(if (enableDragDrop) Modifier.dropTarget(key = TemplateDropTarget(item)) else Modifier)
                                 ) {
                                     TemplateItemCard(
                                         template = item,
                                         onEditTemplate = onEditTemplate,
                                         onTemplateClick = onTemplateClick,
+                                        enableDragDrop = enableDragDrop,
                                         onDelete = {
                                              actions.deleteButtonTemplate(item)
                                         }
@@ -265,6 +269,7 @@ fun TemplateItemCard(
     template: ButtonTemplate,
     onEditTemplate: (ButtonTemplate) -> Unit = {},
     onTemplateClick: ((ButtonTemplate) -> Unit)? = null,
+    enableDragDrop: Boolean = true,
     onDelete: () -> Unit
 ) {
     val dimensions = LocalDimensions.current
@@ -273,7 +278,7 @@ fun TemplateItemCard(
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
         modifier = Modifier
             .fillMaxWidth()
-            .dragSource(item = template)
+            .let { if (enableDragDrop) it.dragSource(item = template) else it }
             .clickable {
                 if (onTemplateClick != null) {
                     onTemplateClick(template)

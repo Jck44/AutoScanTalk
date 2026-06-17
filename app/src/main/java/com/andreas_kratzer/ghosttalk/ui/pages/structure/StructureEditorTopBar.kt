@@ -1,11 +1,13 @@
 package com.andreas_kratzer.ghosttalk.ui.pages.structure
 
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
@@ -34,7 +36,8 @@ fun StructureEditorTopBar(
     onRedoClick: () -> Unit,
     onShowIncomingLinks: () -> Unit,
     viewMode: StructureViewMode,
-    onStyleToggleClick: (() -> Unit)?
+    onStyleToggleClick: (() -> Unit)?,
+    windowInsets: WindowInsets = TopAppBarDefaults.windowInsets
 ) {
     if (state.isMultiSelectMode) {
         BulkActionTopBar(
@@ -196,7 +199,8 @@ fun StructureEditorTopBar(
             onExitEditor = onExitEditor,
             modeSwitcher = modeSwitcher,
             actions = actionsList,
-            overflowTestTag = "structure_editor_overflow_menu_trigger"
+            overflowTestTag = "structure_editor_overflow_menu_trigger",
+            windowInsets = windowInsets
         )
     }
 }
