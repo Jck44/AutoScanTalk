@@ -60,6 +60,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
+import android.provider.Settings
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.andreas_kratzer.ghosttalk.R
@@ -122,6 +124,19 @@ fun StructureOverviewCanvas(
     val currentOnFocus by rememberUpdatedState(onFocus)
     val currentOnNavigateToGraph by rememberUpdatedState(onNavigateToGraph)
     val interactionSources = remember { mutableMapOf<String, MutableInteractionSource>() }
+
+    val context = LocalContext.current
+    val isReducedMotion = remember(context) {
+        try {
+            Settings.Global.getFloat(
+                context.contentResolver,
+                Settings.Global.ANIMATOR_DURATION_SCALE,
+                1.0f
+            ) == 0f
+        } catch (e: Exception) {
+            false
+        }
+    }
 
     val rootId = remember(graph, pages) {
         graph.startPageId?.takeIf { it in graph.allPageIds }
@@ -217,14 +232,17 @@ fun StructureOverviewCanvas(
                         flingJob = null
                     },
                     onGestureEnd = { velocity ->
-                        flingJob = scope.launch {
-                            val animatable = Animatable(offset, Offset.VectorConverter)
-                            animatable.animateDecay(velocity, decaySpec) {
-                                offset = this.value
+                        if (!isReducedMotion) {
+                            flingJob = scope.launch {
+                                val animatable = Animatable(offset, Offset.VectorConverter)
+                                animatable.animateDecay(velocity, decaySpec) {
+                                    offset = this.value
+                                }
                             }
                         }
                     },
-                    onGesture = { centroid, pan, zoom, _ ->
+                    onGesture = { centroid, pan, zoom, rotation ->
+                        // The rotation parameter is ignored because rotation is not supported on this map overview canvas
                         val oldScale = scale
                         val newScale = (oldScale * zoom).coerceIn(0.15f, 3.0f)
                         offset = (offset - centroid) * (newScale / oldScale) + centroid + pan
@@ -429,15 +447,9 @@ fun StructureOverviewCanvas(
             val (focusedForward, unfocusedForward) = forwardEdges.partition {
                 it.sourceId == focusedPageId || it.targetId == focusedPageId
             }
-            val (focusedBackward, unfocusedBackward) = backwardEdges.partition {
-                it.sourceId == focusedPageId || it.targetId == focusedPageId
-            }
 
             // Draw all unfocused edges first
             unfocusedForward.forEach { edge ->
-                drawEdge(edge, isFocusedConnection = false)
-            }
-            unfocusedBackward.forEach { edge ->
                 drawEdge(edge, isFocusedConnection = false)
             }
 
@@ -445,7 +457,7 @@ fun StructureOverviewCanvas(
             focusedForward.forEach { edge ->
                 drawEdge(edge, isFocusedConnection = true)
             }
-            focusedBackward.forEach { edge ->
+            backwardEdges.forEach { edge ->
                 drawEdge(edge, isFocusedConnection = true)
             }
         }
