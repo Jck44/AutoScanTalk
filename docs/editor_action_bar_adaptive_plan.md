@@ -66,7 +66,7 @@ data class EditorAction(
 Misst die verfügbare Breite und platziert greedy so viele P1-Aktionen wie passen; der Rest plus alle
 P2 landen in **einem** `⋮`-`DropdownMenu`.
 
-```kotlin
+```text
 @Composable
 fun AdaptiveActionBar(
     actions: List<EditorAction>,

@@ -1,7 +1,6 @@
 package com.andreas_kratzer.ghosttalk.ui.pages
 
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,13 +11,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
@@ -55,21 +50,19 @@ import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.core.domain.pages.BookNavigationGraph
 import com.andreas_kratzer.ghosttalk.core.domain.pages.UsageLocation
 import com.andreas_kratzer.ghosttalk.core.model.GridSettingsUpdate
-import com.andreas_kratzer.ghosttalk.core.ui.components.EditorTopBar
 import com.andreas_kratzer.ghosttalk.core.ui.components.EditorAction
+import com.andreas_kratzer.ghosttalk.core.ui.components.EditorTopBar
 import com.andreas_kratzer.ghosttalk.core.ui.components.GhostTalkDialog
 import com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons
-import com.andreas_kratzer.ghosttalk.ui.components.EditorAssistantButton
 import com.andreas_kratzer.ghosttalk.ui.components.GridEditorContent
 import com.andreas_kratzer.ghosttalk.ui.components.ValidatedTextField
+import com.andreas_kratzer.ghosttalk.ui.pages.history.EditIcon
+import com.andreas_kratzer.ghosttalk.ui.pages.history.EditLabel
 import com.andreas_kratzer.ghosttalk.ui.pages.structure.StructureLegend
 import com.andreas_kratzer.ghosttalk.ui.pages.structure.WarningBadges
 import com.andreas_kratzer.ghosttalk.ui.pages.structure.rememberStructureProblems
-import com.andreas_kratzer.ghosttalk.ui.pages.history.EditIcon
-import com.andreas_kratzer.ghosttalk.ui.pages.history.EditLabel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import com.andreas_kratzer.ghosttalk.core.ui.R as CoreR
 
 @Suppress("AssignedValueIsNeverRead")
 @OptIn(ExperimentalMaterial3Api::class)
