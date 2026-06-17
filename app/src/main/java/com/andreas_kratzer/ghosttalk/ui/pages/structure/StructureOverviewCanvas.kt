@@ -652,34 +652,65 @@ private fun calculateOverviewLayout(
     fun layoutComponent(component: Set<String>, startNode: String, startY: Float): Float {
         if (component.isEmpty()) return startY
 
-        val levels = mutableListOf<MutableList<String>>()
-        val visited = mutableSetOf<String>()
-        val queue = ArrayDeque<Pair<String, Int>>()
+        val visitedDfs = mutableSetOf<String>()
+        val stack = mutableSetOf<String>()
+        val backEdges = mutableSetOf<Pair<String, String>>()
 
-        queue.add(startNode to 0)
-        visited.add(startNode)
-
-        while (queue.isNotEmpty()) {
-            val (node, level) = queue.removeFirst()
-            while (levels.size <= level) {
-                levels.add(mutableListOf())
-            }
-            levels[level].add(node)
-
+        fun dfs(node: String) {
+            visitedDfs.add(node)
+            stack.add(node)
             val edges = graph.outgoing[node] ?: emptyList()
             for (edge in edges) {
                 val target = edge.targetPageId
-                if (target in component && target !in visited) {
-                    visited.add(target)
-                    queue.add(target to level + 1)
+                if (target in component) {
+                    if (target in stack) {
+                        backEdges.add(node to target)
+                    } else if (target !in visitedDfs) {
+                        dfs(target)
+                    }
                 }
+            }
+            stack.remove(node)
+        }
+
+        dfs(startNode)
+        for (node in component) {
+            if (node !in visitedDfs) {
+                dfs(node)
             }
         }
 
-        val remaining = component - visited
-        if (remaining.isNotEmpty()) {
-            if (levels.isEmpty()) levels.add(mutableListOf())
-            levels[0].addAll(remaining)
+        val memoLevels = mutableMapOf<String, Int>()
+        val visiting = mutableSetOf<String>()
+
+        fun getLongestPathLevel(node: String): Int {
+            if (node == startNode) return 0
+            memoLevels[node]?.let { return it }
+            if (!visiting.add(node)) return 0
+            
+            val parents = graph.incoming[node] ?: emptyList()
+            var maxParentLevel = -1
+            for (parent in parents) {
+                if (parent in component && (parent to node) !in backEdges) {
+                    val parentLevel = getLongestPathLevel(parent)
+                    if (parentLevel > maxParentLevel) {
+                        maxParentLevel = parentLevel
+                    }
+                }
+            }
+            visiting.remove(node)
+            val lvl = if (maxParentLevel == -1) 0 else maxParentLevel + 1
+            memoLevels[node] = lvl
+            return lvl
+        }
+
+        val levels = mutableListOf<MutableList<String>>()
+        component.forEach { node ->
+            val lvl = getLongestPathLevel(node)
+            while (levels.size <= lvl) {
+                levels.add(mutableListOf())
+            }
+            levels[lvl].add(node)
         }
 
         // Barycenter sorting (Teil 5.1)
