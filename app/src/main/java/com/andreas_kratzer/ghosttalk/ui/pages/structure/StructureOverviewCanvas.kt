@@ -14,6 +14,7 @@ import androidx.compose.foundation.gestures.calculateCentroidSize
 import androidx.compose.foundation.gestures.calculatePan
 import androidx.compose.foundation.gestures.calculateRotation
 import androidx.compose.foundation.gestures.calculateZoom
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.indication
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.PressInteraction
@@ -45,11 +46,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.PointerInputScope
-import androidx.compose.ui.input.pointer.changedToUp
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.positionChanged
 import androidx.compose.ui.input.pointer.util.VelocityTracker
@@ -68,7 +69,6 @@ import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.core.domain.pages.BookNavigationGraph
 import com.andreas_kratzer.ghosttalk.core.model.Page
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlin.math.PI
 import kotlin.math.abs
@@ -91,7 +91,9 @@ fun StructureOverviewCanvas(
     onFocus: (String) -> Unit,
     onNavigateToGraph: (String) -> Unit,
     matchingPageIds: Set<String>,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onZoomInto: (String) -> Unit,
+    selection: Map<String, Set<Int>> = emptyMap()
 ) {
     val problems = rememberStructureProblems(graph)
     val orphans = problems.orphans
@@ -120,7 +122,7 @@ fun StructureOverviewCanvas(
     val currentLayout by rememberUpdatedState(layout)
     val currentFocusedPageId by rememberUpdatedState(focusedPageId)
     val currentOnFocus by rememberUpdatedState(onFocus)
-    val currentOnNavigateToGraph by rememberUpdatedState(onNavigateToGraph)
+    val currentOnZoomInto by rememberUpdatedState(onZoomInto)
     val interactionSources = remember { mutableMapOf<String, MutableInteractionSource>() }
 
     val context = LocalContext.current
@@ -223,6 +225,7 @@ fun StructureOverviewCanvas(
     Box(
         modifier = modifier
             .fillMaxSize()
+            .clipToBounds()
             .onGloballyPositioned { layoutCoordinates ->
                 canvasSize = layoutCoordinates.size
             }
@@ -252,102 +255,41 @@ fun StructureOverviewCanvas(
                 )
             }
             .pointerInput(Unit) {
-                coroutineScope {
-                    var pressedNodeId: String? = null
-                    var pressInteraction: PressInteraction.Press? = null
-                    
-                    awaitEachGesture {
-                        val down = awaitFirstDown(requireUnconsumed = false)
+                // Maps a screen position back to a node id, accounting for the current pan/zoom.
+                fun hitTest(pos: Offset): String? {
+                    val canvasX = (pos.x - offset.x) / scale
+                    val canvasY = (pos.y - offset.y) / scale
+                    return currentLayout.entries.firstOrNull { (_, nodeOffset) ->
+                        canvasX >= nodeOffset.x && canvasX <= nodeOffset.x + nodeWidthPx &&
+                        canvasY >= nodeOffset.y && canvasY <= nodeOffset.y + nodeHeightPx
+                    }?.key
+                }
+                detectTapGestures(
+                    onPress = { pos ->
                         flingJob?.cancel()
                         flingJob = null
-                        
-                        val canvasDownX = (down.position.x - offset.x) / scale
-                        val canvasDownY = (down.position.y - offset.y) / scale
-                        
-                        val hitNode = currentLayout.entries.find { (_, nodeOffset) ->
-                            canvasDownX >= nodeOffset.x && canvasDownX <= nodeOffset.x + nodeWidthPx &&
-                            canvasDownY >= nodeOffset.y && canvasDownY <= nodeOffset.y + nodeHeightPx
-                        }
-                        
-                        if (hitNode != null) {
-                            val pageId = hitNode.key
+                        val pageId = hitTest(pos)
+                        if (pageId != null) {
                             val interactionSource = interactionSources.getOrPut(pageId) { MutableInteractionSource() }
-                            launch {
-                                val press = PressInteraction.Press(down.position)
-                                interactionSource.emit(press)
-                                pressInteraction = press
-                                pressedNodeId = pageId
-                            }
+                            val press = PressInteraction.Press(pos)
+                            interactionSource.emit(press)
+                            val released = tryAwaitRelease()
+                            interactionSource.emit(
+                                if (released) PressInteraction.Release(press)
+                                else PressInteraction.Cancel(press)
+                            )
                         }
-                        
-                        var isClick = true
-                        var pointerCount = 1
-                        val touchSlop = viewConfiguration.touchSlop
-                        
-                        try {
-                            while (true) {
-                                val event = awaitPointerEvent()
-                                pointerCount = maxOf(pointerCount, event.changes.size)
-                                
-                                if (pointerCount > 1) {
-                                    isClick = false
-                                }
-                                
-                                val hasMovedPastSlop = event.changes.any { change ->
-                                    (change.position - down.position).getDistance() > touchSlop
-                                }
-                                if (hasMovedPastSlop) {
-                                    isClick = false
-                                }
-                                
-                                if (!isClick && pressedNodeId != null) {
-                                    val pageId = pressedNodeId
-                                    val interactionSource = interactionSources[pageId]
-                                    val press = pressInteraction
-                                    if (interactionSource != null && press != null) {
-                                        launch {
-                                            interactionSource.emit(PressInteraction.Cancel(press))
-                                        }
-                                    }
-                                    pressedNodeId = null
-                                    pressInteraction = null
-                                }
-                                
-                                val allUp = event.changes.all { it.changedToUp() }
-                                if (allUp) {
-                                    if (isClick && pointerCount == 1 && pressedNodeId != null) {
-                                        val pageId = pressedNodeId!!
-                                        val interactionSource = interactionSources[pageId]
-                                        val press = pressInteraction
-                                        if (interactionSource != null && press != null) {
-                                            launch {
-                                                interactionSource.emit(PressInteraction.Release(press))
-                                            }
-                                        }
-                                        
-                                        if (pageId == currentFocusedPageId) {
-                                            currentOnNavigateToGraph(pageId)
-                                        } else {
-                                            currentOnFocus(pageId)
-                                        }
-                                    }
-                                    break
-                                }
-                            }
-                        } finally {
-                            val pageId = pressedNodeId
-                            val interactionSource = pageId?.let { interactionSources[it] }
-                            val press = pressInteraction
-                            if (interactionSource != null && press != null) {
-                                launch {
-                                    interactionSource.emit(PressInteraction.Cancel(press))
-                                }
-                            }
-                            pressedNodeId = null
-                            pressInteraction = null
+                    },
+                    // Tap an unfocused node to focus/centre it; tap the already-focused
+                    // node again to open the next zoom level (its focused graph).
+                    onTap = { pos ->
+                        val pageId = hitTest(pos)
+                        if (pageId != null) {
+                            if (pageId == currentFocusedPageId) currentOnZoomInto(pageId)
+                            else currentOnFocus(pageId)
                         }
                     }
-                }
+                )
             }
     ) {
         val primaryColor = MaterialTheme.colorScheme.primary
@@ -479,6 +421,7 @@ fun StructureOverviewCanvas(
                 val pageName = pageNames[pageId] ?: pageId
                 val isFocused = pageId == focusedPageId
                 val isMatched = matchingPageIds.contains(pageId)
+                val hasSelectedButtons = selection[pageId]?.isNotEmpty() == true
                 val interactionSource = remember(pageId) {
                     interactionSources.getOrPut(pageId) { MutableInteractionSource() }
                 }
@@ -490,6 +433,7 @@ fun StructureOverviewCanvas(
                     Surface(
                         color = when {
                             isFocused -> MaterialTheme.colorScheme.primaryContainer
+                            hasSelectedButtons -> MaterialTheme.colorScheme.secondaryContainer
                             isMatched -> MaterialTheme.colorScheme.tertiaryContainer
                             else -> MaterialTheme.colorScheme.surface
                         },
@@ -497,16 +441,18 @@ fun StructureOverviewCanvas(
                         border = BorderStroke(
                             width = when {
                                 isFocused -> 2.dp
+                                hasSelectedButtons -> 2.dp
                                 isMatched -> 2.dp
                                 else -> 1.dp
                             },
                             color = when {
                                 isFocused -> MaterialTheme.colorScheme.primary
+                                hasSelectedButtons -> MaterialTheme.colorScheme.secondary
                                 isMatched -> MaterialTheme.colorScheme.tertiary
                                 else -> MaterialTheme.colorScheme.outlineVariant
                             }
                         ),
-                        tonalElevation = if (isFocused || isMatched) 6.dp else 2.dp,
+                        tonalElevation = if (isFocused || hasSelectedButtons || isMatched) 6.dp else 2.dp,
                         modifier = Modifier
                             .size(nodeWidth, nodeHeight)
                             .indication(interactionSource, LocalIndication.current)
@@ -528,6 +474,7 @@ fun StructureOverviewCanvas(
                                     overflow = TextOverflow.Ellipsis,
                                     color = when {
                                         isFocused -> MaterialTheme.colorScheme.onPrimaryContainer
+                                        hasSelectedButtons -> MaterialTheme.colorScheme.onSecondaryContainer
                                         isMatched -> MaterialTheme.colorScheme.onTertiaryContainer
                                         else -> MaterialTheme.colorScheme.onSurface
                                     },
@@ -606,6 +553,14 @@ fun StructureOverviewCanvas(
                 )
             }
         }
+
+        StructureLegend(
+            showOrphan = orphans.isNotEmpty(),
+            showDeadEnd = deadEnds.isNotEmpty(),
+            modifier = Modifier
+                .align(Alignment.BottomStart)
+                .padding(16.dp)
+        )
     }
 }
 

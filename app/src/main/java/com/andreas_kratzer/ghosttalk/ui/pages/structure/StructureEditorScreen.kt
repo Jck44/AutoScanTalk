@@ -54,7 +54,16 @@ fun StructureEditorScreen(
     onNavigateToGraph: (String) -> Unit = {},
     viewMode: StructureViewMode = StructureViewMode.CARDS,
     modeSwitcher: (@Composable () -> Unit)? = null,
-    onExitEditor: (() -> Unit)? = null
+    onExitEditor: (() -> Unit)? = null,
+    onZoomInto: (String) -> Unit = {},
+    onZoomOut: () -> Unit = {},
+    searchQuery: String = "",
+    onSearchQueryChange: (String) -> Unit = {},
+    isMultiSelectMode: Boolean = false,
+    onMultiSelectModeChange: (Boolean) -> Unit = {},
+    selection: Map<String, Set<Int>> = emptyMap(),
+    onSelectionChange: (Map<String, Set<Int>>) -> Unit = {},
+    onStyleToggleClick: (() -> Unit)? = null
 ) {
     val pages by pageViewModel.unfilteredPages.collectAsState()
     val templates by pageViewModel.templates.collectAsState(initial = emptyList())
@@ -79,11 +88,39 @@ fun StructureEditorScreen(
     }
 
     val state = rememberStructureEditorState(
-        initialFocusedPageId = initialFocusedId
+        initialFocusedPageId = initialFocusedId,
+        initialSearchQuery = searchQuery,
+        initialIsMultiSelectMode = isMultiSelectMode,
+        initialSelection = selection,
+        onSearchQueryChange = onSearchQueryChange,
+        onIsMultiSelectModeChange = onMultiSelectModeChange,
+        onSelectionChange = onSelectionChange
     )
 
-    BackHandler(enabled = state.focusHistory.isNotEmpty()) {
-        state.goBackHistory()
+    LaunchedEffect(searchQuery) {
+        if (state.searchQuery != searchQuery) {
+            state.searchQuery = searchQuery
+        }
+    }
+    LaunchedEffect(isMultiSelectMode) {
+        if (state.isMultiSelectMode != isMultiSelectMode) {
+            state.isMultiSelectMode = isMultiSelectMode
+        }
+    }
+    LaunchedEffect(selection) {
+        if (state.selection != selection) {
+            state.selection = selection
+        }
+    }
+
+    BackHandler(enabled = true) {
+        if (state.focusHistory.isNotEmpty()) {
+            state.goBackHistory()
+        } else if (viewMode != StructureViewMode.OVERVIEW) {
+            onZoomOut()
+        } else {
+            onNavigateBack()
+        }
     }
 
     val pageSplitProposal by pageSplitViewModel.pageSplitProposal.collectAsState()
@@ -359,7 +396,9 @@ fun StructureEditorScreen(
                         state.incomingUsages = pageViewModel.getPageUsages(state.focusedPageId)
                         state.showIncomingLinksDialog = true
                     }
-                }
+                },
+                viewMode = viewMode,
+                onStyleToggleClick = onStyleToggleClick
             )
         },
         snackbarHost = { SnackbarHost(snackbarHostState) }
@@ -393,6 +432,7 @@ fun StructureEditorScreen(
             },
             templatesPanelActions = gridEditorViewModel,
             onNavigateToGraph = onNavigateToGraph,
+            onZoomInto = onZoomInto,
             modifier = Modifier.padding(paddingValues)
         )
 

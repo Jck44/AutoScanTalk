@@ -79,7 +79,8 @@ fun StructureEditorContent(
     onButtonTemplateClick: (ButtonTemplate) -> Unit,
     templatesPanelActions: GridEditorActions,
     modifier: Modifier = Modifier,
-    onNavigateToGraph: (String) -> Unit = {}
+    onNavigateToGraph: (String) -> Unit = {},
+    onZoomInto: (String) -> Unit = {}
 ) {
     val dragDropState = rememberDragDropState()
     val scope = rememberCoroutineScope()
@@ -216,6 +217,8 @@ fun StructureEditorContent(
                         onFocus = { state.navigateToPage(it) },
                         onNavigateToGraph = onNavigateToGraph,
                         matchingPageIds = matchingPageIds,
+                        onZoomInto = onZoomInto,
+                        selection = state.selection,
                         modifier = Modifier
                             .weight(1f)
                             .fillMaxHeight()
@@ -228,6 +231,7 @@ fun StructureEditorContent(
                         pageNames = pageNames,
                         onFocus = { state.navigateToPage(it) },
                         onAddConnection = onAddConnection,
+                        matchingPageIds = matchingPageIds,
                         onRemoveConnection = { pageId, buttonIndex, targetPageName ->
                             state.pageToRemoveConnectionFromPageId = pageId
                             state.pageToRemoveConnectionByButtonIndex = buttonIndex
@@ -252,6 +256,7 @@ fun StructureEditorContent(
                         selection = state.selection,
                         templates = templates,
                         onCreatePage = onCreatePage,
+                        onZoomInto = onZoomInto,
                         modifier = Modifier
                             .weight(1f)
                             .fillMaxHeight()

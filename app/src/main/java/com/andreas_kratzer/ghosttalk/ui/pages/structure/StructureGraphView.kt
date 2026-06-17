@@ -8,6 +8,9 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.VectorConverter
+import androidx.compose.animation.core.exponentialDecay
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -35,6 +38,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -56,6 +60,8 @@ import com.andreas_kratzer.ghosttalk.core.domain.pages.NavEdge
 import com.andreas_kratzer.ghosttalk.core.model.Page
 import com.andreas_kratzer.ghosttalk.ui.components.LocalDragDropState
 import com.andreas_kratzer.ghosttalk.ui.components.StructureButtonDrag
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.first
 
 private val expandedPageIdsSaver = listSaver<Set<String>, String>(
@@ -79,7 +85,9 @@ fun StructureGraphView(
     onRemoveConnection: ((pageId: String, buttonIndex: Int, targetPageName: String) -> Unit)? = null,
     isFullView: Boolean = false,
     isMultiSelectMode: Boolean = false,
-    selection: Map<String, Set<Int>> = emptyMap()
+    selection: Map<String, Set<Int>> = emptyMap(),
+    onZoomInto: (String) -> Unit = {},
+    matchingPageIds: Set<String> = emptySet()
 ) {
     val problems = rememberStructureProblems(graph)
     val orphans = problems.orphans
@@ -178,6 +186,10 @@ fun StructureGraphView(
 
     val configuration = LocalConfiguration.current
     val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+    
+    val scope = rememberCoroutineScope()
+    var flingJob by remember { mutableStateOf<Job?>(null) }
+    val decaySpec = remember { exponentialDecay<Offset>() }
 
     Card(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)),
@@ -208,8 +220,36 @@ fun StructureGraphView(
                     ) {
                         selectedEdgeForDeletion = null
                     }
-                    .horizontalScroll(scrollStateX)
-                    .verticalScroll(scrollStateY)
+                    .horizontalScroll(scrollStateX, enabled = !isFullView)
+                    .verticalScroll(scrollStateY, enabled = !isFullView)
+                    .then(
+                        if (isFullView) {
+                            Modifier.pointerInput(Unit) {
+                                detectTransformGesturesWithFling(
+                                    onGestureStart = {
+                                        flingJob?.cancel()
+                                        flingJob = null
+                                    },
+                                    onGestureEnd = { velocity ->
+                                        flingJob = scope.launch {
+                                            var lastValue = Offset.Zero
+                                            val animatable = Animatable(Offset.Zero, Offset.VectorConverter)
+                                            animatable.animateDecay(Offset(-velocity.x, -velocity.y), decaySpec) {
+                                                val delta = this.value - lastValue
+                                                lastValue = this.value
+                                                scrollStateX.dispatchRawDelta(delta.x)
+                                                scrollStateY.dispatchRawDelta(delta.y)
+                                            }
+                                        }
+                                    },
+                                    onGesture = { _, pan, _, _ ->
+                                        scrollStateX.dispatchRawDelta(-pan.x)
+                                        scrollStateY.dispatchRawDelta(-pan.y)
+                                    }
+                                )
+                            }
+                        } else Modifier
+                    )
                     // Bottom scroll buffer so the last node can be scrolled clear of the
                     // floating "Zielseite verbinden" button (only present in the full editor).
                     .then(if (isFullView) Modifier.padding(bottom = 88.dp) else Modifier)
@@ -250,7 +290,9 @@ fun StructureGraphView(
                             isMultiSelectMode = isMultiSelectMode,
                             selectedIndices = selection[focusedPageId].orEmpty(),
                             isOrphan = focusedPageId in orphans,
-                            isDeadEnd = focusedPageId in deadEnds
+                            isDeadEnd = focusedPageId in deadEnds,
+                            onZoomInto = { onZoomInto(focusedPageId) },
+                            isMatched = focusedPageId in matchingPageIds
                         )
                     }.map { it.measure(Constraints.fixedWidth(with(density) { centerWidthDp.roundToPx() })) }
                     val centerPlaceable = centerPlaceables.first()
@@ -296,7 +338,9 @@ fun StructureGraphView(
                                     isMultiSelectMode = isMultiSelectMode,
                                     selectedIndices = selection[sourceId].orEmpty(),
                                     isOrphan = sourceId in orphans,
-                                    isDeadEnd = sourceId in deadEnds
+                                    isDeadEnd = sourceId in deadEnds,
+                                    onZoomInto = onZoomInto,
+                                    isMatched = sourceId in matchingPageIds
                                 )
                             }
                         }
@@ -343,7 +387,9 @@ fun StructureGraphView(
                                     isMultiSelectMode = isMultiSelectMode,
                                     selectedIndices = selection[targetId].orEmpty(),
                                     isOrphan = targetId in orphans,
-                                    isDeadEnd = targetId in deadEnds
+                                    isDeadEnd = targetId in deadEnds,
+                                    onZoomInto = onZoomInto,
+                                    isMatched = targetId in matchingPageIds
                                 )
                             }
                         }

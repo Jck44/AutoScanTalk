@@ -20,9 +20,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import com.andreas_kratzer.ghosttalk.R
 import com.andreas_kratzer.ghosttalk.core.ui.components.EditorTopBar
+import com.andreas_kratzer.ghosttalk.core.ui.components.EditorAction
 import com.andreas_kratzer.ghosttalk.core.ui.theme.GhostTalkIcons
 import com.andreas_kratzer.ghosttalk.ui.components.BulkActionTopBar
-import com.andreas_kratzer.ghosttalk.ui.components.EditorAssistantButton
 import com.andreas_kratzer.ghosttalk.core.ui.R as CoreR
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -39,7 +39,9 @@ fun StructureEditorTopBar(
     onSplitWizardClick: () -> Unit,
     onUndoClick: () -> Unit,
     onRedoClick: () -> Unit,
-    onShowIncomingLinks: () -> Unit
+    onShowIncomingLinks: () -> Unit,
+    viewMode: StructureViewMode,
+    onStyleToggleClick: (() -> Unit)?
 ) {
     if (state.isMultiSelectMode) {
         BulkActionTopBar(
@@ -50,6 +52,144 @@ fun StructureEditorTopBar(
             onDelete = { state.showBulkDeleteConfirm = true }
         )
     } else {
+        val showStyleToggle = viewMode == StructureViewMode.CARDS || viewMode == StructureViewMode.GRAPH
+        val actionsList = buildList {
+            if (showStyleToggle) {
+                add(
+                    EditorAction(
+                        key = "style_toggle",
+                        icon = if (viewMode == StructureViewMode.GRAPH) GhostTalkIcons.Description else GhostTalkIcons.Sitemap,
+                        label = if (viewMode == StructureViewMode.GRAPH) "Karten-Ansicht" else "Graph-Ansicht",
+                        onClick = { onStyleToggleClick?.invoke() },
+                        priority = 1,
+                        testTag = "structure_editor_style_toggle"
+                    )
+                )
+            }
+            add(
+                EditorAction(
+                    key = "assistant",
+                    icon = GhostTalkIcons.AutoAwesome,
+                    label = "Assistent",
+                    onClick = onSplitWizardClick,
+                    tint = MaterialTheme.colorScheme.primary,
+                    priority = 1,
+                    testTag = "structure_editor_split_wizard_trigger_menu"
+                )
+            )
+            add(
+                EditorAction(
+                    key = "undo",
+                    icon = GhostTalkIcons.Undo,
+                    label = stringResource(R.string.structure_action_undo),
+                    onClick = onUndoClick,
+                    enabled = canUndo,
+                    tint = if (canUndo) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f),
+                    priority = 1,
+                    testTag = "structure_editor_undo_button"
+                )
+            )
+            add(
+                EditorAction(
+                    key = "multiselect",
+                    icon = GhostTalkIcons.CheckCircle,
+                    label = stringResource(R.string.bulk_action_toggle_multi_select),
+                    onClick = {
+                        state.isMultiSelectMode = !state.isMultiSelectMode
+                        if (state.isMultiSelectMode) {
+                            state.templatesPanelExpanded = false
+                        } else {
+                            state.selection = emptyMap()
+                        }
+                    },
+                    tint = if (state.isMultiSelectMode) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                    priority = 1,
+                    testTag = "structure_editor_multiselect_toggle"
+                )
+            )
+            add(
+                EditorAction(
+                    key = "templates",
+                    icon = Icons.AutoMirrored.Filled.List,
+                    label = stringResource(R.string.template_panel_title),
+                    onClick = {
+                        if (isTablet) {
+                            state.templatesPanelExpanded = !state.templatesPanelExpanded
+                        } else {
+                            state.showTemplatesBottomSheet = true
+                        }
+                    },
+                    tint = if (state.templatesPanelExpanded && isTablet) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                    priority = 1,
+                    testTag = "structure_editor_templates_button"
+                )
+            )
+            add(
+                EditorAction(
+                    key = "redo",
+                    icon = GhostTalkIcons.Redo,
+                    label = stringResource(R.string.history_redo_action),
+                    onClick = onRedoClick,
+                    enabled = canRedo,
+                    tint = if (canRedo) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f),
+                    priority = 2,
+                    testTag = "structure_editor_redo_button"
+                )
+            )
+            if (!isTablet) {
+                add(
+                    EditorAction(
+                        key = "tree_toggle",
+                        icon = Icons.Default.Menu,
+                        label = stringResource(R.string.structure_tree_toggle),
+                        onClick = { state.showBottomSheet = true },
+                        priority = 2
+                    )
+                )
+            }
+            add(
+                EditorAction(
+                    key = "history",
+                    icon = GhostTalkIcons.History,
+                    label = stringResource(R.string.history_panel_title),
+                    onClick = { state.showHistoryPanel = true },
+                    priority = 2,
+                    testTag = "structure_editor_history_button"
+                )
+            )
+            add(
+                EditorAction(
+                    key = "incoming_links",
+                    icon = GhostTalkIcons.Link,
+                    label = stringResource(R.string.page_incoming_links_title),
+                    onClick = onShowIncomingLinks,
+                    priority = 2,
+                    testTag = "structure_editor_incoming_links"
+                )
+            )
+            add(
+                EditorAction(
+                    key = "rename",
+                    icon = GhostTalkIcons.Edit,
+                    label = stringResource(R.string.page_dialog_rename_title),
+                    onClick = { state.showRenameDialog = true },
+                    priority = 2
+                )
+            )
+            if (onExitEditor != null) {
+                add(
+                    EditorAction(
+                        key = "exit",
+                        icon = Icons.Default.Close,
+                        label = stringResource(CoreR.string.editor_exit),
+                        onClick = { onExitEditor() },
+                        priority = 2,
+                        testTag = "structure_editor_exit_button"
+                    )
+                )
+            }
+        }
+
         EditorTopBar(
             titleContent = {
                 Text(
@@ -63,188 +203,11 @@ fun StructureEditorTopBar(
                 )
             },
             onNavigateBack = onNavigateBack,
-            onExitEditor = null, // Disable top-right exit button in TopBar
+            onExitEditor = null,
             modeSwitcher = modeSwitcher,
-            actions = {
-                // Multi-select toggle button
-                IconButton(
-                    onClick = {
-                        state.isMultiSelectMode = !state.isMultiSelectMode
-                        if (state.isMultiSelectMode) {
-                            state.templatesPanelExpanded = false
-                        } else {
-                            state.selection = emptyMap()
-                        }
-                    },
-                    modifier = Modifier.testTag("structure_editor_multiselect_toggle")
-                ) {
-                    Icon(
-                        imageVector = GhostTalkIcons.CheckCircle,
-                        contentDescription = stringResource(R.string.bulk_action_toggle_multi_select),
-                        tint = if (state.isMultiSelectMode) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-
-                // Inline Action 1: Assistent (icon)
-                EditorAssistantButton(
-                    onClick = onSplitWizardClick,
-                    compact = true,
-                    testTag = "structure_editor_split_wizard_trigger_menu"
-                )
-
-                // Inline Action 2: Undo
-                IconButton(
-                    onClick = onUndoClick,
-                    enabled = canUndo,
-                    modifier = Modifier.testTag("structure_editor_undo_button")
-                ) {
-                    Icon(
-                        imageVector = GhostTalkIcons.Undo,
-                        contentDescription = stringResource(R.string.structure_action_undo),
-                        tint = if (canUndo) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f)
-                    )
-                }
-
-                // Inline Action 3: Templates panel toggle
-                IconButton(
-                    onClick = {
-                        if (isTablet) {
-                            state.templatesPanelExpanded = !state.templatesPanelExpanded
-                        } else {
-                            state.showTemplatesBottomSheet = true
-                        }
-                    },
-                    modifier = Modifier.testTag("structure_editor_templates_button")
-                ) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.List,
-                        contentDescription = stringResource(R.string.template_panel_title),
-                        tint = if (state.templatesPanelExpanded && isTablet) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-
-                Box {
-                    IconButton(
-                        onClick = { state.showOverflowMenu = true },
-                        modifier = Modifier.testTag("structure_editor_overflow_menu_trigger")
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.MoreVert,
-                            contentDescription = stringResource(R.string.structure_more_options),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                    DropdownMenu(
-                        expanded = state.showOverflowMenu,
-                        onDismissRequest = { state.showOverflowMenu = false }
-                    ) {
-                        // Redo (Always in ⋮)
-                        DropdownMenuItem(
-                            text = { Text(stringResource(R.string.history_redo_action)) },
-                            onClick = {
-                                state.showOverflowMenu = false
-                                onRedoClick()
-                            },
-                            enabled = canRedo,
-                            leadingIcon = {
-                                Icon(
-                                    imageVector = GhostTalkIcons.Redo,
-                                    contentDescription = null,
-                                    tint = if (canRedo) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f)
-                                )
-                            },
-                            modifier = Modifier.testTag("structure_editor_redo_button")
-                        )
-
-                        // Tree Toggle (Always in ⋮ on phone)
-                        if (!isTablet) {
-                            DropdownMenuItem(
-                                text = { Text(stringResource(R.string.structure_tree_toggle)) },
-                                onClick = {
-                                    state.showOverflowMenu = false
-                                    state.showBottomSheet = true
-                                },
-                                leadingIcon = {
-                                    Icon(
-                                        imageVector = Icons.Default.Menu,
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
-                            )
-                        }
-
-                        // Verlauf / History (Always in ⋮)
-                        DropdownMenuItem(
-                            text = { Text(stringResource(R.string.history_panel_title)) },
-                            onClick = {
-                                state.showOverflowMenu = false
-                                state.showHistoryPanel = true
-                            },
-                            leadingIcon = {
-                                Icon(
-                                    imageVector = GhostTalkIcons.History,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            },
-                            modifier = Modifier.testTag("structure_editor_history_button")
-                        )
-
-                        // Eingehende Links / Incoming Links (Always in ⋮)
-                        DropdownMenuItem(
-                            text = { Text(stringResource(R.string.page_incoming_links_title)) },
-                            onClick = {
-                                state.showOverflowMenu = false
-                                onShowIncomingLinks()
-                            },
-                            leadingIcon = {
-                                Icon(
-                                    imageVector = GhostTalkIcons.Link,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            },
-                            modifier = Modifier.testTag("structure_editor_incoming_links")
-                        )
-
-                        // Umbenennen / Rename (Always in ⋮)
-                        DropdownMenuItem(
-                            text = { Text(stringResource(R.string.page_dialog_rename_title)) },
-                            onClick = {
-                                state.showOverflowMenu = false
-                                state.showRenameDialog = true
-                            },
-                            leadingIcon = {
-                                Icon(
-                                    imageVector = GhostTalkIcons.Edit,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                        )
-
-                        // Editor beenden / Exit Editor (Always in ⋮)
-                        if (onExitEditor != null) {
-                            DropdownMenuItem(
-                                text = { Text(stringResource(CoreR.string.editor_exit)) },
-                                onClick = {
-                                    state.showOverflowMenu = false
-                                    onExitEditor()
-                                },
-                                leadingIcon = {
-                                    Icon(
-                                        imageVector = Icons.Default.Close,
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                },
-                                modifier = Modifier.testTag("structure_editor_exit_button")
-                            )
-                        }
-                    }
-                }
-            }
+            actions = actionsList,
+            isTablet = isTablet,
+            overflowTestTag = "structure_editor_overflow_menu_trigger"
         )
     }
 }

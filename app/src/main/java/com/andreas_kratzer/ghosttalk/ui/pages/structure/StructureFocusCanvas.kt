@@ -46,6 +46,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.layout.boundsInWindow
@@ -102,7 +103,9 @@ fun StructureFocusCanvas(
     isMultiSelectMode: Boolean = false,
     selection: Map<String, Set<Int>> = emptyMap(),
     templates: List<PageTemplate> = emptyList(),
-    onCreatePage: ((String, Int, Int, String?, (String) -> Unit) -> Unit)? = null
+    onCreatePage: ((String, Int, Int, String?, (String) -> Unit) -> Unit)? = null,
+    onZoomInto: (String) -> Unit = {},
+    matchingPageIds: Set<String> = emptySet()
 ) {
     val page = remember(pages, focusedPageId) { pages.find { it.id == focusedPageId } }
     val problems = rememberStructureProblems(graph)
@@ -114,6 +117,17 @@ fun StructureFocusCanvas(
     }
     val effectiveStartPageId = remember(graph, pages) {
         graph.startPageId ?: pages.minByOrNull { it.orderIndex }?.id
+    }
+
+    val visibleNodes = remember(focusedPageId, incomingSources, outgoingEdges) {
+        val outgoingIds = outgoingEdges.map { it.targetPageId }
+        setOf(focusedPageId) + incomingSources + outgoingIds
+    }
+    val showOrphan = remember(visibleNodes, orphans) {
+        visibleNodes.any { it in orphans }
+    }
+    val showDeadEnd = remember(visibleNodes, deadEnds) {
+        visibleNodes.any { it in deadEnds }
     }
 
     val dragDropState = LocalDragDropState.current
@@ -238,6 +252,7 @@ fun StructureFocusCanvas(
 
     Box(
         modifier = modifier
+            .clipToBounds()
             .onGloballyPositioned { layoutCoordinates ->
                 canvasBoundsInWindow = layoutCoordinates.boundsInWindow()
             }
@@ -258,7 +273,9 @@ fun StructureFocusCanvas(
                 modifier = Modifier.fillMaxSize(),
                 pages = pages,
                 onEditButton = onEditButton,
-                onAddButton = onAddButton
+                onAddButton = onAddButton,
+                onZoomInto = onZoomInto,
+                matchingPageIds = matchingPageIds
             )
         } else {
             Column(
@@ -807,6 +824,14 @@ fun StructureFocusCanvas(
                 }
             }
         }
+
+        StructureLegend(
+            showOrphan = showOrphan,
+            showDeadEnd = showDeadEnd,
+            modifier = Modifier
+                .align(Alignment.BottomStart)
+                .padding(16.dp)
+        )
     }
 
     if (showConnectDialogState.value) {

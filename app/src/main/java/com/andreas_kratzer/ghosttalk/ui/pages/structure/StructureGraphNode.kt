@@ -2,6 +2,7 @@ package com.andreas_kratzer.ghosttalk.ui.pages.structure
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.border
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -42,7 +43,7 @@ import com.andreas_kratzer.ghosttalk.ui.components.dragSource
 import com.andreas_kratzer.ghosttalk.ui.components.dropTarget
 
 
-@OptIn(ExperimentalLayoutApi::class)
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 fun StructureGraphNode(
     pageId: String,
@@ -59,21 +60,46 @@ fun StructureGraphNode(
     isMultiSelectMode: Boolean = false,
     selectedIndices: Set<Int> = emptySet(),
     isOrphan: Boolean = false,
-    isDeadEnd: Boolean = false
+    isDeadEnd: Boolean = false,
+    onZoomInto: (String) -> Unit = {},
+    isMatched: Boolean = false
 ) {
     val dragDropState = LocalDragDropState.current
     val isNodeHovered = dragDropState.currentHoveredTarget == StructureNodeTarget(pageId)
 
     Surface(
-        onClick = { if (!isMultiSelectMode) onFocus() },
         shape = MaterialTheme.shapes.medium,
-        color = if (isCenter) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface,
+        color = when {
+            isCenter -> MaterialTheme.colorScheme.primaryContainer
+            isMatched -> MaterialTheme.colorScheme.tertiaryContainer
+            else -> MaterialTheme.colorScheme.surface
+        },
+        contentColor = when {
+            isCenter -> MaterialTheme.colorScheme.onPrimaryContainer
+            isMatched -> MaterialTheme.colorScheme.onTertiaryContainer
+            else -> MaterialTheme.colorScheme.onSurface
+        },
         border = BorderStroke(
-            width = if (isCenter || isNodeHovered) 2.dp else 1.dp,
-            color = if (isCenter || isNodeHovered) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
+            width = when {
+                isCenter || isNodeHovered -> 2.dp
+                isMatched -> 2.dp
+                else -> 1.dp
+            },
+            color = when {
+                isCenter || isNodeHovered -> MaterialTheme.colorScheme.primary
+                isMatched -> MaterialTheme.colorScheme.tertiary
+                else -> MaterialTheme.colorScheme.outlineVariant
+            }
         ),
-        tonalElevation = if (isCenter) 4.dp else 2.dp,
-        modifier = modifier.dropTarget(key = StructureNodeTarget(pageId))
+        tonalElevation = if (isCenter || isMatched) 4.dp else 2.dp,
+        modifier = modifier
+            .dropTarget(key = StructureNodeTarget(pageId))
+            .combinedClickable(
+                enabled = !isMultiSelectMode,
+                // No real double-click: the focused (center) node drills into the next zoom
+                // level; a neighbour first becomes focused, a further tap then drills in.
+                onClick = { if (isCenter) onZoomInto(pageId) else onFocus() }
+            )
     ) {
         if (isExpanded) {
             Column(

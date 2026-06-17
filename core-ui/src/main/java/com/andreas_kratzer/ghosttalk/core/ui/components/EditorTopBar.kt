@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
@@ -27,7 +28,9 @@ fun EditorTopBar(
     titleContent: @Composable RowScope.() -> Unit,
     onNavigateBack: (() -> Unit)? = null,
     modeSwitcher: (@Composable () -> Unit)? = null,
-    actions: @Composable RowScope.() -> Unit = {},
+    actions: List<EditorAction> = emptyList(),
+    isTablet: Boolean = false,
+    overflowTestTag: String = "editor_overflow_menu_trigger",
     onExitEditor: (() -> Unit)? = null,
     exitTestTag: String = "page_editor_exit_button",
     exitContentDescription: String? = null
@@ -56,7 +59,15 @@ fun EditorTopBar(
             }
         },
         actions = {
-            actions()
+            val configuration = androidx.compose.ui.platform.LocalConfiguration.current
+            val maxActionsWidth = (configuration.screenWidthDp * 0.5f).dp
+            
+            AdaptiveActionBar(
+                actions = actions,
+                isTablet = isTablet,
+                overflowTestTag = overflowTestTag,
+                modifier = Modifier.widthIn(max = maxActionsWidth)
+            )
             if (onExitEditor != null) {
                 IconButton(
                     onClick = onExitEditor,
@@ -74,3 +85,4 @@ fun EditorTopBar(
         )
     )
 }
+
