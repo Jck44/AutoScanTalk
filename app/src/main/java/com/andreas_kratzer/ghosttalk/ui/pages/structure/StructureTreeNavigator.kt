@@ -35,6 +35,14 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.produceState
+import androidx.compose.runtime.snapshotFlow
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.mapLatest
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -93,7 +101,7 @@ private fun WarningBadges(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class, FlowPreview::class, ExperimentalCoroutinesApi::class)
 @Composable
 fun StructureTreeNavigator(
     graph: BookNavigationGraph,
@@ -155,11 +163,18 @@ fun StructureTreeNavigator(
             .sortedBy { pageNames[it] ?: it }
     }
 
-    val localSearchResults = if (state == null) {
+    val localSearchResults: List<PageSearchResult> = if (state == null) {
         val searchPagesUseCase = remember { SearchPagesUseCase() }
-        remember(searchQuery, pages) {
-            searchPagesUseCase.execute(pages, searchQuery)
+        val produced by produceState(emptyList<PageSearchResult>(), searchQuery, pages) {
+            snapshotFlow { searchQuery }
+                .debounce(200)
+                .mapLatest { q ->
+                    if (q.isBlank()) emptyList()
+                    else withContext(Dispatchers.Default) { searchPagesUseCase.execute(pages, q) }
+                }
+                .collect { value = it }
         }
+        produced
     } else {
         searchResults
     }
