@@ -679,6 +679,33 @@ private fun calculateOverviewLayout(
             levels[0].addAll(remaining)
         }
 
+        // Barycenter sorting (Teil 5.1)
+        for (l in 1 until levels.size) {
+            val prevLevel = levels[l - 1]
+            val prevLevelIndices = prevLevel.withIndex().associate { it.value to it.index }
+            
+            val barycenters = levels[l].associateWith { node ->
+                val parentsInPrev = prevLevel.filter { parent ->
+                    graph.outgoing[parent]?.any { it.targetPageId == node } == true
+                }
+                if (parentsInPrev.isNotEmpty()) {
+                    parentsInPrev.map { prevLevelIndices[it]!! }.average()
+                } else {
+                    null
+                }
+            }
+            
+            val originalIndices = levels[l].withIndex().associate { it.value to it.index }
+            levels[l] = levels[l].sortedWith(Comparator { a, b ->
+                val bA = barycenters[a]
+                val bB = barycenters[b]
+                val valA = bA ?: originalIndices[a]!!.toDouble()
+                val valB = bB ?: originalIndices[b]!!.toDouble()
+                val cmp = valA.compareTo(valB)
+                if (cmp != 0) cmp else originalIndices[a]!!.compareTo(originalIndices[b]!!)
+            }).toMutableList()
+        }
+
         val maxLevelHeight = levels.maxOfOrNull { it.size } ?: 0
         val totalComponentHeight = maxLevelHeight * (nodeHeightPx + verticalGapPx)
 
