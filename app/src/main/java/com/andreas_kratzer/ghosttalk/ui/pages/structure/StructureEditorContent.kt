@@ -21,6 +21,9 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -152,7 +155,8 @@ fun StructureEditorContent(
             ) {
                 if (isTablet) {
                     if (state.sidePanelExpanded) {
-                        // Left Column: TreeView (~34%)
+                        // Unified left panel: one place for both Tree and Templates,
+                        // switched via a segmented toggle (no second sidebar on the right).
                         Card(
                             modifier = Modifier
                                 .fillMaxHeight()
@@ -162,9 +166,24 @@ fun StructureEditorContent(
                         ) {
                             Column(modifier = Modifier.fillMaxSize()) {
                                 Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.End
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(start = 12.dp, end = 4.dp, top = 8.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    verticalAlignment = Alignment.CenterVertically
                                 ) {
+                                    SingleChoiceSegmentedButtonRow(modifier = Modifier.weight(1f)) {
+                                        SegmentedButton(
+                                            selected = state.sidePanelTab == SidePanelTab.TREE,
+                                            onClick = { state.sidePanelTab = SidePanelTab.TREE },
+                                            shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2)
+                                        ) { Text("Baum") }
+                                        SegmentedButton(
+                                            selected = state.sidePanelTab == SidePanelTab.TEMPLATES,
+                                            onClick = { state.sidePanelTab = SidePanelTab.TEMPLATES },
+                                            shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2)
+                                        ) { Text("Vorlagen") }
+                                    }
                                     IconButton(onClick = { state.sidePanelExpanded = false }) {
                                         Icon(
                                             imageVector = GhostTalkIcons.ArrowBack,
@@ -172,19 +191,29 @@ fun StructureEditorContent(
                                         )
                                     }
                                 }
-                                StructureTreeNavigator(
-                                    state = state,
-                                    graph = graph,
-                                    pages = pages,
-                                    pageNames = pageNames,
-                                    focusedPageId = state.focusedPageId,
-                                    onFocus = { state.navigateToPage(it) },
-                                    searchResults = searchResults,
-                                    onOrphanClick = { orphanId -> state.orphanToConnectId = orphanId },
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .fillMaxWidth()
-                                )
+                                when (state.sidePanelTab) {
+                                    SidePanelTab.TREE -> StructureTreeNavigator(
+                                        state = state,
+                                        graph = graph,
+                                        pages = pages,
+                                        pageNames = pageNames,
+                                        focusedPageId = state.focusedPageId,
+                                        onFocus = { state.navigateToPage(it) },
+                                        searchResults = searchResults,
+                                        onOrphanClick = { orphanId -> state.orphanToConnectId = orphanId },
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .fillMaxWidth()
+                                    )
+                                    SidePanelTab.TEMPLATES -> ButtonTemplatesPanel(
+                                        actions = templatesPanelActions,
+                                        onEditTemplate = onEditButtonTemplate,
+                                        onTemplateClick = onTemplateClick,
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .fillMaxWidth()
+                                    )
+                                }
                             }
                         }
                     } else {
@@ -263,41 +292,6 @@ fun StructureEditorContent(
                     )
                 }
 
-                if (isTablet && state.templatesPanelExpanded) {
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Card(
-                        modifier = Modifier
-                            .fillMaxHeight()
-                            .width(300.dp)
-                            .padding(end = 16.dp, top = 16.dp, bottom = 16.dp),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
-                    ) {
-                        Column(modifier = Modifier.fillMaxSize()) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth().padding(16.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(
-                                    text = stringResource(R.string.template_panel_title),
-                                    style = MaterialTheme.typography.titleMedium
-                                )
-                                IconButton(onClick = { state.templatesPanelExpanded = false }) {
-                                    Icon(
-                                        imageVector = Icons.Default.Close,
-                                        contentDescription = stringResource(R.string.structure_close_templates)
-                                    )
-                                }
-                            }
-                            ButtonTemplatesPanel(
-                                actions = templatesPanelActions,
-                                onEditTemplate = onEditButtonTemplate,
-                                onTemplateClick = onTemplateClick,
-                                modifier = Modifier.weight(1f).fillMaxWidth()
-                            )
-                        }
-                    }
-                }
             }
         }
 

@@ -13,12 +13,15 @@ import com.andreas_kratzer.ghosttalk.core.model.ButtonConfig
 import com.andreas_kratzer.ghosttalk.core.model.ButtonTemplate
 import com.andreas_kratzer.ghosttalk.ui.components.SplitWizardButtonDrag
 
+/** Which content the unified left side panel currently shows (tablet). */
+enum class SidePanelTab { TREE, TEMPLATES }
+
 @Stable
 class StructureEditorState(
     initialFocusedPageId: String,
     initialFocusHistory: List<String> = emptyList(),
     initialSidePanelExpanded: Boolean = true,
-    initialTemplatesPanelExpanded: Boolean = false,
+    initialSidePanelTab: SidePanelTab = SidePanelTab.TREE,
     initialSearchQuery: String = "",
     initialIsMultiSelectMode: Boolean = false,
     initialSelection: Map<String, Set<Int>> = emptyMap()
@@ -26,7 +29,7 @@ class StructureEditorState(
     var focusedPageId by mutableStateOf(initialFocusedPageId)
     var focusHistory by mutableStateOf(initialFocusHistory)
     var sidePanelExpanded by mutableStateOf(initialSidePanelExpanded)
-    var templatesPanelExpanded by mutableStateOf(initialTemplatesPanelExpanded)
+    var sidePanelTab by mutableStateOf(initialSidePanelTab)
 
     var onSearchQueryChange: (String) -> Unit = {}
     var onIsMultiSelectModeChange: (Boolean) -> Unit = {}
@@ -126,7 +129,7 @@ class StructureEditorState(
                     state.focusedPageId,
                     state.focusHistory,
                     state.sidePanelExpanded,
-                    state.templatesPanelExpanded
+                    state.sidePanelTab.name
                 )
             },
             restore = { saved ->
@@ -135,7 +138,7 @@ class StructureEditorState(
                     initialFocusedPageId = saved[0] as String,
                     initialFocusHistory = saved[1] as List<String>,
                     initialSidePanelExpanded = saved[2] as Boolean,
-                    initialTemplatesPanelExpanded = saved[3] as Boolean
+                    initialSidePanelTab = SidePanelTab.valueOf(saved[3] as String)
                 )
             }
         )
@@ -146,7 +149,7 @@ class StructureEditorState(
 fun rememberStructureEditorState(
     initialFocusedPageId: String,
     initialSidePanelExpanded: Boolean = true,
-    initialTemplatesPanelExpanded: Boolean = false,
+    initialSidePanelTab: SidePanelTab = SidePanelTab.TREE,
     initialSearchQuery: String = "",
     initialIsMultiSelectMode: Boolean = false,
     initialSelection: Map<String, Set<Int>> = emptyMap(),
@@ -158,7 +161,7 @@ fun rememberStructureEditorState(
         StructureEditorState(
             initialFocusedPageId = initialFocusedPageId,
             initialSidePanelExpanded = initialSidePanelExpanded,
-            initialTemplatesPanelExpanded = initialTemplatesPanelExpanded,
+            initialSidePanelTab = initialSidePanelTab,
             initialSearchQuery = initialSearchQuery,
             initialIsMultiSelectMode = initialIsMultiSelectMode,
             initialSelection = initialSelection

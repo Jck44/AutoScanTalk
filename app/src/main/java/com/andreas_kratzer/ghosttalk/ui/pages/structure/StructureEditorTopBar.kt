@@ -91,7 +91,7 @@ fun StructureEditorTopBar(
                     onClick = {
                         state.isMultiSelectMode = !state.isMultiSelectMode
                         if (state.isMultiSelectMode) {
-                            state.templatesPanelExpanded = false
+                            state.sidePanelTab = SidePanelTab.TREE
                         } else {
                             state.selection = emptyMap()
                         }
@@ -108,12 +108,18 @@ fun StructureEditorTopBar(
                     label = stringResource(R.string.template_panel_title),
                     onClick = {
                         if (isTablet) {
-                            state.templatesPanelExpanded = !state.templatesPanelExpanded
+                            // Open the unified left panel on the Templates tab (toggle off if already there).
+                            if (state.sidePanelExpanded && state.sidePanelTab == SidePanelTab.TEMPLATES) {
+                                state.sidePanelExpanded = false
+                            } else {
+                                state.sidePanelExpanded = true
+                                state.sidePanelTab = SidePanelTab.TEMPLATES
+                            }
                         } else {
                             state.showTemplatesBottomSheet = true
                         }
                     },
-                    tint = if (state.templatesPanelExpanded && isTablet) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                    tint = if (isTablet && state.sidePanelExpanded && state.sidePanelTab == SidePanelTab.TEMPLATES) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                     priority = 1,
                     testTag = "structure_editor_templates_button"
                 )
